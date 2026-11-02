@@ -158,8 +158,19 @@ def test_ui_tab_browser_shortcuts(main_window):
     main_window._select_tab_index(0)
     assert main_window.tab_widget.currentIndex() == 0
 
-    # Test move relative
-    main_window._move_active_tab_relative(+1)
+    # Test direct editor key event for Ctrl+Shift+PageDown
+    from PySide6.QtGui import QKeyEvent
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+
+    # Simulate pressing Ctrl+Shift+PageDown while typing in editor
+    ev_move_right = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageDown, Qt.ControlModifier | Qt.ShiftModifier)
+    editor.keyPressEvent(ev_move_right)
     assert main_window.tab_widget.currentIndex() == 1
+
+    # Simulate pressing Ctrl+Shift+PageUp while typing in editor
+    ev_move_left = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageUp, Qt.ControlModifier | Qt.ShiftModifier)
+    editor.keyPressEvent(ev_move_left)
+    assert main_window.tab_widget.currentIndex() == 0
 
 

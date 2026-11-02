@@ -101,33 +101,37 @@ class TechPadMainWindow(QMainWindow):
 
     def _setup_shortcuts(self) -> None:
         # Browser-style tab shortcuts
-        QShortcut(QKeySequence("Ctrl+T"), self, self.create_new_tab)
-        QShortcut(QKeySequence("Ctrl+W"), self, self._close_current_tab)
-        QShortcut(QKeySequence("Ctrl+F4"), self, self._close_current_tab)
+        QShortcut(QKeySequence("Ctrl+T"), self, self.create_new_tab, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+W"), self, self._close_current_tab, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+F4"), self, self._close_current_tab, context=Qt.ApplicationShortcut)
 
         # Tab navigation: Next / Previous
-        QShortcut(QKeySequence("Ctrl+Tab"), self, lambda: self._switch_tab_relative(+1))
-        QShortcut(QKeySequence("Ctrl+Shift+Tab"), self, lambda: self._switch_tab_relative(-1))
-        QShortcut(QKeySequence("Ctrl+PageDown"), self, lambda: self._switch_tab_relative(+1))
-        QShortcut(QKeySequence("Ctrl+PageUp"), self, lambda: self._switch_tab_relative(-1))
+        QShortcut(QKeySequence("Ctrl+Tab"), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+Shift+Tab"), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+PgDown"), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+PgUp"), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_PageDown), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_PageUp), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
 
         # Tab reordering: Slide current tab left / right
-        QShortcut(QKeySequence("Ctrl+Shift+PageDown"), self, lambda: self._move_active_tab_relative(+1))
-        QShortcut(QKeySequence("Ctrl+Shift+PageUp"), self, lambda: self._move_active_tab_relative(-1))
+        QShortcut(QKeySequence("Ctrl+Shift+PgDown"), self, lambda: self._move_active_tab_relative(+1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+Shift+PgUp"), self, lambda: self._move_active_tab_relative(-1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT | Qt.Key_PageDown), self, lambda: self._move_active_tab_relative(+1), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT | Qt.Key_PageUp), self, lambda: self._move_active_tab_relative(-1), context=Qt.ApplicationShortcut)
 
         # Direct tab number switching (Ctrl+1 .. Ctrl+8, Ctrl+9 for last)
         for num in range(1, 9):
             idx = num - 1
-            QShortcut(QKeySequence(f"Ctrl+{num}"), self, lambda i=idx: self._select_tab_index(i))
-        QShortcut(QKeySequence("Ctrl+9"), self, lambda: self._select_tab_index(self.tab_widget.count() - 1))
+            QShortcut(QKeySequence(f"Ctrl+{num}"), self, lambda i=idx: self._select_tab_index(i), context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+9"), self, lambda: self._select_tab_index(self.tab_widget.count() - 1), context=Qt.ApplicationShortcut)
 
         # Reopen / restore last closed/archived tab (Ctrl+Shift+T)
-        QShortcut(QKeySequence("Ctrl+Shift+T"), self, self._restore_last_closed_tab)
+        QShortcut(QKeySequence("Ctrl+Shift+T"), self, self._restore_last_closed_tab, context=Qt.ApplicationShortcut)
 
         # General app shortcuts
-        QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves)
-        QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer)
-        QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog)
+        QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
 
     def _restore_workspace(self) -> None:
         """Restores tabs and focused tab from SQLite session."""
@@ -162,6 +166,8 @@ class TechPadMainWindow(QMainWindow):
         editor.load_content(initial_html)
         editor.content_modified.connect(self._on_editor_modified)
         editor.currentCharFormatChanged.connect(self.toolbar.update_format_states)
+        editor.move_tab_requested.connect(self._move_active_tab_relative)
+        editor.switch_tab_requested.connect(self._switch_tab_relative)
 
         # Create debouncer using configured delay
         delay_ms = int(self.session_service.get_setting("auto_save_delay_ms", str(AUTO_SAVE_DEBOUNCE_MS)))

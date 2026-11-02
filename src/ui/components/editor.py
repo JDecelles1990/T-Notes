@@ -22,8 +22,10 @@ from src.services.image_service import ImageService
 class TechPadEditor(QTextEdit):
     """Custom editor with image clipboard/drop capture, clickable links, and auto-save signaling."""
 
-    content_modified = Signal(int)  # Emits scratchpad_id
-    image_inserted = Signal(str)    # Emits image_name
+    content_modified = Signal(int)     # Emits scratchpad_id
+    image_inserted = Signal(str)       # Emits image_name
+    move_tab_requested = Signal(int)   # Emits relative delta (-1 for left, +1 for right)
+    switch_tab_requested = Signal(int) # Emits relative delta (-1 for previous, +1 for next)
 
     URL_PATTERN = re.compile(r'((?:https?://|www\.)[^\s<>"\'\)]+)', re.IGNORECASE)
 
@@ -92,8 +94,32 @@ class TechPadEditor(QTextEdit):
         super().insertFromMimeData(source)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """Auto-formats typed URLs as hyperlinks when space or enter is pressed."""
+        """Handles browser-style tab shortcuts and auto-formats typed URLs."""
+        # 1. Slide / Move tab left or right: Ctrl+Shift+PageDown / PageUp
+        if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+            if event.key() == Qt.Key_PageDown:
+                self.move_tab_requested.emit(+1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_PageUp:
+                self.move_tab_requested.emit(-1)
+                event.accept()
+                return
+
+        # 2. Switch tab next or previous: Ctrl+PageDown / PageUp
+        if event.modifiers() == Qt.ControlModifier:
+            if event.key() == Qt.Key_PageDown:
+                self.switch_tab_requested.emit(+1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_PageUp:
+                self.switch_tab_requested.emit(-1)
+                event.accept()
+                return
+
         super().keyPressEvent(event)
+
+        # 3. Auto-formats typed URLs as hyperlinks when space or enter is pressed
         if event.key() in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
             self._auto_link_preceding_word()
 
