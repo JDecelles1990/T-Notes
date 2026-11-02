@@ -14,7 +14,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS scratchpad_fts USING fts5(
     ticket_number,
     client_name,
     title,
-    content_text,
+    content_html,
     content='scratchpads',
     content_rowid='id'
 );
@@ -25,7 +25,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS scratchpad_fts USING fts5(
   - `ticket_number`: Ticket identifier.
   - `client_name`: Client / department name.
   - `title`: Subject / short summary.
-  - `content_text`: HTML body text.
+  - `content_html`: Note body text and markup.
 
 ---
 
@@ -36,21 +36,21 @@ Because `scratchpad_fts` uses external content, three database triggers maintain
 ```sql
 -- 1. After Insert: Add new record to FTS index
 CREATE TRIGGER IF NOT EXISTS scratchpads_ai AFTER INSERT ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;
 
 -- 2. After Delete: Remove deleted record from FTS index
 CREATE TRIGGER IF NOT EXISTS scratchpads_ad AFTER DELETE ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
   VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
 END;
 
 -- 3. After Update: Remove old token entries and re-index updated text
 CREATE TRIGGER IF NOT EXISTS scratchpads_au AFTER UPDATE ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
   VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
-  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;
 ```

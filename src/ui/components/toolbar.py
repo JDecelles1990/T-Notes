@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import LOG_BADGES, TICKET_SKELETONS
+from src.ui.components.stopwatch_widget import TicketStopwatchWidget
 
 
 class TechPadToolBar(QToolBar):
@@ -138,6 +139,13 @@ class TechPadToolBar(QToolBar):
         self.act_export.setToolTip("Copy stripped clean text/markdown for PSA ticket (Ctrl+Alt+N)")
         self.act_export.setShortcut(QKeySequence("Ctrl+Alt+N"))
         self.act_export.triggered.connect(self.export_note_requested.emit)
+
+        self.addSeparator()
+
+        # Stopwatch Widget for tracking ticket troubleshooting time
+        self.stopwatch = TicketStopwatchWidget(parent=self)
+        self.stopwatch.psa_export_requested.connect(self.export_note_requested.emit)
+        self.addWidget(self.stopwatch)
 
         # Expanding spacer pushing Opacity & Settings to the right side
         spacer = QWidget()

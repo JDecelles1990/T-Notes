@@ -1,11 +1,13 @@
 """Business logic service for scratchpad operations and note formatting."""
 
 import re
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
 from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.services.image_service import ImageService
+from src.services.stopwatch_service import StopwatchService
 
 
 class ScratchpadService:
@@ -26,6 +28,7 @@ class ScratchpadService:
         title: str = "",
         content_html: str = "",
         tab_order: Optional[int] = None,
+        elapsed_seconds: int = 0,
     ) -> Dict[str, Any]:
         """Creates a new active ticket scratchpad."""
         active = self.repo.get_active()
@@ -43,8 +46,13 @@ class ScratchpadService:
             content_html=content_html,
             status=STATUS_ACTIVE,
             tab_order=tab_order,
+            elapsed_seconds=elapsed_seconds,
         )
         return self.repo.get_by_id(scratchpad_id) or {}
+
+    def update_elapsed_time(self, scratchpad_id: int, elapsed_seconds: int) -> None:
+        """Persists cumulative troubleshooting time in seconds."""
+        self.repo.update_elapsed_time(scratchpad_id, elapsed_seconds)
 
     def get_ticket(self, scratchpad_id: int) -> Optional[Dict[str, Any]]:
         """Retrieves ticket data by ID."""
@@ -82,9 +90,67 @@ class ScratchpadService:
         """Updates tab ordering for active scratchpads."""
         self.repo.update_tab_orders(orders)
 
-    def archive_ticket(self, scratchpad_id: int) -> None:
-        """Archives a ticket, moving it out of active tabs."""
-        self.repo.archive(scratchpad_id)
+    def archive_ticket(self, scratchpad_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Archives a ticket:
+        1. Captures the creation time and archiving timestamp.
+        2. Computes the total lifespan the tab was open (wall-clock duration).
+        3. Appends a structured audit summary block to the ticket's HTML content.
+        4. Updates status to 'archived' and records archived_at timestamp.
+        """
+        ticket = self.repo.get_by_id(scratchpad_id)
+        if not ticket:
+            return None
+
+        now_dt = datetime.now(timezone.utc)
+        archived_at_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Parse created_at and calculate total open duration
+        created_str = str(ticket.get("created_at", ""))
+        total_open_str = "N/A"
+        if created_str:
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+                try:
+                    created_dt = datetime.strptime(created_str.split(".")[0], fmt).replace(tzinfo=timezone.utc)
+                    delta = now_dt - created_dt
+                    total_secs = int(max(0, delta.total_seconds()))
+                    hrs = total_secs // 3600
+                    mins = (total_secs % 3600) // 60
+                    secs = total_secs % 60
+                    if hrs > 0:
+                        total_open_str = f"{hrs}h {mins}m {secs}s"
+                    elif mins > 0:
+                        total_open_str = f"{mins}m {secs}s"
+                    else:
+                        total_open_str = f"{secs}s"
+                    break
+                except ValueError:
+                    continue
+
+        elapsed_seconds = ticket.get("elapsed_seconds", 0) or 0
+        stopwatch_fmt = StopwatchService.format_time(elapsed_seconds)
+
+        # Generate audit footer HTML
+        audit_html = (
+            f'<div class="ticket-archive-audit" style="margin-top: 20px; padding: 10px 14px; '
+            f'background-color: #1e1e1e; border: 1px solid #3c3c3c; border-left: 4px solid #007acc; '
+            f'border-radius: 4px; font-family: Consolas, monospace; font-size: 11px; color: #a0a0a0;">'
+            f'<div style="font-weight: bold; color: #4fc1ff; margin-bottom: 6px;">📦 Ticket Archive Audit Summary</div>'
+            f'<div>• <b>Tab Created:</b> {created_str} UTC</div>'
+            f'<div>• <b>Tab Archived:</b> {archived_at_str} UTC</div>'
+            f'<div>• <b>Total Tab Open Duration:</b> {total_open_str}</div>'
+            f'<div>• <b>Active Troubleshooting Time:</b> {stopwatch_fmt.display} ({stopwatch_fmt.rounded_15m} billable)</div>'
+            f'</div>'
+        )
+
+        current_html = ticket.get("content_html", "") or ""
+        # Strip any existing audit block if re-archiving
+        clean_html = re.sub(r'<div class="ticket-archive-audit".*?</div>\s*</div>', '', current_html, flags=re.DOTALL)
+        updated_html = f"{clean_html.rstrip()}<br/>{audit_html}"
+
+        self.repo.update_content(scratchpad_id, updated_html)
+        self.repo.archive(scratchpad_id, archived_at=archived_at_str)
+        return self.repo.get_by_id(scratchpad_id)
 
     def restore_ticket(self, scratchpad_id: int) -> Optional[Dict[str, Any]]:
         """Restores an archived ticket as the last active tab."""
@@ -125,6 +191,14 @@ class ScratchpadService:
             header_lines.append(f"Client: {ticket['client_name']}")
         if ticket.get("title"):
             header_lines.append(f"Subject: {ticket['title']}")
+        if ticket.get("elapsed_seconds"):
+            hours = ticket["elapsed_seconds"] // 3600
+            mins = (ticket["elapsed_seconds"] % 3600) // 60
+            secs = ticket["elapsed_seconds"] % 60
+            import math
+            blocks = max(1, math.ceil(ticket["elapsed_seconds"] / 900))
+            rounded = f"{blocks * 0.25:.2f}h"
+            header_lines.append(f"Time Logged: {hours:02d}:{mins:02d}:{secs:02d} ({rounded} billable)")
         header_lines.append("=" * 30 + "\n")
 
         html = ticket.get("content_html", "") or ""

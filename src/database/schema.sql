@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS scratchpads (
     content_html TEXT DEFAULT '',
     status TEXT DEFAULT 'active' CHECK(status IN ('active', 'archived', 'deleted')),
     tab_order INTEGER DEFAULT 0,
+    elapsed_seconds INTEGER DEFAULT 0,
+    archived_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -54,25 +56,25 @@ CREATE VIRTUAL TABLE IF NOT EXISTS scratchpad_fts USING fts5(
     ticket_number,
     client_name,
     title,
-    content_text,
+    content_html,
     content='scratchpads',
     content_rowid='id'
 );
 
 -- Triggers for FTS5 synchronization
 CREATE TRIGGER IF NOT EXISTS scratchpads_ai AFTER INSERT ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;
 
 CREATE TRIGGER IF NOT EXISTS scratchpads_ad AFTER DELETE ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
   VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
 END;
 
 CREATE TRIGGER IF NOT EXISTS scratchpads_au AFTER UPDATE ON scratchpads BEGIN
-  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
   VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
-  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
+  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;

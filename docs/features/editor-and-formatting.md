@@ -57,6 +57,22 @@ Clicking `⚙️` or pressing `Ctrl+,` opens `SettingsDialog`:
 - **Tab Close Action:** Choice between prompting or immediately archiving to the History Drawer.
 - **Default Opacity:** Default window translucency on startup.
 
+### 4.3 Ticket Stopwatch & MSP Billing (`⏱️`)
+Integrated directly in the toolbar for tracking cumulative active troubleshooting time per tab:
+- **Display:** Consolas monospace counter (`⏱️ HH:MM:SS`) with live duration updates.
+- **Micro-Controls:**
+  - `▶️` / `⏸️` (Start / Pause): Resumes or pauses the timer.
+  - `🔄` (Reset): Resets the ticket's elapsed time back to `00:00:00`.
+  - `📋 Time` Dropdown Menu:
+    - **Copy Exact (`HH:MM:SS`):** e.g. `00:14:32`.
+    - **Copy Decimal:** e.g. `0.24h` (hours with two decimal points).
+    - **Copy 15m Rounded Block:** e.g. `0.25h` (rounds up to the nearest 15-minute billable block standard in MSPs).
+    - **Copy Note for Ticket Tool:** Copies the full stripped Markdown note with billable time header.
+- **Auto-Pause on Lock or 5-Minute Inactivity:**
+  - Uses Windows system APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
+  - If the technician locks their screen (`Win + L`) or leaves the workstation idle for more than 5 minutes (300 seconds), the stopwatch automatically pauses to prevent accidental billing overages.
+  - Clicking `▶️` or switching tabs clears the auto-pause state and resumes active tracking.
+
 ---
 
 ## 5. Technician Micro-Controls

@@ -23,6 +23,7 @@ class ScratchpadRepository:
         content_html: str = "",
         status: str = "active",
         tab_order: int = 0,
+        elapsed_seconds: int = 0,
     ) -> int:
         """Inserts a new scratchpad and returns its generated ID."""
         conn = self.db.get_connection()
@@ -30,10 +31,10 @@ class ScratchpadRepository:
         with conn:
             cursor = conn.execute(
                 """
-                INSERT INTO scratchpads (ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO scratchpads (ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (ticket_number.strip(), client_name.strip(), title.strip(), content_html, status, tab_order, now, now),
+                (ticket_number.strip(), client_name.strip(), title.strip(), content_html, status, tab_order, elapsed_seconds, now, now),
             )
             return cursor.lastrowid
 
@@ -42,7 +43,7 @@ class ScratchpadRepository:
         conn = self.db.get_connection()
         row = conn.execute(
             """
-            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at
+            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, archived_at, created_at, updated_at
             FROM scratchpads
             WHERE id = ?
             """,
@@ -55,7 +56,7 @@ class ScratchpadRepository:
         conn = self.db.get_connection()
         rows = conn.execute(
             """
-            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at
+            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, archived_at, created_at, updated_at
             FROM scratchpads
             WHERE status = 'active'
             ORDER BY tab_order ASC, id ASC
@@ -68,7 +69,7 @@ class ScratchpadRepository:
         conn = self.db.get_connection()
         rows = conn.execute(
             """
-            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at
+            SELECT id, ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, archived_at, created_at, updated_at
             FROM scratchpads
             WHERE status = 'archived'
             ORDER BY updated_at DESC
@@ -119,18 +120,18 @@ class ScratchpadRepository:
                 [(order, sid) for sid, order in orders],
             )
 
-    def archive(self, scratchpad_id: int) -> None:
-        """Marks a scratchpad as archived."""
+    def archive(self, scratchpad_id: int, archived_at: Optional[str] = None) -> None:
+        """Marks a scratchpad as archived and records archived_at timestamp."""
         conn = self.db.get_connection()
-        now = _get_utc_now_str()
+        now = archived_at or _get_utc_now_str()
         with conn:
             conn.execute(
                 """
                 UPDATE scratchpads
-                SET status = 'archived', updated_at = ?
+                SET status = 'archived', archived_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (now, scratchpad_id),
+                (now, now, scratchpad_id),
             )
 
     def restore(self, scratchpad_id: int, next_tab_order: int) -> None:
@@ -145,6 +146,19 @@ class ScratchpadRepository:
                 WHERE id = ?
                 """,
                 (next_tab_order, now, scratchpad_id),
+            )
+
+    def update_elapsed_time(self, scratchpad_id: int, elapsed_seconds: int) -> None:
+        """Updates cumulative troubleshooting time in seconds."""
+        conn = self.db.get_connection()
+        with conn:
+            conn.execute(
+                """
+                UPDATE scratchpads
+                SET elapsed_seconds = ?
+                WHERE id = ?
+                """,
+                (elapsed_seconds, scratchpad_id),
             )
 
     def delete_permanently(self, scratchpad_id: int) -> None:
@@ -178,7 +192,7 @@ class ScratchpadRepository:
         try:
             if status:
                 sql = """
-                    SELECT s.id, s.ticket_number, s.client_name, s.title, s.content_html, s.status, s.tab_order, s.created_at, s.updated_at
+                    SELECT s.id, s.ticket_number, s.client_name, s.title, s.content_html, s.status, s.tab_order, s.elapsed_seconds, s.archived_at, s.created_at, s.updated_at
                     FROM scratchpads s
                     JOIN scratchpad_fts f ON s.id = f.rowid
                     WHERE scratchpad_fts MATCH ? AND s.status = ?
@@ -188,7 +202,7 @@ class ScratchpadRepository:
                 rows = conn.execute(sql, (fts_query, status)).fetchall()
             else:
                 sql = """
-                    SELECT s.id, s.ticket_number, s.client_name, s.title, s.content_html, s.status, s.tab_order, s.created_at, s.updated_at
+                    SELECT s.id, s.ticket_number, s.client_name, s.title, s.content_html, s.status, s.tab_order, s.elapsed_seconds, s.archived_at, s.created_at, s.updated_at
                     FROM scratchpads s
                     JOIN scratchpad_fts f ON s.id = f.rowid
                     WHERE scratchpad_fts MATCH ?
@@ -202,7 +216,7 @@ class ScratchpadRepository:
             pattern = f"%{clean_query}%"
             if status:
                 sql = """
-                    SELECT id, ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at
+                    SELECT id, ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, archived_at, created_at, updated_at
                     FROM scratchpads
                     WHERE status = ? AND (ticket_number LIKE ? OR client_name LIKE ? OR title LIKE ? OR content_html LIKE ?)
                     ORDER BY updated_at DESC
@@ -211,7 +225,7 @@ class ScratchpadRepository:
                 rows = conn.execute(sql, (status, pattern, pattern, pattern, pattern)).fetchall()
             else:
                 sql = """
-                    SELECT id, ticket_number, client_name, title, content_html, status, tab_order, created_at, updated_at
+                    SELECT id, ticket_number, client_name, title, content_html, status, tab_order, elapsed_seconds, archived_at, created_at, updated_at
                     FROM scratchpads
                     WHERE ticket_number LIKE ? OR client_name LIKE ? OR title LIKE ? OR content_html LIKE ?
                     ORDER BY updated_at DESC

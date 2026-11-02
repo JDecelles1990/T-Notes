@@ -223,3 +223,93 @@ def test_ui_global_tab_reordering_with_keypad_modifier(main_window):
     assert main_window.tab_widget.currentIndex() == 1
 
 
+def test_ui_stopwatch_integration_and_dynamic_tab_minutes(main_window):
+    """Verifies stopwatch tracks active ticket time and dynamically displays running minutes on tab headers."""
+    stopwatch = main_window.toolbar.stopwatch
+    assert stopwatch is not None
+    assert stopwatch.is_running is True
+
+    # Check initial ticket has 0 elapsed seconds
+    initial_editor = main_window.tab_widget.get_current_editor()
+    sid = initial_editor.scratchpad_id
+    assert stopwatch.current_scratchpad_id == sid
+
+    # Simulate stopwatch running for 14 minutes (840 seconds)
+    stopwatch._seconds = 840
+    stopwatch._update_display()
+    assert "00:14:00" in stopwatch.lbl_time.text()
+
+    # Trigger time update emission
+    stopwatch.time_updated.emit(sid, 840)
+
+    # Tab header should now include '(14m)'
+    current_tab_title = main_window.tab_widget.tabText(main_window.tab_widget.currentIndex())
+    assert "(14m)" in current_tab_title
+
+    # Create a second tab
+    main_window.create_new_tab()
+    new_editor = main_window.tab_widget.get_current_editor()
+    new_sid = new_editor.scratchpad_id
+    assert new_sid != sid
+
+    # Outgoing tab's time (840s) should have been saved in database
+    saved_ticket = main_window.scratchpad_service.get_ticket(sid)
+    assert saved_ticket["elapsed_seconds"] == 840
+
+    # New tab's stopwatch should start at 0
+    assert stopwatch.current_scratchpad_id == new_sid
+    assert stopwatch.elapsed_seconds == 0
+
+    # Switch back to the first tab
+    main_window._select_tab_index(0)
+    assert stopwatch.current_scratchpad_id == sid
+    assert stopwatch.elapsed_seconds == 840
+    assert "00:14:00" in stopwatch.lbl_time.text()
+
+
+def test_ui_stopwatch_copy_and_reset(main_window):
+    """Tests stopwatch copy menu actions and reset button."""
+    stopwatch = main_window.toolbar.stopwatch
+    stopwatch._seconds = 930  # 15m 30s -> 0.26h decimal, 0.50h rounded
+    stopwatch._update_display()
+
+    # Test copy exact
+    stopwatch._copy_to_clipboard("display")
+    assert QApplication.clipboard().text() == "00:15:30"
+
+    # Test copy decimal
+    stopwatch._copy_to_clipboard("decimal")
+    assert QApplication.clipboard().text() == "0.26h"
+
+    # Test copy 15m rounded
+    stopwatch._copy_to_clipboard("rounded")
+    assert QApplication.clipboard().text() == "0.50h"
+
+    # Test reset timer
+    stopwatch.reset_timer()
+    assert stopwatch.elapsed_seconds == 0
+    assert stopwatch.is_running is False
+    assert "00:00:00" in stopwatch.lbl_time.text()
+
+
+def test_ui_stopwatch_auto_pause_on_idle(main_window, monkeypatch):
+    """Verifies that the stopwatch auto-pauses when the computer is locked or idle >= 5 minutes."""
+    from src.services.stopwatch_service import StopwatchService
+
+    stopwatch = main_window.toolbar.stopwatch
+    stopwatch.start_timer()
+    assert stopwatch.is_running is True
+
+    # Mock should_auto_pause to True (idle for 5+ minutes or locked)
+    monkeypatch.setattr(StopwatchService, "should_auto_pause", lambda threshold: True)
+
+    # Execute tick
+    stopwatch._on_tick()
+
+    # Stopwatch should now be paused
+    assert stopwatch.is_running is False
+    assert stopwatch._auto_paused is True
+    assert "Auto-paused" in stopwatch.lbl_time.toolTip()
+
+
+

@@ -150,3 +150,41 @@ def test_migration_adds_window_opacity_to_legacy_db(tmp_path):
     manager.close()
 
 
+def test_migration_adds_elapsed_seconds_to_legacy_db(tmp_path):
+    """Simulates an existing database from before elapsed_seconds was introduced on scratchpads."""
+    db_file = tmp_path / "legacy_scratchpads.db"
+    manager = DatabaseManager(db_file)
+    conn = manager.get_connection()
+
+    # Create old scratchpads table without elapsed_seconds column
+    with conn:
+        conn.execute("""
+            CREATE TABLE scratchpads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_number TEXT NOT NULL,
+                client_name TEXT DEFAULT '',
+                title TEXT DEFAULT '',
+                content_html TEXT DEFAULT '',
+                status TEXT DEFAULT 'active',
+                tab_order INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("INSERT INTO scratchpads (ticket_number) VALUES ('INC-OLD-1');")
+
+    # Run init_database which should migrate the table
+    init_database(manager)
+
+    repo = ScratchpadRepository(manager)
+    ticket = repo.get_by_id(1)
+    assert ticket is not None
+    assert ticket.get("elapsed_seconds") == 0
+
+    # Test updating elapsed time
+    repo.update_elapsed_time(1, 450)
+    ticket = repo.get_by_id(1)
+    assert ticket["elapsed_seconds"] == 450
+    manager.close()
+
+

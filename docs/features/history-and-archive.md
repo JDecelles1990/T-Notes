@@ -31,11 +31,26 @@ stateDiagram-v2
     Deleted --> [*]
 ```
 
-### 3.1 Archiving a Ticket
-1. When a tab is closed via `✕` or `Ctrl+W`, the technician selects **Archive to History**.
-2. `ScratchpadService.archive_ticket(scratchpad_id)` sets `status = 'archived'` in `scratchpads`.
-3. The tab is removed from the central tab widget.
-4. The History Drawer refreshes its list view immediately.
+### 3.1 Archiving a Ticket & Appended Audit Trail
+When a tab is closed via `✕`, `Ctrl+W`, or right-click **Archive to History**:
+1. Active stopwatch elapsed seconds and debounced edits are flushed synchronously to SQLite.
+2. `ScratchpadService.archive_ticket(scratchpad_id)` performs automated audit calculation:
+   - **Tab Created:** Original creation timestamp (`created_at` in UTC).
+   - **Tab Archived:** Instantaneous archive timestamp (`archived_at` in UTC).
+   - **Total Tab Open Duration:** Complete wall-clock lifespan the scratchpad tab was active (e.g. `1h 45m 20s`).
+   - **Active Troubleshooting Time:** Cumulative billable stopwatch time (e.g. `00:35:10` / `0.75h billable`).
+3. An audit summary box is automatically formatted and appended to the ticket's `content_html`:
+   ```html
+   <div class="ticket-archive-audit" style="...">
+       <div>📦 Ticket Archive Audit Summary</div>
+       <div>• Tab Created: 2026-11-01 20:10:00 UTC</div>
+       <div>• Tab Archived: 2026-11-01 20:55:00 UTC</div>
+       <div>• Total Tab Open Duration: 45m 0s</div>
+       <div>• Active Troubleshooting Time: 00:15:00 (0.25h billable)</div>
+   </div>
+   ```
+4. `scratchpads.status` is set to `'archived'`, and `archived_at` is recorded in SQLite.
+5. The tab is removed from the central tab widget and immediately appears in the History Drawer list with time tags and hover tooltips.
 
 ### 3.2 Real-Time FTS5 Search Filtering
 1. The technician types a search query (e.g. `VPN timeout Cisco`).

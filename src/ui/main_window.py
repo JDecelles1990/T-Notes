@@ -135,6 +135,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
+        self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
         # History / Archive Side Drawer
@@ -146,6 +147,7 @@ class TechPadMainWindow(QMainWindow):
         # Status Bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
+        self.toolbar.stopwatch.status_message_requested.connect(self.status_bar.showMessage)
 
         self.lbl_save_status = QLabel("● Saved")
         self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
@@ -274,8 +276,27 @@ class TechPadMainWindow(QMainWindow):
             self.lbl_save_status.setText("↻ Saving...")
             self.lbl_save_status.setStyleSheet("color: #facc15; font-weight: bold; padding-left: 8px;")
 
+    def _on_stopwatch_time_updated(self, scratchpad_id: int, elapsed_seconds: int) -> None:
+        """Persists stopwatch elapsed seconds and updates the active tab's running minutes display."""
+        self.scratchpad_service.update_elapsed_time(scratchpad_id, elapsed_seconds)
+
+        # Update tab title with running minutes tag (e.g. '#4092 (14m) — ACME')
+        for i in range(self.tab_widget.count()):
+            editor = self.tab_widget.get_editor_at(i)
+            if editor and editor.scratchpad_id == scratchpad_id:
+                ticket = self.scratchpad_service.get_ticket(scratchpad_id)
+                if ticket:
+                    self.tab_widget.update_tab_title(
+                        index=i,
+                        ticket_number=ticket.get("ticket_number", ""),
+                        client_name=ticket.get("client_name", ""),
+                        title=ticket.get("title", ""),
+                        elapsed_seconds=elapsed_seconds,
+                    )
+                break
+
     def _on_current_tab_changed(self, index: int) -> None:
-        """Updates active editor in toolbar and updates status info."""
+        """Updates active editor in toolbar, synchronizes stopwatch, and updates status info."""
         # Flush previous tab's debounced save before switching
         self.flush_all_saves()
 
@@ -289,8 +310,15 @@ class TechPadMainWindow(QMainWindow):
                 client = ticket.get("client_name", "")
                 title = ticket.get("title", "")
                 self.lbl_active_info.setText(f"Active Ticket: #{t_num} | Client: {client or 'N/A'} | Subject: {title or 'N/A'}")
+                elapsed = ticket.get("elapsed_seconds", 0) or 0
+                self.toolbar.stopwatch.load_scratchpad(
+                    scratchpad_id=editor.scratchpad_id,
+                    elapsed_seconds=elapsed,
+                    auto_start=True,
+                )
         else:
             self.lbl_active_info.setText("")
+            self.toolbar.stopwatch.pause_timer()
 
     def _on_tab_double_clicked(self, index: int) -> None:
         """Opens modal dialog to edit ticket metadata."""
@@ -313,11 +341,20 @@ class TechPadMainWindow(QMainWindow):
                 client_name=data["client_name"],
                 title=data["title"],
             )
+
+            # Preserve elapsed seconds in updated tab title
+            elapsed = 0
+            if self.toolbar.stopwatch.current_scratchpad_id == editor.scratchpad_id:
+                elapsed = self.toolbar.stopwatch.elapsed_seconds
+            else:
+                elapsed = ticket.get("elapsed_seconds", 0) or 0
+
             # Update tab title
             new_title = TechPadTabWidget.format_title(
                 data["ticket_number"],
                 data["client_name"],
                 data["title"],
+                elapsed_seconds=elapsed,
             )
             self.tab_widget.setTabText(index, new_title)
             self.tab_widget.setTabToolTip(
@@ -432,6 +469,9 @@ class TechPadMainWindow(QMainWindow):
             self.status_bar.showMessage("✓ Preferences saved", 3000)
 
     def _remove_tab(self, index: int, scratchpad_id: int) -> None:
+        if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+            self.toolbar.stopwatch.pause_timer()
+
         if scratchpad_id in self._debounce_timers:
             self._debounce_timers[scratchpad_id].cancel()
             del self._debounce_timers[scratchpad_id]
@@ -630,6 +670,8 @@ class TechPadMainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Synchronously flushes all pending saves and persists workspace session before exit."""
+        self.toolbar.stopwatch.save_current_state()
+        self.toolbar.stopwatch.pause_timer()
         self.flush_all_saves()
 
         # Update tab orders

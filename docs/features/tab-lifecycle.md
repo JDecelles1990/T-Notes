@@ -7,14 +7,16 @@ The multi-tab architecture in T-Notes organizes concurrent troubleshooting sessi
 
 ## 2. Tab Bar Features (`TechPadTabWidget`)
 
-### Dynamic Tab Title Formatting
-Tabs display concise metadata formatted as:
+### Dynamic Tab Title Formatting with Live Running Minutes
+Tabs display concise metadata and real-time troubleshooting elapsed minutes:
 ```text
-#{ticket_number} — {client_name | title}
+#{ticket_number} ({minutes}m) — {client_name | title}
 ```
-- Example: `#INC-4092 — Acme Corp`
-- Example without client: `#4821 — DNS Resolution Failure`
+- Example with running stopwatch: `#INC-4092 (14m) — Acme Corp`
+- Example without client: `#4821 (35m) — DNS Resolution Failure`
+- When elapsed time is under 1 minute or at 0: `#{ticket_number} — {secondary}`
 - Titles longer than 24 characters are truncated cleanly with an ellipsis (`...`) while preserving full tooltips on hover.
+- Tab titles update dynamically every minute as the technician works. Switching tabs seamlessly pauses the outgoing tab's stopwatch, persists elapsed seconds to SQLite, and loads/starts the incoming tab's stopwatch.
 
 ### Slide-Reorganizing & Movable Tabs
 - Tabs can be clicked and slid horizontally to reorganize their order in real time.

@@ -84,7 +84,9 @@ class HistoryDrawer(QDockWidget):
             t_num = t.get("ticket_number", "")
             client = t.get("client_name", "")
             title = t.get("title", "")
-            date_str = str(t.get("updated_at", ""))[:10]
+            date_str = str(t.get("archived_at") or t.get("updated_at", ""))[:16]
+            elapsed = t.get("elapsed_seconds", 0) or 0
+            time_tag = f"⏱️ {elapsed // 60}m | " if elapsed > 0 else ""
 
             header = f"#{t_num}"
             if client:
@@ -97,7 +99,15 @@ class HistoryDrawer(QDockWidget):
             if len(first_line) > 40:
                 first_line = first_line[:37] + "..."
 
-            item.setText(f"{header}\n📅 {date_str} | {first_line}")
+            item.setText(f"{header}\n{time_tag}📅 {date_str} | {first_line}")
+            item.setToolTip(
+                f"Ticket: #{t_num}\n"
+                f"Client: {client or 'N/A'}\n"
+                f"Title: {title or 'N/A'}\n"
+                f"Created: {t.get('created_at', 'N/A')}\n"
+                f"Archived: {t.get('archived_at') or t.get('updated_at', 'N/A')}\n"
+                f"Troubleshooting Time: {elapsed}s"
+            )
             item.setData(Qt.UserRole, t.get("id"))
             self.list_tickets.addItem(item)
 

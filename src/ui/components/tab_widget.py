@@ -92,30 +92,54 @@ class TechPadTabWidget(QTabWidget):
         self.setCornerWidget(self.btn_add, Qt.TopRightCorner)
 
     @staticmethod
-    def format_title(ticket_number: str, client_name: str = "", title: str = "") -> str:
-        """Formats the title displayed on the tab header."""
+    def format_title(
+        ticket_number: str,
+        client_name: str = "",
+        title: str = "",
+        elapsed_seconds: int = 0,
+    ) -> str:
+        """Formats the title displayed on the tab header (e.g. '#4092 (14m) — ACME')."""
         t_num = ticket_number.strip() if ticket_number else "New"
         if not t_num.startswith("#") and not t_num.upper().startswith("INC") and not t_num.upper().startswith("REQ") and not t_num.upper().startswith("T-"):
             t_num = f"#{t_num}"
+
+        time_tag = f" ({elapsed_seconds // 60}m)" if elapsed_seconds > 0 else ""
+        t_display = f"{t_num}{time_tag}"
 
         secondary = client_name.strip() or title.strip()
         if secondary:
             if len(secondary) > 24:
                 secondary = secondary[:21] + "..."
-            return f"{t_num} — {secondary}"
-        return t_num
+            return f"{t_display} — {secondary}"
+        return t_display
 
     def add_ticket_tab(self, ticket: dict, editor: TechPadEditor) -> int:
         """Adds a new tab and binds ticket metadata."""
+        elapsed = ticket.get("elapsed_seconds", 0) or 0
         title = self.format_title(
             ticket.get("ticket_number", ""),
             ticket.get("client_name", ""),
             ticket.get("title", ""),
+            elapsed_seconds=elapsed,
         )
         index = self.addTab(editor, title)
         editor.setProperty("scratchpad_id", ticket.get("id"))
         self.setTabToolTip(index, f"Ticket: {ticket.get('ticket_number')}\nClient: {ticket.get('client_name')}\nTitle: {ticket.get('title')}")
         return index
+
+    def update_tab_title(
+        self,
+        index: int,
+        ticket_number: str,
+        client_name: str = "",
+        title: str = "",
+        elapsed_seconds: int = 0,
+    ) -> None:
+        """Updates tab header title with ticket metadata and elapsed minutes."""
+        if 0 <= index < self.count():
+            new_title = self.format_title(ticket_number, client_name, title, elapsed_seconds)
+            if self.tabText(index) != new_title:
+                self.setTabText(index, new_title)
 
     def get_editor_at(self, index: int) -> Optional[TechPadEditor]:
         widget = self.widget(index)

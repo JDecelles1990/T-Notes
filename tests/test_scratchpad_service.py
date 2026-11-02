@@ -73,7 +73,39 @@ def test_archive_and_restore(services):
 
     restored = scratch_service.restore_ticket(sid)
     assert restored["status"] == "active"
-    assert len(scratch_service.get_active_tickets()) == 1
+
+
+def test_archive_ticket_audit_trail_appended(services):
+    scratch_service, _ = services
+
+    # Create ticket with initial notes and 900 seconds (15m) of troubleshooting time
+    t = scratch_service.create_ticket(
+        ticket_number="INC-AUDIT",
+        client_name="Initech",
+        title="Server Migration",
+        content_html="<p>Migrated domain controller to Azure</p>",
+        elapsed_seconds=900,
+    )
+    sid = t["id"]
+
+    # Archive the ticket
+    archived = scratch_service.archive_ticket(sid)
+    assert archived is not None
+    assert archived["status"] == "archived"
+    assert archived["archived_at"] is not None
+
+    # Verify audit summary was appended to the ticket content
+    content = archived["content_html"]
+    assert "Ticket Archive Audit Summary" in content
+    assert "Tab Created:" in content
+    assert "Tab Archived:" in content
+    assert "Total Tab Open Duration:" in content
+    assert "Active Troubleshooting Time:" in content
+    assert "00:15:00" in content
+    assert "0.25h billable" in content
+
+    assert len(scratch_service.get_active_tickets()) == 0
+    assert len(scratch_service.get_archived_tickets()) == 1
 
 
 def test_clean_text_ticket_note_conversion():
