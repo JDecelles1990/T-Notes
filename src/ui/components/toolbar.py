@@ -29,6 +29,7 @@ class TechPadToolBar(QToolBar):
     export_note_requested = Signal()
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
+    split_view_requested = Signal()     # Emits when split view toggle clicked
     opacity_changed = Signal(int)       # Emits opacity value (60 to 100)
     history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
@@ -226,7 +227,17 @@ class TechPadToolBar(QToolBar):
 
         self.secondary_toolbar.addSeparator()
 
-        # 5. History Section Toggle Button (🕰️)
+        # 5. Split View Toggle Button (◫ / Alt+Z)
+        self.btn_split = QToolButton(self.secondary_toolbar)
+        self.btn_split.setText("◫")
+        self.btn_split.setToolTip("Toggle Split View (Alt+Z)")
+        self.btn_split.setCheckable(True)
+        self.btn_split.setStyleSheet("font-size: 14px; padding: 2px 6px;")
+        self.btn_split.clicked.connect(self.split_view_requested.emit)
+        self.secondary_toolbar.addWidget(self.btn_split)
+        self.act_split = self.btn_split
+
+        # 6. History Section Toggle Button (🕰️)
         self.btn_history = QToolButton(self.secondary_toolbar)
         self.btn_history.setText("🕰️")
         self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
@@ -234,7 +245,7 @@ class TechPadToolBar(QToolBar):
         self.btn_history.clicked.connect(self.history_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_history)
 
-        # 6. Settings Gear Icon Button (⚙️)
+        # 7. Settings Gear Icon Button (⚙️)
         self.btn_settings = QToolButton(self.secondary_toolbar)
         self.btn_settings.setText("⚙️")
         self.btn_settings.setToolTip("Preferences & Settings (Ctrl+,)")

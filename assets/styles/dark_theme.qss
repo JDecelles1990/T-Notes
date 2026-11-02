@@ -133,13 +133,15 @@ QTextEdit {
 }
 
 /* Dock Widget Splitter & Resize Separator */
-QMainWindow::separator {
+QMainWindow::separator,
+QSplitter::handle:horizontal {
     background-color: #2d2d2d;
     width: 6px;
     height: 6px;
 }
 
-QMainWindow::separator:hover {
+QMainWindow::separator:hover,
+QSplitter::handle:horizontal:hover {
     background-color: #007acc;
 }
 

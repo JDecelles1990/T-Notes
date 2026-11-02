@@ -5,6 +5,22 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Side-by-Side Split View & Dual Ticket Workspace (`Alt+Z` / `◫`)**:
+  - Implemented dual side-by-side editing panes using a central horizontal `QSplitter` containing Primary (`TechPadTabWidget`) and Secondary (`TechPadTabWidget`) ticket workspaces.
+  - Dedicated **`◫`** toggle button on Row 2 toolbar and global application shortcut **`Alt+Z`** to toggle Split View ON/OFF.
+  - 6px draggable divider bar (`QSplitter::handle:horizontal`) styled with `#2d2d2d` and `#007acc` hover highlight, with `setChildrenCollapsible(False)` preventing accidental collapsing.
+  - Automatic 50/50 spatial distribution on launch; preserves manual resizing proportions (60/40, 70/30).
+  - Intelligent tab migration:
+    - When toggled ON with 2+ tabs, moves the adjacent tab into the secondary pane.
+    - When toggled ON with 1 tab, generates a fresh ticket scratchpad in the secondary pane.
+    - When toggled OFF, flushes all debounced auto-saves, safely consolidates all secondary tabs back into the primary tab bar without state loss, and restores 100% full-width view.
+  - Focus-aware micro-control routing:
+    - Clicking either editor emits `editor_focused(scratchpad_id)`.
+    - Automatically binds top ribbon formatting actions, stopwatch active tracking, and status bar metadata to the focused ticket pane.
+  - Context menu integrations:
+    - Primary & Secondary tab context menus offer *"◫ Move to Right/Left Pane"*.
+    - History Drawer right-click menu offers *"◫ Open in Side-by-Side Split"*, restoring archived tickets directly into the secondary pane alongside active work.
+  - Permanent status bar toggle button: `◫ Split (Alt+Z)` / `◫ Single (Alt+Z)`.
 - **Top Bar Ribbon Reorganization & Whitespace Elimination**:
   - Rebalanced the two-row ribbon to eliminate the 600px artificial expanding gap in Row 2:
     - **Row 1 (Formatting & Content):** `B`, `I`, `U`, `🎨`, `🖍️`, `</>`, `🏷️ Tag`, `☑ Checkbox`, `🕒`, `🖼️`.

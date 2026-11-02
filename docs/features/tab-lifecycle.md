@@ -84,6 +84,7 @@ Right-clicking any tab header (or empty space on the tab bar) triggers `TechPadT
 | **Rename / Edit Metadata** | `✏️ Rename Ticket #<id>...` | Opens the `EditTicketDialog` modal to update ticket number, client, and summary. |
 | **Duplicate Note** | `📋 Duplicate Ticket Note` | Clones the note body, ticket metadata, and all embedded screenshot BLOBs into a fresh tab (`<ticket>-COPY`). |
 | **Copy for PSA** | `📤 Copy Note for Ticket Tool` | Exports clean Markdown/plain-text stripped of HTML directly to the clipboard. |
+| **Split View / Move** | `◫ Open in Side-by-Side Split (Alt+Z)` / `◫ Move to Right/Left Pane` | Toggles dual side-by-side editing panes or transfers tabs between primary and secondary panes. |
 | **Archive Ticket** | `📦 Archive to History` | Flushes pending edits and archives the ticket directly into the History Drawer. |
 | **Close Tab** | `✕ Close Tab` | Prompts to archive or permanently delete the tab. |
 | **Close Other Tabs** | `Close Other Tabs` | Archives all other tabs, keeping only the targeted tab open. |
@@ -117,6 +118,37 @@ When a tab is closed:
 ### 4.4 Session Persistence on Reboot
 Upon closing the application:
 1. All pending saves are flushed.
-2. The current tab order is saved.
+2. The current tab order is saved across primary and secondary panes.
 3. The focused tab ID and window geometry are saved to `app_session`.
 4. On reboot, all tabs are recreated in identical order, and the previously focused tab is selected.
+
+---
+
+## 5. Side-by-Side Split View (`Alt+Z` or Ribbon `◫`)
+
+### 5.1 Architecture & Pane Division
+T-Notes supports dual concurrent ticket editing via a horizontal `QSplitter` containing two independent `TechPadTabWidget` instances:
+- **Primary Pane (Left):** Houses primary tickets and remains permanently visible.
+- **Secondary Pane (Right):** Collapsible split view pane that toggles on demand.
+- **Draggable Handle (6px):** 6-pixel wide splitter divider (`#2d2d2d`, highlighting to `#007acc` on hover) allowing fluid 50/50, 60/40, or custom spatial partitioning. `setChildrenCollapsible(False)` prevents either pane from accidentally vanishing when dragged.
+
+### 5.2 Opening & Tab Migration
+- **Triggered via `Alt+Z`, Ribbon `◫`, Status Bar `◫ Split`, or Tab/History Context Menus.**
+- When opened:
+  - If 2+ tabs are open in the primary pane, the adjacent tab moves seamlessly to the secondary pane.
+  - If only 1 tab is open, a new ticket scratchpad is created in the secondary pane.
+  - If opened from the History Drawer (*"◫ Open in Side-by-Side Split"*), the archived ticket is restored directly into the secondary pane without displacing active tabs.
+- Technicians can freely migrate tickets between panes using the right-click context menu (*"◫ Move to Right Pane"* / *"◫ Move to Left Pane"*).
+
+### 5.3 Focus-Aware Routing
+- Clicking inside either editor immediately routes:
+  1. **Toolbar Actions:** Bold, Italic, Code block, Checklists, Badges format the focused editor.
+  2. **Billing Stopwatch:** Automatically synchronizes to track troubleshooting time for the focused ticket.
+  3. **Status Bar Metadata:** Displays active ticket number, client, and subject for the focused editor.
+
+### 5.4 Closing & Re-merging
+- Closing Split View via `Alt+Z`, Ribbon `◫`, or closing the last secondary tab:
+  1. Flushes all debounced auto-saves synchronously.
+  2. Re-merges all open secondary tabs back into the primary tab bar without state loss.
+  3. Hides the secondary pane and restores full 100% width to the primary pane.
+

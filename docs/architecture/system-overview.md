@@ -8,7 +8,9 @@ T-Notes is engineered using a clean, layered architecture separating user interf
 flowchart TD
     subgraph Presentation ["Presentation Layer (src/ui/)"]
         MW["MainWindow"]
-        TW["TechPadTabWidget"]
+        SPLIT["Central QSplitter (Horizontal)"]
+        TW["Primary TechPadTabWidget (Left)"]
+        TW2["Secondary TechPadTabWidget (Right — Split View)"]
         ED["TechPadEditor (Custom QTextEdit)"]
         TB["TechPadToolBar (Two Rows)"]
         HD["HistoryDrawer (QDockWidget)"]
@@ -50,8 +52,11 @@ flowchart TD
         T_FTS[("scratchpad_fts (FTS5)")]
     end
 
-    MW --> TW
+    MW --> SPLIT
+    SPLIT --> TW
+    SPLIT --> TW2
     TW --> ED
+    TW2 --> ED
     MW --> TB
     MW --> HD
     MW --> ETD
@@ -64,6 +69,7 @@ flowchart TD
     SWW -.-> W32
     SWW --> SWS
     TW --> SPS
+    TW2 --> SPS
     ED --> IMS
     ED --> DBT
     DBT --> SPS
@@ -91,8 +97,8 @@ flowchart TD
 - **Role:** Handles user input, window layouts, rendering, shortcuts, and event handling.
 - **Rule:** UI components must **never** execute raw SQL queries. All data operations are delegated exclusively to `src/services/` or `src/repositories/`.
 - **Components:**
-  - `MainWindow`: Orchestrates application lifecycle, dock panels, opacity slider, settings modal, status bar, and central tabs. Houses application-wide `eventFilter` on `QApplication.instance()` to handle keyboard shortcuts across physical hardware modifier variations.
-  - `TechPadTabWidget`: Movable, closable tabs with persistent ticket color ownership (12-color palette), live running minutes, dynamic task checklist progress badges (`☑️2/5`, `✅5/5`), rich tooltips, and context menu operations.
+  - `MainWindow`: Orchestrates application lifecycle, dock panels, opacity slider, settings modal, status bar, and central `QSplitter` hosting primary and secondary `TechPadTabWidget` instances for Split View. Houses application-wide `eventFilter` on `QApplication.instance()` to handle keyboard shortcuts across physical hardware modifier variations.
+  - `TechPadTabWidget`: Movable, closable tabs with persistent ticket color ownership (12-color palette), live running minutes, dynamic task checklist progress badges (`☑️2/5`, `✅5/5`), rich tooltips, Split View pane migration, and context menu operations.
   - `TechPadEditor`: Subclass of `QTextEdit` intercepting clipboard images, drag-and-drop, clickable URLs, and interactive task checklists (`task://toggle` URI anchors with click toggling and smart Enter continuation).
   - `TechPadToolBar`: Reorganized two-row command ribbon: Row 1 for formatting, markup, and `☑ Checkbox`; Row 2 for stopwatch, templates, note copy, opacity, and preferences without artificial whitespace gaps.
   - `TicketStopwatchWidget`: Toolbar component managing per-tab active troubleshooting duration, play/pause toggles, and MSP billing copy menus.

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -20,8 +21,9 @@ from src.services.scratchpad_service import ScratchpadService
 class HistoryDrawer(QDockWidget):
     """Side drawer for viewing, searching, and restoring archived tickets."""
 
-    restore_requested = Signal(int)  # Emits scratchpad_id
-    delete_requested = Signal(int)   # Emits scratchpad_id
+    restore_requested = Signal(int)        # Emits scratchpad_id
+    split_restore_requested = Signal(int)  # Emits scratchpad_id to restore in split view
+    delete_requested = Signal(int)         # Emits scratchpad_id
 
     def __init__(self, scratchpad_service: ScratchpadService, parent: Optional[QWidget] = None):
         super().__init__("Ticket Archive & History", parent)
@@ -54,6 +56,8 @@ class HistoryDrawer(QDockWidget):
         self.list_tickets = QListWidget()
         self.list_tickets.itemDoubleClicked.connect(self._on_item_double_clicked)
         self.list_tickets.itemSelectionChanged.connect(self._update_button_states)
+        self.list_tickets.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.list_tickets.customContextMenuRequested.connect(self._on_history_context_menu)
         layout.addWidget(self.list_tickets)
 
         # Action Buttons
@@ -156,4 +160,28 @@ class HistoryDrawer(QDockWidget):
         )
         if res == QMessageBox.Yes:
             self.delete_requested.emit(ticket_id)
+
+    def _on_history_context_menu(self, pos) -> None:
+        """Displays rich context menu for archived tickets."""
+        item = self.list_tickets.itemAt(pos)
+        if not item:
+            return
+        ticket_id = item.data(Qt.UserRole)
+        if ticket_id is None:
+            return
+
+        menu = QMenu(self)
+        act_restore = menu.addAction("Restore Tab")
+        act_restore.triggered.connect(lambda: self.restore_requested.emit(ticket_id))
+
+        act_split = menu.addAction("◫ Open in Side-by-Side Split")
+        act_split.triggered.connect(lambda: self.split_restore_requested.emit(ticket_id))
+
+        menu.addSeparator()
+
+        act_delete = menu.addAction("Delete Permanently")
+        act_delete.triggered.connect(self._on_delete_clicked)
+
+        menu.exec(self.list_tickets.mapToGlobal(pos))
+
 

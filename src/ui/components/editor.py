@@ -30,6 +30,7 @@ class TechPadEditor(QTextEdit):
     move_tab_requested = Signal(int)   # Emits relative delta (-1 for left, +1 for right)
     switch_tab_requested = Signal(int) # Emits relative delta (-1 for previous, +1 for next)
     checklist_stats_changed = Signal(int, int, int)  # Emits scratchpad_id, completed, total
+    editor_focused = Signal(int)                      # Emits scratchpad_id when focus enters editor
 
     URL_PATTERN = re.compile(r'((?:https?://|www\.)[^\s<>"\'\)]+)', re.IGNORECASE)
     CHECKBOX_UNCHECKED_HTML = '<a href="task://toggle" style="color: #4ade80; text-decoration: none; font-family: Consolas, monospace; font-size: 13px; font-weight: bold;">[ ]</a>&nbsp;'
@@ -366,6 +367,11 @@ class TechPadEditor(QTextEdit):
                         event.accept()
                         return
         super().mouseReleaseEvent(event)
+
+    def focusInEvent(self, event) -> None:
+        """Notifies main window when this editor receives focus for active tracking."""
+        super().focusInEvent(event)
+        self.editor_focused.emit(self.scratchpad_id)
 
     def contextMenuEvent(self, event) -> None:
         """Provides enhanced context menu with screenshot paste and technician quick-actions."""

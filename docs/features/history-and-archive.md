@@ -77,3 +77,11 @@ When a tab is closed via `✕`, `Ctrl+W`, or right-click **Archive to History**:
    - A new tab is instantiated with its saved HTML and images loaded from SQLite.
    - The drawer list refreshes, removing the item from archive.
 
+### 3.4 Restoring into Side-by-Side Split View
+1. Right-clicking any ticket item in the History Drawer list displays a context menu featuring:
+   - **Restore Tab:** Re-opens the ticket in the primary tab bar.
+   - **◫ Open in Side-by-Side Split:** Restores the archived ticket directly into the secondary pane of Split View.
+   - **Delete Permanently:** Prompts for permanent removal.
+2. Selecting **◫ Open in Side-by-Side Split** allows technicians to compare or extract information from an archived ticket alongside their active ticket without navigating away or losing context.
+
+

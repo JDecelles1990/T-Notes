@@ -575,4 +575,87 @@ def test_ui_reorganized_ribbon_structure(main_window):
     assert tb1.stopwatch.btn_reset.text() == "↺"
 
 
+def test_ui_split_view_toggle_and_layout(main_window):
+    """Verifies toggling split view creates side-by-side panes and partitions tabs."""
+    main_window.show()
+    # Create a second tab so we have 2 tabs
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.isHidden()
+
+    # Toggle Split View ON
+    main_window.toolbar.btn_split.click()
+    assert main_window.secondary_tab_widget.isVisible()
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 1
+    assert main_window.toolbar.btn_split.isChecked()
+    assert "Single" in main_window.btn_toggle_split.text()
+
+    # Toggle Split View OFF
+    main_window.toolbar.btn_split.click()
+    assert main_window.secondary_tab_widget.isHidden()
+    assert main_window.tab_widget.count() == 2
+    assert not main_window.toolbar.btn_split.isChecked()
+    assert "Split" in main_window.btn_toggle_split.text()
+
+
+def test_ui_split_view_editor_focus_sync(main_window):
+    """Verifies focusing the secondary pane updates active editor, stopwatch, and formatting target."""
+    main_window.show()
+    main_window.create_new_tab()
+    main_window.open_split_view()
+
+    prim_editor = main_window.tab_widget.get_editor_at(0)
+    sec_editor = main_window.secondary_tab_widget.get_editor_at(0)
+    assert prim_editor is not None and sec_editor is not None
+
+    # Focus secondary editor
+    main_window._on_editor_focused(sec_editor.scratchpad_id)
+    assert main_window._get_active_editor() == sec_editor
+    assert main_window.toolbar._current_editor == sec_editor
+    assert main_window.toolbar.stopwatch.current_scratchpad_id == sec_editor.scratchpad_id
+
+    # Insert checklist into active editor
+    main_window._on_insert_checklist()
+    assert "[ ]" in sec_editor.toPlainText()
+    assert "[ ]" not in prim_editor.toPlainText()
+
+
+def test_ui_split_view_close_and_remerge(main_window):
+    """Verifies that closing split view preserves content and safely consolidates all tickets."""
+    main_window.create_new_tab()
+    main_window.open_split_view()
+
+    sec_editor = main_window.secondary_tab_widget.get_editor_at(0)
+    sec_id = sec_editor.scratchpad_id
+    sec_editor.setPlainText("Important dual-pane research notes.")
+    main_window.flush_all_saves()
+
+    # Close Split View
+    main_window.close_split_view()
+    assert main_window.secondary_tab_widget.isHidden()
+    assert main_window.tab_widget.count() == 2
+
+    # Check that sec_id is now in the primary tab widget with content preserved
+    ed, tw, idx = main_window._find_editor_by_id(sec_id)
+    assert tw == main_window.tab_widget
+    assert "Important dual-pane research notes." in ed.toPlainText()
+
+
+def test_ui_history_drawer_split_restore(main_window):
+    """Verifies right-clicking an archived ticket to open in split view restores it directly in secondary pane."""
+    main_window.show()
+    # Archive initial ticket
+    sp_id = main_window.tab_widget.get_editor_at(0).scratchpad_id
+    main_window.scratchpad_service.archive_ticket(sp_id)
+    main_window.history_drawer.refresh_list()
+
+    # Trigger restore in split view from history drawer
+    main_window.history_drawer.split_restore_requested.emit(sp_id)
+    assert main_window.secondary_tab_widget.isVisible()
+    ed, tw, idx = main_window._find_editor_by_id(sp_id)
+    assert tw == main_window.secondary_tab_widget
+
+
+
 

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QSplitter,
     QStatusBar,
     QSystemTrayIcon,
     QVBoxLayout,
@@ -91,6 +92,11 @@ class TechPadMainWindow(QMainWindow):
                 self.toggle_window_visibility()
                 return True
 
+            # Alt+Z toggle split view
+            if key == Qt.Key_Z and has_alt and not has_ctrl and not has_shift:
+                self._toggle_split_view()
+                return True
+
             if has_ctrl and not has_alt:
                 # 1. Tab Reordering (Slide Left / Right): Ctrl + Shift + PageDown / PageUp
                 if has_shift:
@@ -134,7 +140,11 @@ class TechPadMainWindow(QMainWindow):
         return super().eventFilter(watched, event)
 
     def _setup_ui(self) -> None:
-        # Central Tab Widget
+        # Central Horizontal Splitter with Primary & Secondary Tab Panes
+        self.workspace_splitter = QSplitter(Qt.Horizontal, self)
+        self.workspace_splitter.setChildrenCollapsible(False)
+
+        # Primary Tab Widget (Left Pane)
         self.tab_widget = TechPadTabWidget(self)
         self.tab_widget.new_tab_requested.connect(self.create_new_tab)
         self.tab_widget.tab_edit_requested.connect(self._on_tab_double_clicked)
@@ -142,7 +152,20 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget.tab_close_prompted.connect(self._on_tab_close_requested)
         self.tab_widget.tab_reordered.connect(self._on_tabs_reordered)
         self.tab_widget.currentChanged.connect(self._on_current_tab_changed)
-        self.setCentralWidget(self.tab_widget)
+        self.workspace_splitter.addWidget(self.tab_widget)
+
+        # Secondary Tab Widget (Right Pane — Split View)
+        self.secondary_tab_widget = TechPadTabWidget(self)
+        self.secondary_tab_widget.new_tab_requested.connect(self._create_new_secondary_tab)
+        self.secondary_tab_widget.tab_edit_requested.connect(self._on_secondary_tab_double_clicked)
+        self.secondary_tab_widget.tab_context_menu_requested.connect(self._on_secondary_tab_context_menu)
+        self.secondary_tab_widget.tab_close_prompted.connect(self._on_secondary_tab_close_requested)
+        self.secondary_tab_widget.tab_reordered.connect(self._on_tabs_reordered)
+        self.secondary_tab_widget.currentChanged.connect(self._on_secondary_tab_changed)
+        self.secondary_tab_widget.hide()
+        self.workspace_splitter.addWidget(self.secondary_tab_widget)
+
+        self.setCentralWidget(self.workspace_splitter)
 
         # Formatting & System Toolbars (Two-Row Header)
         self.toolbar = TechPadToolBar(self)
@@ -150,6 +173,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
         self.toolbar.checklist_requested.connect(self._on_insert_checklist)
         self.toolbar.export_note_requested.connect(self._on_export_note)
+        self.toolbar.split_view_requested.connect(self._toggle_split_view)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
@@ -165,6 +189,7 @@ class TechPadMainWindow(QMainWindow):
         # History / Archive Side Drawer
         self.history_drawer = HistoryDrawer(self.scratchpad_service, self)
         self.history_drawer.restore_requested.connect(self._on_restore_ticket)
+        self.history_drawer.split_restore_requested.connect(self._on_history_split_restore)
         self.history_drawer.delete_requested.connect(self._on_delete_ticket)
         self.addDockWidget(Qt.RightDockWidgetArea, self.history_drawer)
         self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
@@ -181,6 +206,13 @@ class TechPadMainWindow(QMainWindow):
         self.lbl_active_info = QLabel("")
         self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 16px;")
         self.status_bar.addWidget(self.lbl_active_info)
+
+        # Toggle split view button in status bar
+        self.btn_toggle_split = QPushButton("◫ Split (Alt+Z)")
+        self.btn_toggle_split.setObjectName("btnSecondary")
+        self.btn_toggle_split.setFlat(True)
+        self.btn_toggle_split.clicked.connect(self._toggle_split_view)
+        self.status_bar.addPermanentWidget(self.btn_toggle_split)
 
         # Toggle history drawer button in status bar
         self.btn_toggle_drawer = QPushButton("🕰️ History (Ctrl+H)")
@@ -200,6 +232,7 @@ class TechPadMainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Alt+Z"), self, self._toggle_split_view, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
 
     def _setup_tray_and_hotkey(self) -> None:
@@ -236,7 +269,7 @@ class TechPadMainWindow(QMainWindow):
                     user32.SetForegroundWindow(hwnd)
                 except Exception:
                     pass
-            if editor := self.tab_widget.get_current_editor():
+            if editor := self._get_active_editor():
                 editor.setFocus()
 
     def _create_new_tab_and_show(self) -> None:
@@ -293,6 +326,7 @@ class TechPadMainWindow(QMainWindow):
         editor.move_tab_requested.connect(self._move_active_tab_relative)
         editor.switch_tab_requested.connect(self._switch_tab_relative)
         editor.checklist_stats_changed.connect(self._on_checklist_stats_changed)
+        editor.editor_focused.connect(self._on_editor_focused)
 
         # Create debouncer using configured delay
         delay_ms = int(self.session_service.get_setting("auto_save_delay_ms", str(AUTO_SAVE_DEBOUNCE_MS)))
@@ -303,6 +337,27 @@ class TechPadMainWindow(QMainWindow):
         )
         self._debounce_timers[scratchpad_id] = debouncer
         return editor
+
+    def _get_active_editor(self) -> Optional[TechPadEditor]:
+        """Returns the currently active editor across primary and secondary panes."""
+        if hasattr(self, "toolbar") and self.toolbar._current_editor:
+            for tw in (self.tab_widget, self.secondary_tab_widget):
+                for i in range(tw.count()):
+                    if tw.get_editor_at(i) == self.toolbar._current_editor:
+                        return self.toolbar._current_editor
+        if self.secondary_tab_widget.isVisible() and self.secondary_tab_widget.hasFocus():
+            if sec_ed := self.secondary_tab_widget.get_current_editor():
+                return sec_ed
+        return self.tab_widget.get_current_editor()
+
+    def _find_editor_by_id(self, scratchpad_id: int):
+        """Finds editor, its parent tab widget, and index by scratchpad ID."""
+        for tw in (self.tab_widget, self.secondary_tab_widget):
+            for i in range(tw.count()):
+                ed = tw.get_editor_at(i)
+                if ed and ed.scratchpad_id == scratchpad_id:
+                    return ed, tw, i
+        return None, None, -1
 
     def create_new_tab(self) -> None:
         """Creates a new ticket scratchpad and opens it in a new tab."""
@@ -315,6 +370,17 @@ class TechPadMainWindow(QMainWindow):
         editor.setFocus()
         self.set_save_status("Saved", is_saved=True)
 
+    def _create_new_secondary_tab(self) -> None:
+        """Creates a new ticket scratchpad and opens it in the secondary (split) tab pane."""
+        prefix = self.session_service.get_setting("ticket_prefix", "INC-")
+        active = self.scratchpad_service.get_active_tickets()
+        ticket = self.scratchpad_service.create_ticket(ticket_number=f"{prefix}{len(active) + 101}")
+        editor = self._create_editor(ticket["id"], "")
+        idx = self.secondary_tab_widget.add_ticket_tab(ticket, editor)
+        self.secondary_tab_widget.setCurrentIndex(idx)
+        editor.setFocus()
+        self.set_save_status("Saved", is_saved=True)
+
     def _on_editor_modified(self, scratchpad_id: int) -> None:
         """Triggered whenever typing occurs in an editor."""
         self.set_save_status("Saving...", is_saved=False)
@@ -323,20 +389,17 @@ class TechPadMainWindow(QMainWindow):
             debouncer.trigger()
 
     def _execute_save(self, scratchpad_id: int) -> None:
-        """Saves editor content and synchronizes images with SQLite."""
-        # Find editor with this scratchpad_id
-        for i in range(self.tab_widget.count()):
-            editor = self.tab_widget.get_editor_at(i)
-            if editor and editor.scratchpad_id == scratchpad_id:
-                html = editor.toHtml()
-                self.scratchpad_service.save_content(
-                    scratchpad_id=scratchpad_id,
-                    content_html=html,
-                    in_memory_images=editor.in_memory_images,
-                )
-                # Clear memory image cache after successful DB persistence
-                editor.in_memory_images.clear()
-                break
+        """Saves editor content and synchronizes images with SQLite across primary and secondary panes."""
+        editor, tw, idx = self._find_editor_by_id(scratchpad_id)
+        if editor:
+            html = editor.toHtml()
+            self.scratchpad_service.save_content(
+                scratchpad_id=scratchpad_id,
+                content_html=html,
+                in_memory_images=editor.in_memory_images,
+            )
+            # Clear memory image cache after successful DB persistence
+            editor.in_memory_images.clear()
 
         # Check if any other saves are pending
         any_pending = any(d.is_active() for d in self._debounce_timers.values())
@@ -363,62 +426,64 @@ class TechPadMainWindow(QMainWindow):
         self.scratchpad_service.update_elapsed_time(scratchpad_id, elapsed_seconds)
 
         # Update tab title with running minutes tag (e.g. '#4092 (14m) — ACME')
-        for i in range(self.tab_widget.count()):
-            editor = self.tab_widget.get_editor_at(i)
-            if editor and editor.scratchpad_id == scratchpad_id:
-                ticket = self.scratchpad_service.get_ticket(scratchpad_id)
-                if ticket:
-                    self.tab_widget.update_tab_title(
-                        index=i,
-                        ticket_number=ticket.get("ticket_number", ""),
-                        client_name=ticket.get("client_name", ""),
-                        title=ticket.get("title", ""),
-                        elapsed_seconds=elapsed_seconds,
-                    )
-                break
+        editor, tw, idx = self._find_editor_by_id(scratchpad_id)
+        if editor and tw:
+            ticket = self.scratchpad_service.get_ticket(scratchpad_id)
+            if ticket:
+                tw.update_tab_title(
+                    index=idx,
+                    ticket_number=ticket.get("ticket_number", ""),
+                    client_name=ticket.get("client_name", ""),
+                    title=ticket.get("title", ""),
+                    elapsed_seconds=elapsed_seconds,
+                )
 
     def _on_checklist_stats_changed(self, scratchpad_id: int, completed: int, total: int) -> None:
         """Updates the tab badge and tooltip whenever checklist items are added, removed, or toggled."""
-        for i in range(self.tab_widget.count()):
-            editor = self.tab_widget.get_editor_at(i)
-            if editor and editor.scratchpad_id == scratchpad_id:
-                ticket = self.scratchpad_service.get_ticket(scratchpad_id)
-                if ticket:
-                    elapsed = ticket.get("elapsed_seconds", 0) or 0
-                    if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
-                        elapsed = self.toolbar.stopwatch.elapsed_seconds
-                    self.tab_widget.update_tab_title(
-                        index=i,
-                        ticket_number=ticket.get("ticket_number", ""),
-                        client_name=ticket.get("client_name", ""),
-                        title=ticket.get("title", ""),
-                        elapsed_seconds=elapsed,
-                        checklist_progress=(completed, total),
-                    )
-                break
+        editor, tw, idx = self._find_editor_by_id(scratchpad_id)
+        if editor and tw:
+            ticket = self.scratchpad_service.get_ticket(scratchpad_id)
+            if ticket:
+                elapsed = ticket.get("elapsed_seconds", 0) or 0
+                if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+                    elapsed = self.toolbar.stopwatch.elapsed_seconds
+                tw.update_tab_title(
+                    index=idx,
+                    ticket_number=ticket.get("ticket_number", ""),
+                    client_name=ticket.get("client_name", ""),
+                    title=ticket.get("title", ""),
+                    elapsed_seconds=elapsed,
+                    checklist_progress=(completed, total),
+                )
+
+    def _on_editor_focused(self, scratchpad_id: int) -> None:
+        """Updates active editor in toolbar, synchronizes stopwatch, and updates status info when focus enters editor."""
+        editor, tw, idx = self._find_editor_by_id(scratchpad_id)
+        if not editor:
+            return
+
+        self.toolbar.set_active_editor(editor)
+        ticket = self.scratchpad_service.get_ticket(scratchpad_id)
+        if ticket:
+            t_num = ticket.get("ticket_number", "")
+            client = ticket.get("client_name", "")
+            title = ticket.get("title", "")
+            self.lbl_active_info.setText(f"Active Ticket: #{t_num} | Client: {client or 'N/A'} | Subject: {title or 'N/A'}")
+            elapsed = ticket.get("elapsed_seconds", 0) or 0
+            self.toolbar.stopwatch.load_scratchpad(
+                scratchpad_id=scratchpad_id,
+                elapsed_seconds=elapsed,
+                auto_start=True,
+            )
 
     def _on_current_tab_changed(self, index: int) -> None:
-        """Updates active editor in toolbar, synchronizes stopwatch, and updates status info."""
-        # Flush previous tab's debounced save before switching
+        """Updates active editor in toolbar and synchronizes stopwatch on primary tab change."""
         self.flush_all_saves()
-
         editor = self.tab_widget.get_editor_at(index)
-        self.toolbar.set_active_editor(editor)
-
         if editor:
-            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id)
-            if ticket:
-                t_num = ticket.get("ticket_number", "")
-                client = ticket.get("client_name", "")
-                title = ticket.get("title", "")
-                self.lbl_active_info.setText(f"Active Ticket: #{t_num} | Client: {client or 'N/A'} | Subject: {title or 'N/A'}")
-                elapsed = ticket.get("elapsed_seconds", 0) or 0
-                self.toolbar.stopwatch.load_scratchpad(
-                    scratchpad_id=editor.scratchpad_id,
-                    elapsed_seconds=elapsed,
-                    auto_start=True,
-                )
+            self._on_editor_focused(editor.scratchpad_id)
         else:
+            self.toolbar.set_active_editor(None)
             self.lbl_active_info.setText("")
             self.toolbar.stopwatch.pause_timer()
 
@@ -584,30 +649,40 @@ class TechPadMainWindow(QMainWindow):
             self.create_new_tab()
 
     def _on_tabs_reordered(self) -> None:
-        """Persists new tab order after drag and drop."""
+        """Persists new tab order after drag and drop across primary and secondary panes."""
         orders = []
-        for i in range(self.tab_widget.count()):
-            editor = self.tab_widget.get_editor_at(i)
-            if editor:
-                orders.append((editor.scratchpad_id, i))
+        order_idx = 0
+        for tw in (self.tab_widget, self.secondary_tab_widget):
+            for i in range(tw.count()):
+                editor = tw.get_editor_at(i)
+                if editor:
+                    orders.append((editor.scratchpad_id, order_idx))
+                    order_idx += 1
         if orders:
             self.scratchpad_service.update_tab_orders(orders)
 
     def _on_restore_ticket(self, scratchpad_id: int) -> None:
-        """Restores an archived ticket as a tab."""
-        # Check if already open
-        for i in range(self.tab_widget.count()):
-            editor = self.tab_widget.get_editor_at(i)
-            if editor and editor.scratchpad_id == scratchpad_id:
-                self.tab_widget.setCurrentIndex(i)
-                return
+        """Restores an archived ticket as an active tab in the primary pane."""
+        # Check if already open in primary or secondary
+        ed, tw, idx = self._find_editor_by_id(scratchpad_id)
+        if tw and idx >= 0:
+            tw.setCurrentIndex(idx)
+            if ed:
+                ed.setFocus()
+            return
 
         ticket = self.scratchpad_service.restore_ticket(scratchpad_id)
         if ticket:
             editor = self._create_editor(ticket["id"], ticket.get("content_html", ""))
             idx = self.tab_widget.add_ticket_tab(ticket, editor)
             self.tab_widget.setCurrentIndex(idx)
+            editor.setFocus()
             self.history_drawer.refresh_list()
+
+    def _on_history_split_restore(self, scratchpad_id: int) -> None:
+        """Restores an archived ticket directly into the secondary pane in Split View."""
+        self.open_split_view(target_scratchpad_id=scratchpad_id)
+        self.history_drawer.refresh_list()
 
     def _on_delete_ticket(self, scratchpad_id: int) -> None:
         """Permanently deletes a ticket from history."""
@@ -615,8 +690,8 @@ class TechPadMainWindow(QMainWindow):
         self.history_drawer.refresh_list()
 
     def _on_insert_image_file(self) -> None:
-        """Prompts for an image file and inserts it into current editor."""
-        editor = self.tab_widget.get_current_editor()
+        """Prompts for an image file and inserts it into current focused editor."""
+        editor = self._get_active_editor()
         if not editor:
             return
 
@@ -632,8 +707,8 @@ class TechPadMainWindow(QMainWindow):
             editor.insert_embedded_image(data)
 
     def _on_skeleton_selected(self, skeleton_name: str) -> None:
-        """Inserts selected ticket template into active editor."""
-        editor = self.tab_widget.get_current_editor()
+        """Inserts selected ticket template into active focused editor."""
+        editor = self._get_active_editor()
         if not editor:
             return
         html = self.scratchpad_service.get_skeleton_html(skeleton_name)
@@ -641,14 +716,14 @@ class TechPadMainWindow(QMainWindow):
             editor.textCursor().insertHtml(html)
 
     def _on_insert_checklist(self) -> None:
-        """Inserts an interactive checklist item in the active editor."""
-        editor = self.tab_widget.get_current_editor()
+        """Inserts an interactive checklist item in the active focused editor."""
+        editor = self._get_active_editor()
         if editor:
             editor.insert_checklist_item()
 
     def _on_export_note(self) -> None:
-        """Copies clean plain text / Markdown note to clipboard for ticketing tool."""
-        editor = self.tab_widget.get_current_editor()
+        """Copies clean plain text / Markdown note from active editor to clipboard for ticketing tool."""
+        editor = self._get_active_editor()
         if not editor:
             return
 
@@ -660,7 +735,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Copied clean note for ticketing system to clipboard!", 3500)
 
     def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
-        """Displays rich context menu on right-clicking a tab or the tab bar."""
+        """Displays rich context menu on right-clicking a tab or the primary tab bar."""
         menu = QMenu(self)
 
         if index >= 0:
@@ -679,6 +754,16 @@ class TechPadMainWindow(QMainWindow):
             # Copy Note for Ticketing Tool
             act_copy = menu.addAction("📤 Copy Note for Ticket Tool")
             act_copy.triggered.connect(lambda: self._copy_tab_note(index))
+
+            menu.addSeparator()
+
+            # Split view toggle / move action
+            if self.secondary_tab_widget.isVisible():
+                act_move = menu.addAction("◫ Move to Right Pane")
+                act_move.triggered.connect(lambda: self._move_tab_between_panes(self.tab_widget, self.secondary_tab_widget, index))
+            else:
+                act_split = menu.addAction("◫ Open in Side-by-Side Split (Alt+Z)")
+                act_split.triggered.connect(lambda: self._open_tab_in_split_view(index))
 
             menu.addSeparator()
 
@@ -701,6 +786,266 @@ class TechPadMainWindow(QMainWindow):
         act_new.triggered.connect(self.create_new_tab)
 
         menu.exec(global_pos)
+
+    def _open_tab_in_split_view(self, index: int) -> None:
+        """Opens the specified primary tab in the secondary pane of split view."""
+        editor = self.tab_widget.get_editor_at(index)
+        if not editor:
+            return
+        self.open_split_view(target_scratchpad_id=editor.scratchpad_id)
+
+    def _on_secondary_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
+        """Displays context menu for tabs in secondary (split) pane."""
+        menu = QMenu(self)
+
+        if index >= 0:
+            editor = self.secondary_tab_widget.get_editor_at(index)
+            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) if editor else None
+            t_num = ticket.get("ticket_number", "") if ticket else ""
+
+            act_rename = menu.addAction(f"✏️ Rename Ticket #{t_num}...")
+            act_rename.triggered.connect(lambda: self._on_secondary_tab_double_clicked(index))
+
+            act_move = menu.addAction("◫ Move to Left Pane")
+            act_move.triggered.connect(lambda: self._move_tab_between_panes(self.secondary_tab_widget, self.tab_widget, index))
+
+            act_copy = menu.addAction("📤 Copy Note for Ticket Tool")
+            act_copy.triggered.connect(lambda: self._copy_tab_note_from(self.secondary_tab_widget, index))
+
+            menu.addSeparator()
+
+            act_archive = menu.addAction("📦 Archive to History")
+            act_archive.triggered.connect(lambda: self._archive_secondary_tab(index))
+
+            act_close = menu.addAction("✕ Close Tab")
+            act_close.triggered.connect(lambda: self._on_secondary_tab_close_requested(index))
+
+            menu.addSeparator()
+
+        act_new = menu.addAction("➕ New Ticket Tab")
+        act_new.triggered.connect(self._create_new_secondary_tab)
+
+        act_close_split = menu.addAction("◫ Close Split View (Alt+Z)")
+        act_close_split.triggered.connect(self.close_split_view)
+
+        menu.exec(global_pos)
+
+    def _on_secondary_tab_double_clicked(self, index: int) -> None:
+        """Opens modal dialog to edit ticket metadata in secondary pane."""
+        editor = self.secondary_tab_widget.get_editor_at(index)
+        if not editor:
+            return
+
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        dlg = EditTicketDialog(
+            ticket_number=ticket.get("ticket_number", ""),
+            client_name=ticket.get("client_name", ""),
+            title=ticket.get("title", ""),
+            parent=self,
+        )
+        if dlg.exec():
+            data = dlg.get_data()
+            self.scratchpad_service.update_metadata(
+                scratchpad_id=editor.scratchpad_id,
+                ticket_number=data["ticket_number"],
+                client_name=data["client_name"],
+                title=data["title"],
+            )
+
+            elapsed = 0
+            if self.toolbar.stopwatch.current_scratchpad_id == editor.scratchpad_id:
+                elapsed = self.toolbar.stopwatch.elapsed_seconds
+            else:
+                elapsed = ticket.get("elapsed_seconds", 0) or 0
+
+            self.secondary_tab_widget.update_tab_title(
+                index=index,
+                ticket_number=data["ticket_number"],
+                client_name=data["client_name"],
+                title=data["title"],
+                elapsed_seconds=elapsed,
+            )
+            self._on_secondary_tab_changed(index)
+
+    def _on_secondary_tab_changed(self, index: int) -> None:
+        """Updates active editor in toolbar and synchronizes stopwatch on secondary tab change."""
+        self.flush_all_saves()
+        editor = self.secondary_tab_widget.get_editor_at(index)
+        if editor:
+            self._on_editor_focused(editor.scratchpad_id)
+
+    def _on_secondary_tab_close_requested(self, index: int) -> None:
+        """Handles closing a tab from the secondary pane."""
+        editor = self.secondary_tab_widget.get_editor_at(index)
+        if not editor:
+            return
+
+        close_pref = self.session_service.get_setting("close_tab_action", "prompt")
+        if close_pref == "archive":
+            self._archive_secondary_tab(index)
+            return
+
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        t_label = f"#{ticket.get('ticket_number', '')} {ticket.get('client_name', '')}"
+
+        debouncer = self._debounce_timers.get(editor.scratchpad_id)
+        if debouncer:
+            debouncer.flush()
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Close Ticket Scratchpad")
+        msg_box.setText(f"How would you like to handle ticket {t_label}?")
+        btn_archive = msg_box.addButton("Archive to History", QMessageBox.AcceptRole)
+        btn_delete = msg_box.addButton("Delete Permanently", QMessageBox.DestructiveRole)
+        btn_cancel = msg_box.addButton("Cancel", QMessageBox.RejectRole)
+        msg_box.setDefaultButton(btn_archive)
+
+        msg_box.exec()
+        clicked = msg_box.clickedButton()
+
+        if clicked == btn_archive:
+            self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+            self._remove_secondary_tab(index, editor.scratchpad_id)
+            self.history_drawer.refresh_list()
+        elif clicked == btn_delete:
+            self.scratchpad_service.delete_ticket_permanently(editor.scratchpad_id)
+            self._remove_secondary_tab(index, editor.scratchpad_id)
+            self.history_drawer.refresh_list()
+
+    def _archive_secondary_tab(self, index: int) -> None:
+        """Archives a secondary tab directly without extra prompt."""
+        editor = self.secondary_tab_widget.get_editor_at(index)
+        if not editor:
+            return
+        debouncer = self._debounce_timers.get(editor.scratchpad_id)
+        if debouncer:
+            debouncer.flush()
+        self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+        self._remove_secondary_tab(index, editor.scratchpad_id)
+        self.history_drawer.refresh_list()
+        self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+
+    def _remove_secondary_tab(self, index: int, scratchpad_id: int) -> None:
+        """Removes a tab from the secondary pane and collapses split view if empty."""
+        if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+            self.toolbar.stopwatch.pause_timer()
+
+        if scratchpad_id in self._debounce_timers:
+            self._debounce_timers[scratchpad_id].cancel()
+            del self._debounce_timers[scratchpad_id]
+
+        self.secondary_tab_widget.removeTab(index)
+        self._on_tabs_reordered()
+
+        if self.secondary_tab_widget.count() == 0:
+            self.close_split_view()
+
+    def _move_tab_between_panes(self, from_tw: TechPadTabWidget, to_tw: TechPadTabWidget, index: int) -> None:
+        """Moves a tab from one pane to another without losing state or content."""
+        if index < 0 or index >= from_tw.count():
+            return
+        editor = from_tw.get_editor_at(index)
+        if not editor:
+            return
+        sid = editor.scratchpad_id
+        ticket = self.scratchpad_service.get_ticket(sid) or {"id": sid}
+        from_tw.removeTab(index)
+        new_idx = to_tw.add_ticket_tab(ticket, editor)
+        to_tw.setCurrentIndex(new_idx)
+        editor.setFocus()
+        self._on_editor_focused(sid)
+        self._on_tabs_reordered()
+
+        # If primary became empty, create a new tab; if secondary became empty, close split view
+        if from_tw == self.tab_widget and self.tab_widget.count() == 0:
+            self.create_new_tab()
+        elif from_tw == self.secondary_tab_widget and self.secondary_tab_widget.count() == 0:
+            self.close_split_view()
+
+    def _toggle_split_view(self) -> None:
+        """Toggles side-by-side split view mode."""
+        if self.secondary_tab_widget.isVisible():
+            self.close_split_view()
+        else:
+            self.open_split_view()
+
+    def open_split_view(self, target_scratchpad_id: Optional[int] = None) -> None:
+        """Enables split view mode and populates the secondary pane."""
+        self.flush_all_saves()
+
+        if self.secondary_tab_widget.isVisible():
+            if target_scratchpad_id is not None:
+                # Find if target is in primary pane
+                for i in range(self.tab_widget.count()):
+                    ed = self.tab_widget.get_editor_at(i)
+                    if ed and ed.scratchpad_id == target_scratchpad_id:
+                        self._move_tab_between_panes(self.tab_widget, self.secondary_tab_widget, i)
+                        break
+            return
+
+        # Prepare secondary pane content
+        if target_scratchpad_id is not None:
+            moved = False
+            for i in range(self.tab_widget.count()):
+                ed = self.tab_widget.get_editor_at(i)
+                if ed and ed.scratchpad_id == target_scratchpad_id:
+                    self._move_tab_between_panes(self.tab_widget, self.secondary_tab_widget, i)
+                    moved = True
+                    break
+            if not moved:
+                ticket = self.scratchpad_service.get_ticket(target_scratchpad_id)
+                if ticket:
+                    if ticket.get("status") == "archived":
+                        ticket = self.scratchpad_service.restore_ticket(target_scratchpad_id)
+                    editor = self._create_editor(ticket["id"], ticket.get("content_html", ""))
+                    self.secondary_tab_widget.add_ticket_tab(ticket, editor)
+        elif self.secondary_tab_widget.count() == 0:
+            if self.tab_widget.count() > 1:
+                curr_idx = self.tab_widget.currentIndex()
+                move_idx = curr_idx + 1 if curr_idx + 1 < self.tab_widget.count() else curr_idx - 1
+                self._move_tab_between_panes(self.tab_widget, self.secondary_tab_widget, move_idx)
+            else:
+                self._create_new_secondary_tab()
+
+        self.secondary_tab_widget.show()
+        total_w = self.workspace_splitter.width() or self.width() or 1000
+        half = max(200, total_w // 2)
+        self.workspace_splitter.setSizes([half, half])
+
+        self.toolbar.btn_split.setChecked(True)
+        self.btn_toggle_split.setText("◫ Single (Alt+Z)")
+
+        sec_editor = self.secondary_tab_widget.get_current_editor()
+        if sec_editor:
+            sec_editor.setFocus()
+            self._on_editor_focused(sec_editor.scratchpad_id)
+
+        self._on_tabs_reordered()
+
+    def close_split_view(self) -> None:
+        """Consolidates secondary tabs into primary tab widget and hides secondary pane."""
+        self.flush_all_saves()
+
+        while self.secondary_tab_widget.count() > 0:
+            editor = self.secondary_tab_widget.get_editor_at(0)
+            if editor:
+                sid = editor.scratchpad_id
+                ticket = self.scratchpad_service.get_ticket(sid) or {"id": sid}
+                self.secondary_tab_widget.removeTab(0)
+                self.tab_widget.add_ticket_tab(ticket, editor)
+            else:
+                self.secondary_tab_widget.removeTab(0)
+
+        self.secondary_tab_widget.hide()
+        self.toolbar.btn_split.setChecked(False)
+        self.btn_toggle_split.setText("◫ Split (Alt+Z)")
+
+        prim_editor = self.tab_widget.get_current_editor()
+        if prim_editor:
+            prim_editor.setFocus()
+            self._on_editor_focused(prim_editor.scratchpad_id)
+
+        self._on_tabs_reordered()
 
     def _duplicate_tab(self, index: int) -> None:
         """Duplicates a ticket scratchpad and its embedded images."""
@@ -741,8 +1086,12 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
 
     def _copy_tab_note(self, index: int) -> None:
+        """Copies formatted plain text / Markdown note of a primary tab to clipboard."""
+        self._copy_tab_note_from(self.tab_widget, index)
+
+    def _copy_tab_note_from(self, tab_widget: TechPadTabWidget, index: int) -> None:
         """Copies formatted plain text / Markdown note of a specific tab to clipboard."""
-        editor = self.tab_widget.get_editor_at(index)
+        editor = tab_widget.get_editor_at(index)
         if not editor:
             return
         self._execute_save(editor.scratchpad_id)
@@ -780,11 +1129,11 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.stopwatch.save_current_state()
         self.flush_all_saves()
 
-        # Update tab orders
+        # Update tab orders across all panes
         self._on_tabs_reordered()
 
         # Determine currently active scratchpad ID
-        active_editor = self.tab_widget.get_current_editor()
+        active_editor = self._get_active_editor()
         active_id = active_editor.scratchpad_id if active_editor else None
 
         # Save session with window geometry and opacity
@@ -814,4 +1163,5 @@ class TechPadMainWindow(QMainWindow):
             if hasattr(self, "global_hotkey") and self.global_hotkey:
                 self.global_hotkey.unregister()
             event.accept()
+
 

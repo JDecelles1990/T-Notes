@@ -26,6 +26,7 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Badge: 🟡 WARN** | `Alt+3` | Injects inline amber WARN tag. |
 | **Badge: ℹ️ INFO** | `Alt+4` | Injects inline blue INFO tag. |
 | **Open Preferences** | `Ctrl+,` | Launches the Preferences / Settings modal dialog. |
+| **Toggle Split View** | `Alt+Z` | Toggles side-by-side dual ticket editing panes (50/50 draggable split). |
 | **Slide Tab Left / Right** | `Ctrl+Shift+PgUp` / `PgDown` | Reorders current tab horizontally while typing (modifier-masked). |
 | **Switch Next / Prev Tab** | `Ctrl+PgUp` / `PgDown` | Cycles active tab while typing in the editor. |
 | **Global Quick-Launch / Toggle** | `F8` | System-wide hotkey: pops TechPad to front from any application, or minimizes it if active. |
@@ -60,6 +61,7 @@ Dedicated to ticket-level actions, troubleshooting duration, translucency, and p
 - **Ticket Templates (`📋 Template`):** Structured Skeleton templates (Incident Triage, Quick Fix, Maintenance).
 - **PSA Ticket Export (`📤 Copy Note`):** Copies clean Markdown/plain-text note with converted `- [ ] ` checkboxes.
 - **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% positioned naturally alongside workflow tools without artificial expanding voids.
+- **Split View Toggle (`◫` / `Alt+Z`):** Instant side-by-side dual ticket editing with draggable 6px divider.
 - **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.
 - **Settings Gear (`⚙️`):** Launches preferences modal for defaults, delays, and compression.
 - **Zero Whitespace & Zero Overflow:** Both rows feature balanced, compact grouping without artificial `QSizePolicy.Expanding` gaps, keeping all tools within easy reach while completely eliminating the 3-dots overflow button.
