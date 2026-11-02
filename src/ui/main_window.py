@@ -4,8 +4,8 @@ import ctypes
 from pathlib import Path
 import sys
 from typing import Optional
-from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QFont, QKeySequence, QShortcut
+from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
+from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QResizeEvent, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSplitter,
+    QStackedWidget,
     QStatusBar,
     QSystemTrayIcon,
     QVBoxLayout,
@@ -33,6 +34,14 @@ from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
+from src.ui.m365.launcher_widget import M365LauncherWidget
+
+
+class CompactLabel(QLabel):
+    """QLabel whose minimumSizeHint width does not constrain narrow parent layouts."""
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(0, super().minimumSizeHint().height())
 
 
 class TechPadMainWindow(QMainWindow):
@@ -52,12 +61,24 @@ class TechPadMainWindow(QMainWindow):
 
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — Technician Scratchpad")
         self.resize(1100, 750)
-        self.setMinimumSize(800, 500)
+        self.setMinimumSize(660, 400)
 
         # Pending saves tracking: {scratchpad_id: DebounceTimer}
         self._debounce_timers: dict[int, DebounceTimer] = {}
         self._force_quit: bool = False
         self._first_minimize_to_tray: bool = True
+        self._notes_visibility = {}
+        self._notes_enabled = {}
+        self._workspace_restore_ticket = None
+        self._dirty_scratchpad_ids: set[int] = set()
+        self._workspace_switching = False
+        self._user_history_drawer_open: bool = False
+        self._history_auto_collapsed: bool = False
+        self._user_split_view_active: bool = False
+        self._split_auto_single_pane: bool = False
+        self._compact_active_pane: int = 0
+        self._saved_splitter_sizes: list[int] = []
+        self._logical_active_scratchpad_id = None
 
         self.setWindowIcon(get_or_create_app_icon())
 
@@ -92,14 +113,25 @@ class TechPadMainWindow(QMainWindow):
                 self.toggle_window_visibility()
                 return True
 
-            # Alt+Z toggle split view
-            if key == Qt.Key_Z and has_alt and not has_ctrl and not has_shift:
-                self._toggle_split_view()
-                return True
-
-            # Alt+T toggle Always-on-Top Mini-HUD mode
+            # Alt+T remains global; it returns to Notes before entering HUD.
             if key == Qt.Key_T and has_alt and not has_ctrl and not has_shift:
                 self.toggle_mini_hud_mode()
+                return True
+
+            if self.is_m365_workspace:
+                return super().eventFilter(watched, event)
+
+            if key == Qt.Key_F5 and not has_ctrl and not has_alt and not has_shift:
+                if hasattr(self, "toolbar"):
+                    self.toolbar._insert_timestamp()
+                return True
+
+            if key == Qt.Key_Z and has_alt and has_shift and not has_ctrl:
+                self.switch_compact_split_pane()
+                return True
+
+            if key == Qt.Key_Z and has_alt and not has_ctrl and not has_shift:
+                self._toggle_split_view()
                 return True
 
             if has_ctrl and not has_alt:
@@ -176,7 +208,14 @@ class TechPadMainWindow(QMainWindow):
         self.secondary_tab_widget.hide()
         self.workspace_splitter.addWidget(self.secondary_tab_widget)
 
-        self.setCentralWidget(self.workspace_splitter)
+        self.workspace_stack = QStackedWidget(self)
+        self.workspace_stack.addWidget(self.workspace_splitter)
+        self.m365_workspace = M365LauncherWidget(self.workspace_stack)
+        self.workspace_stack.addWidget(self.m365_workspace)
+        self.setMinimumSize(660, 400)
+        self.workspace_stack.setCurrentWidget(self.workspace_splitter)
+        self.m365_workspace.back_requested.connect(self.switch_workspace)
+        self.setCentralWidget(self.workspace_stack)
 
         # Formatting & System Toolbars (Two-Row Header)
         self.toolbar = TechPadToolBar(self)
@@ -190,6 +229,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
+        self.toolbar.m365_requested.connect(self.switch_workspace)
         self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
 
         # Row 1: Formatting Actions
@@ -216,7 +256,7 @@ class TechPadMainWindow(QMainWindow):
         self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
         self.status_bar.addWidget(self.lbl_save_status)
 
-        self.lbl_active_info = QLabel("")
+        self.lbl_active_info = CompactLabel("")
         self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 16px;")
         self.status_bar.addWidget(self.lbl_active_info)
 
@@ -226,6 +266,14 @@ class TechPadMainWindow(QMainWindow):
         self.btn_toggle_split.setFlat(True)
         self.btn_toggle_split.clicked.connect(self._toggle_split_view)
         self.status_bar.addPermanentWidget(self.btn_toggle_split)
+
+        self.btn_switch_split_pane = QPushButton("⇋ Switch Pane (Alt+Shift+Z)")
+        self.btn_switch_split_pane.setObjectName("btnSecondary")
+        self.btn_switch_split_pane.setFlat(True)
+        self.btn_switch_split_pane.setToolTip("Switch between primary and secondary split panes in compact mode (Alt+Shift+Z)")
+        self.btn_switch_split_pane.clicked.connect(self.switch_compact_split_pane)
+        self.btn_switch_split_pane.setVisible(False)
+        self.status_bar.addPermanentWidget(self.btn_switch_split_pane)
 
         # Toggle history drawer button in status bar
         self.btn_toggle_drawer = QPushButton("🕰️ History (Ctrl+H)")
@@ -250,12 +298,130 @@ class TechPadMainWindow(QMainWindow):
         to guarantee reliable dispatch across all focused child widgets and
         hardware modifier states.
         """
-        QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Alt+Z"), self, self._toggle_split_view, context=Qt.ApplicationShortcut)
+        self._notes_shortcuts = [
+            QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Alt+Z"), self, self._toggle_split_view, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Alt+Shift+Z"), self, self.switch_compact_split_pane, context=Qt.ApplicationShortcut),
+        ]
         QShortcut(QKeySequence("Alt+T"), self, self.toggle_mini_hud_mode, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
+        # One Qt shortcut owns Alt+F8; do not also handle it in eventFilter.
+        self.workspace_shortcut = QShortcut(
+            QKeySequence("Alt+F8"), self, self.switch_workspace
+        )
+        self.workspace_shortcut.setContext(Qt.ApplicationShortcut)
+        self.workspace_shortcut.setAutoRepeat(False)
+
+    @property
+    def is_m365_workspace(self) -> bool:
+        return self.workspace_stack.currentWidget() is self.m365_workspace
+
+    @property
+    def history_auto_collapsed(self) -> bool:
+        """Returns True if the History drawer was automatically collapsed by responsive layout."""
+        return getattr(self, "_history_auto_collapsed", False)
+
+    @history_auto_collapsed.setter
+    def history_auto_collapsed(self, val: bool) -> None:
+        self._history_auto_collapsed = bool(val)
+
+    @property
+    def split_auto_single_pane(self) -> bool:
+        """Returns True if Split View is temporarily displaying a single pane due to narrow width."""
+        return getattr(self, "_split_auto_single_pane", False)
+
+    @property
+    def is_split_view_active(self) -> bool:
+        """Returns True if Split View is logically active (user preference or secondary tabs exist)."""
+        return getattr(self, "_user_split_view_active", False) or self.secondary_tab_widget.count() > 0
+
+    def switch_workspace(self) -> bool:
+        """Shared button/Alt+F8 route; refuse modal, shutdown or reentrant input."""
+        if (
+            QApplication.activeModalWidget() is not None
+            or self._force_quit
+            or self._workspace_switching
+            or not self.isVisible()
+            or self.isMinimized()
+        ):
+            return False
+        self._workspace_switching = True
+        try:
+            if self.is_m365_workspace:
+                self.show_notes_workspace()
+                return True
+            return self.show_m365_workspace()
+        finally:
+            self._workspace_switching = False
+
+    def _activate_and_focus(self, target_widget: Optional[QWidget] = None) -> None:
+        """Activate the window and direct keyboard focus to the target widget."""
+        if not self.isVisible() or self.isMinimized():
+            return
+        self.raise_()
+        self.activateWindow()
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                ctypes.windll.user32.SetForegroundWindow(int(self.winId()))
+            except Exception:
+                pass
+        if target_widget is not None:
+            target_widget.setFocus()
+
+    def show_m365_workspace(self) -> bool:
+        """Flush notes, then select the existing M365 page without rebuilding notes."""
+        if self.is_m365_workspace:
+            return True
+        pending = {sid for sid, timer in self._debounce_timers.items() if timer.is_active()}
+        pending.update(self._dirty_scratchpad_ids)
+        try:
+            # Call the existing saver directly: exceptions raised inside a Qt
+            # signal callback do not propagate through DebounceTimer.flush().
+            for sid in sorted(pending):
+                if timer := self._debounce_timers.get(sid):
+                    timer.cancel()
+                self._execute_save(sid)
+        except Exception:
+            # Dirty IDs survive failed autosaves and stopped timers, allowing
+            # an explicit navigation retry without treating an idle timer as saved.
+            self.status_bar.showMessage("Notes could not be saved. Stay in T-Notes and retry.", 6000)
+            return False
+        if self.is_mini_hud:
+            self._disable_mini_hud()
+        editor = self._get_active_editor()
+        self._workspace_restore_ticket = editor.scratchpad_id if editor else None
+        for widget in (self.toolbar, self.toolbar.secondary_toolbar, self.history_drawer):
+            self._notes_visibility[widget] = not widget.isHidden()
+            widget.hide()
+        if not self.history_auto_collapsed:
+            self._user_history_drawer_open = self._notes_visibility[self.history_drawer]
+        actions = set(self.toolbar.findChildren(QAction) + self.toolbar.secondary_toolbar.findChildren(QAction))
+        for control in (*actions, *self._notes_shortcuts, self.btn_toggle_split, self.btn_toggle_drawer):
+            self._notes_enabled[control] = control.isEnabled()
+            control.setEnabled(False)
+        self.setMinimumSize(640, 380)
+        self.workspace_stack.setCurrentWidget(self.m365_workspace)
+        self._activate_and_focus(self.m365_workspace.back_button)
+        return True
+
+    def show_notes_workspace(self) -> None:
+        """Restore the same Notes page and its pre-navigation controls."""
+        if not self.is_m365_workspace:
+            return
+        self.setMinimumSize(660, 400)
+        self.workspace_stack.setCurrentWidget(self.workspace_splitter)
+        for widget, visible in self._notes_visibility.items():
+            widget.setVisible(visible)
+        for control, enabled in self._notes_enabled.items():
+            control.setEnabled(enabled)
+        self._notes_visibility.clear()
+        self._notes_enabled.clear()
+        self._clamp_geometry_to_screen()
+        self._check_responsive_layout(self.width())
+        self._activate_and_focus(self._get_active_editor())
 
     def _setup_tray_and_hotkey(self) -> None:
         """Configures the system tray icon and system-wide F8 global hotkey."""
@@ -292,7 +458,9 @@ class TechPadMainWindow(QMainWindow):
                     user32.SetForegroundWindow(hwnd)
                 except Exception:
                     pass
-            if editor := self._get_active_editor():
+            if self.is_m365_workspace:
+                self._activate_and_focus(self.m365_workspace.back_button)
+            elif editor := self._get_active_editor():
                 editor.setFocus()
 
     def _create_new_tab_and_show(self) -> None:
@@ -300,6 +468,7 @@ class TechPadMainWindow(QMainWindow):
         self.showNormal()
         self.raise_()
         self.activateWindow()
+        self.show_notes_workspace()
         self.create_new_tab()
 
     def quit_application(self) -> None:
@@ -328,7 +497,13 @@ class TechPadMainWindow(QMainWindow):
         self.setWindowOpacity(opacity_clamped / 100.0)
         self.toolbar.set_opacity_value(opacity_clamped)
 
-        self.history_drawer.setVisible(drawer_open)
+        self._user_history_drawer_open = bool(drawer_open)
+        if self.width() < 850 and drawer_open:
+            self._history_auto_collapsed = True
+            self.history_drawer.setVisible(False)
+        else:
+            self._history_auto_collapsed = False
+            self.history_drawer.setVisible(bool(drawer_open))
 
         focused_index = 0
         for i, ticket in enumerate(active_tickets):
@@ -339,6 +514,8 @@ class TechPadMainWindow(QMainWindow):
 
         self.tab_widget.setCurrentIndex(focused_index)
         self._on_current_tab_changed(focused_index)
+        if focused_id:
+            self._logical_active_scratchpad_id = focused_id
 
     def _create_editor(self, scratchpad_id: int, initial_html: str) -> TechPadEditor:
         """Instantiates and configures a TechPadEditor for a ticket."""
@@ -363,6 +540,10 @@ class TechPadMainWindow(QMainWindow):
 
     def _get_active_editor(self) -> Optional[TechPadEditor]:
         """Returns the currently active editor across primary and secondary panes."""
+        if getattr(self, "_logical_active_scratchpad_id", None):
+            ed, tw, idx = self._find_editor_by_id(self._logical_active_scratchpad_id)
+            if ed:
+                return ed
         if hasattr(self, "toolbar") and self.toolbar._current_editor:
             for tw in (self.tab_widget, self.secondary_tab_widget):
                 for i in range(tw.count()):
@@ -406,6 +587,7 @@ class TechPadMainWindow(QMainWindow):
 
     def _on_editor_modified(self, scratchpad_id: int) -> None:
         """Triggered whenever typing occurs in an editor."""
+        self._dirty_scratchpad_ids.add(scratchpad_id)
         self.set_save_status("Saving...", is_saved=False)
         debouncer = self._debounce_timers.get(scratchpad_id)
         if debouncer:
@@ -423,17 +605,33 @@ class TechPadMainWindow(QMainWindow):
             )
             # Clear memory image cache after successful DB persistence
             editor.in_memory_images.clear()
+            self._dirty_scratchpad_ids.discard(scratchpad_id)
 
-        # Check if any other saves are pending
-        any_pending = any(d.is_active() for d in self._debounce_timers.values())
-        if not any_pending:
+        # Check if any other saves are pending or dirty
+        any_dirty = bool(self._dirty_scratchpad_ids)
+        any_timer_active = any(d.is_active() for d in self._debounce_timers.values())
+        if not any_dirty and not any_timer_active:
             self.set_save_status("Saved", is_saved=True)
+        elif any_dirty and not any_timer_active:
+            self.set_save_status("Save Failed", is_saved=False)
 
-    def flush_all_saves(self) -> None:
-        """Forces all debounced saves to execute immediately."""
-        for debouncer in self._debounce_timers.values():
-            debouncer.flush()
+    def flush_all_saves(self) -> bool:
+        """Forces all debounced saves and dirty tickets to execute immediately."""
+        pending = {sid for sid, timer in self._debounce_timers.items() if timer.is_active()}
+        pending.update(self._dirty_scratchpad_ids)
+        all_ok = True
+        for sid in sorted(pending):
+            if timer := self._debounce_timers.get(sid):
+                timer.cancel()
+            try:
+                self._execute_save(sid)
+            except Exception:
+                all_ok = False
+        if self._dirty_scratchpad_ids or not all_ok:
+            self.set_save_status("Save Failed", is_saved=False)
+            return False
         self.set_save_status("Saved", is_saved=True)
+        return True
 
     def set_save_status(self, text: str, is_saved: bool = True) -> None:
         """Updates the status bar indicator."""
@@ -441,8 +639,12 @@ class TechPadMainWindow(QMainWindow):
             self.lbl_save_status.setText("● Saved")
             self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
         else:
-            self.lbl_save_status.setText("↻ Saving...")
-            self.lbl_save_status.setStyleSheet("color: #facc15; font-weight: bold; padding-left: 8px;")
+            if "fail" in text.lower():
+                self.lbl_save_status.setText(f"● {text}")
+                self.lbl_save_status.setStyleSheet("color: #ef4444; font-weight: bold; padding-left: 8px;")
+            else:
+                self.lbl_save_status.setText("↻ Saving...")
+                self.lbl_save_status.setStyleSheet("color: #facc15; font-weight: bold; padding-left: 8px;")
 
     def _on_stopwatch_time_updated(self, scratchpad_id: int, elapsed_seconds: int) -> None:
         """Persists stopwatch elapsed seconds and updates the active tab's running minutes display."""
@@ -485,7 +687,14 @@ class TechPadMainWindow(QMainWindow):
         if not editor:
             return
 
+        if self.is_m365_workspace or self._workspace_switching:
+            return
+        self._logical_active_scratchpad_id = scratchpad_id
         self.toolbar.set_active_editor(editor)
+        restore_ticket = self._workspace_restore_ticket
+        self._workspace_restore_ticket = None
+        if restore_ticket == scratchpad_id and self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+            return
         ticket = self.scratchpad_service.get_ticket(scratchpad_id)
         if ticket:
             t_num = ticket.get("ticket_number", "")
@@ -1079,7 +1288,7 @@ class TechPadMainWindow(QMainWindow):
 
     def _toggle_split_view(self) -> None:
         """Toggles side-by-side split view mode."""
-        if self.secondary_tab_widget.isVisible():
+        if self.is_split_view_active:
             self.close_split_view()
         else:
             self.open_split_view()
@@ -1087,8 +1296,9 @@ class TechPadMainWindow(QMainWindow):
     def open_split_view(self, target_scratchpad_id: Optional[int] = None) -> None:
         """Enables split view mode and populates the secondary pane."""
         self.flush_all_saves()
+        self._user_split_view_active = True
 
-        if self.secondary_tab_widget.isVisible():
+        if self.secondary_tab_widget.count() > 0 and (self.secondary_tab_widget.isVisible() or self.split_auto_single_pane):
             if target_scratchpad_id is not None:
                 # Find if target is in primary pane
                 for i in range(self.tab_widget.count()):
@@ -1122,10 +1332,21 @@ class TechPadMainWindow(QMainWindow):
             else:
                 self._create_new_secondary_tab()
 
-        self.secondary_tab_widget.show()
-        total_w = self.workspace_splitter.width() or self.width() or 1000
-        half = max(200, total_w // 2)
-        self.workspace_splitter.setSizes([half, half])
+        if self.width() < 750:
+            self._split_auto_single_pane = True
+            self._compact_active_pane = 1
+            self.tab_widget.hide()
+            self.secondary_tab_widget.show()
+            self.btn_switch_split_pane.setVisible(True)
+            self.btn_switch_split_pane.setText("⇋ Pane 2/2 (Alt+Shift+Z)")
+        else:
+            self._split_auto_single_pane = False
+            self.tab_widget.show()
+            self.secondary_tab_widget.show()
+            self.btn_switch_split_pane.setVisible(False)
+            total_w = self.workspace_splitter.width() or self.width() or 1000
+            half = max(200, total_w // 2)
+            self.workspace_splitter.setSizes([half, half])
 
         self.toolbar.btn_split.setChecked(True)
         self.btn_toggle_split.setText("◫ Single (Alt+Z)")
@@ -1140,6 +1361,11 @@ class TechPadMainWindow(QMainWindow):
     def close_split_view(self) -> None:
         """Consolidates secondary tabs into primary tab widget and hides secondary pane."""
         self.flush_all_saves()
+        self._user_split_view_active = False
+        self._split_auto_single_pane = False
+        self._compact_active_pane = 0
+        self.btn_switch_split_pane.setVisible(False)
+        self.tab_widget.show()
 
         while self.secondary_tab_widget.count() > 0:
             editor = self.secondary_tab_widget.get_editor_at(0)
@@ -1169,6 +1395,8 @@ class TechPadMainWindow(QMainWindow):
 
     def toggle_mini_hud_mode(self) -> None:
         """Toggles between normal workspace and Always-on-Top Mini-HUD mode."""
+        if self.is_m365_workspace:
+            self.show_notes_workspace()
         if self.is_mini_hud:
             self._disable_mini_hud()
         else:
@@ -1190,32 +1418,37 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.hide()
         if self._saved_drawer_visible:
             self.history_drawer.hide()
-        if self._saved_split_visible:
-            self.secondary_tab_widget.hide()
 
-        # 3. Enable Always-on-Top and relax minimum size constraints
+        # 3. Ensure an editor pane remains visible in Mini-HUD
+        self._saved_split_active = self.is_split_view_active
+        self._saved_compact_pane = getattr(self, "_compact_active_pane", 0)
+        self.secondary_tab_widget.hide()
+        self.tab_widget.show()
+        hud_editor = self.tab_widget.get_current_editor()
+
+        # 4. Enable Always-on-Top and relax minimum size constraints
         self.setMinimumSize(340, 200)
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.resize(440, 280)
 
-        # 4. Update HUD window title with active ticket info
-        editor = self._get_active_editor()
+        # 5. Update HUD window title with active ticket info
         t_label = ""
-        if editor:
-            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id)
+        if hud_editor:
+            ticket = self.scratchpad_service.get_ticket(hud_editor.scratchpad_id)
             if ticket:
                 t_num = ticket.get("ticket_number", "")
                 client = ticket.get("client_name", "")
                 t_label = f" — #{t_num}" + (f" ({client})" if client else "")
         self.setWindowTitle(f"📌 [HUD] {APP_NAME}{t_label}")
 
-        # 5. Update UI controls & status bar feedback
+        # 6. Update UI controls & status bar feedback
         self.toolbar.set_mini_hud_state(True)
         if hasattr(self, "btn_status_hud"):
             self.btn_status_hud.setText("📌 Normal (Alt+T)")
         self.status_bar.showMessage("📌 Mini-HUD Mode Active (Always-on-Top) — Press Alt+T to restore", 3500)
 
         self.show()
+        self._activate_and_focus(hud_editor)
 
     def _disable_mini_hud(self) -> None:
         """Disables Mini-HUD mode and restores standard full workspace geometry."""
@@ -1223,21 +1456,57 @@ class TechPadMainWindow(QMainWindow):
 
         self._is_mini_hud = False
 
-        # 1. Disable Always-on-Top and restore standard minimum size
+        # 1. Disable Always-on-Top and restore workspace-specific minimum size
         self.setWindowFlag(Qt.WindowStaysOnTopHint, False)
-        self.setMinimumSize(800, 500)
+        if self.is_m365_workspace:
+            self.setMinimumSize(640, 380)
+        else:
+            self.setMinimumSize(660, 400)
 
-        # 2. Restore previous window geometry
+        # 2. Restore previous window geometry within available screen bounds
         if getattr(self, "_saved_normal_geometry", None):
             self.restoreGeometry(self._saved_normal_geometry)
+            self._clamp_geometry_to_screen()
 
         # 3. Restore visibility of toolbar, drawer, and split view
         if getattr(self, "_saved_row1_visible", True):
             self.toolbar.show()
+        if getattr(self, "_saved_row2_visible", True):
+            self.toolbar.secondary_toolbar.show()
         if getattr(self, "_saved_drawer_visible", False):
-            self.history_drawer.show()
-        if getattr(self, "_saved_split_visible", False):
-            self.secondary_tab_widget.show()
+            if not self.history_auto_collapsed:
+                self.history_drawer.show()
+
+        # Restore Split View
+        if getattr(self, "_saved_split_active", False) or getattr(self, "_saved_split_visible", False):
+            self._user_split_view_active = True
+            if self.width() < 750:
+                self._split_auto_single_pane = True
+                if getattr(self, "_saved_compact_pane", 0) == 1:
+                    self.tab_widget.hide()
+                    self.secondary_tab_widget.show()
+                    self._compact_active_pane = 1
+                else:
+                    self.secondary_tab_widget.hide()
+                    self.tab_widget.show()
+                    self._compact_active_pane = 0
+                if hasattr(self, "btn_switch_split_pane"):
+                    self.btn_switch_split_pane.setVisible(True)
+                    self.btn_switch_split_pane.setText(f"⇋ Pane {self._compact_active_pane + 1}/2 (Alt+Shift+Z)")
+            else:
+                self._split_auto_single_pane = False
+                self.tab_widget.show()
+                self.secondary_tab_widget.show()
+                if hasattr(self, "btn_switch_split_pane"):
+                    self.btn_switch_split_pane.setVisible(False)
+        else:
+            self._user_split_view_active = False
+            self._split_auto_single_pane = False
+            self.tab_widget.show()
+            self.secondary_tab_widget.hide()
+            if hasattr(self, "btn_switch_split_pane"):
+                self.btn_switch_split_pane.setVisible(False)
+        self._check_responsive_layout(self.width())
 
         # 4. Restore window title and UI controls
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — Technician Scratchpad")
@@ -1247,6 +1516,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Restored Normal Workspace", 3000)
 
         self.show()
+        self._activate_and_focus(self._get_active_editor())
 
     def _duplicate_tab(self, index: int) -> None:
         """Duplicates a ticket scratchpad and its embedded images."""
@@ -1329,31 +1599,52 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _toggle_history_drawer(self) -> None:
-        is_visible = not self.history_drawer.isVisible()
-        self.history_drawer.setVisible(is_visible)
-        if is_visible and self.history_drawer.width() < 320:
-            self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
+        if self.history_drawer.isVisible():
+            self._user_history_drawer_open = False
+            self.history_auto_collapsed = False
+            self.history_drawer.hide()
+        else:
+            self._user_history_drawer_open = True
+            self.history_auto_collapsed = False
+            self.history_drawer.show()
+            if self.history_drawer.width() < 320:
+                self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Minimizes to system tray if tray icon is active, preserving saves and session state."""
         self.toolbar.stopwatch.save_current_state()
-        self.flush_all_saves()
+        save_ok = self.flush_all_saves()
+        if not save_ok or self._dirty_scratchpad_ids:
+            self.status_bar.showMessage("Error: Notes could not be saved. Application remains open to prevent data loss.", 6000)
+            self.set_save_status("Save Failed", is_saved=False)
+            self._force_quit = False
+            event.ignore()
+            return
 
         # Update tab orders across all panes
         self._on_tabs_reordered()
 
         # Determine currently active scratchpad ID
-        active_editor = self._get_active_editor()
-        active_id = active_editor.scratchpad_id if active_editor else None
+        if self.is_m365_workspace and getattr(self, "_workspace_restore_ticket", None):
+            active_id = self._workspace_restore_ticket
+        elif getattr(self, "_logical_active_scratchpad_id", None):
+            active_id = self._logical_active_scratchpad_id
+        else:
+            active_editor = self._get_active_editor()
+            active_id = active_editor.scratchpad_id if active_editor else None
 
         # Save session with window geometry and opacity
         geometry_hex = self.saveGeometry().toHex().data().decode("utf-8")
         opacity_val = int(round(self.windowOpacity() * 100))
+        if self.is_m365_workspace:
+            drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self._notes_visibility.get(self.history_drawer, False)
+        else:
+            drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self.history_drawer.isVisible()
         self.session_service.persist_workspace(
             active_scratchpad_id=active_id,
             window_geometry=geometry_hex,
             window_opacity=opacity_val,
-            history_drawer_open=self.history_drawer.isVisible(),
+            history_drawer_open=drawer_open,
         )
 
         # If system tray is active and not forcing quit, minimize to tray
@@ -1373,5 +1664,105 @@ class TechPadMainWindow(QMainWindow):
             if hasattr(self, "global_hotkey") and self.global_hotkey:
                 self.global_hotkey.unregister()
             event.accept()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._clamp_geometry_to_screen()
+        self._check_responsive_layout(self.width())
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._check_responsive_layout(self.width())
+    def switch_compact_split_pane(self) -> None:
+        """Toggles displayed pane in compact single-pane Split View mode."""
+        if not self.is_split_view_active or not self.split_auto_single_pane:
+            return
+        if self._compact_active_pane == 0:
+            self._compact_active_pane = 1
+            self.tab_widget.hide()
+            self.secondary_tab_widget.show()
+            ed = self.secondary_tab_widget.get_current_editor()
+            if ed:
+                ed.setFocus()
+                self._on_editor_focused(ed.scratchpad_id)
+        else:
+            self._compact_active_pane = 0
+            self.secondary_tab_widget.hide()
+            self.tab_widget.show()
+            ed = self.tab_widget.get_current_editor()
+            if ed:
+                ed.setFocus()
+                self._on_editor_focused(ed.scratchpad_id)
+        self.btn_switch_split_pane.setText(f"⇋ Pane {self._compact_active_pane + 1}/2 (Alt+Shift+Z)")
+
+    def _clamp_geometry_to_screen(self) -> None:
+        """Clamps the window geometry to fit within the active screen's available geometry."""
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if not screen:
+            return
+        avail = screen.availableGeometry()
+        geo = self.geometry()
+        new_w = min(geo.width(), avail.width())
+        new_h = min(geo.height(), avail.height())
+        max_x = avail.x() + avail.width() - new_w
+        max_y = avail.y() + avail.height() - new_h
+        new_x = max(avail.x(), min(geo.x(), max_x))
+        new_y = max(avail.y(), min(geo.y(), max_y))
+        if (new_x, new_y, new_w, new_h) != (geo.x(), geo.y(), geo.width(), geo.height()):
+            self.setGeometry(new_x, new_y, new_w, new_h)
+
+    def _check_responsive_layout(self, current_width: int) -> None:
+        """Coordinates responsive toolbar, history drawer, and split view layout."""
+        if self.is_m365_workspace:
+            return
+        if hasattr(self, "toolbar"):
+            self.toolbar.check_responsive_mode(current_width)
+        self._check_responsive_history(current_width)
+        self._check_responsive_split(current_width)
+
+    def _check_responsive_history(self, current_width: int) -> None:
+        """Temporarily collapses History drawer on narrow viewports to prioritize editor."""
+        if self.is_m365_workspace:
+            return
+        if current_width < 850:
+            if self._user_history_drawer_open and not self.history_auto_collapsed:
+                self.history_auto_collapsed = True
+                self.history_drawer.hide()
+        elif current_width >= 900:
+            if self.history_auto_collapsed:
+                self.history_auto_collapsed = False
+                if self._user_history_drawer_open and not self.is_m365_workspace:
+                    self.history_drawer.show()
+
+    def _check_responsive_split(self, current_width: int) -> None:
+        """Switches between side-by-side and compact single-pane Split View."""
+        if not self.is_split_view_active:
+            if hasattr(self, "btn_switch_split_pane"):
+                self.btn_switch_split_pane.setVisible(False)
+            return
+        if current_width < 750 and not self.split_auto_single_pane:
+            self._saved_splitter_sizes = self.workspace_splitter.sizes()
+            self._split_auto_single_pane = True
+            ed = self._get_active_editor()
+            if ed and self.secondary_tab_widget.indexOf(ed) != -1:
+                self._compact_active_pane = 1
+                self.tab_widget.hide()
+                self.secondary_tab_widget.show()
+            else:
+                self._compact_active_pane = 0
+                self.secondary_tab_widget.hide()
+                self.tab_widget.show()
+            self.btn_switch_split_pane.setVisible(True)
+            self.btn_switch_split_pane.setText(f"⇋ Pane {self._compact_active_pane + 1}/2 (Alt+Shift+Z)")
+        elif current_width >= 780 and self.split_auto_single_pane:
+            self._split_auto_single_pane = False
+            self.tab_widget.show()
+            self.secondary_tab_widget.show()
+            self.btn_switch_split_pane.setVisible(False)
+            if getattr(self, "_saved_splitter_sizes", None):
+                self.workspace_splitter.setSizes(self._saved_splitter_sizes)
+            else:
+                half = max(200, self.workspace_splitter.width() // 2)
+                self.workspace_splitter.setSizes([half, half])
 
 

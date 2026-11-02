@@ -1,5 +1,15 @@
 # History Drawer & Ticket Archival
 
+## S001 history visibility during M365 navigation
+
+The candidate hides the existing history dock while M365 is displayed and disables
+its Notes toolbar/status/shortcut entry points. Back restores previous visibility
+and enabled state; navigation neither refreshes nor replaces ticket history.
+Archive/restore/delete behavior is unchanged. Close-to-tray or explicit Quit from
+M365 persists the pre-navigation Notes drawer preference rather than its transient
+hidden state. No execution-history store is introduced. Independent review and
+integration remain pending.
+
 ## 1. Overview
 The **History Drawer** is a collapsible side panel (`QDockWidget`) that stores completed or paused tickets. It combines SQLite FTS5 search with one-click tab restoration, allowing technicians to quickly reference past solutions without cluttering their active workspace.
 

@@ -1,7 +1,7 @@
 """UI Integration tests using PySide6 QtTest."""
 
 import pytest
-from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt, QTimer
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 from src.database.connection import DatabaseManager
@@ -35,8 +35,15 @@ def main_window(qapp, tmp_path):
         session_service=session_service,
     )
     yield window
-    window.quit_application()
-    manager.close()
+    try:
+        window.quit_application()
+    finally:
+        # A closed test window otherwise retains its application event filter
+        # until GC and can intercept keys intended for a later fixture window.
+        qapp.removeEventFilter(window)
+        window.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+        manager.close()
 
 
 def test_ui_initial_state_and_new_tab(main_window):
@@ -889,7 +896,218 @@ def test_ui_mini_hud_shortcut_and_controls(main_window):
     assert main_window.is_mini_hud is False
 
 
+def test_ui_toolbar_compact_and_normal_responsive_mode(main_window, qapp):
+    """Verifies responsive toolbar compact vs normal mode, hysteresis, and overflow actions."""
+    main_window.show()
+    tb = main_window.toolbar
+
+    # 1. Normal Mode (width >= 800)
+    main_window.resize(1000, 750)
+    qapp.processEvents()
+    assert tb.is_compact is False
+    assert tb.act_badge.isVisible() is True
+    assert tb.act_timestamp_btn.isVisible() is True
+    assert tb.act_image_btn.isVisible() is True
+    assert tb.act_more.isVisible() is False
+    assert tb.btn_m365.isVisible() is True
+
+    # 2. Compact Mode (width < 775)
+    main_window.resize(720, 750)
+    qapp.processEvents()
+    assert tb.is_compact is True
+    assert tb.act_badge.isVisible() is False
+    assert tb.act_timestamp_btn.isVisible() is False
+    assert tb.act_image_btn.isVisible() is False
+    assert tb.act_timestamp.isVisible() is True
+    assert tb.act_image.isVisible() is True
+    assert tb.act_more.isVisible() is True
+    assert tb.btn_more.isVisible() is True
+    assert tb.btn_m365.isVisible() is True
+
+    # 3. Hysteresis check
+    # Arriving from compact (720 -> 785) should stay compact (< 800)
+    main_window.resize(785, 750)
+    qapp.processEvents()
+    assert tb.is_compact is True
+
+    # Reaching >= 800 should return to normal mode
+    main_window.resize(805, 750)
+    qapp.processEvents()
+    assert tb.is_compact is False
+
+    # Arriving from normal (805 -> 785) should stay normal (>= 775)
+    main_window.resize(785, 750)
+    qapp.processEvents()
+    assert tb.is_compact is False
+
+    # 4. Action parity via 'More ▾' menu
+    main_window.resize(700, 750)
+    qapp.processEvents()
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    editor.clear()
+    editor.setFocus()
+    tb.set_active_editor(editor)
+
+    # Trigger timestamp from act_timestamp
+    tb.act_timestamp.trigger()
+    qapp.processEvents()
+    assert "[" in editor.toPlainText() and "]" in editor.toPlainText()
+    assert editor.hasFocus()
 
 
+def test_ui_history_drawer_responsive_auto_collapse_and_restore(main_window, qapp):
+    """Verifies responsive automatic collapse and restoration of History drawer."""
+    main_window.show()
+    main_window.resize(1000, 750)
+    qapp.processEvents()
 
+    # User explicitly opens history drawer
+    main_window.history_drawer.show()
+    main_window._user_history_drawer_open = True
+    assert main_window.history_drawer.isVisible() is True
+    assert main_window.history_auto_collapsed is False
+
+    # 1. Resize to < 850 collapses drawer temporarily
+    main_window.resize(750, 750)
+    qapp.processEvents()
+    assert main_window.history_drawer.isHidden() is True
+    assert main_window.history_auto_collapsed is True
+    assert main_window._user_history_drawer_open is True
+
+    # 2. Resize to >= 900 restores drawer
+    main_window.resize(920, 750)
+    qapp.processEvents()
+    assert main_window.history_drawer.isVisible() is True
+    assert main_window.history_auto_collapsed is False
+
+    # 3. Manual toggle while narrow updates preference
+    main_window.resize(750, 750)
+    qapp.processEvents()
+    assert main_window.history_auto_collapsed is True
+    # User manually opens it while narrow
+    main_window._toggle_history_drawer()
+    qapp.processEvents()
+    assert main_window.history_drawer.isVisible() is True
+    assert main_window.history_auto_collapsed is False
+    assert main_window._user_history_drawer_open is True
+
+    # 4. Session persistence when auto-collapsed preserves user intent
+    # Re-collapse it
+    main_window.resize(950, 750)
+    qapp.processEvents()
+    main_window.resize(750, 750)
+    qapp.processEvents()
+    assert main_window.history_auto_collapsed is True
+    # Calling close() saves session
+    main_window.close()
+    session = main_window.session_service.session_repo.get_session()
+    assert session["history_drawer_open"] == 1
+
+
+def test_ui_split_view_responsive_single_pane_and_restore(main_window, qapp):
+    """Verifies responsive compact single-pane Split View and switching."""
+    main_window.show()
+    main_window.resize(1000, 750)
+    qapp.processEvents()
+
+    # Create second tab and open split view
+    main_window.create_new_tab()
+    main_window.open_split_view()
+    qapp.processEvents()
+
+    assert main_window.is_split_view_active is True
+    assert main_window.split_auto_single_pane is False
+    assert main_window.tab_widget.isVisible() is True
+    assert main_window.secondary_tab_widget.isVisible() is True
+    assert main_window.btn_switch_split_pane.isVisible() is False
+
+    primary_editor = main_window.tab_widget.get_current_editor()
+    sec_editor = main_window.secondary_tab_widget.get_current_editor()
+    assert primary_editor is not None and sec_editor is not None
+    prim_id = primary_editor.scratchpad_id
+    sec_id = sec_editor.scratchpad_id
+
+    # Ensure primary editor is active before resizing
+    primary_editor.setFocus()
+    main_window._on_editor_focused(prim_id)
+    qapp.processEvents()
+
+    # 1. Resize < 750 switches to single pane displaying active editor (pane 1)
+    main_window.resize(700, 750)
+    qapp.processEvents()
+    assert main_window.split_auto_single_pane is True
+    assert main_window.btn_switch_split_pane.isVisible() is True
+    assert main_window.tab_widget.isVisible() is True
+    assert main_window.secondary_tab_widget.isHidden() is True
+    assert "Pane 1/2" in main_window.btn_switch_split_pane.text()
+
+    # Identities preserved
+    assert main_window.tab_widget.get_current_editor() is primary_editor
+    assert main_window.secondary_tab_widget.get_current_editor() is sec_editor
+
+    # 2. Switch compact split pane to pane 2
+    main_window.switch_compact_split_pane()
+    qapp.processEvents()
+    assert main_window.tab_widget.isHidden() is True
+    assert main_window.secondary_tab_widget.isVisible() is True
+    assert "Pane 2/2" in main_window.btn_switch_split_pane.text()
+    assert sec_editor.hasFocus()
+
+    # 3. Modify note in secondary pane while compact
+    sec_editor.insertPlainText("Compact edit in pane 2")
+    main_window.flush_all_saves()
+    loaded_sec = main_window.scratchpad_service.get_ticket(sec_id)
+    assert loaded_sec is not None
+    assert "Compact edit in pane 2" in loaded_sec["content_html"]
+
+    # 4. Switch back to pane 1
+    main_window.switch_compact_split_pane()
+    qapp.processEvents()
+    assert main_window.tab_widget.isVisible() is True
+    assert main_window.secondary_tab_widget.isHidden() is True
+    assert "Pane 1/2" in main_window.btn_switch_split_pane.text()
+    assert primary_editor.hasFocus()
+
+    # 5. Restore two panes on >= 780
+    main_window.resize(850, 750)
+    qapp.processEvents()
+    assert main_window.split_auto_single_pane is False
+    assert main_window.tab_widget.isVisible() is True
+    assert main_window.secondary_tab_widget.isVisible() is True
+    assert main_window.btn_switch_split_pane.isVisible() is False
+
+
+def test_ui_portrait_monitor_700_viewport_constraints(main_window, qapp):
+    """Verifies that Notes workspace operates cleanly at 700 logical pixels wide."""
+    main_window.show()
+    main_window.resize(700, 1120)
+    qapp.processEvents()
+
+    assert main_window.width() == 700
+    assert main_window.minimumWidth() <= 700
+
+    # Ensure toolbar actions fit without horizontal overflow
+    tb1 = main_window.toolbar
+    tb2 = main_window.toolbar.secondary_toolbar
+    assert tb1.is_compact is True
+
+    for tb in (tb1, tb2):
+        for act in tb.actions():
+            if not act.isVisible() or act.isSeparator():
+                continue
+            w = tb.widgetForAction(act)
+            if w:
+                assert tb.rect().contains(w.geometry())
+
+    # Active editor visible and writable
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None and editor.isVisible()
+    editor.setFocus()
+    editor.insertPlainText("Portrait 700 test")
+    assert "Portrait 700 test" in editor.toPlainText()
+
+    # Clamping function check
+    main_window._clamp_geometry_to_screen()
+    assert main_window.width() <= 700
 
