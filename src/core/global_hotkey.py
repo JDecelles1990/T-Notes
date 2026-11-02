@@ -85,3 +85,4 @@ class GlobalHotkeyManager(QObject):
     def is_registered(self) -> bool:
         """Returns True if the hotkey is actively registered with Windows."""
         return self._is_registered
+

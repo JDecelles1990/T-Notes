@@ -14,6 +14,7 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Italic** | `Ctrl+I` | Toggles italic text style. |
 | **Underline** | `Ctrl+U` | Toggles text underline. |
 | **Monospace Code Block** | `Ctrl+Alt+C` | Formats selected text or inserts a dark monospace container block. |
+| **Insert Checklist Item** | `Ctrl+Alt+L` | Inserts an interactive task checklist item (`[ ]`) at current line. |
 | **Insert Timestamp** | `F5` / `Ctrl+Alt+T` | Injects current timestamp in format `[YYYY-MM-DD HH:MM:SS]`. |
 | **Insert Image File** | `Ctrl+Alt+I` | Prompts file picker to insert screenshot or image. |
 | **Ticket Skeletons** | `Ctrl+Alt+S` | Opens template skeleton menu. |
@@ -52,7 +53,7 @@ Dedicated strictly to rich-text authoring and triage markup:
 - **Triage Tagging:** Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`)
 - **Colors:** Text Color picker (`🎨`), Text Highlight background picker (`🖍️`)
 - **Media & Injections:** Screenshot/Image insertion (`🖼️`), Current timestamp injection (`🕒`)
-- **Templates & Export:** Structured Skeleton templates (`📋 Template`), Clean note export for PSA (`📤 Copy Note`)
+- **Checklists & Templates:** Interactive Task Checklists (`☑ Task` / `Ctrl+Alt+L`), Structured Skeleton templates (`📋 Template`), Clean note export for PSA (`📤 Copy Note`)
 
 ### 4.2 Row 2: Ticket Workflow & System Utilities Toolbar
 Dedicated to real-time troubleshooting duration, translucency, and workspace management:
@@ -111,4 +112,44 @@ Clicking **"Copy Note"** invokes `ScratchpadService.export_as_plain_ticket_note(
 3. Formats bullet points (`• `) and bold items (`**...**`).
 4. Converts monospace blocks into markdown fences (```...```).
 5. Replaces internal image URIs with clean placeholders (`[Screenshot: <uuid>.jpg]`).
-6. Strips all remaining tags and copies the plain text to the clipboard with a status bar confirmation.
+6. Converts interactive task anchors (`task://toggle`) into standard Markdown checkboxes (`- [ ] ` and `- [x] `).
+7. Strips all remaining tags and copies the plain text to the clipboard with a status bar confirmation.
+
+---
+
+## 6. Interactive Task Checklists & Action Items
+
+To streamline multi-step incident troubleshooting, server maintenance checklists, and ticket resolution procedures, `TechPadEditor` features native, clickable task lists with live tab status badges:
+
+### 6.1 Checkbox Architecture & URI Scheme (`task://toggle`)
+Checklist items utilize custom HTML anchor tags that map directly into Qt's `QTextDocument` resource tree:
+- **Unchecked Item:**
+  ```html
+  <a href="task://toggle" style="text-decoration:none; color:#007acc; font-weight:bold; font-family:Consolas, monospace;">[ ]</a> Task Description
+  ```
+- **Completed Item:**
+  ```html
+  <a href="task://toggle" style="text-decoration:none; color:#4ade80; font-weight:bold; font-family:Consolas, monospace;">[✔]</a> <span style="text-decoration: line-through; color: #888888;">Task Description</span>
+  ```
+
+### 6.2 1-Click Interactive Toggling
+- **Mouse Hover:** Hovering over any `[ ]` or `[✔]` anchor changes the cursor to `Qt.PointingHandCursor` and renders a tooltip: *"Click to toggle task completion"*.
+- **Click Routing:** `mouseReleaseEvent()` intercepts clicks on `task://toggle` anchors (as well as direct clicks within bracket bounds). It immediately toggles the symbol between `[ ]` (accent blue `#007acc`) and `[✔]` (success green `#4ade80`), and toggles strikethrough styling (`#888888`) across the remaining line text without launching an external browser.
+- **Real-Time Signal Dispatch:** Toggling emits `checklist_stats_changed(scratchpad_id, completed, total)`, immediately updating the active tab title badge.
+
+### 6.3 Smart Typing Auto-Conversions
+- **Markdown Typing Trigger:** Typing `[] `, `[ ] `, or `- [ ] ` at the start of any line followed by `Space` automatically transforms the typed text in-place into an interactive checklist anchor.
+- **Enter Key List Continuation:**
+  - Pressing `Enter` on a non-empty checklist line automatically starts a new unchecked task (`[ ] `) on the subsequent line.
+  - Pressing `Enter` on an empty checklist line erases the empty checkbox and converts the line into a normal blank paragraph, smoothly exiting checklist authoring mode.
+
+### 6.4 Micro-Controls & Access Points
+1. **Toolbar Button:** Dedicated `☑ Task` button on Row 1 formatting toolbar.
+2. **Keyboard Shortcut:** `Ctrl+Alt+L` instantly inserts an interactive checklist item at current cursor position.
+3. **Context Menu:** Right-clicking anywhere in the editor offers `☑ Insert Checklist Item (Ctrl+Alt+L)`.
+
+### 6.5 Clean Ticketing System Export (PSA / Markdown)
+When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text with elapsed billable time:
+- `ScratchpadService.convert_html_to_clean_text()` automatically converts `<a href="task://toggle">[ ]</a>` into standard Markdown `- [ ] `.
+- Automatically converts `<a href="task://toggle">[✔]</a>` into standard Markdown `- [x] `.
+- This ensures notes copied into PSA ticket portals (ConnectWise, ServiceNow, Jira, GitHub Issues) render clean, native markdown checkboxes with zero proprietary HTML tags.

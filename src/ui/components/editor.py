@@ -6,12 +6,15 @@ import re
 from typing import Dict, Optional
 from PySide6.QtCore import QMimeData, QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import (
+    QColor,
     QDesktopServices,
     QDragEnterEvent,
     QDropEvent,
+    QFont,
     QImage,
     QKeyEvent,
     QMouseEvent,
+    QTextCharFormat,
     QTextCursor,
     QTextDocument,
 )
@@ -26,8 +29,11 @@ class TechPadEditor(QTextEdit):
     image_inserted = Signal(str)       # Emits image_name
     move_tab_requested = Signal(int)   # Emits relative delta (-1 for left, +1 for right)
     switch_tab_requested = Signal(int) # Emits relative delta (-1 for previous, +1 for next)
+    checklist_stats_changed = Signal(int, int, int)  # Emits scratchpad_id, completed, total
 
     URL_PATTERN = re.compile(r'((?:https?://|www\.)[^\s<>"\'\)]+)', re.IGNORECASE)
+    CHECKBOX_UNCHECKED_HTML = '<a href="task://toggle" style="color: #4ade80; text-decoration: none; font-family: Consolas, monospace; font-size: 13px; font-weight: bold;">[ ]</a>&nbsp;'
+    CHECKBOX_CHECKED_HTML = '<a href="task://toggle" style="color: #4ade80; text-decoration: none; font-family: Consolas, monospace; font-size: 13px; font-weight: bold;">[✔]</a>&nbsp;'
 
     def __init__(self, scratchpad_id: int, image_service: ImageService, parent=None):
         super().__init__(parent)
@@ -44,6 +50,7 @@ class TechPadEditor(QTextEdit):
 
     def _on_text_changed(self) -> None:
         self.content_modified.emit(self.scratchpad_id)
+        self._emit_checklist_stats()
 
     @classmethod
     def linkify_text(cls, text: str) -> str:
@@ -53,6 +60,99 @@ class TechPadEditor(QTextEdit):
             href = url if url.lower().startswith(('http://', 'https://')) else f'http://{url}'
             return f'<a href="{href}" style="color: #4fc1ff; text-decoration: underline;">{url}</a>'
         return cls.URL_PATTERN.sub(repl, text)
+
+    def get_checklist_stats(self) -> tuple[int, int]:
+        """Calculates (completed_count, total_count) of checklist items in the document."""
+        text = self.toPlainText()
+        total = 0
+        completed = 0
+        for line in text.splitlines():
+            trimmed = line.strip()
+            if trimmed.startswith("[ ]") or trimmed.startswith("- [ ]"):
+                total += 1
+            elif any(trimmed.startswith(prefix) for prefix in ("[✔]", "[x]", "[X]", "- [x]", "- [X]", "- [✔]")):
+                total += 1
+                completed += 1
+        return completed, total
+
+    def _emit_checklist_stats(self) -> None:
+        """Emits checklist progress statistics for tab header updates."""
+        completed, total = self.get_checklist_stats()
+        self.checklist_stats_changed.emit(self.scratchpad_id, completed, total)
+
+    def insert_checklist_item(self) -> None:
+        """Inserts a new interactive checklist item at current cursor position."""
+        cursor = self.textCursor()
+        cursor.insertHtml(self.CHECKBOX_UNCHECKED_HTML)
+        self.setTextCursor(cursor)
+        self._emit_checklist_stats()
+
+    def _toggle_checkbox_at(self, pos: QPoint) -> None:
+        """Toggles checklist checkbox [ ] <-> [✔] and updates strikethrough styling."""
+        cursor = self.cursorForPosition(pos)
+        block = cursor.block()
+        block_text = block.text()
+
+        # Position relative to block
+        pos_in_block = cursor.position() - block.position()
+
+        # Isolate line within soft breaks (\u2028)
+        line_start = block_text.rfind('\u2028', 0, max(0, pos_in_block))
+        line_start = 0 if line_start == -1 else line_start + 1
+        line_end = block_text.find('\u2028', pos_in_block)
+        line_end = len(block_text) if line_end == -1 else line_end
+        line_text = block_text[line_start:line_end]
+
+        if "[ ]" in line_text:
+            idx = line_text.find("[ ]")
+            start = block.position() + line_start + idx
+            end = start + 3
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.KeepAnchor)
+            btn_fmt = QTextCharFormat()
+            btn_fmt.setForeground(QColor("#4ade80"))
+            btn_fmt.setFontWeight(QFont.Bold)
+            btn_fmt.setFontFamilies(["Consolas"])
+            btn_fmt.setAnchor(True)
+            btn_fmt.setAnchorHref("task://toggle")
+            cursor.insertText("[✔]", btn_fmt)
+            # Apply strikethrough to text following the checkbox on this line
+            text_start = end
+            text_end = block.position() + line_end
+            if text_end > text_start:
+                cursor.setPosition(text_start)
+                cursor.setPosition(text_end, QTextCursor.KeepAnchor)
+                fmt = QTextCharFormat()
+                fmt.setFontStrikeOut(True)
+                fmt.setForeground(QColor("#888888"))
+                cursor.mergeCharFormat(fmt)
+        elif any(sym in line_text for sym in ("[✔]", "[x]", "[X]")):
+            match_sym = "[✔]" if "[✔]" in line_text else ("[x]" if "[x]" in line_text else "[X]")
+            idx = line_text.find(match_sym)
+            start = block.position() + line_start + idx
+            end = start + len(match_sym)
+            cursor.setPosition(start)
+            cursor.setPosition(end, QTextCursor.KeepAnchor)
+            btn_fmt = QTextCharFormat()
+            btn_fmt.setForeground(QColor("#007acc"))
+            btn_fmt.setFontWeight(QFont.Bold)
+            btn_fmt.setFontFamilies(["Consolas"])
+            btn_fmt.setAnchor(True)
+            btn_fmt.setAnchorHref("task://toggle")
+            cursor.insertText("[ ]", btn_fmt)
+            # Remove strikethrough from text following the checkbox on this line
+            text_start = end
+            text_end = block.position() + line_end
+            if text_end > text_start:
+                cursor.setPosition(text_start)
+                cursor.setPosition(text_end, QTextCursor.KeepAnchor)
+                fmt = QTextCharFormat()
+                fmt.setFontStrikeOut(False)
+                fmt.setForeground(QColor("#cccccc"))
+                cursor.mergeCharFormat(fmt)
+
+        self._emit_checklist_stats()
+        self._on_text_changed()
 
     def canInsertFromMimeData(self, source: QMimeData) -> bool:
         """Enables paste if clipboard contains image or URLs or text."""
@@ -121,10 +221,49 @@ class TechPadEditor(QTextEdit):
                 event.accept()
                 return
 
+        # 3. Insert / Toggle Checklist Item: Ctrl+Alt+L
+        if has_ctrl and bool(mods & Qt.AltModifier) and event.key() == Qt.Key_L:
+            self.insert_checklist_item()
+            event.accept()
+            return
+
+        # 4. Handle Enter continuation for checklists
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            cursor = self.textCursor()
+            block = cursor.block()
+            text = block.text().strip()
+            if text in ("[ ]", "[✔]", "[x]", "[X]", "- [ ]", "- [x]"):
+                # Empty checkbox line: user pressed enter to finish list
+                cursor.select(QTextCursor.BlockUnderCursor)
+                cursor.insertText("")
+                event.accept()
+                self._emit_checklist_stats()
+                return
+            elif text.startswith(("[ ]", "[✔]", "[x]", "[X]", "- [ ]", "- [x]")):
+                # Checklist line with text: continue checklist on next line
+                super().keyPressEvent(event)
+                self.insert_checklist_item()
+                event.accept()
+                return
+
         super().keyPressEvent(event)
 
-        # 3. Auto-formats typed URLs as hyperlinks when space or enter is pressed
-        if event.key() in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+        # 5. Auto-convert [] or [ ] or - [ ] typed at line start when pressing space
+        if event.key() == Qt.Key_Space:
+            cursor = self.textCursor()
+            block = cursor.block()
+            text = block.text()
+            trimmed = text.strip()
+            if trimmed in ("[]", "[ ]", "- []", "- [ ]"):
+                cursor.setPosition(block.position())
+                cursor.setPosition(block.position() + len(text), QTextCursor.KeepAnchor)
+                cursor.insertHtml(self.CHECKBOX_UNCHECKED_HTML)
+                self.setTextCursor(cursor)
+                self._emit_checklist_stats()
+                return
+            self._auto_link_preceding_word()
+
+        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self._auto_link_preceding_word()
 
     def _auto_link_preceding_word(self) -> None:
@@ -158,6 +297,7 @@ class TechPadEditor(QTextEdit):
         self.image_service.load_scratchpad_images_into_document(self.scratchpad_id, self.document())
         self.setHtml(html_content)
         self.blockSignals(False)
+        self._emit_checklist_stats()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls() or event.mimeData().hasImage():
@@ -179,11 +319,14 @@ class TechPadEditor(QTextEdit):
             super().dropEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Shows pointing hand cursor when hovering over hyperlinks."""
+        """Shows pointing hand cursor when hovering over hyperlinks or task checkboxes."""
         anchor = self.anchorAt(event.pos())
         if anchor:
             self.viewport().setCursor(Qt.PointingHandCursor)
-            self.setToolTip(f"Open link: {anchor}")
+            if anchor.startswith("task://"):
+                self.setToolTip("Click to toggle task completion")
+            else:
+                self.setToolTip(f"Open link: {anchor}")
         else:
             self.viewport().setCursor(Qt.IBeamCursor)
             self.setToolTip("")
@@ -197,20 +340,40 @@ class TechPadEditor(QTextEdit):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Launches external browser when clicking on an anchor."""
+        """Launches external browser when clicking on an anchor or toggles task checkboxes."""
         if event.button() == Qt.LeftButton:
             anchor = self.anchorAt(event.pos())
             if anchor and anchor == self._pressed_anchor:
+                if anchor.startswith("task://"):
+                    self._toggle_checkbox_at(event.pos())
+                    event.accept()
+                    return
                 target_url = anchor if not anchor.startswith("www.") else f"http://{anchor}"
                 QDesktopServices.openUrl(QUrl(target_url))
                 event.accept()
                 return
+
+            # Direct click on bracket checkboxes even if anchor wasn't hit
+            cursor = self.cursorForPosition(event.pos())
+            block = cursor.block()
+            line_text = block.text()
+            pos_in_block = cursor.position() - block.position()
+            for sym in ("[ ]", "[✔]", "[x]", "[X]"):
+                if sym in line_text:
+                    idx = line_text.find(sym)
+                    if abs(pos_in_block - idx) <= 4:
+                        self._toggle_checkbox_at(event.pos())
+                        event.accept()
+                        return
         super().mouseReleaseEvent(event)
 
     def contextMenuEvent(self, event) -> None:
         """Provides enhanced context menu with screenshot paste and technician quick-actions."""
         menu = self.createStandardContextMenu()
         menu.addSeparator()
+
+        act_checklist = menu.addAction("☑ Insert Checklist Item (Ctrl+Alt+L)")
+        act_checklist.triggered.connect(self.insert_checklist_item)
 
         act_timestamp = menu.addAction("🕒 Insert Timestamp (F5 / Ctrl+Alt+T)")
         act_timestamp.triggered.connect(self._insert_timestamp)

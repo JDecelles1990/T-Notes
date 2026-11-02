@@ -92,9 +92,9 @@ flowchart TD
 - **Rule:** UI components must **never** execute raw SQL queries. All data operations are delegated exclusively to `src/services/` or `src/repositories/`.
 - **Components:**
   - `MainWindow`: Orchestrates application lifecycle, dock panels, opacity slider, settings modal, status bar, and central tabs. Houses application-wide `eventFilter` on `QApplication.instance()` to handle keyboard shortcuts across physical hardware modifier variations.
-  - `TechPadTabWidget`: Movable, closable tabs with live running minutes (`#101 (14m) — Acme`) and context menu operations.
-  - `TechPadEditor`: Subclass of `QTextEdit` intercepting clipboard images, drag-and-drop, and clickable URLs.
-  - `TechPadToolBar`: Two-row compact micro-controls for rich text, monospace code blocks, triage badges, templates, stopwatch, opacity, and preferences.
+  - `TechPadTabWidget`: Movable, closable tabs with live running minutes, dynamic task checklist progress badges (`☑️2/5`, `✅5/5`), rich tooltips, and context menu operations.
+  - `TechPadEditor`: Subclass of `QTextEdit` intercepting clipboard images, drag-and-drop, clickable URLs, and interactive task checklists (`task://toggle` URI anchors with click toggling and smart Enter continuation).
+  - `TechPadToolBar`: Two-row compact micro-controls for rich text, monospace code blocks, checklists (`☑ Task`), triage badges, templates, stopwatch, opacity, and preferences.
   - `TicketStopwatchWidget`: Toolbar component managing per-tab active troubleshooting duration, play/pause toggles, and MSP billing copy menus.
   - `HistoryDrawer`: Collapsible side drawer with real-time FTS5 search, ticket lifespan metadata, and tab restoration.
   - `SettingsDialog`: User configuration modal for ticket prefixes, auto-save debounce delay, JPEG quality, tab closure behavior, and default window opacity.
@@ -108,7 +108,7 @@ flowchart TD
 ### Service Layer (`src/services/`)
 - **Role:** Encapsulates business logic, data formatting, debounced auto-saving, media compression, session reconciliation, and billing math.
 - **Components:**
-  - `ScratchpadService`: Ticket CRUD, note conversion for PSA tools ("Copy for Ticket Note"), skeleton templates, and automated audit summaries.
+  - `ScratchpadService`: Ticket CRUD, note conversion for PSA tools ("Copy for Ticket Note" with Markdown checklist conversion), skeleton templates, and automated audit summaries.
   - `StopwatchService`: Calculates human-readable time strings (`HH:MM:SS`), decimal billing hours (`0.25h`), and 15-minute rounded MSP billing increments (`0.50h`).
   - `ImageService`: Image conversion, JPEG 85% compression, resource URL management, and synchronization/pruning.
   - `SessionService`: Loads and saves workspace session (active tabs, active index, window geometry, window opacity).

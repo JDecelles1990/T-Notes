@@ -406,4 +406,118 @@ def test_global_hotkey_manager_lifecycle():
     assert mgr.is_registered is False
 
 
+def test_ui_checklist_toolbar_and_insert(main_window):
+    """Verifies that the toolbar task button inserts a checklist item into the active editor."""
+    assert main_window.toolbar.act_checklist.text() == "☑ Task"
+    assert main_window.toolbar.act_checklist.shortcut().toString() == "Ctrl+Alt+L"
+
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    assert editor.get_checklist_stats() == (0, 0)
+
+    # Click toolbar checklist button
+    main_window.toolbar.act_checklist.trigger()
+
+    # Verify checklist item inserted
+    assert "[ ]" in editor.toPlainText()
+    assert editor.get_checklist_stats() == (0, 1)
+
+
+def test_ui_checklist_toggle_and_tab_progress(main_window):
+    """Verifies toggling checklist items updates dynamic tab badge and rich tooltip."""
+    main_window.show()
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    editor.clear()
+
+    # Insert two checklist tasks
+    main_window.toolbar.act_checklist.trigger()
+    editor.insertPlainText("Verify firewall status\n")
+    main_window.toolbar.act_checklist.trigger()
+    editor.insertPlainText("Restart service\n")
+
+    # Check initial stats and tab header
+    completed, total = editor.get_checklist_stats()
+    assert (completed, total) == (0, 2)
+    tab_text = main_window.tab_widget.tabText(0)
+    assert "☑️0/2" in tab_text
+
+    # Toggle task 1 at position of first checkbox
+    cursor = editor.textCursor()
+    cursor.setPosition(1)
+    editor.setTextCursor(cursor)
+    pos = editor.cursorRect(cursor).center()
+    editor._toggle_checkbox_at(pos)
+
+    assert editor.get_checklist_stats() == (1, 2)
+    assert "[✔]" in editor.toPlainText()
+    tab_text = main_window.tab_widget.tabText(0)
+    assert "☑️1/2" in tab_text
+    tooltip = main_window.tab_widget.tabToolTip(0)
+    assert "Tasks: 1/2 completed (50%)" in tooltip
+
+    # Toggle task 2
+    plain = editor.toPlainText()
+    idx2 = plain.find("[ ]")
+    assert idx2 != -1
+    cursor.setPosition(idx2 + 1)
+    editor.setTextCursor(cursor)
+    pos2 = editor.cursorRect(cursor).center()
+    editor._toggle_checkbox_at(pos2)
+
+    assert editor.get_checklist_stats() == (2, 2)
+    tab_text = main_window.tab_widget.tabText(0)
+    assert "✅2/2" in tab_text
+    tooltip = main_window.tab_widget.tabToolTip(0)
+    assert "Tasks: 2/2 completed (100%)" in tooltip
+
+
+def test_ui_checklist_enter_continuation_and_exit(main_window):
+    """Verifies pressing Enter on a checklist line continues list, and on empty checkbox exits."""
+    from PySide6.QtGui import QKeyEvent
+    from PySide6.QtCore import QEvent
+
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    editor.clear()
+
+    # Insert first checklist item
+    editor.insert_checklist_item()
+    editor.insertPlainText("Step 1")
+
+    # Press Enter -> should continue checklist on next line
+    enter_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier)
+    editor.keyPressEvent(enter_event)
+
+    stats = editor.get_checklist_stats()
+    assert stats == (0, 2)
+
+    # Press Enter again on empty checklist item -> should exit checklist and delete the empty box
+    enter_event2 = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier)
+    editor.keyPressEvent(enter_event2)
+
+    stats = editor.get_checklist_stats()
+    assert stats == (0, 1)
+
+
+def test_ui_checklist_typing_space_auto_conversion(main_window):
+    """Verifies typing '[] ' or '- [ ] ' at start of line auto-converts to an interactive checkbox."""
+    from PySide6.QtGui import QKeyEvent
+    from PySide6.QtCore import QEvent
+
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    editor.clear()
+
+    # Type '[]' then press Space
+    editor.insertPlainText("[]")
+    space_event = QKeyEvent(QEvent.KeyPress, Qt.Key_Space, Qt.NoModifier, text=" ")
+    editor.keyPressEvent(space_event)
+
+    # Check auto-conversion took effect
+    stats = editor.get_checklist_stats()
+    assert stats == (0, 1)
+    assert "[ ]" in editor.toPlainText()
+
+
 

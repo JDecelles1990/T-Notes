@@ -28,6 +28,7 @@ class TechPadToolBar(QToolBar):
     skeleton_selected = Signal(str)
     export_note_requested = Signal()
     code_block_requested = Signal()
+    checklist_requested = Signal()      # Emits when checklist button clicked
     opacity_changed = Signal(int)       # Emits opacity value (60 to 100)
     history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
@@ -158,6 +159,12 @@ class TechPadToolBar(QToolBar):
             act.triggered.connect(lambda checked=False, n=name: self.skeleton_selected.emit(n))
         self.btn_skeleton.setMenu(skeleton_menu)
         self.addWidget(self.btn_skeleton)
+
+        # Interactive Task Checklist (Ctrl+Alt+L)
+        self.act_checklist = self.addAction("☑ Task")
+        self.act_checklist.setToolTip("Insert Checklist Item (Ctrl+Alt+L)")
+        self.act_checklist.setShortcut(QKeySequence("Ctrl+Alt+L"))
+        self.act_checklist.triggered.connect(self.checklist_requested.emit)
 
         self.addSeparator()
 

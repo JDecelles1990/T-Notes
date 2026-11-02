@@ -131,6 +131,20 @@ def test_clean_text_ticket_note_conversion():
     assert "</li>" not in clean_text
 
 
+def test_clean_text_checklist_conversion():
+    html = """
+    <p><a href="task://toggle">[ ]</a> Check disk space</p>
+    <p><a href="task://toggle">[✔]</a> <span style="text-decoration: line-through; color: #888888;">Reboot server</span></p>
+    <p><a href="task://toggle">[x]</a> Notify customer</p>
+    """
+    clean_text = ScratchpadService.convert_html_to_clean_text(html)
+    assert "- [ ] Check disk space" in clean_text
+    assert "- [x] Reboot server" in clean_text
+    assert "- [x] Notify customer" in clean_text
+    assert "task://toggle" not in clean_text
+    assert "<a" not in clean_text
+
+
 def test_session_service_workspace_restore(services):
     scratch_service, session_service = services
 

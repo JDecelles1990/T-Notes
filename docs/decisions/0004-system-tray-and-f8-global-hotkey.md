@@ -61,3 +61,4 @@ Having to search for TechPad on the Windows taskbar or re-launch the application
 - **System Tray:** `src/ui/components/system_tray.py` (`TechPadSystemTray`, `get_or_create_app_icon`).
 - **Window Toggle Logic:** `src/ui/main_window.py` (`toggle_window_visibility`, `closeEvent`, `quit_application`).
 - **Automated Validation:** Verified via `tests/test_ui_integration.py` (`test_ui_system_tray_close_to_tray`, `test_ui_f8_toggle_window_visibility`, `test_global_hotkey_manager_lifecycle`).
+

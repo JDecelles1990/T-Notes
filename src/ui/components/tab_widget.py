@@ -44,6 +44,7 @@ class TechPadTabWidget(QTabWidget):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self._tab_checklist_progress: dict[int, tuple[int, int]] = {}
 
         # 1. Install custom tab bar FIRST before setting movable/closable properties
         self._tab_bar = TechPadTabBar(self)
@@ -97,14 +98,24 @@ class TechPadTabWidget(QTabWidget):
         client_name: str = "",
         title: str = "",
         elapsed_seconds: int = 0,
+        checklist_progress: Optional[tuple[int, int]] = None,
     ) -> str:
-        """Formats the title displayed on the tab header (e.g. '#4092 (14m) — ACME')."""
+        """Formats the title displayed on the tab header (e.g. '#4092 (14m) ☑️2/5 — ACME')."""
         t_num = ticket_number.strip() if ticket_number else "New"
         if not t_num.startswith("#") and not t_num.upper().startswith("INC") and not t_num.upper().startswith("REQ") and not t_num.upper().startswith("T-"):
             t_num = f"#{t_num}"
 
         time_tag = f" ({elapsed_seconds // 60}m)" if elapsed_seconds > 0 else ""
-        t_display = f"{t_num}{time_tag}"
+
+        progress_tag = ""
+        if checklist_progress and checklist_progress[1] > 0:
+            completed, total = checklist_progress
+            if completed == total:
+                progress_tag = f" ✅{completed}/{total}"
+            else:
+                progress_tag = f" ☑️{completed}/{total}"
+
+        t_display = f"{t_num}{time_tag}{progress_tag}"
 
         secondary = client_name.strip() or title.strip()
         if secondary:
@@ -116,15 +127,33 @@ class TechPadTabWidget(QTabWidget):
     def add_ticket_tab(self, ticket: dict, editor: TechPadEditor) -> int:
         """Adds a new tab and binds ticket metadata."""
         elapsed = ticket.get("elapsed_seconds", 0) or 0
+        sp_id = ticket.get("id")
+        checklist_progress = None
+        if editor:
+            c, tot = editor.get_checklist_stats()
+            if tot > 0:
+                checklist_progress = (c, tot)
+                if sp_id is not None:
+                    self._tab_checklist_progress[sp_id] = checklist_progress
+
         title = self.format_title(
             ticket.get("ticket_number", ""),
             ticket.get("client_name", ""),
             ticket.get("title", ""),
             elapsed_seconds=elapsed,
+            checklist_progress=checklist_progress,
         )
         index = self.addTab(editor, title)
-        editor.setProperty("scratchpad_id", ticket.get("id"))
-        self.setTabToolTip(index, f"Ticket: {ticket.get('ticket_number')}\nClient: {ticket.get('client_name')}\nTitle: {ticket.get('title')}")
+        editor.setProperty("scratchpad_id", sp_id)
+
+        # Rich tooltip
+        tooltip = f"Ticket: {ticket.get('ticket_number')}\nClient: {ticket.get('client_name') or 'N/A'}\nTitle: {ticket.get('title') or 'N/A'}"
+        if checklist_progress and checklist_progress[1] > 0:
+            pct = int(round((checklist_progress[0] / checklist_progress[1]) * 100))
+            tooltip += f"\nTasks: {checklist_progress[0]}/{checklist_progress[1]} completed ({pct}%)"
+        if elapsed > 0:
+            tooltip += f"\nTroubleshooting Time: {elapsed // 60}m"
+        self.setTabToolTip(index, tooltip)
         return index
 
     def update_tab_title(
@@ -134,12 +163,34 @@ class TechPadTabWidget(QTabWidget):
         client_name: str = "",
         title: str = "",
         elapsed_seconds: int = 0,
+        checklist_progress: Optional[tuple[int, int]] = None,
     ) -> None:
-        """Updates tab header title with ticket metadata and elapsed minutes."""
+        """Updates tab header title with ticket metadata, elapsed minutes, and task progress."""
         if 0 <= index < self.count():
-            new_title = self.format_title(ticket_number, client_name, title, elapsed_seconds)
+            sp_id = self.get_scratchpad_id_at(index)
+            if checklist_progress is not None and sp_id is not None:
+                self._tab_checklist_progress[sp_id] = checklist_progress
+            elif sp_id is not None and checklist_progress is None:
+                checklist_progress = self._tab_checklist_progress.get(sp_id)
+
+            new_title = self.format_title(
+                ticket_number,
+                client_name,
+                title,
+                elapsed_seconds=elapsed_seconds,
+                checklist_progress=checklist_progress,
+            )
             if self.tabText(index) != new_title:
                 self.setTabText(index, new_title)
+
+            # Update rich tooltip
+            tooltip = f"Ticket: {ticket_number}\nClient: {client_name or 'N/A'}\nTitle: {title or 'N/A'}"
+            if checklist_progress and checklist_progress[1] > 0:
+                pct = int(round((checklist_progress[0] / checklist_progress[1]) * 100))
+                tooltip += f"\nTasks: {checklist_progress[0]}/{checklist_progress[1]} completed ({pct}%)"
+            if elapsed_seconds > 0:
+                tooltip += f"\nTroubleshooting Time: {elapsed_seconds // 60}m"
+            self.setTabToolTip(index, tooltip)
 
     def get_editor_at(self, index: int) -> Optional[TechPadEditor]:
         widget = self.widget(index)

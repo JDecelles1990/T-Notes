@@ -148,6 +148,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar = TechPadToolBar(self)
         self.toolbar.image_requested.connect(self._on_insert_image_file)
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
+        self.toolbar.checklist_requested.connect(self._on_insert_checklist)
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
@@ -291,6 +292,7 @@ class TechPadMainWindow(QMainWindow):
         editor.currentCharFormatChanged.connect(self.toolbar.update_format_states)
         editor.move_tab_requested.connect(self._move_active_tab_relative)
         editor.switch_tab_requested.connect(self._switch_tab_relative)
+        editor.checklist_stats_changed.connect(self._on_checklist_stats_changed)
 
         # Create debouncer using configured delay
         delay_ms = int(self.session_service.get_setting("auto_save_delay_ms", str(AUTO_SAVE_DEBOUNCE_MS)))
@@ -375,6 +377,26 @@ class TechPadMainWindow(QMainWindow):
                     )
                 break
 
+    def _on_checklist_stats_changed(self, scratchpad_id: int, completed: int, total: int) -> None:
+        """Updates the tab badge and tooltip whenever checklist items are added, removed, or toggled."""
+        for i in range(self.tab_widget.count()):
+            editor = self.tab_widget.get_editor_at(i)
+            if editor and editor.scratchpad_id == scratchpad_id:
+                ticket = self.scratchpad_service.get_ticket(scratchpad_id)
+                if ticket:
+                    elapsed = ticket.get("elapsed_seconds", 0) or 0
+                    if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+                        elapsed = self.toolbar.stopwatch.elapsed_seconds
+                    self.tab_widget.update_tab_title(
+                        index=i,
+                        ticket_number=ticket.get("ticket_number", ""),
+                        client_name=ticket.get("client_name", ""),
+                        title=ticket.get("title", ""),
+                        elapsed_seconds=elapsed,
+                        checklist_progress=(completed, total),
+                    )
+                break
+
     def _on_current_tab_changed(self, index: int) -> None:
         """Updates active editor in toolbar, synchronizes stopwatch, and updates status info."""
         # Flush previous tab's debounced save before switching
@@ -429,17 +451,13 @@ class TechPadMainWindow(QMainWindow):
             else:
                 elapsed = ticket.get("elapsed_seconds", 0) or 0
 
-            # Update tab title
-            new_title = TechPadTabWidget.format_title(
-                data["ticket_number"],
-                data["client_name"],
-                data["title"],
+            # Update tab title (preserving checklist badge and progress)
+            self.tab_widget.update_tab_title(
+                index=index,
+                ticket_number=data["ticket_number"],
+                client_name=data["client_name"],
+                title=data["title"],
                 elapsed_seconds=elapsed,
-            )
-            self.tab_widget.setTabText(index, new_title)
-            self.tab_widget.setTabToolTip(
-                index,
-                f"Ticket: {data['ticket_number']}\nClient: {data['client_name']}\nTitle: {data['title']}",
             )
             self._on_current_tab_changed(index)
 
@@ -621,6 +639,12 @@ class TechPadMainWindow(QMainWindow):
         html = self.scratchpad_service.get_skeleton_html(skeleton_name)
         if html:
             editor.textCursor().insertHtml(html)
+
+    def _on_insert_checklist(self) -> None:
+        """Inserts an interactive checklist item in the active editor."""
+        editor = self.tab_widget.get_current_editor()
+        if editor:
+            editor.insert_checklist_item()
 
     def _on_export_note(self) -> None:
         """Copies clean plain text / Markdown note to clipboard for ticketing tool."""

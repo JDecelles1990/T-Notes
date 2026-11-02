@@ -7,16 +7,28 @@ The multi-tab architecture in T-Notes organizes concurrent troubleshooting sessi
 
 ## 2. Tab Bar Features (`TechPadTabWidget`)
 
-### Dynamic Tab Title Formatting with Live Running Minutes
-Tabs display concise metadata and real-time troubleshooting elapsed minutes:
+### Dynamic Tab Title Formatting with Live Running Minutes & Task Badges
+Tabs display concise metadata, real-time troubleshooting elapsed minutes, and live task checklist completion progress:
 ```text
-#{ticket_number} ({minutes}m) — {client_name | title}
+#{ticket_number} ({minutes}m) {progress_tag} — {client_name | title}
 ```
-- Example with running stopwatch: `#INC-4092 (14m) — Acme Corp`
-- Example without client: `#4821 (35m) — DNS Resolution Failure`
-- When elapsed time is under 1 minute or at 0: `#{ticket_number} — {secondary}`
+- **In-Progress Tasks:** `#INC-4092 (14m) ☑️3/5 — Acme Corp`
+- **100% Completed Tasks:** `#INC-4092 (14m) ✅5/5 — Acme Corp`
+- **Without Tasks (Standard):** `#INC-4092 (14m) — Acme Corp`
+- **When elapsed time is under 1 minute or at 0:** `#{ticket_number} ☑️1/3 — {secondary}`
 - Titles longer than 24 characters are truncated cleanly with an ellipsis (`...`) while preserving full tooltips on hover.
-- Tab titles update dynamically every minute as the technician works. Switching tabs seamlessly pauses the outgoing tab's stopwatch, persists elapsed seconds to SQLite, and loads/starts the incoming tab's stopwatch.
+- Tab titles update dynamically every minute as the technician works, and instantly whenever checklist tasks are added, removed, or clicked.
+- Switching tabs seamlessly pauses the outgoing tab's stopwatch, persists elapsed seconds to SQLite, and loads/starts the incoming tab's stopwatch.
+
+### Rich Tab Hover Tooltips
+Hovering over any tab header displays an instant summary of ticket details, task completion breakdown, and accumulated troubleshooting time:
+```text
+Ticket: INC-4092
+Client: Acme Corp
+Title: Server Migration
+Tasks: 3/5 completed (60%)
+Troubleshooting Time: 14m
+```
 
 ### Slide-Reorganizing & Movable Tabs
 - Tabs can be clicked and slid horizontally to reorganize their order in real time.

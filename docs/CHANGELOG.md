@@ -5,6 +5,15 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Interactive Task Checklists & Tab Progress Badges**:
+  - Clickable task checkboxes (`[ ]` in accent blue `#007acc` and `[✔]` in success green `#4ade80`) anchored via custom `task://toggle` URI scheme.
+  - 1-Click interactive toggling in `TechPadEditor` with automatic strikethrough styling (`text-decoration: line-through; color: #888888;`) for completed tasks.
+  - Dynamic tab header progress badges updating live as tasks are checked or unchecked: `☑️{completed}/{total}` during progress (e.g. `#INC-1001 (14m) ☑️3/5 — Client`) and `✅{total}/{total}` upon 100% completion. Cleanly suppressed when a note contains no checklists.
+  - Rich tab header tooltips displaying complete task statistics and percentage: `Tasks: 3/5 completed (60%)`.
+  - Smart typing auto-conversion: typing `[] `, `[ ] `, or `- [ ] ` at the start of any line auto-transforms to an interactive checkbox.
+  - Enter continuation: pressing `Enter` on a checklist line continues the list on the next line; pressing `Enter` on an empty checkbox line exits checklist mode.
+  - Toolbar button `☑ Task` on Row 1 formatting toolbar, global shortcut `Ctrl+Alt+L`, and editor context menu integration.
+  - Clean Markdown PSA Export: `ScratchpadService.convert_html_to_clean_text()` automatically converts `task://toggle` anchors to standard Markdown `- [ ] ` and `- [x] ` for ServiceNow, Jira, and GitHub compatibility.
 - **System Tray Background Lifecycle & F8 Global Quick-Toggle**:
   - Closing the application window (`closeEvent`) minimizes TechPad to the Windows system tray (`QSystemTrayIcon`) rather than terminating the process, safeguarding ongoing notes and active stopwatch timers.
   - Generates crisp high-DPI application brand icon (`assets/icons/app_icon.png`) for window headers and system tray.

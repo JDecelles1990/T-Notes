@@ -227,6 +227,10 @@ class ScratchpadService:
         text = re.sub(r'<h3[^>]*>', '### ', text, flags=re.IGNORECASE)
         text = re.sub(r'<h4[^>]*>', '#### ', text, flags=re.IGNORECASE)
 
+        # Convert interactive checklists to Markdown task lists (- [ ] / - [x])
+        text = re.sub(r'<a[^>]*href=["\']task://toggle["\'][^>]*>\s*\[\s*\]\s*</a>\s*', '- [ ] ', text, flags=re.IGNORECASE)
+        text = re.sub(r'<a[^>]*href=["\']task://toggle["\'][^>]*>\s*\[(?:✔|x|X)\]\s*</a>\s*', '- [x] ', text, flags=re.IGNORECASE)
+
         # Format lists
         text = re.sub(r'<li[^>]*>', '• ', text, flags=re.IGNORECASE)
         text = re.sub(r'</li>', '\n', text, flags=re.IGNORECASE)

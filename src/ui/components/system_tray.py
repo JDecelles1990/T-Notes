@@ -71,3 +71,4 @@ class TechPadSystemTray(QSystemTrayIcon):
         """Toggles window visibility upon left-click or double-click."""
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.toggle_requested.emit()
+
