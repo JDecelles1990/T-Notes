@@ -408,7 +408,7 @@ def test_global_hotkey_manager_lifecycle():
 
 def test_ui_checklist_toolbar_and_insert(main_window):
     """Verifies that the toolbar task button inserts a checklist item into the active editor."""
-    assert main_window.toolbar.act_checklist.text() == "☑ Task"
+    assert main_window.toolbar.act_checklist.text() == "☑ Checkbox"
     assert main_window.toolbar.act_checklist.shortcut().toString() == "Ctrl+Alt+L"
 
     editor = main_window.tab_widget.get_current_editor()
@@ -518,6 +518,61 @@ def test_ui_checklist_typing_space_auto_conversion(main_window):
     stats = editor.get_checklist_stats()
     assert stats == (0, 1)
     assert "[ ]" in editor.toPlainText()
+
+
+def test_ui_tab_color_ownership(main_window):
+    """Verifies each tab owns a different, distinct color persistently."""
+    from src.ui.components.tab_widget import TAB_COLOR_PALETTE
+
+    # App starts with tab 0
+    assert main_window.tab_widget.count() == 1
+    c0 = main_window.tab_widget.get_tab_color(0)
+    assert c0.isValid()
+
+    # Create two more tabs
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 3
+
+    c0 = main_window.tab_widget.get_tab_color(0)
+    c1 = main_window.tab_widget.get_tab_color(1)
+    c2 = main_window.tab_widget.get_tab_color(2)
+
+    # All three tabs must have different colors
+    colors = {c0.name(), c1.name(), c2.name()}
+    assert len(colors) == 3
+
+    # Remember which scratchpad ID owned which color
+    sp0 = main_window.tab_widget.get_scratchpad_id_at(0)
+    sp1 = main_window.tab_widget.get_scratchpad_id_at(1)
+
+    # Move tab 0 to position 1 (reordering)
+    main_window._move_active_tab_relative(+1)
+
+    # The tickets must still own their respective colors even after index shift
+    for i in range(main_window.tab_widget.count()):
+        sp_id = main_window.tab_widget.get_scratchpad_id_at(i)
+        if sp_id == sp0:
+            assert main_window.tab_widget.get_tab_color(i).name() == c0.name()
+        elif sp_id == sp1:
+            assert main_window.tab_widget.get_tab_color(i).name() == c1.name()
+
+
+def test_ui_reorganized_ribbon_structure(main_window):
+    """Verifies that the ribbon buttons are reorganized logically without artificial expanding spacers."""
+    tb1 = main_window.toolbar
+    tb2 = main_window.toolbar.secondary_toolbar
+
+    # Row 1 contains Checkbox button
+    assert tb1.act_checklist.text() == "☑ Checkbox"
+
+    # Row 2 contains Template, Copy Note, Opacity, History, Settings
+    assert tb1.btn_skeleton.parent() == tb2
+    assert tb1.act_export.parent() == tb2
+
+    # Stopwatch play/reset buttons use crisp Unicode glyphs
+    assert tb1.stopwatch.btn_toggle.text() in ("▶", "⏸")
+    assert tb1.stopwatch.btn_reset.text() == "↺"
 
 
 

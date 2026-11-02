@@ -1,8 +1,8 @@
 """Custom QTabWidget with right-click context menu, double-click renaming, and slide-reordering."""
 
 from typing import Optional
-from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QContextMenuEvent, QMouseEvent
+from PySide6.QtCore import QPoint, QRect, Qt, Signal
+from PySide6.QtGui import QColor, QContextMenuEvent, QMouseEvent, QPainter
 from PySide6.QtWidgets import (
     QTabBar,
     QTabWidget,
@@ -11,12 +11,52 @@ from PySide6.QtWidgets import (
 )
 from src.ui.components.editor import TechPadEditor
 
+TAB_COLOR_PALETTE = [
+    "#38bdf8",  # Sky Blue
+    "#34d399",  # Emerald Green
+    "#a855f7",  # Purple
+    "#fbbf24",  # Amber / Gold
+    "#f43f5e",  # Rose / Coral
+    "#06b6d4",  # Cyan
+    "#fb923c",  # Orange
+    "#818cf8",  # Indigo
+    "#a3e635",  # Lime
+    "#ec4899",  # Pink
+    "#2dd4bf",  # Teal
+    "#c084fc",  # Lavender
+]
+
 
 class TechPadTabBar(QTabBar):
     """Custom tab bar supporting double clicks, right-click context menus, and slide reorganization."""
 
     tab_double_clicked = Signal(int)
     tab_context_menu_requested = Signal(int, QPoint)
+
+    def paintEvent(self, event) -> None:
+        """Paints standard tab layout, then overlays each tab's distinctive owned color."""
+        super().paintEvent(event)
+        parent_widget = self.parent()
+        if not isinstance(parent_widget, TechPadTabWidget):
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        for i in range(self.count()):
+            rect = self.tabRect(i)
+            color = parent_widget.get_tab_color(i)
+            is_selected = (i == self.currentIndex())
+
+            # 1. Subtle background ambient tint with tab's own color
+            tint_alpha = 32 if is_selected else 14
+            tint = QColor(color.red(), color.green(), color.blue(), tint_alpha)
+            painter.fillRect(rect.adjusted(1, 2, -1, 0), tint)
+
+            # 2. Distinct top accent stripe (3px if selected, 2px if unselected)
+            stripe_height = 3 if is_selected else 2
+            stripe_rect = QRect(rect.x() + 1, rect.y(), rect.width() - 2, stripe_height)
+            painter.fillRect(stripe_rect, color)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
@@ -45,6 +85,7 @@ class TechPadTabWidget(QTabWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._tab_checklist_progress: dict[int, tuple[int, int]] = {}
+        self._tab_colors: dict[int, str] = {}
 
         # 1. Install custom tab bar FIRST before setting movable/closable properties
         self._tab_bar = TechPadTabBar(self)
@@ -128,6 +169,9 @@ class TechPadTabWidget(QTabWidget):
         """Adds a new tab and binds ticket metadata."""
         elapsed = ticket.get("elapsed_seconds", 0) or 0
         sp_id = ticket.get("id")
+        if sp_id is not None and sp_id not in self._tab_colors:
+            self._tab_colors[sp_id] = TAB_COLOR_PALETTE[(sp_id - 1) % len(TAB_COLOR_PALETTE)]
+
         checklist_progress = None
         if editor:
             c, tot = editor.get_checklist_stats()
@@ -206,3 +250,19 @@ class TechPadTabWidget(QTabWidget):
         if editor:
             return editor.scratchpad_id
         return None
+
+    def get_tab_color(self, index: int) -> QColor:
+        """Returns the distinctive owned color for the tab at the given index."""
+        sp_id = self.get_scratchpad_id_at(index)
+        if sp_id is not None and sp_id in self._tab_colors:
+            return QColor(self._tab_colors[sp_id])
+        if sp_id is not None:
+            c = TAB_COLOR_PALETTE[(sp_id - 1) % len(TAB_COLOR_PALETTE)]
+            self._tab_colors[sp_id] = c
+            return QColor(c)
+        return QColor(TAB_COLOR_PALETTE[index % len(TAB_COLOR_PALETTE)])
+
+    def set_tab_color(self, scratchpad_id: int, hex_color: str) -> None:
+        """Explicitly sets or overrides the owned color for a scratchpad."""
+        self._tab_colors[scratchpad_id] = hex_color
+        self._tab_bar.update()

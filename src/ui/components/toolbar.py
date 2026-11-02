@@ -91,6 +91,19 @@ class TechPadToolBar(QToolBar):
 
         self.addSeparator()
 
+        # Text & Highlight Colors (Ctrl+Alt+X / Ctrl+Alt+H)
+        self.act_color = self.addAction("🎨")
+        self.act_color.setToolTip("Text Color (Ctrl+Alt+X)")
+        self.act_color.setShortcut(QKeySequence("Ctrl+Alt+X"))
+        self.act_color.triggered.connect(self._pick_text_color)
+
+        self.act_highlight = self.addAction("🖍️")
+        self.act_highlight.setToolTip("Highlight Background Color (Ctrl+Alt+H)")
+        self.act_highlight.setShortcut(QKeySequence("Ctrl+Alt+H"))
+        self.act_highlight.triggered.connect(self._pick_highlight_color)
+
+        self.addSeparator()
+
         # Monospace Code Block (Ctrl+Alt+C)
         self.act_code = self.addAction("</>")
         self.act_code.setToolTip("Monospace Code Block (Ctrl+Alt+C)")
@@ -121,25 +134,15 @@ class TechPadToolBar(QToolBar):
         btn_badge.setMenu(badge_menu)
         self.addWidget(btn_badge)
 
-        # Color picker (Ctrl+Alt+X)
-        self.act_color = self.addAction("🎨")
-        self.act_color.setToolTip("Text Color (Ctrl+Alt+X)")
-        self.act_color.setShortcut(QKeySequence("Ctrl+Alt+X"))
-        self.act_color.triggered.connect(self._pick_text_color)
-
-        # Highlight color picker (Ctrl+Alt+H)
-        self.act_highlight = self.addAction("🖍️")
-        self.act_highlight.setToolTip("Highlight Background Color (Ctrl+Alt+H)")
-        self.act_highlight.setShortcut(QKeySequence("Ctrl+Alt+H"))
-        self.act_highlight.triggered.connect(self._pick_highlight_color)
-
         self.addSeparator()
 
-        # Media: Insert Image (Ctrl+Alt+I)
-        self.act_image = self.addAction("🖼️")
-        self.act_image.setToolTip("Insert Image File... (Ctrl+Alt+I)")
-        self.act_image.setShortcut(QKeySequence("Ctrl+Alt+I"))
-        self.act_image.triggered.connect(self.image_requested.emit)
+        # Interactive Task / Checkbox Button (Ctrl+Alt+L)
+        self.act_checklist = self.addAction("☑ Checkbox")
+        self.act_checklist.setToolTip("Insert Interactive Checkbox Item (Ctrl+Alt+L)")
+        self.act_checklist.setShortcut(QKeySequence("Ctrl+Alt+L"))
+        self.act_checklist.triggered.connect(self.checklist_requested.emit)
+
+        self.addSeparator()
 
         # Timestamp Insertion (F5 / Ctrl+Alt+T)
         self.act_timestamp = self.addAction("🕒")
@@ -147,8 +150,24 @@ class TechPadToolBar(QToolBar):
         self.act_timestamp.setShortcut(QKeySequence("F5"))
         self.act_timestamp.triggered.connect(self._insert_timestamp)
 
-        # Ticket Skeletons Dropdown (Ctrl+Alt+S)
-        self.btn_skeleton = QToolButton(self)
+        # Media: Insert Image (Ctrl+Alt+I)
+        self.act_image = self.addAction("🖼️")
+        self.act_image.setToolTip("Insert Image File... (Ctrl+Alt+I)")
+        self.act_image.setShortcut(QKeySequence("Ctrl+Alt+I"))
+        self.act_image.triggered.connect(self.image_requested.emit)
+
+        # -------------------------------------------------------------
+        # Row 2: Workflow, Templates, Stopwatch & Utilities
+        # -------------------------------------------------------------
+
+        # 1. Stopwatch Widget for tracking ticket troubleshooting time
+        self.stopwatch = TicketStopwatchWidget(parent=self.secondary_toolbar)
+        self.secondary_toolbar.addWidget(self.stopwatch)
+
+        self.secondary_toolbar.addSeparator()
+
+        # 2. Ticket Skeletons Dropdown (Ctrl+Alt+S)
+        self.btn_skeleton = QToolButton(self.secondary_toolbar)
         self.btn_skeleton.setText("📋 Template")
         self.btn_skeleton.setPopupMode(QToolButton.InstantPopup)
         self.btn_skeleton.setToolTip("Insert Structured Ticket Skeleton (Ctrl+Alt+S)")
@@ -158,40 +177,20 @@ class TechPadToolBar(QToolBar):
             act = skeleton_menu.addAction(name)
             act.triggered.connect(lambda checked=False, n=name: self.skeleton_selected.emit(n))
         self.btn_skeleton.setMenu(skeleton_menu)
-        self.addWidget(self.btn_skeleton)
+        self.secondary_toolbar.addWidget(self.btn_skeleton)
 
-        # Interactive Task Checklist (Ctrl+Alt+L)
-        self.act_checklist = self.addAction("☑ Task")
-        self.act_checklist.setToolTip("Insert Checklist Item (Ctrl+Alt+L)")
-        self.act_checklist.setShortcut(QKeySequence("Ctrl+Alt+L"))
-        self.act_checklist.triggered.connect(self.checklist_requested.emit)
+        self.secondary_toolbar.addSeparator()
 
-        self.addSeparator()
-
-        # Copy For Ticket Note (PSA Export - Ctrl+Alt+N)
-        self.act_export = self.addAction("📤 Copy Note")
+        # 3. Copy For Ticket Note (PSA Export - Ctrl+Alt+N)
+        self.act_export = self.secondary_toolbar.addAction("📤 Copy Note")
         self.act_export.setToolTip("Copy stripped clean text/markdown for PSA ticket (Ctrl+Alt+N)")
         self.act_export.setShortcut(QKeySequence("Ctrl+Alt+N"))
         self.act_export.triggered.connect(self.export_note_requested.emit)
-
-        # -------------------------------------------------------------
-        # Row 2: Workflow, Stopwatch, Opacity & Preferences
-        # -------------------------------------------------------------
-
-        # Stopwatch Widget for tracking ticket troubleshooting time
-        self.stopwatch = TicketStopwatchWidget(parent=self.secondary_toolbar)
         self.stopwatch.psa_export_requested.connect(self.export_note_requested.emit)
-        self.secondary_toolbar.addWidget(self.stopwatch)
 
-        # Separator on row 2
         self.secondary_toolbar.addSeparator()
 
-        # Expanding spacer pushing Opacity & Settings to the right side
-        spacer = QWidget(self.secondary_toolbar)
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.secondary_toolbar.addWidget(spacer)
-
-        # Opacity Slider (60% to 100%)
+        # 4. Opacity Slider (60% to 100%) - positioned compactly without artificial expanding spacer
         self.lbl_opacity = QLabel("👁️ 100%", self.secondary_toolbar)
         self.lbl_opacity.setStyleSheet("color: #9cdcfe; font-size: 11px; padding-right: 2px;")
         self.secondary_toolbar.addWidget(self.lbl_opacity)
@@ -227,19 +226,19 @@ class TechPadToolBar(QToolBar):
 
         self.secondary_toolbar.addSeparator()
 
-        # History Section Toggle Button (🕰️)
+        # 5. History Section Toggle Button (🕰️)
         self.btn_history = QToolButton(self.secondary_toolbar)
         self.btn_history.setText("🕰️")
         self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
-        self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px; margin-left: 4px;")
+        self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px;")
         self.btn_history.clicked.connect(self.history_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_history)
 
-        # Settings Gear Icon Button (⚙️)
+        # 6. Settings Gear Icon Button (⚙️)
         self.btn_settings = QToolButton(self.secondary_toolbar)
         self.btn_settings.setText("⚙️")
         self.btn_settings.setToolTip("Preferences & Settings (Ctrl+,)")
-        self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px; margin-left: 4px;")
+        self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px;")
         self.btn_settings.clicked.connect(self.settings_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_settings)
 

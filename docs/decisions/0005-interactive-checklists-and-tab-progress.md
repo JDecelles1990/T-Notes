@@ -73,3 +73,4 @@ In pure rich-text editors without native checklist support:
 - **Toolbar & MainWindow Wiring:** `src/ui/components/toolbar.py` (`act_checklist`), `src/ui/main_window.py` (`_on_checklist_stats_changed`).
 - **Export Filter:** `src/services/scratchpad_service.py` (`convert_html_to_clean_text`).
 - **Automated Tests:** `tests/test_ui_integration.py` (`test_ui_checklist_toolbar_and_insert`, `test_ui_checklist_toggle_and_tab_progress`, `test_ui_checklist_enter_continuation_and_exit`, `test_ui_checklist_typing_space_auto_conversion`) and `tests/test_scratchpad_service.py` (`test_clean_text_checklist_conversion`).
+

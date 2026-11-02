@@ -46,23 +46,23 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 
 The top header is structured into two dedicated rows to prevent button truncation and completely eliminate the 3-dots (`...`) toolbar overflow menu on standard display resolutions:
 
-### 4.1 Row 1: Note Formatting & Authoring Toolbar
-Dedicated strictly to rich-text authoring and triage markup:
+### 4.1 Row 1: Note Formatting, Styling & Markup Ribbon
+Dedicated strictly to rich-text authoring, colors, and content markup:
 - **Text Styling:** Bold (`B`), Italic (`I`), Underline (`U`)
-- **Code Container:** Monospace CLI container (`</>`)
-- **Triage Tagging:** Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`)
 - **Colors:** Text Color picker (`🎨`), Text Highlight background picker (`🖍️`)
-- **Media & Injections:** Screenshot/Image insertion (`🖼️`), Current timestamp injection (`🕒`)
-- **Checklists & Templates:** Interactive Task Checklists (`☑ Task` / `Ctrl+Alt+L`), Structured Skeleton templates (`📋 Template`), Clean note export for PSA (`📤 Copy Note`)
+- **Developer Markup:** Monospace CLI container (`</>`), Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`)
+- **Checklists:** Dedicated Interactive Checkbox button (`☑ Checkbox` / `Ctrl+Alt+L`)
+- **Injections:** Current timestamp injection (`🕒`), Screenshot/Image file insertion (`🖼️`)
 
-### 4.2 Row 2: Ticket Workflow & System Utilities Toolbar
-Dedicated to real-time troubleshooting duration, translucency, and workspace management:
-- **Ticket Stopwatch & MSP Billing (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), Play/Pause (`▶️`/`⏸️`), Reset (`🔄`), and `📋 Time` dropdown (Exact, Decimal, 15m rounded blocks, Copy Note with billable time).
-- **Expanding Spacer:** Pushes system controls cleanly to the right side.
-- **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% enabling technicians to read underlying terminal outputs or remote desktop sessions.
+### 4.2 Row 2: Ticket Workflow, Skeletons & Utilities Ribbon
+Dedicated to ticket-level actions, troubleshooting duration, translucency, and preferences:
+- **Ticket Stopwatch & MSP Billing (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), crisp Unicode Play/Pause (`▶`/`⏸`), Reset (`↺`), and `📋 Time` dropdown (Exact, Decimal, 15m rounded blocks, Copy Note with billable time).
+- **Ticket Templates (`📋 Template`):** Structured Skeleton templates (Incident Triage, Quick Fix, Maintenance).
+- **PSA Ticket Export (`📤 Copy Note`):** Copies clean Markdown/plain-text note with converted `- [ ] ` checkboxes.
+- **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% positioned naturally alongside workflow tools without artificial expanding voids.
 - **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.
 - **Settings Gear (`⚙️`):** Launches preferences modal for defaults, delays, and compression.
-- **Zero Overflow (No 3-Dots Menu):** Both rows feature non-movable fixed layouts with `QToolBarExtension` suppressed via QSS and programmatic bounds, ensuring all buttons remain accessible directly on the screen without clicking overflow menus.
+- **Zero Whitespace & Zero Overflow:** Both rows feature balanced, compact grouping without artificial `QSizePolicy.Expanding` gaps, keeping all tools within easy reach while completely eliminating the 3-dots overflow button.
 - **Auto-Pause on Lock or 5-Minute Inactivity:**
   - Uses Windows system APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
   - If the technician locks their screen (`Win + L`) or leaves the workstation idle for more than 5 minutes (300 seconds), the stopwatch automatically pauses to prevent accidental billing overages.

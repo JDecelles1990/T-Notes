@@ -5,6 +5,16 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Top Bar Ribbon Reorganization & Whitespace Elimination**:
+  - Rebalanced the two-row ribbon to eliminate the 600px artificial expanding gap in Row 2:
+    - **Row 1 (Formatting & Content):** `B`, `I`, `U`, `🎨`, `🖍️`, `</>`, `🏷️ Tag`, `☑ Checkbox`, `🕒`, `🖼️`.
+    - **Row 2 (Ticket Workflow & Utilities):** Stopwatch (`⏱️ 00:00:00 ▶ ↺ 📋 Time`), `📋 Template`, `📤 Copy Note`, `👁️ 100%` Opacity Slider, `🕰️` History, `⚙️` Settings.
+  - Added dedicated, clearly labeled **`☑ Checkbox`** button on Row 1 formatting ribbon (`Ctrl+Alt+L`) for instant 1-click task list insertion.
+  - Replaced problematic glyphs on stopwatch buttons with crisp Unicode symbols (`▶` / `⏸` and `↺`) styled with explicit typography fonts to eliminate empty box `[ ][ ]` glyph rendering.
+- **Automatic Tab Color Ownership**:
+  - Each tab automatically and permanently owns a distinct, vibrant accent color from a curated 12-color technician palette (Sky Blue, Emerald, Purple, Amber, Rose, Cyan, Orange, Indigo, Lime, Pink, Teal, Lavender).
+  - Rendered with a high-visibility 3px top accent stripe (2px when unselected) and a subtle 12%–14% ambient background tint.
+  - Color ownership is deterministically bound to the ticket's `scratchpad_id`: moving, switching, or restoring tabs preserves each ticket's distinct color identity automatically without requiring manual configuration.
 - **Interactive Task Checklists & Tab Progress Badges**:
   - Clickable task checkboxes (`[ ]` in accent blue `#007acc` and `[✔]` in success green `#4ade80`) anchored via custom `task://toggle` URI scheme.
   - 1-Click interactive toggling in `TechPadEditor` with automatic strikethrough styling (`text-decoration: line-through; color: #888888;`) for completed tasks.

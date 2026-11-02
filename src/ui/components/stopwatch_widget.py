@@ -51,7 +51,7 @@ class TicketStopwatchWidget(QWidget):
         self.lbl_time.setToolTip("Active ticket troubleshooting stopwatch")
 
         # Play / Pause Toggle Button
-        self.btn_toggle = QPushButton("▶️")
+        self.btn_toggle = QPushButton("▶")
         self.btn_toggle.setFixedSize(30, 24)
         self.btn_toggle.setToolTip("Start / Pause Stopwatch")
         self.btn_toggle.setStyleSheet("""
@@ -59,17 +59,21 @@ class TicketStopwatchWidget(QWidget):
                 background-color: #21262d;
                 border: 1px solid #30363d;
                 border-radius: 4px;
-                font-size: 11px;
+                font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', sans-serif;
+                font-size: 12px;
+                color: #58a6ff;
+                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #30363d;
                 border-color: #58a6ff;
+                color: #79c0ff;
             }
         """)
         self.btn_toggle.clicked.connect(self.toggle_timer)
 
         # Reset Button
-        self.btn_reset = QPushButton("🔄")
+        self.btn_reset = QPushButton("↺")
         self.btn_reset.setFixedSize(30, 24)
         self.btn_reset.setToolTip("Reset Timer to 00:00:00")
         self.btn_reset.setStyleSheet("""
@@ -77,11 +81,15 @@ class TicketStopwatchWidget(QWidget):
                 background-color: #21262d;
                 border: 1px solid #30363d;
                 border-radius: 4px;
-                font-size: 11px;
+                font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', sans-serif;
+                font-size: 14px;
+                color: #8b949e;
+                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #30363d;
                 border-color: #f85149;
+                color: #f85149;
             }
         """)
         self.btn_reset.clicked.connect(self.reset_timer)
@@ -177,14 +185,14 @@ class TicketStopwatchWidget(QWidget):
         if not self._is_running:
             self._is_running = True
             self._auto_paused = False
-            self.btn_toggle.setText("⏸️")
+            self.btn_toggle.setText("⏸")
             self.btn_toggle.setToolTip("Pause Stopwatch")
             self._timer.start()
 
     def pause_timer(self) -> None:
         if self._is_running:
             self._is_running = False
-            self.btn_toggle.setText("▶️")
+            self.btn_toggle.setText("▶")
             self.btn_toggle.setToolTip("Start Stopwatch")
             self._timer.stop()
             self.save_current_state()

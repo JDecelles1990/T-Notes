@@ -30,6 +30,14 @@ Tasks: 3/5 completed (60%)
 Troubleshooting Time: 14m
 ```
 
+### Automatic Tab Color Ownership (Unique Color per Ticket)
+To prevent disorientation across concurrent support sessions, each tab automatically and permanently owns a distinct, vibrant accent color from a curated 12-color technician palette:
+- **Curated Palette:** Sky Blue (`#38bdf8`), Emerald (`#34d399`), Purple (`#a855f7`), Amber (`#fbbf24`), Rose (`#f43f5e`), Cyan (`#06b6d4`), Orange (`#fb923c`), Indigo (`#818cf8`), Lime (`#a3e635`), Pink (`#ec4899`), Teal (`#2dd4bf`), and Lavender (`#c084fc`).
+- **Visual Presentation:**
+  - **Top Accent Line:** Rendered in `TechPadTabBar.paintEvent()` directly atop each tab (3px thick on active tab, 2px on background tabs).
+  - **Ambient Background Tint:** A subtle 12%–14% ambient tint (32% when selected) overlays the dark tab background.
+- **Persistent Ownership by Ticket ID:** Colors map deterministically to each ticket's `scratchpad_id`. Dragging/reordering tabs, switching between tickets, or restoring archived tickets guarantees that each ticket retains its exact color identity without requiring manual user configuration.
+
 ### Slide-Reorganizing & Movable Tabs
 - Tabs can be clicked and slid horizontally to reorganize their order in real time.
 - `setMovable(True)` and `setDocumentMode(True)` enable fluid visual drag animations.
