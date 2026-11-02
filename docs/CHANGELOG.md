@@ -5,6 +5,10 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Application Rebranding to T-Notes**:
+  - Rebranded the application name from `TechPad` to `T-Notes` across the entire interface.
+  - Window title bar at the top-left now dynamically displays `T-Notes v1.0.0 — Technician Scratchpad`.
+  - Updated application metadata (`app.setApplicationName("T-Notes")`), default scratchpad welcome template header, preferences modal title, system tray action labels, and background notifications.
 - **Image Context Menu (Copy Image & Save Image As...)**:
   - Right-clicking directly on any embedded screenshot or image in `TechPadEditor` surfaces dedicated image actions:
     - **`📋 Copy Image`**: Copies full-fidelity bitmap data to system clipboard (`QApplication.clipboard().setImage`), enabling direct pasting (`Ctrl+V`) into Teams, Slack, Outlook, Jira, or graphics apps.

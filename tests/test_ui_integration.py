@@ -40,6 +40,9 @@ def main_window(qapp, tmp_path):
 
 
 def test_ui_initial_state_and_new_tab(main_window):
+    # App window title starts with T-Notes
+    assert main_window.windowTitle().startswith("T-Notes")
+
     # App should boot with 1 active tab (initial workspace)
     assert main_window.tab_widget.count() == 1
     assert "INC-1001" in main_window.tab_widget.tabText(0)

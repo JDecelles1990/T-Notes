@@ -1233,8 +1233,8 @@ class TechPadMainWindow(QMainWindow):
             if getattr(self, "_first_minimize_to_tray", True):
                 self._first_minimize_to_tray = False
                 self.tray_icon.showMessage(
-                    "TechPad Running in Background",
-                    "TechPad minimized to system tray.\nPress F8 anytime to show or hide.",
+                    f"{APP_NAME} Running in Background",
+                    f"{APP_NAME} minimized to system tray.\nPress F8 anytime to show or hide.",
                     QSystemTrayIcon.Information,
                     2500,
                 )

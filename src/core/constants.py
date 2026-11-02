@@ -1,6 +1,6 @@
-"""Constants and default configuration values for TechPad."""
+"""Constants and default configuration values for T-Notes."""
 
-APP_NAME = "TechPad"
+APP_NAME = "T-Notes"
 APP_VERSION = "1.0.0"
 
 # Auto-save timing

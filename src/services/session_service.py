@@ -29,7 +29,7 @@ class SessionService:
                 ticket_number=f"{prefix}1001",
                 client_name="Internal IT",
                 title="Daily Scratchpad",
-                content_html="<h2>Welcome to TechPad 🚀</h2><p>Use this tab for troubleshooting notes, CLI logs, and screenshot snips (<strong>Win+Shift+S</strong>).</p>",
+                content_html="<h2>Welcome to T-Notes 🚀</h2><p>Use this tab for troubleshooting notes, CLI logs, and screenshot snips (<strong>Win+Shift+S</strong>).</p>",
             )
             active_tickets = [initial_ticket]
 

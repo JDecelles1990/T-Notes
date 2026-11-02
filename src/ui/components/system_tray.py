@@ -54,7 +54,7 @@ class TechPadSystemTray(QSystemTrayIcon):
     def _build_menu(self) -> None:
         menu = QMenu()
 
-        self.act_toggle = menu.addAction("Show / Hide TechPad (F8)")
+        self.act_toggle = menu.addAction(f"Show / Hide {APP_NAME} (F8)")
         self.act_toggle.triggered.connect(self.toggle_requested.emit)
 
         self.act_new = menu.addAction("➕ New Ticket Tab (Ctrl+T)")
@@ -62,7 +62,7 @@ class TechPadSystemTray(QSystemTrayIcon):
 
         menu.addSeparator()
 
-        self.act_quit = menu.addAction("✕ Quit TechPad")
+        self.act_quit = menu.addAction(f"✕ Quit {APP_NAME}")
         self.act_quit.triggered.connect(self.quit_requested.emit)
 
         self.setContextMenu(menu)

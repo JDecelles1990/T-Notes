@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import QApplication
 from src.config import DEFAULT_DB_PATH, DEFAULT_QSS_PATH
+from src.core.constants import APP_NAME
 from src.database.connection import DatabaseManager
 from src.database.migrations import init_database
 from src.repositories.image_repository import ImageRepository
@@ -25,7 +26,7 @@ def main() -> int:
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    app.setApplicationName("TechPad")
+    app.setApplicationName(APP_NAME)
     app.setOrganizationName("MSP Tools")
     app.setWindowIcon(get_or_create_app_icon())
 

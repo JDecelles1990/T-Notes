@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.core.constants import APP_NAME
 
 
 class SettingsDialog(QDialog):
@@ -22,7 +23,7 @@ class SettingsDialog(QDialog):
 
     def __init__(self, current_settings: Dict[str, str], parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self.setWindowTitle("TechPad Preferences")
+        self.setWindowTitle(f"{APP_NAME} Preferences")
         self.setMinimumWidth(440)
         self.setModal(True)
 
