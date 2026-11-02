@@ -97,6 +97,11 @@ class TechPadMainWindow(QMainWindow):
                 self._toggle_split_view()
                 return True
 
+            # Alt+T toggle Always-on-Top Mini-HUD mode
+            if key == Qt.Key_T and has_alt and not has_ctrl and not has_shift:
+                self.toggle_mini_hud_mode()
+                return True
+
             if has_ctrl and not has_alt:
                 # 1. Tab Reordering (Slide Left / Right): Ctrl + Shift + PageDown / PageUp
                 if has_shift:
@@ -181,6 +186,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.copy_formatted_requested.connect(self._on_copy_formatted_note)
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.split_view_requested.connect(self._toggle_split_view)
+        self.toolbar.mini_hud_requested.connect(self.toggle_mini_hud_mode)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
@@ -228,6 +234,14 @@ class TechPadMainWindow(QMainWindow):
         self.btn_toggle_drawer.clicked.connect(self._toggle_history_drawer)
         self.status_bar.addPermanentWidget(self.btn_toggle_drawer)
 
+        # Toggle Always-on-Top Mini-HUD button in status bar
+        self.btn_status_hud = QPushButton("📌 HUD (Alt+T)")
+        self.btn_status_hud.setObjectName("btnSecondary")
+        self.btn_status_hud.setFlat(True)
+        self.btn_status_hud.setToolTip("Toggle Always-on-Top Mini-HUD Mode (Alt+T)")
+        self.btn_status_hud.clicked.connect(self.toggle_mini_hud_mode)
+        self.status_bar.addPermanentWidget(self.btn_status_hud)
+
     def _setup_shortcuts(self) -> None:
         """Configures application-wide shortcuts for saving, drawer toggle, and settings.
 
@@ -240,6 +254,7 @@ class TechPadMainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Alt+Z"), self, self._toggle_split_view, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Alt+T"), self, self.toggle_mini_hud_mode, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
 
     def _setup_tray_and_hotkey(self) -> None:
@@ -248,6 +263,7 @@ class TechPadMainWindow(QMainWindow):
         self.tray_icon = TechPadSystemTray(self)
         self.tray_icon.toggle_requested.connect(self.toggle_window_visibility)
         self.tray_icon.new_tab_requested.connect(self._create_new_tab_and_show)
+        self.tray_icon.hud_requested.connect(self.toggle_mini_hud_mode)
         self.tray_icon.quit_requested.connect(self.quit_application)
         self.tray_icon.show()
 
@@ -1145,6 +1161,92 @@ class TechPadMainWindow(QMainWindow):
             self._on_editor_focused(prim_editor.scratchpad_id)
 
         self._on_tabs_reordered()
+
+    @property
+    def is_mini_hud(self) -> bool:
+        """Returns True if the application is currently in Always-on-Top Mini-HUD mode."""
+        return getattr(self, "_is_mini_hud", False)
+
+    def toggle_mini_hud_mode(self) -> None:
+        """Toggles between normal workspace and Always-on-Top Mini-HUD mode."""
+        if self.is_mini_hud:
+            self._disable_mini_hud()
+        else:
+            self._enable_mini_hud()
+
+    def _enable_mini_hud(self) -> None:
+        """Enables Always-on-Top Mini-HUD mode: compact floating HUD pinned to top."""
+        self.flush_all_saves()
+
+        # 1. Preserve normal workspace state
+        self._saved_normal_geometry = self.saveGeometry()
+        self._saved_row1_visible = self.toolbar.isVisible()
+        self._saved_drawer_visible = self.history_drawer.isVisible()
+        self._saved_split_visible = self.secondary_tab_widget.isVisible()
+
+        self._is_mini_hud = True
+
+        # 2. Hide bulky UI elements to maximize note space
+        self.toolbar.hide()
+        if self._saved_drawer_visible:
+            self.history_drawer.hide()
+        if self._saved_split_visible:
+            self.secondary_tab_widget.hide()
+
+        # 3. Enable Always-on-Top and relax minimum size constraints
+        self.setMinimumSize(340, 200)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.resize(440, 280)
+
+        # 4. Update HUD window title with active ticket info
+        editor = self._get_active_editor()
+        t_label = ""
+        if editor:
+            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id)
+            if ticket:
+                t_num = ticket.get("ticket_number", "")
+                client = ticket.get("client_name", "")
+                t_label = f" — #{t_num}" + (f" ({client})" if client else "")
+        self.setWindowTitle(f"📌 [HUD] {APP_NAME}{t_label}")
+
+        # 5. Update UI controls & status bar feedback
+        self.toolbar.set_mini_hud_state(True)
+        if hasattr(self, "btn_status_hud"):
+            self.btn_status_hud.setText("📌 Normal (Alt+T)")
+        self.status_bar.showMessage("📌 Mini-HUD Mode Active (Always-on-Top) — Press Alt+T to restore", 3500)
+
+        self.show()
+
+    def _disable_mini_hud(self) -> None:
+        """Disables Mini-HUD mode and restores standard full workspace geometry."""
+        self.flush_all_saves()
+
+        self._is_mini_hud = False
+
+        # 1. Disable Always-on-Top and restore standard minimum size
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, False)
+        self.setMinimumSize(800, 500)
+
+        # 2. Restore previous window geometry
+        if getattr(self, "_saved_normal_geometry", None):
+            self.restoreGeometry(self._saved_normal_geometry)
+
+        # 3. Restore visibility of toolbar, drawer, and split view
+        if getattr(self, "_saved_row1_visible", True):
+            self.toolbar.show()
+        if getattr(self, "_saved_drawer_visible", False):
+            self.history_drawer.show()
+        if getattr(self, "_saved_split_visible", False):
+            self.secondary_tab_widget.show()
+
+        # 4. Restore window title and UI controls
+        self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — Technician Scratchpad")
+        self.toolbar.set_mini_hud_state(False)
+        if hasattr(self, "btn_status_hud"):
+            self.btn_status_hud.setText("📌 HUD (Alt+T)")
+        self.status_bar.showMessage("✓ Restored Normal Workspace", 3000)
+
+        self.show()
 
     def _duplicate_tab(self, index: int) -> None:
         """Duplicates a ticket scratchpad and its embedded images."""

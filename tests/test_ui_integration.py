@@ -836,6 +836,59 @@ def test_ui_copy_formatted_note_toolbar_and_context_menu(main_window, monkeypatc
     assert "Section Header" in captured_text[-1]
 
 
+def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
+    """Verifies that toggle_mini_hud_mode shrinks geometry, sets WindowStaysOnTopHint, and restores cleanly."""
+    main_window.show()
+    assert main_window.is_mini_hud is False
+    assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
+    assert main_window.toolbar.isVisible() is True
+
+    # 1. Toggle to Mini-HUD mode
+    main_window.toggle_mini_hud_mode()
+
+    assert main_window.is_mini_hud is True
+    assert bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint) is True
+    assert main_window.toolbar.isVisible() is False
+    assert main_window.width() <= 480
+    assert main_window.height() <= 320
+    assert "[HUD]" in main_window.windowTitle()
+    assert main_window.toolbar.btn_pin.isChecked() is True
+    assert "Normal" in main_window.btn_status_hud.text()
+
+    # 2. Toggle back to Normal mode
+    main_window.toggle_mini_hud_mode()
+
+    assert main_window.is_mini_hud is False
+    assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
+    assert main_window.toolbar.isVisible() is True
+    assert "[HUD]" not in main_window.windowTitle()
+    assert main_window.toolbar.btn_pin.isChecked() is False
+    assert "HUD" in main_window.btn_status_hud.text()
+
+
+def test_ui_mini_hud_shortcut_and_controls(main_window):
+    """Verifies that Alt+T shortcut in eventFilter triggers Mini-HUD toggle."""
+    main_window.show()
+    assert main_window.is_mini_hud is False
+
+    from PySide6.QtGui import QKeyEvent
+    from PySide6.QtCore import QEvent
+
+    # Simulate Alt+T key press event
+    key_event = QKeyEvent(QEvent.KeyPress, Qt.Key_T, Qt.AltModifier)
+    handled = main_window.eventFilter(main_window, key_event)
+
+    assert handled is True
+    assert main_window.is_mini_hud is True
+
+    # Simulate Alt+T key press event again to restore
+    key_event2 = QKeyEvent(QEvent.KeyPress, Qt.Key_T, Qt.AltModifier)
+    handled2 = main_window.eventFilter(main_window, key_event2)
+
+    assert handled2 is True
+    assert main_window.is_mini_hud is False
+
+
 
 
 

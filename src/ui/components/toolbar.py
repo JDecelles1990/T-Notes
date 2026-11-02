@@ -31,6 +31,7 @@ class TechPadToolBar(QToolBar):
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
     split_view_requested = Signal()     # Emits when split view toggle clicked
+    mini_hud_requested = Signal()       # Emits when Always-on-Top Mini-HUD toggle clicked
     opacity_changed = Signal(int)       # Emits opacity value (60 to 100)
     history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
@@ -258,7 +259,16 @@ class TechPadToolBar(QToolBar):
         self.secondary_toolbar.addWidget(self.btn_split)
         self.act_split = self.btn_split
 
-        # 6. History Section Toggle Button (🕰️)
+        # 6. Always-on-Top Mini-HUD Toggle Button (📌 / Alt+T)
+        self.btn_pin = QToolButton(self.secondary_toolbar)
+        self.btn_pin.setText("📌")
+        self.btn_pin.setToolTip("Always-on-Top Mini-HUD Mode (Alt+T)")
+        self.btn_pin.setCheckable(True)
+        self.btn_pin.setStyleSheet("font-size: 13px; padding: 2px 6px;")
+        self.btn_pin.clicked.connect(self.mini_hud_requested.emit)
+        self.secondary_toolbar.addWidget(self.btn_pin)
+
+        # 7. History Section Toggle Button (🕰️)
         self.btn_history = QToolButton(self.secondary_toolbar)
         self.btn_history.setText("🕰️")
         self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
@@ -280,6 +290,12 @@ class TechPadToolBar(QToolBar):
         self.slider_opacity.setValue(val)
         self.lbl_opacity.setText(f"👁️ {val}%")
         self.slider_opacity.blockSignals(False)
+
+    def set_mini_hud_state(self, active: bool) -> None:
+        """Updates the pin button state to reflect Mini-HUD status."""
+        self.btn_pin.blockSignals(True)
+        self.btn_pin.setChecked(active)
+        self.btn_pin.blockSignals(False)
 
     def _on_opacity_changed(self, value: int) -> None:
         self.lbl_opacity.setText(f"👁️ {value}%")

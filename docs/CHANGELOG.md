@@ -5,6 +5,13 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Always-on-Top Mini-HUD Mode (`📌` / `Alt+T`)**:
+  - Implemented compact floating Mini-HUD mode pinned to top (`Qt.WindowStaysOnTopHint`) for remote desktop, ScreenConnect, RDP, and Hyper-V console sessions.
+  - Toggled via global application hotkey **`Alt+T`**, dedicated Row 2 ribbon button **`📌`**, status bar button **`📌 HUD (Alt+T)`**, or system tray menu.
+  - Smoothly transitions from the standard workspace (~1100×750) down to a compact floating HUD (~440×280) with minimum size relaxed to 340×200.
+  - Collapses Row 1 formatting toolbar, history drawer, and secondary split view to maximize note writing space while keeping the live stopwatch, opacity slider, and note editor fully active.
+  - Dynamically updates window title to `📌 [HUD] T-Notes — #<ticket_number>`.
+  - Toggling off restores the exact previous normal window geometry, minimum size, toolbar visibility, drawer states, and split-view panes without any state loss.
 - **Rich Text, Color & Inline Image Clipboard Copying**:
   - Overrode `TechPadEditor.createMimeDataFromSelection()` to automatically resolve and convert internal `image://local/...` image URLs into self-contained Base64 Data URIs (`data:image/jpeg;base64,...`).
   - Enables copying large blocks of highlighted text along with custom font colors, highlights, code blocks, bold/italics, and embedded screenshots, and pasting directly into Microsoft Word, Microsoft Outlook, Microsoft Teams, Slack, Google Docs, Gmail, and web browsers with full visual fidelity.

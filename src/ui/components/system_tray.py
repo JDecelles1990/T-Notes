@@ -43,6 +43,7 @@ class TechPadSystemTray(QSystemTrayIcon):
     show_requested = Signal()
     toggle_requested = Signal()
     new_tab_requested = Signal()
+    hud_requested = Signal()
     quit_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None):
@@ -59,6 +60,9 @@ class TechPadSystemTray(QSystemTrayIcon):
 
         self.act_new = menu.addAction("➕ New Ticket Tab (Ctrl+T)")
         self.act_new.triggered.connect(self.new_tab_requested.emit)
+
+        self.act_hud = menu.addAction("📌 Mini-HUD Mode (Alt+T)")
+        self.act_hud.triggered.connect(self.hud_requested.emit)
 
         menu.addSeparator()
 
