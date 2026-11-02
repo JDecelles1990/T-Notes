@@ -84,3 +84,4 @@ In `ImageService`:
 | Full 1080p Screenshot | ~8.3 MB (ARGB32) | ~180 KB – 320 KB | **~96%** |
 | 4K Monitor Window Snip | ~16.5 MB (ARGB32) | ~450 KB – 750 KB | **~95%** |
 | Terminal / CLI Error Snip | ~2.1 MB (ARGB32) | ~60 KB – 120 KB | **~94%** |
+

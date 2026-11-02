@@ -2,13 +2,14 @@
 
 from pathlib import Path
 from typing import Optional
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
     QLabel,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QStatusBar,
@@ -57,6 +58,7 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget = TechPadTabWidget(self)
         self.tab_widget.new_tab_requested.connect(self.create_new_tab)
         self.tab_widget.tab_edit_requested.connect(self._on_tab_double_clicked)
+        self.tab_widget.tab_context_menu_requested.connect(self._on_tab_context_menu)
         self.tab_widget.tab_close_prompted.connect(self._on_tab_close_requested)
         self.tab_widget.tab_reordered.connect(self._on_tabs_reordered)
         self.tab_widget.currentChanged.connect(self._on_current_tab_changed)
@@ -371,6 +373,116 @@ class TechPadMainWindow(QMainWindow):
         clean_text = self.scratchpad_service.export_as_plain_ticket_note(editor.scratchpad_id)
         QApplication.clipboard().setText(clean_text)
         self.status_bar.showMessage("✓ Copied clean note for ticketing system to clipboard!", 3500)
+
+    def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
+        """Displays rich context menu on right-clicking a tab or the tab bar."""
+        menu = QMenu(self)
+
+        if index >= 0:
+            editor = self.tab_widget.get_editor_at(index)
+            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) if editor else None
+            t_num = ticket.get("ticket_number", "") if ticket else ""
+
+            # Rename / Edit Ticket Metadata
+            act_rename = menu.addAction(f"✏️ Rename Ticket #{t_num}...")
+            act_rename.triggered.connect(lambda: self._on_tab_double_clicked(index))
+
+            # Duplicate Note
+            act_duplicate = menu.addAction("📋 Duplicate Ticket Note")
+            act_duplicate.triggered.connect(lambda: self._duplicate_tab(index))
+
+            # Copy Note for Ticketing Tool
+            act_copy = menu.addAction("📤 Copy Note for Ticket Tool")
+            act_copy.triggered.connect(lambda: self._copy_tab_note(index))
+
+            menu.addSeparator()
+
+            # Archive Ticket
+            act_archive = menu.addAction("📦 Archive to History")
+            act_archive.triggered.connect(lambda: self._archive_tab(index))
+
+            # Close Tab
+            act_close = menu.addAction("✕ Close Tab")
+            act_close.triggered.connect(lambda: self._on_tab_close_requested(index))
+
+            if self.tab_widget.count() > 1:
+                act_close_others = menu.addAction("Close Other Tabs")
+                act_close_others.triggered.connect(lambda: self._close_other_tabs(index))
+
+            menu.addSeparator()
+
+        # Always offer quick tab creation
+        act_new = menu.addAction("➕ New Ticket Tab (Ctrl+T)")
+        act_new.triggered.connect(self.create_new_tab)
+
+        menu.exec(global_pos)
+
+    def _duplicate_tab(self, index: int) -> None:
+        """Duplicates a ticket scratchpad and its embedded images."""
+        editor = self.tab_widget.get_editor_at(index)
+        if not editor:
+            return
+
+        self._execute_save(editor.scratchpad_id)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        new_ticket = self.scratchpad_service.create_ticket(
+            ticket_number=f"{ticket.get('ticket_number', 'T-100')}-COPY",
+            client_name=ticket.get("client_name", ""),
+            title=f"Copy of {ticket.get('title', '')}" if ticket.get("title") else "Copied Ticket",
+            content_html=editor.toHtml(),
+        )
+
+        # Duplicate associated image BLOBs
+        images = self.image_service.repo.get_images_for_scratchpad(editor.scratchpad_id)
+        for img_name, img_data in images.items():
+            self.image_service.repo.save_image(new_ticket["id"], img_name, img_data)
+
+        new_editor = self._create_editor(new_ticket["id"], new_ticket.get("content_html", ""))
+        idx = self.tab_widget.add_ticket_tab(new_ticket, new_editor)
+        self.tab_widget.setCurrentIndex(idx)
+        self.status_bar.showMessage(f"✓ Duplicated ticket as #{new_ticket['ticket_number']}", 3000)
+
+    def _archive_tab(self, index: int) -> None:
+        """Archives a tab directly without extra prompt."""
+        editor = self.tab_widget.get_editor_at(index)
+        if not editor:
+            return
+        debouncer = self._debounce_timers.get(editor.scratchpad_id)
+        if debouncer:
+            debouncer.flush()
+        self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+        self._remove_tab(index, editor.scratchpad_id)
+        self.history_drawer.refresh_list()
+        self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+
+    def _copy_tab_note(self, index: int) -> None:
+        """Copies formatted plain text / Markdown note of a specific tab to clipboard."""
+        editor = self.tab_widget.get_editor_at(index)
+        if not editor:
+            return
+        self._execute_save(editor.scratchpad_id)
+        clean_text = self.scratchpad_service.export_as_plain_ticket_note(editor.scratchpad_id)
+        QApplication.clipboard().setText(clean_text)
+        self.status_bar.showMessage("✓ Copied note to clipboard!", 3500)
+
+    def _close_other_tabs(self, keep_index: int) -> None:
+        """Closes and archives all open tabs except the selected one."""
+        keep_editor = self.tab_widget.get_editor_at(keep_index)
+        if not keep_editor:
+            return
+        keep_id = keep_editor.scratchpad_id
+
+        for i in range(self.tab_widget.count() - 1, -1, -1):
+            editor = self.tab_widget.get_editor_at(i)
+            if editor and editor.scratchpad_id != keep_id:
+                debouncer = self._debounce_timers.get(editor.scratchpad_id)
+                if debouncer:
+                    debouncer.flush()
+                self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+                self._remove_tab(i, editor.scratchpad_id)
+
+        self.history_drawer.refresh_list()
+        self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _toggle_history_drawer(self) -> None:
         self.history_drawer.setVisible(not self.history_drawer.isVisible())

@@ -82,3 +82,39 @@ def test_ui_history_drawer_toggle(main_window):
     assert main_window.history_drawer.isHidden() != initial_hidden
     main_window._toggle_history_drawer()
     assert main_window.history_drawer.isHidden() == initial_hidden
+
+
+def test_ui_tab_movable_and_slide_reordering(main_window):
+    # Verify tab bar is explicitly movable to enable slide-reordering
+    assert main_window.tab_widget.isMovable() is True
+    assert main_window.tab_widget.tabBar().isMovable() is True
+    assert main_window.tab_widget.usesScrollButtons() is True
+
+    # Add 2 more tabs
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 3
+
+    initial_first_tab_text = main_window.tab_widget.tabText(0)
+
+    # Slide / move Tab 0 to index 2
+    main_window.tab_widget.tabBar().moveTab(0, 2)
+
+    assert main_window.tab_widget.tabText(2) == initial_first_tab_text
+
+
+def test_ui_tab_duplicate_and_archive_actions(main_window):
+    initial_count = main_window.tab_widget.count()
+
+    # Test duplicate tab
+    main_window._duplicate_tab(0)
+    assert main_window.tab_widget.count() == initial_count + 1
+    duplicated_tab_text = main_window.tab_widget.tabText(main_window.tab_widget.currentIndex())
+    assert "COPY" in duplicated_tab_text
+
+    # Test archive tab
+    archived_idx = main_window.tab_widget.currentIndex()
+    main_window._archive_tab(archived_idx)
+    assert main_window.tab_widget.count() == initial_count
+    assert len(main_window.scratchpad_service.get_archived_tickets()) >= 1
+

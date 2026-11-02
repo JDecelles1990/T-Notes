@@ -130,3 +130,4 @@ When the application receives a `closeEvent`:
 3. Tab order is serialized and updated in `scratchpads`.
 4. The focused tab ID, window geometry hex string, and drawer visibility state are saved to `app_session`.
 5. Database connections are closed cleanly.
+

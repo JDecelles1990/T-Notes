@@ -1,8 +1,8 @@
-"""Custom QTabWidget with double-click renaming, movable tabs, and corner + button."""
+"""Custom QTabWidget with right-click context menu, double-click renaming, and slide-reordering."""
 
 from typing import Optional
 from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QContextMenuEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QTabBar,
     QTabWidget,
@@ -13,9 +13,10 @@ from src.ui.components.editor import TechPadEditor
 
 
 class TechPadTabBar(QTabBar):
-    """Custom tab bar that detects double clicks on individual tabs."""
+    """Custom tab bar supporting double clicks, right-click context menus, and slide reorganization."""
 
     tab_double_clicked = Signal(int)
+    tab_context_menu_requested = Signal(int, QPoint)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
@@ -26,27 +27,45 @@ class TechPadTabBar(QTabBar):
                 return
         super().mouseDoubleClickEvent(event)
 
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
+        index = self.tabAt(event.pos())
+        self.tab_context_menu_requested.emit(index, event.globalPos())
+        event.accept()
+
 
 class TechPadTabWidget(QTabWidget):
-    """Movable, closable tab widget managing ticket scratchpads."""
+    """Movable, closable tab widget managing ticket scratchpads with context actions."""
 
-    tab_edit_requested = Signal(int)       # Emits tab_index
-    tab_close_prompted = Signal(int)       # Emits tab_index
-    tab_reordered = Signal()               # Emits when user drags/moves a tab
-    new_tab_requested = Signal()           # Emits when '+' button clicked
+    tab_edit_requested = Signal(int)                 # Emits tab_index
+    tab_close_prompted = Signal(int)                 # Emits tab_index
+    tab_reordered = Signal()                         # Emits when user drags/moves a tab
+    new_tab_requested = Signal()                     # Emits when '+' button clicked
+    tab_context_menu_requested = Signal(int, QPoint) # Emits (tab_index, global_position)
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self.setTabsClosable(True)
-        self.setMovable(True)
-        self.setDocumentMode(True)
 
-        # Install custom tab bar
+        # 1. Install custom tab bar FIRST before setting movable/closable properties
         self._tab_bar = TechPadTabBar(self)
         self.setTabBar(self._tab_bar)
-        self._tab_bar.tab_double_clicked.connect(self.tab_edit_requested.emit)
-        self._tab_bar.tabMoved.connect(lambda from_idx, to_idx: self.tab_reordered.emit())
 
+        # 2. Configure slide-reorganizing, scrollable tabs, and close buttons on both widget and bar
+        self.setDocumentMode(True)
+        self.setTabsClosable(True)
+        self.setMovable(True)
+        self.setUsesScrollButtons(True)
+        self.setElideMode(Qt.ElideRight)
+
+        self._tab_bar.setMovable(True)
+        self._tab_bar.setTabsClosable(True)
+        self._tab_bar.setUsesScrollButtons(True)
+        self._tab_bar.setElideMode(Qt.ElideRight)
+        self._tab_bar.setExpanding(False)
+
+        # Connect signals
+        self._tab_bar.tab_double_clicked.connect(self.tab_edit_requested.emit)
+        self._tab_bar.tab_context_menu_requested.connect(self.tab_context_menu_requested.emit)
+        self._tab_bar.tabMoved.connect(lambda from_idx, to_idx: self.tab_reordered.emit())
         self.tabCloseRequested.connect(self.tab_close_prompted.emit)
 
         # Persistent '+' corner button
@@ -81,7 +100,6 @@ class TechPadTabWidget(QTabWidget):
 
         secondary = client_name.strip() or title.strip()
         if secondary:
-            # Truncate if too long
             if len(secondary) > 24:
                 secondary = secondary[:21] + "..."
             return f"{t_num} — {secondary}"
@@ -113,4 +131,3 @@ class TechPadTabWidget(QTabWidget):
         if editor:
             return editor.scratchpad_id
         return None
-

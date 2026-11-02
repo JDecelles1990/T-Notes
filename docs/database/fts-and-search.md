@@ -85,3 +85,4 @@ LIMIT 100;
 
 ### Resilient Fallback
 If an unexpected FTS syntax error occurs (e.g. malformed inputs), the repository gracefully catches `sqlite3.OperationalError` and falls back to a standard SQL `LIKE %...%` query across all columns, ensuring the search UI never crashes.
+

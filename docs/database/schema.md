@@ -89,3 +89,4 @@ Database migrations are defined and managed in `src/database/migrations.py`.
   1. Add new DDL statements to `src/database/schema.sql`.
   2. Implement idempotent `ALTER TABLE ... ADD COLUMN ...` checks in `src/database/migrations.py`.
   3. Ensure all automated tests in `tests/test_database.py` pass.
+

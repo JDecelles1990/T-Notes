@@ -94,6 +94,19 @@ QTabBar::close-button:hover {
     color: #ffffff;
 }
 
+QTabBar QToolButton {
+    background-color: #252526;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    padding: 2px 4px;
+    color: #cccccc;
+}
+
+QTabBar QToolButton:hover {
+    background-color: #383838;
+    color: #ffffff;
+}
+
 /* Text Editor */
 QTextEdit {
     background-color: #1e1e1e;

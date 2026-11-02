@@ -52,3 +52,4 @@ All developers and AI agents introducing or modifying features in T-Notes must a
 - [ ] **Feature Specifications:** Add or update the corresponding document under `docs/features/`.
 - [ ] **Architectural Decision Records:** If adopting a new library or altering a core architectural pattern, author a new ADR in `docs/decisions/` using [`decisions/template.md`](decisions/template.md).
 - [ ] **Agent Governance:** Check that all changes comply with the Canonical [`AGENTS.md`](../AGENTS.md).
+

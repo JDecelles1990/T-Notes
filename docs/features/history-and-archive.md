@@ -50,3 +50,4 @@ stateDiagram-v2
    - `ScratchpadService.restore_ticket(scratchpad_id)` sets `status = 'active'` and calculates the next `tab_order`.
    - A new tab is instantiated with its saved HTML and images loaded from SQLite.
    - The drawer list refreshes, removing the item from archive.
+

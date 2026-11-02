@@ -16,31 +16,49 @@ Tabs display concise metadata formatted as:
 - Example without client: `#4821 — DNS Resolution Failure`
 - Titles longer than 24 characters are truncated cleanly with an ellipsis (`...`) while preserving full tooltips on hover.
 
-### Movable & Closable Tabs
-- `setMovable(True)` allows technicians to drag and drop tabs to reorder priority tickets.
-- Moving a tab emits `tabMoved`, which immediately persists the new `tab_order` sequence into SQLite.
-- `setTabsClosable(True)` renders a close button (`✕`) on every tab.
+### Slide-Reorganizing & Movable Tabs
+- Tabs can be clicked and slid horizontally to reorganize their order in real time.
+- `setMovable(True)` and `setDocumentMode(True)` enable fluid visual drag animations.
+- Reorganizing tabs emits `tabMoved`, which immediately persists the new `tab_order` sequence into SQLite.
+- `setUsesScrollButtons(True)` automatically renders dark-themed scroll navigation arrows when numerous tabs overflow the window width.
 
-### Corner Widget
-A persistent `+` button in the top-right corner allows instantaneous tab creation without reaching for the keyboard, backed by the global shortcut `Ctrl+T`.
+### Closable Tabs & Corner Widget
+- `setTabsClosable(True)` renders a close button (`✕`) on every tab.
+- A persistent `+` button in the top-right corner allows instantaneous tab creation without reaching for the keyboard, backed by the global shortcut `Ctrl+T`.
 
 ---
 
-## 3. Tab Operations & State Transitions
+## 3. Right-Click Context Menu & Tab Operations
 
-### 3.1 Creation (`Ctrl+T` or `+`)
-1. User clicks `+` or presses `Ctrl+T`.
+Right-clicking any tab header (or empty space on the tab bar) triggers `TechPadTabBar.contextMenuEvent()`, surfacing a technician-focused context menu:
+
+| Context Action | Icon / Label | Behavior |
+| :--- | :--- | :--- |
+| **Rename / Edit Metadata** | `✏️ Rename Ticket #<id>...` | Opens the `EditTicketDialog` modal to update ticket number, client, and summary. |
+| **Duplicate Note** | `📋 Duplicate Ticket Note` | Clones the note body, ticket metadata, and all embedded screenshot BLOBs into a fresh tab (`<ticket>-COPY`). |
+| **Copy for PSA** | `📤 Copy Note for Ticket Tool` | Exports clean Markdown/plain-text stripped of HTML directly to the clipboard. |
+| **Archive Ticket** | `📦 Archive to History` | Flushes pending edits and archives the ticket directly into the History Drawer. |
+| **Close Tab** | `✕ Close Tab` | Prompts to archive or permanently delete the tab. |
+| **Close Other Tabs** | `Close Other Tabs` | Archives all other tabs, keeping only the targeted tab open. |
+| **New Ticket Tab** | `➕ New Ticket Tab (Ctrl+T)` | Instantiates a fresh ticket scratchpad. |
+
+---
+
+## 4. Tab Operations & State Transitions
+
+### 4.1 Creation (`Ctrl+T` or `+`)
+1. User clicks `+`, presses `Ctrl+T`, or selects `New Ticket Tab` from the tab context menu.
 2. `ScratchpadService.create_ticket()` generates a new ticket record with a default identifier (e.g. `T-102`).
 3. A new `TechPadEditor` is instantiated, bound to the `scratchpad_id`, and added to `TechPadTabWidget`.
 4. The newly created tab receives immediate focus.
 
-### 3.2 Renaming (Double-Click Header)
-1. Double-clicking any tab header triggers `TechPadTabBar.tab_double_clicked(index)`.
-2. `EditTicketDialog` opens with the current values for Ticket Number, Client / Team, and Subject / Summary.
+### 4.2 Renaming (Double-Click or Right-Click Context Menu)
+1. Double-clicking any tab header or selecting **✏️ Rename Ticket** from the right-click menu opens `EditTicketDialog`.
+2. The dialog loads the current Ticket Number, Client / Team, and Subject / Summary.
 3. A live preview demonstrates the formatted tab header as the technician types.
-4. On `Save Details`, `ScratchpadService.update_metadata()` updates SQLite and updates the tab header text and tooltip.
+4. On `Save Details`, `ScratchpadService.update_metadata()` updates SQLite and modifies the tab header text and tooltip.
 
-### 3.3 Closing & Archiving (`Ctrl+W` or `✕`)
+### 4.3 Closing & Archiving (`Ctrl+W` or `✕`)
 When a tab is closed:
 1. Any unsaved debounced edits are flushed synchronously to SQLite.
 2. A confirmation dialog presents three choices:
@@ -49,7 +67,7 @@ When a tab is closed:
    - **Cancel:** Aborts closure and leaves the tab open.
 3. If the user closes the final active tab, the application automatically generates a fresh scratchpad (`INC-1001`) so the technician is never left with an empty workspace.
 
-### 3.4 Session Persistence on Reboot
+### 4.4 Session Persistence on Reboot
 Upon closing the application:
 1. All pending saves are flushed.
 2. The current tab order is saved.

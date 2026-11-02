@@ -89,4 +89,3 @@ Full-Text Search virtual table synchronizing with `scratchpads` via automatic tr
 - **1500ms Debounce:** Keystrokes restart a single-shot timer. Once the technician stops typing for 1500ms, the document HTML and new image BLOBs persist seamlessly to SQLite.
 - **Forced Sync:** Tab switches, new tab requests, and window close events (`closeEvent`) immediately trigger a synchronous flush.
 - **Session Recovery:** On reboot, `SessionService` restores all active tabs in order, selects the previously active tab, and restores window size and position.
-

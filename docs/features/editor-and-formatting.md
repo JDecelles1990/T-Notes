@@ -59,3 +59,4 @@ Clicking **"Copy Note"** invokes `ScratchpadService.export_as_plain_ticket_note(
 
 ## 4. Clickable Hyperlinks
 `TechPadEditor.mousePressEvent()` inspects `anchorAt(event.pos())`. If the technician clicks on an `http://`, `https://`, or `mailto:` link, the URL is opened directly in their default web browser via `QDesktopServices.openUrl()`.
+

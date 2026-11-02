@@ -2,6 +2,26 @@
 
 All notable changes to the TechPad (T-Notes) project will be documented in this file.
 
+## [1.1.0] - 2026-11-01
+
+### Added
+- **Right-Click Tab Context Menu**:
+  - `✏️ Rename Ticket #<id>...`: Launches `EditTicketDialog` directly from tab context menu.
+  - `📋 Duplicate Ticket Note`: Clones the note body, metadata, and embedded image BLOBs to a fresh tab.
+  - `📤 Copy Note for Ticket Tool`: Exports stripped clean Markdown/plain-text to clipboard.
+  - `📦 Archive Ticket to History`: Directly archives the ticket to the History Drawer.
+  - `✕ Close Tab`: Prompts to archive or permanently delete the ticket.
+  - `Close Other Tabs`: Closes and archives all other tabs except the selected one.
+  - `➕ New Ticket Tab (Ctrl+T)`: Adds a new tab directly from the tab bar context menu.
+- **Slide-Reorganizing Tabs**:
+  - Ensured `movable` and `documentMode` are configured on the underlying `QTabBar` post-initialization.
+  - Enabled smooth horizontal dragging and animated slide-swapping for multi-tab organization.
+  - Added dark theme styling for `QTabBar QToolButton` tab bar scroll navigation when tabs overflow.
+- **Automated Tests**:
+  - Added UI integration tests for tab movable properties, slide reordering, tab duplication, and context archiving. Total test count increased to 19 tests.
+
+---
+
 ## [1.0.0] - 2026-11-01
 
 ### Added
@@ -29,4 +49,3 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
   - Restore archived tickets or delete permanently.
 - **Clean Dark Theme**: High-contrast, clean QSS stylesheet (`assets/styles/dark_theme.qss`).
 - **Automated Test Suite**: 17 comprehensive unit and UI integration tests with 100% pass rate.
-

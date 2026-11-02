@@ -65,3 +65,4 @@ We faced two critical engineering challenges:
   - `tests/test_image_service.py::test_compress_qimage_to_jpeg`
   - `tests/test_image_service.py::test_sync_scratchpad_images`
   - `tests/test_database.py::test_cascade_deletion_of_images`
+
