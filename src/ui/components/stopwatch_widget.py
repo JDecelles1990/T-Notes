@@ -212,3 +212,4 @@ class TicketStopwatchWidget(QWidget):
         global_pos = self.btn_copy.mapToGlobal(self.btn_copy.rect().center())
         QToolTip.showText(global_pos, f"Copied: {text}", self.btn_copy, self.btn_copy.rect(), 2500)
         self.status_message_requested.emit(f"✓ Copied time ({text}) to clipboard", 2500)
+

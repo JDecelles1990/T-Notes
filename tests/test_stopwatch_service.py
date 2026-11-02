@@ -81,3 +81,4 @@ def test_stopwatch_should_auto_pause_threshold(monkeypatch):
     # Mock workstation locked
     monkeypatch.setattr(StopwatchService, "is_workstation_locked", lambda: True)
     assert StopwatchService.should_auto_pause(idle_threshold_seconds=300) is True
+

@@ -89,3 +89,4 @@ class StopwatchService:
         if cls.get_system_idle_seconds() >= idle_threshold_seconds:
             return True
         return False
+

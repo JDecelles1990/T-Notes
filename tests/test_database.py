@@ -188,3 +188,54 @@ def test_migration_adds_elapsed_seconds_to_legacy_db(tmp_path):
     manager.close()
 
 
+def test_migration_upgrades_legacy_fts_with_content_text(tmp_path):
+    """Simulates an existing database from when scratchpad_fts had the old content_text column."""
+    db_file = tmp_path / "legacy_fts_db.db"
+    manager = DatabaseManager(db_file)
+    conn = manager.get_connection()
+
+    with conn:
+        conn.execute("""
+            CREATE TABLE scratchpads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_number TEXT NOT NULL,
+                client_name TEXT DEFAULT '',
+                title TEXT DEFAULT '',
+                content_html TEXT DEFAULT '',
+                status TEXT DEFAULT 'active',
+                tab_order INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("INSERT INTO scratchpads (ticket_number, title, content_html) VALUES ('INC-999', 'Old FTS', 'Network outage');")
+
+        # Create old FTS virtual table with 'content_text'
+        conn.execute("""
+            CREATE VIRTUAL TABLE scratchpad_fts USING fts5(
+                ticket_number,
+                client_name,
+                title,
+                content_text,
+                content='scratchpads',
+                content_rowid='id'
+            );
+        """)
+
+    # Running init_database should detect the legacy content_text column and migrate cleanly
+    init_database(manager)
+
+    # Verify FTS virtual table was migrated to content_html
+    sql_row = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'scratchpad_fts';").fetchone()
+    assert "content_html" in sql_row[0]
+    assert "content_text" not in sql_row[0]
+
+    # Verify search works across the migrated database
+    repo = ScratchpadRepository(manager)
+    results = repo.search("outage")
+    assert len(results) == 1
+    assert results[0]["ticket_number"] == "INC-999"
+
+    manager.close()
+
+

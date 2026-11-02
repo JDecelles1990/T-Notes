@@ -20,6 +20,7 @@ Stores active and archived ticket records.
 | `status` | `TEXT` | `DEFAULT 'active' CHECK(status IN ('active', 'archived', 'deleted'))` | State of the ticket. |
 | `tab_order` | `INTEGER` | `DEFAULT 0` | Display index in the active tab bar. |
 | `elapsed_seconds` | `INTEGER` | `DEFAULT 0` | Cumulative troubleshooting time tracked by stopwatch. |
+| `archived_at` | `DATETIME` | `DEFAULT NULL` | UTC timestamp when ticket was archived to history. |
 | `created_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of ticket creation. |
 | `updated_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of last content or metadata modification. |
 

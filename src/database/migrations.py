@@ -27,13 +27,51 @@ def init_database(db_manager: DatabaseManager) -> None:
         if "archived_at" not in scratchpad_cols:
             conn.execute("ALTER TABLE scratchpads ADD COLUMN archived_at DATETIME;")
 
-        # 3. Ensure session singleton row exists
+        # 3. Migration: Migrate legacy scratchpad_fts if it was created with old 'content_text' column
+        fts_row = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'scratchpad_fts';").fetchone()
+        if fts_row and "content_text" in fts_row[0]:
+            conn.execute("DROP TRIGGER IF EXISTS scratchpads_ai;")
+            conn.execute("DROP TRIGGER IF EXISTS scratchpads_ad;")
+            conn.execute("DROP TRIGGER IF EXISTS scratchpads_au;")
+            conn.execute("DROP TABLE IF EXISTS scratchpad_fts;")
+            conn.execute("""
+                CREATE VIRTUAL TABLE scratchpad_fts USING fts5(
+                    ticket_number,
+                    client_name,
+                    title,
+                    content_html,
+                    content='scratchpads',
+                    content_rowid='id'
+                );
+            """)
+            conn.execute("""
+                CREATE TRIGGER scratchpads_ai AFTER INSERT ON scratchpads BEGIN
+                  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
+                  VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
+                END;
+            """)
+            conn.execute("""
+                CREATE TRIGGER scratchpads_ad AFTER DELETE ON scratchpads BEGIN
+                  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
+                  VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
+                END;
+            """)
+            conn.execute("""
+                CREATE TRIGGER scratchpads_au AFTER UPDATE ON scratchpads BEGIN
+                  INSERT INTO scratchpad_fts(scratchpad_fts, rowid, ticket_number, client_name, title, content_html)
+                  VALUES('delete', old.id, old.ticket_number, coalesce(old.client_name, ''), coalesce(old.title, ''), coalesce(old.content_html, ''));
+                  INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_html)
+                  VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
+                END;
+            """)
+
+        # 4. Ensure session singleton row exists
         conn.execute("""
             INSERT OR IGNORE INTO app_session (id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open)
             VALUES (1, NULL, '', 100, 0);
         """)
 
-        # 4. Populate default settings in app_settings table
+        # 5. Populate default settings in app_settings table
         default_settings = [
             ("auto_save_delay_ms", "1500"),
             ("jpeg_quality", "85"),
@@ -47,5 +85,8 @@ def init_database(db_manager: DatabaseManager) -> None:
                 (key, val),
             )
 
-        # 5. Synchronize FTS5 index with scratchpads table
-        conn.execute("INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');")
+        # 6. Synchronize FTS5 index with scratchpads table
+        try:
+            conn.execute("INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');")
+        except sqlite3.OperationalError:
+            pass
