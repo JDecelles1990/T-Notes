@@ -37,9 +37,16 @@ CREATE TABLE IF NOT EXISTS app_session (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     active_scratchpad_id INTEGER,
     window_geometry TEXT DEFAULT '',
+    window_opacity INTEGER DEFAULT 100,
     history_drawer_open INTEGER DEFAULT 0,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(active_scratchpad_id) REFERENCES scratchpads(id) ON DELETE SET NULL
+);
+
+-- Application user preferences & settings
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
 );
 
 -- Full-Text Search virtual table for instant search across all tickets
@@ -69,4 +76,3 @@ CREATE TRIGGER IF NOT EXISTS scratchpads_au AFTER UPDATE ON scratchpads BEGIN
   INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;
-

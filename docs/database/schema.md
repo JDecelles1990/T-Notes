@@ -60,8 +60,26 @@ Stores workspace state across application restarts as a singleton row (`id = 1`)
 | `id` | `INTEGER` | `PRIMARY KEY CHECK (id = 1)` | Singleton identifier. |
 | `active_scratchpad_id` | `INTEGER` | `FOREIGN KEY REFERENCES scratchpads(id) ON DELETE SET NULL` | ID of the focused tab when the app closed. |
 | `window_geometry` | `TEXT` | `DEFAULT ''` | Hex-encoded Qt window geometry and position. |
+| `window_opacity` | `INTEGER` | `DEFAULT 100` | Window opacity level from 60% to 100%. |
 | `history_drawer_open` | `INTEGER` | `DEFAULT 0` | Boolean flag (0 or 1) indicating if the History Drawer was visible. |
 | `updated_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of last session sync. |
+
+---
+
+### 2.4 `app_settings`
+Stores persistent user preferences as key-value pairs.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `key` | `TEXT` | `PRIMARY KEY` | Configuration key (e.g. `ticket_prefix`, `auto_save_delay_ms`). |
+| `value` | `TEXT` | `NOT NULL` | String representation of the setting value. |
+
+**Standard Keys:**
+- `ticket_prefix`: Default ticket prefix for new tabs (default: `INC-`).
+- `auto_save_delay_ms`: Debounced write delay in milliseconds (default: `1500`).
+- `jpeg_quality`: Screenshot JPEG compression factor (default: `85`).
+- `close_tab_action`: Close button workflow (`prompt` vs `archive`).
+- `window_opacity`: Saved default opacity level (default: `100`).
 
 ---
 

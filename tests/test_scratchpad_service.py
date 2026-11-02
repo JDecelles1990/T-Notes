@@ -103,20 +103,23 @@ def test_session_service_workspace_restore(services):
     scratch_service, session_service = services
 
     # If DB is empty, restore_workspace creates an initial tab automatically
-    active_tickets, focused_id, _, _ = session_service.restore_workspace()
+    active_tickets, focused_id, _, opacity, _ = session_service.restore_workspace()
     assert len(active_tickets) == 1
     assert focused_id == active_tickets[0]["id"]
+    assert opacity == 100
 
-    # Persist workspace state with focused tab
+    # Persist workspace state with focused tab and opacity
     session_service.persist_workspace(
         active_scratchpad_id=active_tickets[0]["id"],
         window_geometry="aabbcc",
+        window_opacity=85,
         history_drawer_open=True,
     )
 
     # Verify reload returns exact state
-    reloaded_tickets, reloaded_id, geom, drawer = session_service.restore_workspace()
+    reloaded_tickets, reloaded_id, geom, reloaded_opacity, drawer = session_service.restore_workspace()
     assert reloaded_id == active_tickets[0]["id"]
     assert geom == "aabbcc"
+    assert reloaded_opacity == 85
     assert drawer is True
 

@@ -26,6 +26,7 @@ from src.ui.components.history_drawer import HistoryDrawer
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
+from src.ui.dialogs.settings_dialog import SettingsDialog
 
 
 class TechPadMainWindow(QMainWindow):
@@ -69,6 +70,8 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.image_requested.connect(self._on_insert_image_file)
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
         self.toolbar.export_note_requested.connect(self._on_export_note)
+        self.toolbar.opacity_changed.connect(self._on_opacity_changed)
+        self.toolbar.settings_requested.connect(self._open_settings_dialog)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
         # History / Archive Side Drawer
@@ -97,27 +100,49 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.btn_toggle_drawer)
 
     def _setup_shortcuts(self) -> None:
-        # Ctrl+T: New Tab
+        # Browser-style tab shortcuts
         QShortcut(QKeySequence("Ctrl+T"), self, self.create_new_tab)
-
-        # Ctrl+W: Close Tab
         QShortcut(QKeySequence("Ctrl+W"), self, self._close_current_tab)
+        QShortcut(QKeySequence("Ctrl+F4"), self, self._close_current_tab)
 
-        # Ctrl+S: Immediate Save
+        # Tab navigation: Next / Previous
+        QShortcut(QKeySequence("Ctrl+Tab"), self, lambda: self._switch_tab_relative(+1))
+        QShortcut(QKeySequence("Ctrl+Shift+Tab"), self, lambda: self._switch_tab_relative(-1))
+        QShortcut(QKeySequence("Ctrl+PageDown"), self, lambda: self._switch_tab_relative(+1))
+        QShortcut(QKeySequence("Ctrl+PageUp"), self, lambda: self._switch_tab_relative(-1))
+
+        # Tab reordering: Slide current tab left / right
+        QShortcut(QKeySequence("Ctrl+Shift+PageDown"), self, lambda: self._move_active_tab_relative(+1))
+        QShortcut(QKeySequence("Ctrl+Shift+PageUp"), self, lambda: self._move_active_tab_relative(-1))
+
+        # Direct tab number switching (Ctrl+1 .. Ctrl+8, Ctrl+9 for last)
+        for num in range(1, 9):
+            idx = num - 1
+            QShortcut(QKeySequence(f"Ctrl+{num}"), self, lambda i=idx: self._select_tab_index(i))
+        QShortcut(QKeySequence("Ctrl+9"), self, lambda: self._select_tab_index(self.tab_widget.count() - 1))
+
+        # Reopen / restore last closed/archived tab (Ctrl+Shift+T)
+        QShortcut(QKeySequence("Ctrl+Shift+T"), self, self._restore_last_closed_tab)
+
+        # General app shortcuts
         QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves)
-
-        # Ctrl+H: Toggle History Drawer
         QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer)
+        QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog)
 
     def _restore_workspace(self) -> None:
         """Restores tabs and focused tab from SQLite session."""
-        active_tickets, focused_id, window_geometry, drawer_open = self.session_service.restore_workspace()
+        active_tickets, focused_id, window_geometry, window_opacity, drawer_open = self.session_service.restore_workspace()
 
         if window_geometry:
             try:
                 self.restoreGeometry(bytes.fromhex(window_geometry))
             except Exception:
                 pass
+
+        # Apply saved opacity (60% to 100%)
+        opacity_clamped = max(60, min(100, window_opacity))
+        self.setWindowOpacity(opacity_clamped / 100.0)
+        self.toolbar.set_opacity_value(opacity_clamped)
 
         self.history_drawer.setVisible(drawer_open)
 
@@ -138,9 +163,10 @@ class TechPadMainWindow(QMainWindow):
         editor.content_modified.connect(self._on_editor_modified)
         editor.currentCharFormatChanged.connect(self.toolbar.update_format_states)
 
-        # Create debouncer for this tab
+        # Create debouncer using configured delay
+        delay_ms = int(self.session_service.get_setting("auto_save_delay_ms", str(AUTO_SAVE_DEBOUNCE_MS)))
         debouncer = DebounceTimer(
-            delay_ms=AUTO_SAVE_DEBOUNCE_MS,
+            delay_ms=delay_ms,
             callback=lambda sid=scratchpad_id: self._execute_save(sid),
             parent=self,
         )
@@ -149,7 +175,9 @@ class TechPadMainWindow(QMainWindow):
 
     def create_new_tab(self) -> None:
         """Creates a new ticket scratchpad and opens it in a new tab."""
-        ticket = self.scratchpad_service.create_ticket()
+        prefix = self.session_service.get_setting("ticket_prefix", "INC-")
+        active = self.scratchpad_service.get_active_tickets()
+        ticket = self.scratchpad_service.create_ticket(ticket_number=f"{prefix}{len(active) + 101}")
         editor = self._create_editor(ticket["id"], "")
         idx = self.tab_widget.add_ticket_tab(ticket, editor)
         self.tab_widget.setCurrentIndex(idx)
@@ -257,9 +285,14 @@ class TechPadMainWindow(QMainWindow):
             self._on_tab_close_requested(idx)
 
     def _on_tab_close_requested(self, index: int) -> None:
-        """Prompts the user whether to archive, delete, or cancel."""
+        """Handles tab closure by checking user preference (prompt vs direct archive)."""
         editor = self.tab_widget.get_editor_at(index)
         if not editor:
+            return
+
+        close_pref = self.session_service.get_setting("close_tab_action", "prompt")
+        if close_pref == "archive":
+            self._archive_tab(index)
             return
 
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
@@ -289,6 +322,58 @@ class TechPadMainWindow(QMainWindow):
             self.scratchpad_service.delete_ticket_permanently(editor.scratchpad_id)
             self._remove_tab(index, editor.scratchpad_id)
             self.history_drawer.refresh_list()
+
+    def _switch_tab_relative(self, delta: int) -> None:
+        """Switches active tab to next or previous (Ctrl+Tab / Ctrl+PageDown)."""
+        count = self.tab_widget.count()
+        if count > 1:
+            new_idx = (self.tab_widget.currentIndex() + delta) % count
+            self.tab_widget.setCurrentIndex(new_idx)
+
+    def _move_active_tab_relative(self, delta: int) -> None:
+        """Slides / moves the active tab left or right (Ctrl+Shift+PageDown / PageUp)."""
+        current = self.tab_widget.currentIndex()
+        target = current + delta
+        if 0 <= target < self.tab_widget.count():
+            self.tab_widget.tabBar().moveTab(current, target)
+            self.tab_widget.setCurrentIndex(target)
+            self._on_tabs_reordered()
+
+    def _select_tab_index(self, index: int) -> None:
+        """Selects a tab by direct index (Ctrl+1..Ctrl+9)."""
+        if 0 <= index < self.tab_widget.count():
+            self.tab_widget.setCurrentIndex(index)
+
+    def _restore_last_closed_tab(self) -> None:
+        """Restores the most recently archived ticket (Ctrl+Shift+T)."""
+        archived = self.scratchpad_service.get_archived_tickets(limit=1)
+        if archived:
+            self._on_restore_ticket(archived[0]["id"])
+            self.status_bar.showMessage(f"✓ Restored ticket #{archived[0].get('ticket_number')}", 3000)
+        else:
+            self.status_bar.showMessage("No archived tickets available to restore", 2500)
+
+    def _on_opacity_changed(self, value: int) -> None:
+        """Updates window opacity in real time from slider (60% to 100%)."""
+        clamped = max(60, min(100, value))
+        self.setWindowOpacity(clamped / 100.0)
+
+    def _open_settings_dialog(self) -> None:
+        """Opens preferences dialog and applies updated settings."""
+        current_settings = self.session_service.get_settings()
+        dlg = SettingsDialog(current_settings, self)
+        if dlg.exec():
+            new_settings = dlg.get_settings()
+            self.session_service.save_settings(new_settings)
+            if "window_opacity" in new_settings:
+                val = int(new_settings["window_opacity"])
+                self.setWindowOpacity(val / 100.0)
+                self.toolbar.set_opacity_value(val)
+            if "auto_save_delay_ms" in new_settings:
+                new_delay = int(new_settings["auto_save_delay_ms"])
+                for debouncer in self._debounce_timers.values():
+                    debouncer.delay_ms = new_delay
+            self.status_bar.showMessage("✓ Preferences saved", 3000)
 
     def _remove_tab(self, index: int, scratchpad_id: int) -> None:
         if scratchpad_id in self._debounce_timers:
@@ -498,11 +583,13 @@ class TechPadMainWindow(QMainWindow):
         active_editor = self.tab_widget.get_current_editor()
         active_id = active_editor.scratchpad_id if active_editor else None
 
-        # Save session
+        # Save session with window geometry and opacity
         geometry_hex = self.saveGeometry().toHex().data().decode("utf-8")
+        opacity_val = int(round(self.windowOpacity() * 100))
         self.session_service.persist_workspace(
             active_scratchpad_id=active_id,
             window_geometry=geometry_hex,
+            window_opacity=opacity_val,
             history_drawer_open=self.history_drawer.isVisible(),
         )
         event.accept()

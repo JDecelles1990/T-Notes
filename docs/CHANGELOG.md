@@ -2,6 +2,47 @@
 
 All notable changes to the TechPad (T-Notes) project will be documented in this file.
 
+## [1.2.0] - 2026-11-01
+
+### Added
+- **Clickable URLs & Auto-Detection**:
+  - Automatically detects typed and pasted URLs (`https://`, `http://`, `www.`) and transforms them into clickable HTML hyperlinks.
+  - Hovering over a link changes the cursor to `Qt.PointingHandCursor` with a target URL tooltip.
+  - Clicking any link immediately launches the destination in the default web browser via `QDesktopServices.openUrl()`.
+- **Browser-Style Tab Keyboard Shortcuts**:
+  - `Ctrl+W` / `Ctrl+F4`: Close active tab.
+  - `Ctrl+Tab` / `Ctrl+PageDown`: Switch to next tab.
+  - `Ctrl+Shift+Tab` / `Ctrl+PageUp`: Switch to previous tab.
+  - `Ctrl+Shift+PageDown`: Slide / move active tab to the right.
+  - `Ctrl+Shift+PageUp`: Slide / move active tab to the left.
+  - `Ctrl+1` .. `Ctrl+8`: Switch directly to tab 1–8.
+  - `Ctrl+9`: Switch directly to last tab.
+  - `Ctrl+Shift+T`: Re-open / restore most recently closed/archived ticket tab.
+- **Editing Button Shortcuts**:
+  - `Ctrl+Alt+C`: Monospace code block.
+  - `Alt+1` / `Alt+2` / `Alt+3` / `Alt+4`: Log triage tags (`🟢 PASS`, `🔴 FAIL`, `🟡 WARN`, `ℹ️ INFO`).
+  - `F5` / `Ctrl+Alt+T`: Current timestamp insertion.
+  - `Ctrl+Alt+I`: Insert image file dialog.
+  - `Ctrl+Alt+S`: Structured ticket skeleton menu.
+  - `Ctrl+Alt+N`: Export clean note for PSA / ticketing systems.
+  - `Ctrl+Alt+X`: Text color picker.
+  - `Ctrl+Alt+H`: Text highlight background picker.
+  - `Ctrl+,`: Open Preferences / Settings dialog.
+- **Top Opacity Slider (60% to 100%)**:
+  - Horizontal slider at top right of the toolbar enabling translucent window overlays (`setWindowOpacity`) so technicians can read background logs and terminals while typing.
+  - Persisted across restarts in `app_session`.
+- **Settings Gear Modal (`⚙️`) & Preferences**:
+  - Gear button on top toolbar and `Ctrl+,` shortcut opening `SettingsDialog`.
+  - Configurable ticket prefix (`INC-`, `REQ-`, `T-`).
+  - Configurable auto-save debounce delay (500ms to 5000ms).
+  - Configurable screenshot JPEG compression quality (50% to 100%).
+  - Configurable close-tab workflow (`prompt` vs `archive directly`).
+  - New SQLite table `app_settings` for persistent configuration.
+- **Automated Tests**:
+  - Added unit and UI integration tests for URL linkification, opacity slider bounds, and browser tab navigation shortcuts. Total test suite expanded to 22 tests.
+
+---
+
 ## [1.1.0] - 2026-11-01
 
 ### Added

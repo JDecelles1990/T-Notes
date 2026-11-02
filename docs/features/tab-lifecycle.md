@@ -26,6 +26,20 @@ Tabs display concise metadata formatted as:
 - `setTabsClosable(True)` renders a close button (`✕`) on every tab.
 - A persistent `+` button in the top-right corner allows instantaneous tab creation without reaching for the keyboard, backed by the global shortcut `Ctrl+T`.
 
+### Browser-Style Keyboard Shortcuts
+
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| `Ctrl+T` | New Tab | Opens a fresh ticket scratchpad. |
+| `Ctrl+W` / `Ctrl+F4` | Close / Archive Tab | Closes active tab (prompts or directly archives based on preferences). |
+| `Ctrl+Tab` / `Ctrl+PageDown` | Next Tab | Cycles focus to the adjacent tab on the right. |
+| `Ctrl+Shift+Tab` / `Ctrl+PageUp` | Previous Tab | Cycles focus to the adjacent tab on the left. |
+| `Ctrl+Shift+PageDown` | Slide Tab Right | Moves/slides the active tab one position to the right. |
+| `Ctrl+Shift+PageUp` | Slide Tab Left | Moves/slides the active tab one position to the left. |
+| `Ctrl+1` .. `Ctrl+8` | Select Tab 1–8 | Directly jumps to tab indices 1 through 8. |
+| `Ctrl+9` | Select Last Tab | Jumps directly to the last open tab. |
+| `Ctrl+Shift+T` | Re-open Closed Tab | Restores the most recently archived ticket from the History Drawer. |
+
 ---
 
 ## 3. Right-Click Context Menu & Tab Operations

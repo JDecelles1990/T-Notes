@@ -118,3 +118,48 @@ def test_ui_tab_duplicate_and_archive_actions(main_window):
     assert main_window.tab_widget.count() == initial_count
     assert len(main_window.scratchpad_service.get_archived_tickets()) >= 1
 
+
+def test_ui_editor_url_detection(main_window):
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+
+    # Test linkify_text
+    raw_text = "Refer to https://portal.azure.com and www.google.com for logs."
+    linked_html = editor.linkify_text(raw_text)
+    assert '<a href="https://portal.azure.com"' in linked_html
+    assert '<a href="http://www.google.com"' in linked_html
+
+
+def test_ui_opacity_slider(main_window):
+    # Test setting opacity through slider
+    main_window.toolbar.slider_opacity.setValue(75)
+    assert round(main_window.windowOpacity(), 2) == 0.75
+    assert "75%" in main_window.toolbar.lbl_opacity.text()
+
+    # Opacity bounds
+    main_window.toolbar.slider_opacity.setValue(60)
+    assert round(main_window.windowOpacity(), 2) == 0.60
+
+    main_window.toolbar.slider_opacity.setValue(100)
+    assert round(main_window.windowOpacity(), 2) == 1.0
+
+
+def test_ui_tab_browser_shortcuts(main_window):
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() >= 3
+
+    # Test switch relative
+    initial_idx = main_window.tab_widget.currentIndex()
+    main_window._switch_tab_relative(+1)
+    assert main_window.tab_widget.currentIndex() != initial_idx
+
+    # Test select by number
+    main_window._select_tab_index(0)
+    assert main_window.tab_widget.currentIndex() == 0
+
+    # Test move relative
+    main_window._move_active_tab_relative(+1)
+    assert main_window.tab_widget.currentIndex() == 1
+
+
