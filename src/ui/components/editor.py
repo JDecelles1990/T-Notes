@@ -150,3 +150,4 @@ class TechPadEditor(QTextEdit):
         content = selected if selected else "# CLI / PowerShell Log"
         html = f'<div style="background-color: #252526; border: 1px solid #3c3c3c; border-radius: 4px; padding: 6px; font-family: Consolas, monospace; color: #9cdcfe;"><code>{content}</code></div><br>'
         cursor.insertHtml(html)
+

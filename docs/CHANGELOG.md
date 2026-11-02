@@ -29,3 +29,4 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
   - Restore archived tickets or delete permanently.
 - **Clean Dark Theme**: High-contrast, clean QSS stylesheet (`assets/styles/dark_theme.qss`).
 - **Automated Test Suite**: 17 comprehensive unit and UI integration tests with 100% pass rate.
+

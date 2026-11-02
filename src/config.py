@@ -21,3 +21,4 @@ DEFAULT_DB_PATH = APP_DATA_DIR / "techpad.db"
 # Stylesheet path
 STYLES_DIR = BASE_DIR / "assets" / "styles"
 DEFAULT_QSS_PATH = STYLES_DIR / "dark_theme.qss"
+

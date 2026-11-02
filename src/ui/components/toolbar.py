@@ -190,3 +190,4 @@ class TechPadToolBar(QToolBar):
         self.act_bold.setChecked(format.fontWeight() == QFont.Bold)
         self.act_italic.setChecked(format.fontItalic())
         self.act_underline.setChecked(format.fontUnderline())
+

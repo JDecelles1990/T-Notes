@@ -58,3 +58,4 @@ class SessionService:
             window_geometry=window_geometry,
             history_drawer_open=history_drawer_open,
         )
+

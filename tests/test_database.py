@@ -120,3 +120,4 @@ def test_fts5_search(db_manager):
     results = repo.search("nslookup")
     assert len(results) == 1
     assert results[0]["id"] == sid1
+

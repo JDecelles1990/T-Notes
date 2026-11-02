@@ -119,3 +119,4 @@ def test_session_service_workspace_restore(services):
     assert reloaded_id == active_tickets[0]["id"]
     assert geom == "aabbcc"
     assert drawer is True
+

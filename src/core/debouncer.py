@@ -39,3 +39,4 @@ class DebounceTimer(QObject):
 
     def _on_timeout(self) -> None:
         self.timeout.emit()
+

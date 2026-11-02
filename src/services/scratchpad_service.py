@@ -182,3 +182,4 @@ class ScratchpadService:
         # Normalize redundant empty lines
         text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
+

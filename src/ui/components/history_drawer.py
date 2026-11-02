@@ -141,3 +141,4 @@ class HistoryDrawer(QDockWidget):
         )
         if res == QMessageBox.Yes:
             self.delete_requested.emit(ticket_id)
+

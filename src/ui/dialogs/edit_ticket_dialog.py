@@ -98,3 +98,4 @@ class EditTicketDialog(QDialog):
             "client_name": self.txt_client.text().strip(),
             "title": self.txt_title.text().strip(),
         }
+

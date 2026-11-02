@@ -47,3 +47,4 @@ def get_db(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
     if db_path:
         return DatabaseManager(db_path).get_connection()
     return _default_db_manager.get_connection()
+

@@ -11,3 +11,4 @@ def qapp():
     if app is None:
         app = QApplication([])
     return app
+

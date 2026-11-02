@@ -394,3 +394,4 @@ class TechPadMainWindow(QMainWindow):
             history_drawer_open=self.history_drawer.isVisible(),
         )
         event.accept()
+

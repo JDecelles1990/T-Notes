@@ -88,3 +88,4 @@ class ImageRepository:
                 "DELETE FROM scratchpad_images WHERE scratchpad_id = ?",
                 (scratchpad_id,),
             )
+

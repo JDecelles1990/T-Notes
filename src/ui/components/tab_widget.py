@@ -113,3 +113,4 @@ class TechPadTabWidget(QTabWidget):
         if editor:
             return editor.scratchpad_id
         return None
+

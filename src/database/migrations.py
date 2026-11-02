@@ -19,3 +19,4 @@ def init_database(db_manager: DatabaseManager) -> None:
             INSERT OR IGNORE INTO app_session (id, active_scratchpad_id, window_geometry, history_drawer_open)
             VALUES (1, NULL, '', 0);
         """)
+

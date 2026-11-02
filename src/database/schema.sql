@@ -69,3 +69,4 @@ CREATE TRIGGER IF NOT EXISTS scratchpads_au AFTER UPDATE ON scratchpads BEGIN
   INSERT INTO scratchpad_fts(rowid, ticket_number, client_name, title, content_text)
   VALUES (new.id, new.ticket_number, coalesce(new.client_name, ''), coalesce(new.title, ''), coalesce(new.content_html, ''));
 END;
+
