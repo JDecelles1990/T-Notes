@@ -102,3 +102,4 @@ class SettingsDialog(QDialog):
             "close_tab_action": self.combo_close_action.currentData(),
             "window_opacity": str(self.spin_opacity.value()),
         }
+

@@ -15,18 +15,18 @@ def init_database(db_manager: DatabaseManager) -> None:
     with conn:
         conn.executescript(schema_sql)
 
-        # Ensure session singleton row exists
+        # 1. Migration: Ensure window_opacity column exists on older databases BEFORE inserting
+        pragma_cols = [r[1] for r in conn.execute("PRAGMA table_info(app_session);").fetchall()]
+        if "window_opacity" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN window_opacity INTEGER DEFAULT 100;")
+
+        # 2. Ensure session singleton row exists
         conn.execute("""
             INSERT OR IGNORE INTO app_session (id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open)
             VALUES (1, NULL, '', 100, 0);
         """)
 
-        # Migration: Ensure window_opacity column exists on older databases
-        pragma_cols = [r[1] for r in conn.execute("PRAGMA table_info(app_session);").fetchall()]
-        if "window_opacity" not in pragma_cols:
-            conn.execute("ALTER TABLE app_session ADD COLUMN window_opacity INTEGER DEFAULT 100;")
-
-        # Populate default settings in app_settings table
+        # 3. Populate default settings in app_settings table
         default_settings = [
             ("auto_save_delay_ms", "1500"),
             ("jpeg_quality", "85"),

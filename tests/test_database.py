@@ -121,3 +121,32 @@ def test_fts5_search(db_manager):
     assert len(results) == 1
     assert results[0]["id"] == sid1
 
+
+def test_migration_adds_window_opacity_to_legacy_db(tmp_path):
+    """Simulates an existing database from before window_opacity was introduced."""
+    db_file = tmp_path / "legacy_techpad.db"
+    manager = DatabaseManager(db_file)
+    conn = manager.get_connection()
+
+    # Create old table without window_opacity column
+    with conn:
+        conn.execute("""
+            CREATE TABLE app_session (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                active_scratchpad_id INTEGER,
+                window_geometry TEXT DEFAULT '',
+                history_drawer_open INTEGER DEFAULT 0,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("INSERT INTO app_session (id, active_scratchpad_id) VALUES (1, NULL);")
+
+    # Now run init_database and verify it cleanly migrates without throwing OperationalError
+    init_database(manager)
+
+    # Verify column exists and is queryable
+    row = conn.execute("SELECT window_opacity FROM app_session WHERE id = 1;").fetchone()
+    assert row[0] == 100
+    manager.close()
+
+
