@@ -158,19 +158,68 @@ def test_ui_tab_browser_shortcuts(main_window):
     main_window._select_tab_index(0)
     assert main_window.tab_widget.currentIndex() == 0
 
-    # Test direct editor key event for Ctrl+Shift+PageDown
+    # Test direct editor key event for Ctrl+Shift+PageDown with KeypadModifier (Windows keyboard hardware)
+    from PySide6.QtCore import QEvent
     from PySide6.QtGui import QKeyEvent
     editor = main_window.tab_widget.get_current_editor()
     assert editor is not None
 
-    # Simulate pressing Ctrl+Shift+PageDown while typing in editor
-    ev_move_right = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageDown, Qt.ControlModifier | Qt.ShiftModifier)
+    # Simulate pressing Ctrl+Shift+PageDown with KeypadModifier while typing in editor
+    ev_move_right = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageDown, Qt.ControlModifier | Qt.ShiftModifier | Qt.KeypadModifier)
     editor.keyPressEvent(ev_move_right)
     assert main_window.tab_widget.currentIndex() == 1
 
-    # Simulate pressing Ctrl+Shift+PageUp while typing in editor
-    ev_move_left = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageUp, Qt.ControlModifier | Qt.ShiftModifier)
+    # Simulate pressing Ctrl+Shift+PageUp with KeypadModifier while typing in editor
+    ev_move_left = QKeyEvent(QKeyEvent.KeyPress, Qt.Key_PageUp, Qt.ControlModifier | Qt.ShiftModifier | Qt.KeypadModifier)
     editor.keyPressEvent(ev_move_left)
     assert main_window.tab_widget.currentIndex() == 0
+
+
+def test_ui_global_tab_reordering_with_keypad_modifier(main_window):
+    """Verifies that Ctrl+Shift+PageDown and PageUp reorder tabs via the global event filter
+
+    even when the Windows keyboard hardware driver emits Qt.KeypadModifier.
+    """
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QKeyEvent
+
+    main_window.show()
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() >= 3
+
+    # Select tab 0
+    main_window.tab_widget.setCurrentIndex(0)
+    tab0_title = main_window.tab_widget.tabText(0)
+    tab1_title = main_window.tab_widget.tabText(1)
+
+    editor = main_window.tab_widget.get_current_editor()
+    editor.setFocus()
+
+    # Press Ctrl+Shift+PageDown through QApplication with KeypadModifier
+    ev_down = QKeyEvent(QEvent.KeyPress, Qt.Key_PageDown, Qt.ControlModifier | Qt.ShiftModifier | Qt.KeypadModifier)
+    consumed = main_window.eventFilter(editor, ev_down)
+    assert consumed is True
+
+    # Tab 0 should have slid to position 1
+    assert main_window.tab_widget.currentIndex() == 1
+    assert main_window.tab_widget.tabText(1) == tab0_title
+    assert main_window.tab_widget.tabText(0) == tab1_title
+
+    # Press Ctrl+Shift+PageUp through QApplication with KeypadModifier
+    ev_up = QKeyEvent(QEvent.KeyPress, Qt.Key_PageUp, Qt.ControlModifier | Qt.ShiftModifier | Qt.KeypadModifier)
+    consumed = main_window.eventFilter(editor, ev_up)
+    assert consumed is True
+
+    # Tab should have slid back to position 0
+    assert main_window.tab_widget.currentIndex() == 0
+    assert main_window.tab_widget.tabText(0) == tab0_title
+    assert main_window.tab_widget.tabText(1) == tab1_title
+
+    # Test with focus on tabBar as well
+    main_window.tab_widget.tabBar().setFocus()
+    consumed = main_window.eventFilter(main_window.tab_widget.tabBar(), ev_down)
+    assert consumed is True
+    assert main_window.tab_widget.currentIndex() == 1
 
 

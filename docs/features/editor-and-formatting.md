@@ -25,6 +25,8 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Badge: 🟡 WARN** | `Alt+3` | Injects inline amber WARN tag. |
 | **Badge: ℹ️ INFO** | `Alt+4` | Injects inline blue INFO tag. |
 | **Open Preferences** | `Ctrl+,` | Launches the Preferences / Settings modal dialog. |
+| **Slide Tab Left / Right** | `Ctrl+Shift+PgUp` / `PgDown` | Reorders current tab horizontally while typing (modifier-masked). |
+| **Switch Next / Prev Tab** | `Ctrl+PgUp` / `PgDown` | Cycles active tab while typing in the editor. |
 
 ---
 

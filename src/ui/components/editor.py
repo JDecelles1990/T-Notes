@@ -95,8 +95,12 @@ class TechPadEditor(QTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handles browser-style tab shortcuts and auto-formats typed URLs."""
+        mods = event.modifiers()
+        has_ctrl = bool(mods & Qt.ControlModifier)
+        has_shift = bool(mods & Qt.ShiftModifier)
+
         # 1. Slide / Move tab left or right: Ctrl+Shift+PageDown / PageUp
-        if event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+        if has_ctrl and has_shift:
             if event.key() == Qt.Key_PageDown:
                 self.move_tab_requested.emit(+1)
                 event.accept()
@@ -107,7 +111,7 @@ class TechPadEditor(QTextEdit):
                 return
 
         # 2. Switch tab next or previous: Ctrl+PageDown / PageUp
-        if event.modifiers() == Qt.ControlModifier:
+        if has_ctrl and not has_shift:
             if event.key() == Qt.Key_PageDown:
                 self.switch_tab_requested.emit(+1)
                 event.accept()

@@ -28,6 +28,8 @@ Tabs display concise metadata formatted as:
 
 ### Browser-Style Keyboard Shortcuts
 
+All tab shortcuts are intercepted centrally at the `QApplication` level via `TechPadMainWindow.eventFilter()`. This prevents focused widgets (such as `TechPadEditor` or `TechPadTabBar`) from swallowing navigation events and ensures reliable operation on physical Windows keyboards where hardware drivers attach `Qt.KeypadModifier` to extended navigation keys (`PageDown`/`PageUp`).
+
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | `Ctrl+T` | New Tab | Opens a fresh ticket scratchpad. |
@@ -39,6 +41,15 @@ Tabs display concise metadata formatted as:
 | `Ctrl+1` .. `Ctrl+8` | Select Tab 1–8 | Directly jumps to tab indices 1 through 8. |
 | `Ctrl+9` | Select Last Tab | Jumps directly to the last open tab. |
 | `Ctrl+Shift+T` | Re-open Closed Tab | Restores the most recently archived ticket from the History Drawer. |
+
+#### Architectural Note on Modifier Handling:
+Standard `QShortcut` registrations fail on Windows when keys emit `Qt.KeypadModifier` alongside `Qt.ControlModifier` and `Qt.ShiftModifier`. The application event filter uses bitwise checking:
+```python
+mods = event.modifiers()
+has_ctrl = bool(mods & Qt.ControlModifier)
+has_shift = bool(mods & Qt.ShiftModifier)
+```
+This isolates the key logic from hardware driver flags, guaranteeing that `Ctrl+Shift+PageUp` and `Ctrl+Shift+PageDown` slide tabs regardless of keyboard manufacturer or focus state. Immediately following each tab slide or selection change, focus is automatically returned to the active `TechPadEditor`.
 
 ---
 

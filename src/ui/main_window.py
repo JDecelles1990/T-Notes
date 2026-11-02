@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from typing import Optional
-from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
@@ -54,6 +54,69 @@ class TechPadMainWindow(QMainWindow):
         self._setup_shortcuts()
         self._restore_workspace()
 
+        # Install application-level event filter for reliable global shortcut interception
+        if app := QApplication.instance():
+            app.installEventFilter(self)
+
+    def eventFilter(self, watched, event) -> bool:
+        """Application-level event filter intercepting tab shortcuts across all widgets.
+
+        Ensures browser-style tab shortcuts (including Ctrl+Shift+PageUp/PageDown)
+        work reliably regardless of which child widget has focus, and handles
+        hardware keyboard modifiers (such as Qt.KeypadModifier on Windows).
+        """
+        if event.type() == QEvent.KeyPress:
+            if QApplication.activeModalWidget() is not None:
+                return super().eventFilter(watched, event)
+
+            mods = event.modifiers()
+            has_ctrl = bool(mods & Qt.ControlModifier)
+            has_shift = bool(mods & Qt.ShiftModifier)
+            has_alt = bool(mods & Qt.AltModifier)
+            key = event.key()
+
+            if has_ctrl and not has_alt:
+                # 1. Tab Reordering (Slide Left / Right): Ctrl + Shift + PageDown / PageUp
+                if has_shift:
+                    if key == Qt.Key_PageDown:
+                        self._move_active_tab_relative(+1)
+                        return True
+                    elif key == Qt.Key_PageUp:
+                        self._move_active_tab_relative(-1)
+                        return True
+                    elif key in (Qt.Key_Backtab, Qt.Key_Tab):
+                        self._switch_tab_relative(-1)
+                        return True
+                    elif key == Qt.Key_T:
+                        self._restore_last_closed_tab()
+                        return True
+
+                # 2. Tab Navigation & Management: Ctrl + PageDown / PageUp / Tab / W / T / 1..9
+                else:
+                    if key == Qt.Key_PageDown:
+                        self._switch_tab_relative(+1)
+                        return True
+                    elif key == Qt.Key_PageUp:
+                        self._switch_tab_relative(-1)
+                        return True
+                    elif key == Qt.Key_Tab:
+                        self._switch_tab_relative(+1)
+                        return True
+                    elif key in (Qt.Key_W, Qt.Key_F4):
+                        self._close_current_tab()
+                        return True
+                    elif key == Qt.Key_T:
+                        self.create_new_tab()
+                        return True
+                    elif Qt.Key_1 <= key <= Qt.Key_8:
+                        self._select_tab_index(key - Qt.Key_1)
+                        return True
+                    elif key == Qt.Key_9:
+                        self._select_tab_index(self.tab_widget.count() - 1)
+                        return True
+
+        return super().eventFilter(watched, event)
+
     def _setup_ui(self) -> None:
         # Central Tab Widget
         self.tab_widget = TechPadTabWidget(self)
@@ -100,35 +163,13 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.btn_toggle_drawer)
 
     def _setup_shortcuts(self) -> None:
-        # Browser-style tab shortcuts
-        QShortcut(QKeySequence("Ctrl+T"), self, self.create_new_tab, context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+W"), self, self._close_current_tab, context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+F4"), self, self._close_current_tab, context=Qt.ApplicationShortcut)
+        """Configures application-wide shortcuts for saving, drawer toggle, and settings.
 
-        # Tab navigation: Next / Previous
-        QShortcut(QKeySequence("Ctrl+Tab"), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+Shift+Tab"), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+PgDown"), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+PgUp"), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_PageDown), self, lambda: self._switch_tab_relative(+1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence(Qt.CTRL | Qt.Key_PageUp), self, lambda: self._switch_tab_relative(-1), context=Qt.ApplicationShortcut)
-
-        # Tab reordering: Slide current tab left / right
-        QShortcut(QKeySequence("Ctrl+Shift+PgDown"), self, lambda: self._move_active_tab_relative(+1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+Shift+PgUp"), self, lambda: self._move_active_tab_relative(-1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT | Qt.Key_PageDown), self, lambda: self._move_active_tab_relative(+1), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence(Qt.CTRL | Qt.SHIFT | Qt.Key_PageUp), self, lambda: self._move_active_tab_relative(-1), context=Qt.ApplicationShortcut)
-
-        # Direct tab number switching (Ctrl+1 .. Ctrl+8, Ctrl+9 for last)
-        for num in range(1, 9):
-            idx = num - 1
-            QShortcut(QKeySequence(f"Ctrl+{num}"), self, lambda i=idx: self._select_tab_index(i), context=Qt.ApplicationShortcut)
-        QShortcut(QKeySequence("Ctrl+9"), self, lambda: self._select_tab_index(self.tab_widget.count() - 1), context=Qt.ApplicationShortcut)
-
-        # Reopen / restore last closed/archived tab (Ctrl+Shift+T)
-        QShortcut(QKeySequence("Ctrl+Shift+T"), self, self._restore_last_closed_tab, context=Qt.ApplicationShortcut)
-
-        # General app shortcuts
+        Note: Browser-style tab shortcuts (Ctrl+T, Ctrl+W, Ctrl+PgUp/PgDown,
+        Ctrl+Shift+PgUp/PgDown, Ctrl+1..9) are intercepted centrally in eventFilter()
+        to guarantee reliable dispatch across all focused child widgets and
+        hardware modifier states.
+        """
         QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
@@ -335,6 +376,9 @@ class TechPadMainWindow(QMainWindow):
         if count > 1:
             new_idx = (self.tab_widget.currentIndex() + delta) % count
             self.tab_widget.setCurrentIndex(new_idx)
+            editor = self.tab_widget.get_current_editor()
+            if editor:
+                editor.setFocus()
 
     def _move_active_tab_relative(self, delta: int) -> None:
         """Slides / moves the active tab left or right (Ctrl+Shift+PageDown / PageUp)."""
@@ -343,12 +387,18 @@ class TechPadMainWindow(QMainWindow):
         if 0 <= target < self.tab_widget.count():
             self.tab_widget.tabBar().moveTab(current, target)
             self.tab_widget.setCurrentIndex(target)
+            editor = self.tab_widget.get_current_editor()
+            if editor:
+                editor.setFocus()
             self._on_tabs_reordered()
 
     def _select_tab_index(self, index: int) -> None:
         """Selects a tab by direct index (Ctrl+1..Ctrl+9)."""
         if 0 <= index < self.tab_widget.count():
             self.tab_widget.setCurrentIndex(index)
+            editor = self.tab_widget.get_current_editor()
+            if editor:
+                editor.setFocus()
 
     def _restore_last_closed_tab(self) -> None:
         """Restores the most recently archived ticket (Ctrl+Shift+T)."""
