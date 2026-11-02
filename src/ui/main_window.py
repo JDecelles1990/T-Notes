@@ -134,6 +134,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
+        self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
         self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -158,7 +159,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.addWidget(self.lbl_active_info)
 
         # Toggle history drawer button in status bar
-        self.btn_toggle_drawer = QPushButton("📜 History (Ctrl+H)")
+        self.btn_toggle_drawer = QPushButton("🕰️ History (Ctrl+H)")
         self.btn_toggle_drawer.setObjectName("btnSecondary")
         self.btn_toggle_drawer.setFlat(True)
         self.btn_toggle_drawer.clicked.connect(self._toggle_history_drawer)

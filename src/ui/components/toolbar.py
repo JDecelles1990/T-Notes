@@ -29,6 +29,7 @@ class TechPadToolBar(QToolBar):
     export_note_requested = Signal()
     code_block_requested = Signal()
     opacity_changed = Signal(int)       # Emits opacity value (60 to 100)
+    history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
 
     def __init__(self, parent: Optional[QWidget] = None):
@@ -185,6 +186,14 @@ class TechPadToolBar(QToolBar):
         """)
         self.slider_opacity.valueChanged.connect(self._on_opacity_changed)
         self.addWidget(self.slider_opacity)
+
+        # History Section Toggle Button (🕰️)
+        self.btn_history = QToolButton(self)
+        self.btn_history.setText("🕰️")
+        self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
+        self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px; margin-left: 4px;")
+        self.btn_history.clicked.connect(self.history_requested.emit)
+        self.addWidget(self.btn_history)
 
         # Settings Gear Icon Button (⚙️)
         self.btn_settings = QToolButton(self)

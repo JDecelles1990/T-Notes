@@ -78,9 +78,14 @@ def test_ui_editor_image_insert_and_autosave(main_window):
 def test_ui_history_drawer_toggle(main_window):
     main_window.show()
     initial_hidden = main_window.history_drawer.isHidden()
-    main_window._toggle_history_drawer()
+
+    # Toggle via toolbar 🕰️ button
+    assert main_window.toolbar.btn_history.text() == "🕰️"
+    main_window.toolbar.btn_history.click()
     assert main_window.history_drawer.isHidden() != initial_hidden
-    main_window._toggle_history_drawer()
+
+    # Toggle via status bar button
+    main_window.btn_toggle_drawer.click()
     assert main_window.history_drawer.isHidden() == initial_hidden
 
 

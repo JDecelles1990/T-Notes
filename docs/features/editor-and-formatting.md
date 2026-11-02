@@ -57,7 +57,12 @@ Clicking `⚙️` or pressing `Ctrl+,` opens `SettingsDialog`:
 - **Tab Close Action:** Choice between prompting or immediately archiving to the History Drawer.
 - **Default Opacity:** Default window translucency on startup.
 
-### 4.3 Ticket Stopwatch & MSP Billing (`⏱️`)
+### 4.3 History & Archive Toggle (`🕰️`)
+Positioned in the toolbar header alongside the Settings gear:
+- Compact emoji icon conserving horizontal toolbar space.
+- Clicking `🕰️` or pressing `Ctrl+H` toggles the History & Archive side drawer.
+
+### 4.4 Ticket Stopwatch & MSP Billing (`⏱️`)
 Integrated directly in the toolbar for tracking cumulative active troubleshooting time per tab:
 - **Display:** Consolas monospace counter (`⏱️ HH:MM:SS`) with live duration updates.
 - **Micro-Controls:**
