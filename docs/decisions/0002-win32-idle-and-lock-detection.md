@@ -59,3 +59,4 @@ Relying solely on window focus loss (`focusOutEvent` or `QWindow::activeChanged`
 - **Formatting & Billing Logic:** `src/services/stopwatch_service.py` (`StopwatchService.format_time`).
 - **Persistence:** `src/services/scratchpad_service.py` (`update_elapsed_time`).
 - **Automated Validation:** Verified via `tests/test_stopwatch_service.py` and `tests/test_ui_integration.py`.
+

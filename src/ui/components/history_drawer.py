@@ -1,7 +1,7 @@
 """Collapsible history drawer backed by SQLite FTS5 for searching and restoring tickets."""
 
 from typing import Any, Dict, List, Optional
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -28,9 +28,14 @@ class HistoryDrawer(QDockWidget):
         self.scratchpad_service = scratchpad_service
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.setFeatures(QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable)
+        self.setMinimumWidth(280)
 
         self._setup_ui()
         self.refresh_list()
+
+    def sizeHint(self) -> QSize:
+        """Provides an ergonomic default width so ticket previews and tags are not truncated."""
+        return QSize(380, 600)
 
     def _setup_ui(self) -> None:
         container = QWidget(self)

@@ -64,3 +64,4 @@ During testing across different hardware keyboards (especially Lenovo, Dell, and
 - **Implementation:** `src/ui/main_window.py` (`MainWindow.eventFilter`).
 - **Tab Manipulation Logic:** `src/ui/components/tab_widget.py` (`move_tab_left`, `move_tab_right`).
 - **Automated Validation:** Verified via `tests/test_ui_integration.py` (`test_event_filter_keypad_modifier_tab_sliding`).
+

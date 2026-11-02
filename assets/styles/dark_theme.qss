@@ -118,6 +118,17 @@ QTextEdit {
     line-height: 1.5;
 }
 
+/* Dock Widget Splitter & Resize Separator */
+QMainWindow::separator {
+    background-color: #2d2d2d;
+    width: 6px;
+    height: 6px;
+}
+
+QMainWindow::separator:hover {
+    background-color: #007acc;
+}
+
 /* History / Archive Drawer */
 QDockWidget {
     color: #ffffff;

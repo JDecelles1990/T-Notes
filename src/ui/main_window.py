@@ -144,6 +144,7 @@ class TechPadMainWindow(QMainWindow):
         self.history_drawer.restore_requested.connect(self._on_restore_ticket)
         self.history_drawer.delete_requested.connect(self._on_delete_ticket)
         self.addDockWidget(Qt.RightDockWidgetArea, self.history_drawer)
+        self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
 
         # Status Bar
         self.status_bar = QStatusBar(self)
@@ -667,7 +668,10 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _toggle_history_drawer(self) -> None:
-        self.history_drawer.setVisible(not self.history_drawer.isVisible())
+        is_visible = not self.history_drawer.isVisible()
+        self.history_drawer.setVisible(is_visible)
+        if is_visible and self.history_drawer.width() < 320:
+            self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Synchronously flushes all pending saves and persists workspace session before exit."""

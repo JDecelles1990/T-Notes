@@ -89,6 +89,15 @@ def test_ui_history_drawer_toggle(main_window):
     assert main_window.history_drawer.isHidden() == initial_hidden
 
 
+def test_ui_history_drawer_width_and_resizability(main_window):
+    """Verifies that the History drawer has reasonable width defaults and minimum bounds for readability."""
+    drawer = main_window.history_drawer
+    # Check minimum width to prevent collapsing into an unreadable state
+    assert drawer.minimumWidth() >= 280
+    # Check sizeHint provides an ergonomic default width (>= 350px)
+    assert drawer.sizeHint().width() >= 350
+
+
 def test_ui_tab_movable_and_slide_reordering(main_window):
     # Verify tab bar is explicitly movable to enable slide-reordering
     assert main_window.tab_widget.isMovable() is True

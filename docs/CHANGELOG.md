@@ -32,6 +32,10 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 - **Toolbar Quick History Access Button (`🕰️`)**:
   - Compact emoji button added to the top window toolbar between the Settings gear (`⚙️`) and Opacity Slider.
   - Enables 1-click toggling of the History & Archive Drawer.
+- **History Drawer Resizing & Drag Splitter Handle**:
+  - Added dedicated styling for `QMainWindow::separator` with a 6px width, `#2d2d2d` dark background, and `#007acc` hover highlight so the resize boundary between the note editor and History drawer is clearly visible and easy to drag.
+  - Set ergonomic default width of `380px` via `sizeHint(QSize(380, 600))` and `resizeDocks`, preventing ticket headers, timestamps, and snippets from clipping.
+  - Enforced a minimum width constraint of `280px` to prevent collapsing into an unreadable state.
 - **History Drawer Metadata Enhancements**:
   - History list items now display billable elapsed time tags: `⏱️ {minutes}m | 📅 {YYYY-MM-DD} | {preview}`.
   - Hover tooltips display complete ticket audit metadata: Ticket #, Client, Title, Created timestamp, Archived timestamp, and exact Troubleshooting seconds.

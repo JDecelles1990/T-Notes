@@ -21,6 +21,10 @@ The **History Drawer** is a collapsible side panel (`QDockWidget`) that stores c
 - **Action Buttons:**
   - `Restore Tab`: Re-opens the selected ticket as an active tab.
   - `Delete`: Prompts for permanent deletion of the ticket and its images.
+- **Resizable Splitter & Ergonomic Dimensions:**
+  - **Draggable Splitter Handle:** Styled via `QMainWindow::separator` (6px width, `#2d2d2d` dark background, `#007acc` blue highlight on hover) making the resize boundary between the central editor and History Drawer immediately visible and easy to grab.
+  - **Default Width (`sizeHint`):** Defaults to `380px` (via `sizeHint(QSize(380, 600))` and `resizeDocks([self.history_drawer], [380], Qt.Horizontal)`), providing ample room for full ticket headers, time tags, dates, and preview snippets without horizontal truncation.
+  - **Minimum Width Boundary:** Constrained to a minimum of `280px` (`setMinimumWidth(280)`) to prevent collapsing into an unreadable state while still granting full flexibility to resize wider on high-resolution displays.
 
 ---
 
