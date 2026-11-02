@@ -5,6 +5,14 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **System Tray Background Lifecycle & F8 Global Quick-Toggle**:
+  - Closing the application window (`closeEvent`) minimizes TechPad to the Windows system tray (`QSystemTrayIcon`) rather than terminating the process, safeguarding ongoing notes and active stopwatch timers.
+  - Generates crisp high-DPI application brand icon (`assets/icons/app_icon.png`) for window headers and system tray.
+  - Configured `app.setQuitOnLastWindowClosed(False)` to preserve background execution.
+  - Implemented **System-Wide Global `F8` Hotkey** (`GlobalHotkeyManager`, `WinNativeHotkeyFilter` via `user32.dll:RegisterHotKey`):
+    - **When minimized, hidden in tray, or inactive:** Pressing `F8` pops TechPad to the foreground from any background application, restores normal window geometry, and focuses the note editor.
+    - **When active on the screen:** Pressing `F8` minimizes TechPad out of the way.
+  - System tray context menu providing 1-click toggling (`Show / Hide TechPad`), fresh tab creation (`➕ New Ticket Tab`), and clean exit (`✕ Quit TechPad`).
 - **Two-Row Top Header Architecture (Zero Overflow / No 3-Dots Menu)**:
   - Re-architected the application header into two dedicated, non-movable toolbars via `addToolBarBreak()`:
     - **Row 1 (Formatting & Authoring):** Bold, Italic, Underline, Code Block, Log Badges, Text & Highlight Colors, Image Insertion, Timestamp, Templates, and Copy Clean Note.

@@ -1,6 +1,8 @@
 """Main application window for TechPad."""
 
+import ctypes
 from pathlib import Path
+import sys
 from typing import Optional
 from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFont, QKeySequence, QShortcut
@@ -13,16 +15,19 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QStatusBar,
+    QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
 )
 from src.core.constants import APP_NAME, APP_VERSION, AUTO_SAVE_DEBOUNCE_MS
 from src.core.debouncer import DebounceTimer
+from src.core.global_hotkey import GlobalHotkeyManager
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
 from src.ui.components.editor import TechPadEditor
 from src.ui.components.history_drawer import HistoryDrawer
+from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
@@ -50,9 +55,14 @@ class TechPadMainWindow(QMainWindow):
 
         # Pending saves tracking: {scratchpad_id: DebounceTimer}
         self._debounce_timers: dict[int, DebounceTimer] = {}
+        self._force_quit: bool = False
+        self._first_minimize_to_tray: bool = True
+
+        self.setWindowIcon(get_or_create_app_icon())
 
         self._setup_ui()
         self._setup_shortcuts()
+        self._setup_tray_and_hotkey()
         self._restore_workspace()
 
         # Install application-level event filter for reliable global shortcut interception
@@ -75,6 +85,11 @@ class TechPadMainWindow(QMainWindow):
             has_shift = bool(mods & Qt.ShiftModifier)
             has_alt = bool(mods & Qt.AltModifier)
             key = event.key()
+
+            # F8 toggle window visibility (minimize if active, pop if minimized/inactive)
+            if key == Qt.Key_F8 and not has_ctrl and not has_alt and not has_shift:
+                self.toggle_window_visibility()
+                return True
 
             if has_ctrl and not has_alt:
                 # 1. Tab Reordering (Slide Left / Right): Ctrl + Shift + PageDown / PageUp
@@ -184,6 +199,62 @@ class TechPadMainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
+
+    def _setup_tray_and_hotkey(self) -> None:
+        """Configures the system tray icon and system-wide F8 global hotkey."""
+        # System Tray Icon
+        self.tray_icon = TechPadSystemTray(self)
+        self.tray_icon.toggle_requested.connect(self.toggle_window_visibility)
+        self.tray_icon.new_tab_requested.connect(self._create_new_tab_and_show)
+        self.tray_icon.quit_requested.connect(self.quit_application)
+        self.tray_icon.show()
+
+        # Global System-Wide F8 Hotkey (managed via Win32 RegisterHotKey)
+        self.global_hotkey = GlobalHotkeyManager(parent=self)
+        self.global_hotkey.activated.connect(self.toggle_window_visibility)
+        self.global_hotkey.register()
+
+    def toggle_window_visibility(self) -> None:
+        """Toggles window visibility: pops to front if minimized/hidden/inactive, or minimizes if active."""
+        is_active = self.isVisible() and not self.isMinimized() and self.isActiveWindow()
+
+        if is_active:
+            # App is open on screen and active in foreground -> minimize it
+            self.showMinimized()
+        else:
+            # App is minimized, hidden in tray, or behind other windows -> make it pop!
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
+            if sys.platform == "win32":
+                try:
+                    user32 = ctypes.windll.user32
+                    hwnd = int(self.winId())
+                    user32.ShowWindow(hwnd, 9)  # 9 = SW_RESTORE
+                    user32.SetForegroundWindow(hwnd)
+                except Exception:
+                    pass
+            if editor := self.tab_widget.get_current_editor():
+                editor.setFocus()
+
+    def _create_new_tab_and_show(self) -> None:
+        """Restores window from tray and creates a new ticket tab."""
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        self.create_new_tab()
+
+    def quit_application(self) -> None:
+        """Performs full synchronous flush, unregisters hotkeys, and cleanly exits the application."""
+        self._force_quit = True
+        if hasattr(self, "global_hotkey") and self.global_hotkey:
+            self.global_hotkey.unregister()
+        if hasattr(self, "tray_icon") and self.tray_icon:
+            self.tray_icon.hide()
+        self.close()
+        if app := QApplication.instance():
+            app.quit()
 
     def _restore_workspace(self) -> None:
         """Restores tabs and focused tab from SQLite session."""
@@ -681,9 +752,8 @@ class TechPadMainWindow(QMainWindow):
             self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        """Synchronously flushes all pending saves and persists workspace session before exit."""
+        """Minimizes to system tray if tray icon is active, preserving saves and session state."""
         self.toolbar.stopwatch.save_current_state()
-        self.toolbar.stopwatch.pause_timer()
         self.flush_all_saves()
 
         # Update tab orders
@@ -702,5 +772,22 @@ class TechPadMainWindow(QMainWindow):
             window_opacity=opacity_val,
             history_drawer_open=self.history_drawer.isVisible(),
         )
-        event.accept()
+
+        # If system tray is active and not forcing quit, minimize to tray
+        if getattr(self, "tray_icon", None) and self.tray_icon.isVisible() and not getattr(self, "_force_quit", False):
+            event.ignore()
+            self.hide()
+            if getattr(self, "_first_minimize_to_tray", True):
+                self._first_minimize_to_tray = False
+                self.tray_icon.showMessage(
+                    "TechPad Running in Background",
+                    "TechPad minimized to system tray.\nPress F8 anytime to show or hide.",
+                    QSystemTrayIcon.Information,
+                    2500,
+                )
+        else:
+            self.toolbar.stopwatch.pause_timer()
+            if hasattr(self, "global_hotkey") and self.global_hotkey:
+                self.global_hotkey.unregister()
+            event.accept()
 

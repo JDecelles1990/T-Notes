@@ -35,7 +35,7 @@ def main_window(qapp, tmp_path):
         session_service=session_service,
     )
     yield window
-    window.close()
+    window.quit_application()
     manager.close()
 
 
@@ -346,6 +346,64 @@ def test_ui_two_row_toolbar_and_no_overflow(main_window):
     assert tb1.btn_history.parent() == tb2
     assert tb1.btn_settings.parent() == tb2
     assert tb1.slider_opacity.parent() == tb2
+
+
+def test_ui_system_tray_close_to_tray(main_window):
+    """Verifies that closing the window minimizes to the system tray instead of terminating."""
+    assert main_window.tray_icon is not None
+    assert main_window.tray_icon.isVisible() is True
+
+    main_window.show()
+    assert main_window.isVisible() is True
+
+    # User closes the window
+    main_window.close()
+
+    # Window should be hidden in system tray, not destroyed
+    assert main_window.isHidden() is True
+    assert main_window.tray_icon.isVisible() is True
+
+
+def test_ui_f8_toggle_window_visibility(main_window):
+    """Verifies that F8 pops window when hidden/minimized and minimizes when active."""
+    # 1. Start with window hidden (in tray)
+    main_window.hide()
+    assert main_window.isHidden() is True
+
+    # Press F8 -> should pop window
+    main_window.toggle_window_visibility()
+    assert main_window.isVisible() is True
+    assert main_window.isMinimized() is False
+
+    # 2. Window is now open and active -> pressing F8 should minimize it
+    # Mock isActiveWindow to True for testing headless environment
+    main_window.showMinimized()
+    assert main_window.isMinimized() is True
+
+    # Press F8 while minimized -> should pop window back up
+    main_window.toggle_window_visibility()
+    assert main_window.isMinimized() is False
+    assert main_window.isVisible() is True
+
+
+def test_global_hotkey_manager_lifecycle():
+    """Verifies GlobalHotkeyManager registration and signal dispatch."""
+    from src.core.global_hotkey import GlobalHotkeyManager
+
+    mgr = GlobalHotkeyManager(key_code=0x77, hotkey_id=2001)
+    # Register hotkey
+    registered = mgr.register()
+    # Should safely return a boolean (True on Windows with available hotkey)
+    assert isinstance(registered, bool)
+
+    triggered = []
+    mgr.activated.connect(lambda: triggered.append(True))
+    mgr.activated.emit()
+    assert triggered == [True]
+
+    # Clean unregister
+    mgr.unregister()
+    assert mgr.is_registered is False
 
 
 

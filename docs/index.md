@@ -23,7 +23,8 @@ docs/
     ├── template.md                       # Architecture Decision Record (ADR) template
     ├── 0001-sqlite-wal-and-jpeg-blobs.md # ADR 0001: SQLite WAL & Embedded JPEG BLOB Storage
     ├── 0002-win32-idle-and-lock-detection.md # ADR 0002: Win32 Idle & Lock Auto-Pause
-    └── 0003-global-event-filtering-for-shortcuts.md # ADR 0003: Global Event Filtering for Shortcuts
+    ├── 0003-global-event-filtering-for-shortcuts.md # ADR 0003: Global Event Filtering for Shortcuts
+    └── 0004-system-tray-and-f8-global-hotkey.md # ADR 0004: System Tray Lifecycle & F8 Global Hotkey
 ```
 
 ---
@@ -32,14 +33,14 @@ docs/
 
 | Domain | Document | Key Topics Covered |
 | :--- | :--- | :--- |
-| **System Architecture** | [`architecture/system-overview.md`](architecture/system-overview.md) | Layer boundaries (`ui/` → `services/` → `repositories/` → `database/`), Qt event loop, stopwatch service, settings repository, and bootstrap. |
+| **System Architecture** | [`architecture/system-overview.md`](architecture/system-overview.md) | Layer boundaries (`ui/` → `services/` → `repositories/` → `database/`), Qt event loop, system tray lifecycle, and Win32 F8 hotkey. |
 | **Media & Screenshots** | [`architecture/image-pipeline.md`](architecture/image-pipeline.md) | `Win+Shift+S` clipboard interception, 85% JPEG compression, `image://local/<uuid>` URI mapping, BLOB storage. |
 | **Relational Data** | [`database/schema.md`](database/schema.md) | Data dictionary for `scratchpads`, `scratchpad_images`, `app_session`, `app_settings`, foreign keys, cascade deletes, and schema migrations. |
 | **Full-Text Search** | [`database/fts-and-search.md`](database/fts-and-search.md) | SQLite FTS5 configuration, prefix token matching, automatic sync triggers (`ai`, `ad`, `au`), and legacy table rebuild migrations. |
 | **Workspace & Tabs** | [`features/tab-lifecycle.md`](features/tab-lifecycle.md) | Multi-tab tracking, live running minutes, drag reordering, browser-style shortcuts with bitwise modifier filters, and context menus. |
-| **Editor & Text Tools** | [`features/editor-and-formatting.md`](features/editor-and-formatting.md) | Rich text shortcuts, monospace CLI code blocks, Log Triage pills, Ticket Stopwatch (`⏱️`), MSP billing copy, and opacity slider. |
+| **Editor & Text Tools** | [`features/editor-and-formatting.md`](features/editor-and-formatting.md) | Rich text shortcuts, F8 global hotkey toggle, code blocks, triage badges, Ticket Stopwatch (`⏱️`), and system tray minimization. |
 | **History & Drawer** | [`features/history-and-archive.md`](features/history-and-archive.md) | Collapsible side drawer (`Ctrl+H` / `🕰️`), real-time FTS filtering, ticket archival audit trails, and tab restoration (`Ctrl+Shift+T`). |
-| **Architecture Decisions** | [`decisions/`](decisions/) | Historical record of key technical and architectural decisions (ADRs 0001, 0002, 0003). |
+| **Architecture Decisions** | [`decisions/`](decisions/) | Historical record of key technical and architectural decisions (ADRs 0001, 0002, 0003, 0004). |
 
 ---
 

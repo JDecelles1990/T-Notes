@@ -14,6 +14,7 @@ from src.repositories.session_repository import SessionRepository
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
+from src.ui.components.system_tray import get_or_create_app_icon
 from src.ui.main_window import TechPadMainWindow
 
 
@@ -23,8 +24,10 @@ def main() -> int:
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("TechPad")
     app.setOrganizationName("MSP Tools")
+    app.setWindowIcon(get_or_create_app_icon())
 
     # Set default clean system font
     font = QFont("Segoe UI", 10)

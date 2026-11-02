@@ -10,15 +10,21 @@ flowchart TD
         MW["MainWindow"]
         TW["TechPadTabWidget"]
         ED["TechPadEditor (Custom QTextEdit)"]
-        TB["TechPadToolBar"]
+        TB["TechPadToolBar (Two Rows)"]
         HD["HistoryDrawer (QDockWidget)"]
         ETD["EditTicketDialog"]
         SWW["TicketStopwatchWidget"]
         SD["SettingsDialog"]
+        TRY["TechPadSystemTray (QSystemTrayIcon)"]
     end
 
     subgraph NativeOS ["Operating System Integration"]
-        W32["Win32 APIs (user32.dll)<br/>• GetLastInputInfo<br/>• OpenInputDesktop"]
+        W32["Win32 APIs (user32.dll)<br/>• GetLastInputInfo<br/>• OpenInputDesktop<br/>• RegisterHotKey (F8)<br/>• SetForegroundWindow"]
+    end
+
+    subgraph Core ["Core Infrastructure (src/core/)"]
+        GHM["GlobalHotkeyManager<br/>• NativeEventFilter (WM_HOTKEY)"]
+        DBT["DebounceTimer<br/>• 1500ms QTimer debounce"]
     end
 
     subgraph Services ["Service Layer (src/services/)"]
@@ -26,7 +32,6 @@ flowchart TD
         SWS["StopwatchService<br/>• Decimal & 15m rounded blocks<br/>• Wall-clock duration math"]
         IMS["ImageService<br/>• JPEG 85% compression<br/>• Resource URI mapping<br/>• Orphan image pruning"]
         SES["SessionService<br/>• Workspace state restoration<br/>• Tab order serialization"]
-        DBT["DebounceTimer<br/>• 1500ms QTimer debounce"]
     end
 
     subgraph Repositories ["Repository Layer (src/repositories/)"]
@@ -52,7 +57,10 @@ flowchart TD
     MW --> ETD
     TB --> SWW
     MW --> SD
+    MW --> TRY
+    MW --> GHM
 
+    GHM -.-> W32
     SWW -.-> W32
     SWW --> SWS
     TW --> SPS
@@ -86,10 +94,16 @@ flowchart TD
   - `MainWindow`: Orchestrates application lifecycle, dock panels, opacity slider, settings modal, status bar, and central tabs. Houses application-wide `eventFilter` on `QApplication.instance()` to handle keyboard shortcuts across physical hardware modifier variations.
   - `TechPadTabWidget`: Movable, closable tabs with live running minutes (`#101 (14m) — Acme`) and context menu operations.
   - `TechPadEditor`: Subclass of `QTextEdit` intercepting clipboard images, drag-and-drop, and clickable URLs.
-  - `TechPadToolBar`: Compact micro-controls for rich text, monospace code blocks, triage badges, and templates.
+  - `TechPadToolBar`: Two-row compact micro-controls for rich text, monospace code blocks, triage badges, templates, stopwatch, opacity, and preferences.
   - `TicketStopwatchWidget`: Toolbar component managing per-tab active troubleshooting duration, play/pause toggles, and MSP billing copy menus.
   - `HistoryDrawer`: Collapsible side drawer with real-time FTS5 search, ticket lifespan metadata, and tab restoration.
   - `SettingsDialog`: User configuration modal for ticket prefixes, auto-save debounce delay, JPEG quality, tab closure behavior, and default window opacity.
+  - `TechPadSystemTray`: System tray icon (`QSystemTrayIcon`) managing background execution, balloon notifications, and quick-action context menu.
+
+### Core Infrastructure Layer (`src/core/`)
+- **Components:**
+  - `GlobalHotkeyManager`: Registers and unregisters system-wide global hotkeys via Windows API (`RegisterHotKey` / `UnregisterHotKey`) and routes `WM_HOTKEY` events through a `QAbstractNativeEventFilter`.
+  - `DebounceTimer`: QTimer-based 1500ms debounce helper for responsive typing and persistence.
 
 ### Service Layer (`src/services/`)
 - **Role:** Encapsulates business logic, data formatting, debounced auto-saving, media compression, session reconciliation, and billing math.
@@ -135,26 +149,39 @@ T-Notes operates within the standard PySide6 / Qt Event Loop:
 6. **Centralized Application Event Filter:**
    To guarantee shortcut execution regardless of which widget holds focus (e.g., inside `TechPadEditor` or `TechPadTabBar`), `MainWindow.eventFilter` is registered on `QApplication.instance()`. Modifiers are parsed with bitwise masks (`mods & Qt.ControlModifier`, `mods & Qt.ShiftModifier`), isolating hotkeys from keyboard driver flags such as `Qt.KeypadModifier`.
 
+7. **System-Wide F8 Global Hotkey Interception:**
+   `GlobalHotkeyManager` invokes Windows `user32.dll:RegisterHotKey` for virtual key `VK_F8 (0x77)` with `MOD_NOREPEAT`. When pressed anywhere across the OS, `WinNativeHotkeyFilter` intercepts the `WM_HOTKEY` (0x0312) message and invokes `MainWindow.toggle_window_visibility()`, seamlessly popping the window to the foreground or minimizing it out of the way.
+
 ---
 
-## 4. Application Lifecycle
+## 4. Application Lifecycle & Background Tray Execution
 
 ### Bootstrap & Workspace Restoration Sequence
 When `src/main.py` is executed:
-1. `QApplication` is initialized with high-DPI scaling enabled.
-2. Clean technician dark theme (`assets/styles/dark_theme.qss`) is loaded and applied.
+1. `QApplication` is initialized with high-DPI scaling enabled and `app.setQuitOnLastWindowClosed(False)` so closing the window keeps the tray icon active.
+2. Clean technician dark theme (`assets/styles/dark_theme.qss`) and custom app icon (`assets/icons/app_icon.png`) are loaded.
 3. `DatabaseManager` opens `techpad.db`, activates WAL mode, and verifies table schemas via `init_database()`.
-4. `SessionService.restore_workspace()` runs:
+4. `MainWindow` initializes the two-row toolbar, system tray icon, and registers the global `F8` hotkey.
+5. `SessionService.restore_workspace()` runs:
    - Queries `scratchpads` for all records with `status = 'active'` ordered by `tab_order ASC`.
    - If no active scratchpads exist, an initial scratchpad (`INC-1001`) is automatically generated.
-   - Restores window geometry and History Drawer visibility from `app_session`.
+   - Restores window geometry, window opacity, and History Drawer visibility from `app_session`.
    - Opens each active ticket in its respective tab and restores the focused tab.
 
-### Teardown & Exit Sequence
-When the application receives a `closeEvent`:
-1. `MainWindow.closeEvent` intercepts window closure.
-2. `MainWindow.flush_all_saves()` immediately executes any pending debounced timers.
-3. Tab order is serialized and updated in `scratchpads`.
-4. The focused tab ID, window geometry hex string, and drawer visibility state are saved to `app_session`.
-5. Database connections are closed cleanly.
+### Close to Tray Workflow
+When the technician clicks the window close button (`✕`):
+1. `MainWindow.closeEvent` intercepts closure.
+2. `MainWindow.flush_all_saves()` immediately executes all pending debounced timers.
+3. Current tab order and active session state are serialized and stored to SQLite.
+4. If the system tray icon is active and `_force_quit` is False:
+   - `event.ignore()` cancels termination.
+   - The main window hides (`self.hide()`) and continues running in the system tray.
+   - A one-time balloon tip notifies the technician: *"TechPad Running in Background — Press F8 anytime to show or hide."*
+
+### Explicit Teardown & Exit Sequence
+When the user selects **✕ Quit TechPad** from the system tray context menu or invokes `quit_application()`:
+1. `_force_quit` flag is set to True.
+2. `GlobalHotkeyManager.unregister()` unregisters the `F8` hotkey from Windows.
+3. Active stopwatch timers are paused and final elapsed durations persisted to SQLite.
+4. Tray icon is hidden, window is closed, and `QApplication.quit()` terminates cleanly.
 

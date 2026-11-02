@@ -27,6 +27,7 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Open Preferences** | `Ctrl+,` | Launches the Preferences / Settings modal dialog. |
 | **Slide Tab Left / Right** | `Ctrl+Shift+PgUp` / `PgDown` | Reorders current tab horizontally while typing (modifier-masked). |
 | **Switch Next / Prev Tab** | `Ctrl+PgUp` / `PgDown` | Cycles active tab while typing in the editor. |
+| **Global Quick-Launch / Toggle** | `F8` | System-wide hotkey: pops TechPad to front from any application, or minimizes it if active. |
 
 ---
 
@@ -65,6 +66,18 @@ Dedicated to real-time troubleshooting duration, translucency, and workspace man
   - Uses Windows system APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
   - If the technician locks their screen (`Win + L`) or leaves the workstation idle for more than 5 minutes (300 seconds), the stopwatch automatically pauses to prevent accidental billing overages.
   - Clicking `▶️` or switching tabs clears the auto-pause state and resumes active tracking.
+
+### 4.3 System Tray Lifecycle & F8 Global Hotkey
+TechPad stays resident in the Windows system tray (`QSystemTrayIcon`) to ensure instantaneous access without cold reboots:
+- **Minimize to Tray on Close:** Clicking `✕` closes the main window to the system tray rather than terminating the process. Unsaved note edits and active session states are synchronously flushed to SQLite before hiding. A toast notification confirms background execution.
+- **System-Wide `F8` Hotkey:**
+  - Registered via Win32 `RegisterHotKey` (`VK_F8 = 0x77`).
+  - **When hidden, minimized, or inactive:** Pressing `F8` immediately restores the window (`SW_RESTORE`), brings it to the foreground (`SetForegroundWindow`), and sets keyboard focus directly to the active note editor.
+  - **When active on the screen:** Pressing `F8` minimizes the window, allowing the technician to instantly return to their terminal, browser, or remote session.
+- **Tray Context Menu:**
+  - `Show / Hide TechPad (F8)`: Toggles window visibility.
+  - `➕ New Ticket Tab (Ctrl+T)`: Unhides window and spawns a fresh ticket scratchpad.
+  - `✕ Quit TechPad`: Performs complete teardown, unregisters global hotkeys, and cleanly terminates the process.
 
 ---
 
