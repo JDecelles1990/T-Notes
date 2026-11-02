@@ -152,6 +152,9 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget.tab_close_prompted.connect(self._on_tab_close_requested)
         self.tab_widget.tab_reordered.connect(self._on_tabs_reordered)
         self.tab_widget.currentChanged.connect(self._on_current_tab_changed)
+        self.tab_widget.tab_cross_drop_requested.connect(
+            lambda idx, gpos: self._handle_tab_cross_drop(self.tab_widget, idx, gpos)
+        )
         self.workspace_splitter.addWidget(self.tab_widget)
 
         # Secondary Tab Widget (Right Pane — Split View)
@@ -162,6 +165,9 @@ class TechPadMainWindow(QMainWindow):
         self.secondary_tab_widget.tab_close_prompted.connect(self._on_secondary_tab_close_requested)
         self.secondary_tab_widget.tab_reordered.connect(self._on_tabs_reordered)
         self.secondary_tab_widget.currentChanged.connect(self._on_secondary_tab_changed)
+        self.secondary_tab_widget.tab_cross_drop_requested.connect(
+            lambda idx, gpos: self._handle_tab_cross_drop(self.secondary_tab_widget, idx, gpos)
+        )
         self.secondary_tab_widget.hide()
         self.workspace_splitter.addWidget(self.secondary_tab_widget)
 
@@ -940,7 +946,13 @@ class TechPadMainWindow(QMainWindow):
         if self.secondary_tab_widget.count() == 0:
             self.close_split_view()
 
-    def _move_tab_between_panes(self, from_tw: TechPadTabWidget, to_tw: TechPadTabWidget, index: int) -> None:
+    def _move_tab_between_panes(
+        self,
+        from_tw: TechPadTabWidget,
+        to_tw: TechPadTabWidget,
+        index: int,
+        target_index: Optional[int] = None,
+    ) -> None:
         """Moves a tab from one pane to another without losing state or content."""
         if index < 0 or index >= from_tw.count():
             return
@@ -949,8 +961,15 @@ class TechPadMainWindow(QMainWindow):
             return
         sid = editor.scratchpad_id
         ticket = self.scratchpad_service.get_ticket(sid) or {"id": sid}
+        if self.toolbar.stopwatch.current_scratchpad_id == sid:
+            ticket["elapsed_seconds"] = self.toolbar.stopwatch.elapsed_seconds
+
         from_tw.removeTab(index)
-        new_idx = to_tw.add_ticket_tab(ticket, editor)
+        if target_index is not None and 0 <= target_index <= to_tw.count():
+            new_idx = to_tw.insert_ticket_tab(target_index, ticket, editor)
+        else:
+            new_idx = to_tw.add_ticket_tab(ticket, editor)
+
         to_tw.setCurrentIndex(new_idx)
         editor.setFocus()
         self._on_editor_focused(sid)
@@ -961,6 +980,67 @@ class TechPadMainWindow(QMainWindow):
             self.create_new_tab()
         elif from_tw == self.secondary_tab_widget and self.secondary_tab_widget.count() == 0:
             self.close_split_view()
+
+    def _handle_tab_cross_drop(self, from_tw: TechPadTabWidget, source_idx: int, global_pos: QPoint) -> None:
+        """Handles dropping a dragged tab into the other split view pane or triggering split view."""
+        if source_idx < 0 or source_idx >= from_tw.count():
+            return
+
+        target_widget = QApplication.widgetAt(global_pos)
+        if not target_widget:
+            return
+
+        # Find which tab widget is under the drop point
+        to_tw = None
+        curr = target_widget
+        while curr:
+            if curr == self.tab_widget:
+                to_tw = self.tab_widget
+                break
+            elif curr == self.secondary_tab_widget:
+                to_tw = self.secondary_tab_widget
+                break
+            curr = curr.parent()
+
+        # If Split View is not open, check if user dragged tab to the right half of the workspace splitter
+        if not self.secondary_tab_widget.isVisible():
+            splitter_global = self.workspace_splitter.mapToGlobal(QPoint(0, 0))
+            splitter_rect = self.workspace_splitter.rect()
+            right_half_x = splitter_global.x() + (splitter_rect.width() // 2)
+            if (
+                splitter_global.x() <= global_pos.x() <= splitter_global.x() + splitter_rect.width()
+                and splitter_global.y() <= global_pos.y() <= splitter_global.y() + splitter_rect.height()
+                and global_pos.x() >= right_half_x
+            ):
+                editor = from_tw.get_editor_at(source_idx)
+                if editor:
+                    self.open_split_view(target_scratchpad_id=editor.scratchpad_id)
+            return
+
+        # If dropped over the other tab widget pane:
+        if to_tw and to_tw != from_tw:
+            target_index = self._calculate_tab_insert_index(to_tw, global_pos)
+            self._move_tab_between_panes(from_tw, to_tw, source_idx, target_index=target_index)
+
+    def _calculate_tab_insert_index(self, target_tw: TechPadTabWidget, global_pos: QPoint) -> int:
+        """Determines the target insert index in the destination tab widget based on drop coordinates."""
+        bar = target_tw.tabBar()
+        pos_in_bar = bar.mapFromGlobal(global_pos)
+
+        # Check if cursor is roughly within tab bar vertical bounds (+/- 30px)
+        if -15 <= pos_in_bar.y() <= bar.height() + 30:
+            idx = bar.tabAt(pos_in_bar)
+            if idx >= 0:
+                rect = bar.tabRect(idx)
+                if pos_in_bar.x() > rect.center().x():
+                    return idx + 1
+                return idx
+            # If to the right of all tabs in the bar
+            if pos_in_bar.x() > 0:
+                return target_tw.count()
+
+        # Dropped into the editor area: insert as active tab at the end
+        return target_tw.count()
 
     def _toggle_split_view(self) -> None:
         """Toggles side-by-side split view mode."""

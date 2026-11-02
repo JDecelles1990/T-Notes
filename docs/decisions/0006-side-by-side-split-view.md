@@ -60,6 +60,8 @@ In a single-pane tabbed workspace, comparing two tickets requires constantly swi
 - Clicking either editor instantly routes toolbar actions and stopwatch tracking to the active note.
 - History Drawer right-click action (*"◫ Open in Side-by-Side Split"*) allows comparing archived solutions alongside current active tickets.
 - Right-clicking tab headers allows moving tabs between left and right panes effortlessly.
+- Full cross-pane drag-and-drop: clicking, dragging, and releasing any tab transfers it seamlessly to the opposite split pane with dynamic insertion index calculation (`insert_ticket_tab`).
+
 
 ### Trade-offs & Mitigations
 - *Focus Ambiguity:* Having two editors visible simultaneously could cause confusion over which ticket is receiving formatting commands.

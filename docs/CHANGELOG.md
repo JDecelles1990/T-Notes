@@ -20,6 +20,12 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
   - Context menu integrations:
     - Primary & Secondary tab context menus offer *"◫ Move to Right/Left Pane"*.
     - History Drawer right-click menu offers *"◫ Open in Side-by-Side Split"*, restoring archived tickets directly into the secondary pane alongside active work.
+  - Cross-Pane Tab Drag-and-Drop:
+    - Left-clicking, dragging, and releasing any tab transfers it directly into the opposite split view pane.
+    - Dropping over the destination tab bar calculates the exact insertion index (`insert_ticket_tab`) based on cursor drop coordinates.
+    - Dropping over the note editor area appends the ticket as the active tab.
+    - Dragging a tab into the right half of the window when Split View is closed automatically opens Split View mode.
+    - Visual feedback with `Qt.DragMoveCursor` while dragging outside the source tab bar; cancellation via `Escape`.
   - Permanent status bar toggle button: `◫ Split (Alt+Z)` / `◫ Single (Alt+Z)`.
 - **Top Bar Ribbon Reorganization & Whitespace Elimination**:
   - Rebalanced the two-row ribbon to eliminate the 600px artificial expanding gap in Row 2:

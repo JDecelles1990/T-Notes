@@ -152,3 +152,14 @@ T-Notes supports dual concurrent ticket editing via a horizontal `QSplitter` con
   2. Re-merges all open secondary tabs back into the primary tab bar without state loss.
   3. Hides the secondary pane and restores full 100% width to the primary pane.
 
+### 5.5 Cross-Pane Tab Drag-and-Drop
+Technicians can seamlessly migrate tickets between split view panes using natural drag-and-drop:
+1. **Click and Drag:** Left-clicking and holding any tab header in either pane initiates tab movement.
+2. **Visual Feedback:** Dragging the mouse outside the source tab bar transforms the cursor to `Qt.DragMoveCursor`.
+3. **Drop and Insert:** Releasing the tab over the opposite pane transfers the ticket instantly:
+   - **Target Tab Bar:** Dropping on the opposite tab bar computes the exact insertion index (`target_index`) based on cursor coordinates, placing the ticket exactly between existing tabs or at the end.
+   - **Editor Area:** Dropping anywhere over the opposite note editor body appends the ticket as the active tab.
+4. **Opening Split View via Drag:** Dragging a tab from the primary pane into the right half of the window when Split View is closed automatically triggers Split View mode and places the dragged ticket in the secondary pane.
+5. **State Preservation:** Transferring tabs preserves all embedded image BLOBs, checklist progress badges, ticket color identity, and active billing stopwatch seconds.
+
+

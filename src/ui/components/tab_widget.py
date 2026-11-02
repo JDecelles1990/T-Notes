@@ -4,6 +4,7 @@ from typing import Optional
 from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import QColor, QContextMenuEvent, QMouseEvent, QPainter
 from PySide6.QtWidgets import (
+    QApplication,
     QTabBar,
     QTabWidget,
     QToolButton,
@@ -32,6 +33,13 @@ class TechPadTabBar(QTabBar):
 
     tab_double_clicked = Signal(int)
     tab_context_menu_requested = Signal(int, QPoint)
+    tab_cross_drop_requested = Signal(int, QPoint)  # Emits (source_tab_index, global_position)
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._drag_tab_idx: Optional[int] = None
+        self._drag_start_pos: Optional[QPoint] = None
+        self._is_dragging_out: bool = False
 
     def paintEvent(self, event) -> None:
         """Paints standard tab layout, then overlays each tab's distinctive owned color."""
@@ -58,9 +66,54 @@ class TechPadTabBar(QTabBar):
             stripe_rect = QRect(rect.x() + 1, rect.y(), rect.width() - 2, stripe_height)
             painter.fillRect(stripe_rect, color)
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            idx = self.tabAt(event.position().toPoint())
+            self._drag_tab_idx = idx if idx >= 0 else None
+            self._drag_start_pos = event.position().toPoint()
+            self._is_dragging_out = False
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._drag_tab_idx is not None and (event.buttons() & Qt.LeftButton) and self._drag_start_pos:
+            dist = (event.position().toPoint() - self._drag_start_pos).manhattanLength()
+            if dist >= QApplication.startDragDistance() and not self.rect().contains(event.position().toPoint()):
+                if not self._is_dragging_out:
+                    self._is_dragging_out = True
+                    QApplication.setOverrideCursor(Qt.DragMoveCursor)
+            elif self.rect().contains(event.position().toPoint()):
+                if self._is_dragging_out:
+                    self._is_dragging_out = False
+                    QApplication.restoreOverrideCursor()
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self._is_dragging_out:
+            self._is_dragging_out = False
+            QApplication.restoreOverrideCursor()
+            source_idx = self._drag_tab_idx
+            self._drag_tab_idx = None
+            gpos = event.globalPosition().toPoint()
+            super().mouseReleaseEvent(event)
+            if source_idx is not None:
+                self.tab_cross_drop_requested.emit(source_idx, gpos)
+            return
+
+        self._drag_tab_idx = None
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key_Escape and self._is_dragging_out:
+            self._is_dragging_out = False
+            QApplication.restoreOverrideCursor()
+            self._drag_tab_idx = None
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
-            index = self.tabAt(event.pos())
+            index = self.tabAt(event.position().toPoint())
             if index >= 0:
                 self.tab_double_clicked.emit(index)
                 event.accept()
@@ -81,6 +134,7 @@ class TechPadTabWidget(QTabWidget):
     tab_reordered = Signal()                         # Emits when user drags/moves a tab
     new_tab_requested = Signal()                     # Emits when '+' button clicked
     tab_context_menu_requested = Signal(int, QPoint) # Emits (tab_index, global_position)
+    tab_cross_drop_requested = Signal(int, QPoint)   # Emits (source_tab_index, global_position)
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -107,6 +161,7 @@ class TechPadTabWidget(QTabWidget):
         # Connect signals
         self._tab_bar.tab_double_clicked.connect(self.tab_edit_requested.emit)
         self._tab_bar.tab_context_menu_requested.connect(self.tab_context_menu_requested.emit)
+        self._tab_bar.tab_cross_drop_requested.connect(self.tab_cross_drop_requested.emit)
         self._tab_bar.tabMoved.connect(lambda from_idx, to_idx: self.tab_reordered.emit())
         self.tabCloseRequested.connect(self.tab_close_prompted.emit)
 
@@ -165,8 +220,8 @@ class TechPadTabWidget(QTabWidget):
             return f"{t_display} — {secondary}"
         return t_display
 
-    def add_ticket_tab(self, ticket: dict, editor: TechPadEditor) -> int:
-        """Adds a new tab and binds ticket metadata."""
+    def insert_ticket_tab(self, index: int, ticket: dict, editor: TechPadEditor) -> int:
+        """Inserts a tab at a specific index and binds ticket metadata."""
         elapsed = ticket.get("elapsed_seconds", 0) or 0
         sp_id = ticket.get("id")
         if sp_id is not None and sp_id not in self._tab_colors:
@@ -187,7 +242,7 @@ class TechPadTabWidget(QTabWidget):
             elapsed_seconds=elapsed,
             checklist_progress=checklist_progress,
         )
-        index = self.addTab(editor, title)
+        idx = self.insertTab(index, editor, title)
         editor.setProperty("scratchpad_id", sp_id)
 
         # Rich tooltip
@@ -197,8 +252,12 @@ class TechPadTabWidget(QTabWidget):
             tooltip += f"\nTasks: {checklist_progress[0]}/{checklist_progress[1]} completed ({pct}%)"
         if elapsed > 0:
             tooltip += f"\nTroubleshooting Time: {elapsed // 60}m"
-        self.setTabToolTip(index, tooltip)
-        return index
+        self.setTabToolTip(idx, tooltip)
+        return idx
+
+    def add_ticket_tab(self, ticket: dict, editor: TechPadEditor) -> int:
+        """Adds a new tab at the end and binds ticket metadata."""
+        return self.insert_ticket_tab(self.count(), ticket, editor)
 
     def update_tab_title(
         self,

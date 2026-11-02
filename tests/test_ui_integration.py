@@ -1,7 +1,7 @@
 """UI Integration tests using PySide6 QtTest."""
 
 import pytest
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
 from src.database.connection import DatabaseManager
@@ -658,6 +658,68 @@ def test_ui_history_drawer_split_restore(main_window):
     assert main_window.secondary_tab_widget.isVisible()
     ed, tw, idx = main_window._find_editor_by_id(sp_id)
     assert tw == main_window.secondary_tab_widget
+
+
+def test_ui_tab_drag_and_drop_across_split_panes(main_window):
+    """Verifies dragging and releasing a tab transfers it to the destination split pane."""
+    main_window.show()
+    # Create two more tabs so primary has 3 tabs total
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 3
+
+    # Open Split View: tab 1 moves to secondary pane
+    main_window.open_split_view()
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.count() == 1
+
+    # Drag remaining tab 1 from primary pane and release over secondary tab widget
+    dragged_editor = main_window.tab_widget.get_editor_at(1)
+    dragged_id = dragged_editor.scratchpad_id
+
+    sec_pos = main_window.secondary_tab_widget.mapToGlobal(QPoint(50, 50))
+    main_window.tab_widget.tab_cross_drop_requested.emit(1, sec_pos)
+
+    # Primary should now have 1 tab, secondary should have 2 tabs
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 2
+
+    # Verify dragged_id is now in secondary_tab_widget
+    ed, tw, idx = main_window._find_editor_by_id(dragged_id)
+    assert tw == main_window.secondary_tab_widget
+
+    # Now drag tab back from secondary pane to primary pane
+    prim_pos = main_window.tab_widget.mapToGlobal(QPoint(50, 50))
+    main_window.secondary_tab_widget.tab_cross_drop_requested.emit(idx, prim_pos)
+
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.count() == 1
+    ed2, tw2, idx2 = main_window._find_editor_by_id(dragged_id)
+    assert tw2 == main_window.tab_widget
+
+
+def test_ui_tab_drag_trigger_split_view(main_window):
+    """Verifies dragging a tab to the right half of the window opens Split View."""
+    main_window.show()
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.isHidden()
+
+    # Drag tab 1 to right half of workspace
+    target_editor = main_window.tab_widget.get_editor_at(1)
+    target_id = target_editor.scratchpad_id
+
+    splitter_global = main_window.workspace_splitter.mapToGlobal(QPoint(0, 0))
+    right_x = splitter_global.x() + (main_window.workspace_splitter.width() * 3 // 4)
+    right_y = splitter_global.y() + 50
+    drop_pos = QPoint(right_x, right_y)
+
+    main_window.tab_widget.tab_cross_drop_requested.emit(1, drop_pos)
+
+    assert main_window.secondary_tab_widget.isVisible()
+    ed, tw, idx = main_window._find_editor_by_id(target_id)
+    assert tw == main_window.secondary_tab_widget
+
 
 
 
