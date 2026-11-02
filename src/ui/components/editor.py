@@ -279,7 +279,8 @@ class TechPadEditor(QTextEdit):
         """Generates self-contained clipboard data preserving rich text, colors, and embedded images.
 
         When highlighting text, formatting, and images, the images are embedded as Base64 data URIs
-        inside the HTML clipboard payload. If only an image is selected, raw image data is also set.
+        inside the HTML clipboard payload. Raw bitmap data is also populated whenever an image is
+        selected so that chat apps, image viewers, and file-drop targets can paste the image directly.
         """
         mime_data = super().createMimeDataFromSelection()
         if not mime_data:
@@ -290,17 +291,19 @@ class TechPadEditor(QTextEdit):
             enriched_html, first_qimage = self._enrich_html_with_base64_images(html)
             mime_data.setHtml(enriched_html)
 
-            # If user selected solely an image (plain text is empty or only \uFFFC),
-            # provide raw bitmap data for image-only paste targets (Paint, Photoshop)
-            plain_text = mime_data.text()
-            plain_text_clean = plain_text.replace("\uFFFC", "").strip()
-
-            if not plain_text_clean and first_qimage is not None and not first_qimage.isNull():
+            # Always populate raw bitmap data if an image is part of the selection!
+            # Enables pasting images into chat boxes (Antigravity, Slack, Teams, Discord),
+            # web forms, Paint, and graphics software even when text is also highlighted.
+            if first_qimage is not None and not first_qimage.isNull():
                 mime_data.setImageData(first_qimage)
 
             # In plain text, replace Unicode object replacement character \uFFFC with [Screenshot]
+            # and collapse excessive blank lines so terminal/text pastes are neat and clean.
+            plain_text = mime_data.text()
             if "\uFFFC" in plain_text:
-                mime_data.setText(plain_text.replace("\uFFFC", " [Screenshot] "))
+                plain_text = plain_text.replace("\uFFFC", " [Screenshot] ")
+            plain_text = re.sub(r'\n{3,}', '\n\n', plain_text)
+            mime_data.setText(plain_text)
 
         return mime_data
 
@@ -310,11 +313,12 @@ class TechPadEditor(QTextEdit):
         enriched_html, first_qimage = self._enrich_html_with_base64_images(full_html)
 
         clean_plain = self.toPlainText().replace("\uFFFC", " [Screenshot] ")
+        clean_plain = re.sub(r'\n{3,}', '\n\n', clean_plain)
 
         mime_data = QMimeData()
         mime_data.setHtml(enriched_html)
         mime_data.setText(clean_plain)
-        if first_qimage is not None and not first_qimage.isNull() and not clean_plain.strip():
+        if first_qimage is not None and not first_qimage.isNull():
             mime_data.setImageData(first_qimage)
 
         QApplication.clipboard().setMimeData(mime_data)

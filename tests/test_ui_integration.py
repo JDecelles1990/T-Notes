@@ -799,6 +799,10 @@ def test_ui_copy_selection_with_rich_text_colors_and_images(main_window):
     assert "\uFFFC" not in plain
     assert "[Screenshot]" in plain
 
+    # Raw image data must always be present on MIME data for chat/image paste
+    assert mime.hasImage() is True
+    assert mime.imageData() is not None
+
 
 def test_ui_copy_formatted_note_toolbar_and_context_menu(main_window, monkeypatch):
     """Verifies that Copy Note button and copy_formatted_note place enriched HTML onto clipboard."""
