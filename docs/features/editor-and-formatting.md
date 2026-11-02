@@ -107,15 +107,17 @@ A dropdown menu provides instant structured outlines:
 - **Quick Triage / Quick Fix:** Brief fields for Caller, Problem, Action Taken, and Status.
 - **Maintenance & Change Plan:** Outline covering Target Host, Pre-Execution Checks, Execution Steps, Post-Verification, and Rollback Plan.
 
-### 5.4 "Copy for Ticket Note" (PSA Export `📤`)
-Clicking **"Copy Note"** invokes `ScratchpadService.export_as_plain_ticket_note()`:
-1. Generates a clean ticket header (`=== TICKET: INC-4092 ===`).
-2. Converts HTML headings (`<h3>`) into Markdown headers (`###`).
-3. Formats bullet points (`• `) and bold items (`**...**`).
-4. Converts monospace blocks into markdown fences (```...```).
-5. Replaces internal image URIs with clean placeholders (`[Screenshot: <uuid>.jpg]`).
-6. Converts interactive task anchors (`task://toggle`) into standard Markdown checkboxes (`- [ ] ` and `- [x] `).
-7. Strips all remaining tags and copies the plain text to the clipboard with a status bar confirmation.
+### 5.4 "Copy Note" Dual Workflows (`📋` / `📤`)
+The ribbon toolbar provides a dual-action popup button (`QToolButton.MenuButtonPopup`):
+- **Click Button Directly or `Ctrl+Shift+C`:** Copies the entire active note with **Rich Text & Images** (see Section 8). Full HTML formatting, colors, bold/italics, code blocks, and embedded Base64 images are copied for pasting into Microsoft Word, Outlook, Teams, Slack, and Google Docs.
+- **Dropdown Menu or `Ctrl+Alt+N` ("Copy Clean Note for Ticket Tool"):** Invokes `ScratchpadService.export_as_plain_ticket_note()`:
+  1. Generates a clean ticket header (`=== TICKET: INC-4092 ===`).
+  2. Converts HTML headings (`<h3>`) into Markdown headers (`###`).
+  3. Formats bullet points (`• `) and bold items (`**...**`).
+  4. Converts monospace blocks into markdown fences (```...```).
+  5. Replaces internal image URIs with clean placeholders (`[Screenshot: <uuid>.jpg]`).
+  6. Converts interactive task anchors (`task://toggle`) into standard Markdown checkboxes (`- [ ] ` and `- [x] `).
+  7. Strips all remaining tags and copies clean plain text to the clipboard with status bar confirmation.
 
 ---
 
@@ -164,4 +166,23 @@ When right-clicking on any embedded screenshot or image in `TechPadEditor`:
 - **📋 Copy Image:** Copies the full-resolution bitmap directly into the system clipboard (`QApplication.clipboard().setImage`), ready to paste (`Ctrl+V`) into external applications such as Slack, Microsoft Teams, Outlook, Word, or Jira.
 - **💾 Save Image As...:** Opens a file dialog allowing export to `.png` (lossless) or `.jpg` (raw original bytes without recompression artifacts).
 - Both actions display instantaneous feedback in the window status bar (`✓ Copied image to clipboard!` / `✓ Saved image to <path>`).
+
+---
+
+## 8. Rich Text, Color & Image Clipboard Pipeline
+
+When copying highlighted selections or copying the entire note for use in other applications:
+
+### 8.1 Base64 Data URI Image Embedding
+- **Automatic Translation:** Overrides `TechPadEditor.createMimeDataFromSelection()`. Any embedded image referencing `image://local/<uuid>.jpg` is automatically retrieved from memory cache (`in_memory_images`) or the database repository, converted into JPEG bytes, Base64-encoded, and embedded inline as `data:image/jpeg;base64,...` in the `text/html` clipboard fragment.
+- **External Compatibility:** Microsoft Word, Microsoft Outlook, Microsoft Teams, Slack, Google Docs, Gmail, Chrome, Edge, and Confluence natively parse `data:image/jpeg;base64,...` inside incoming `CF_HTML` clipboard data, rendering text formatting, custom colors, bold/italics, code blocks, and images together with zero broken links.
+- **Standalone Image Handling:** If a user selects only an image (with no accompanying text), `mime_data.setImageData(first_qimage)` is populated to support image-only target apps (e.g. MS Paint, photo editors).
+- **Clean Plain-Text Fallback:** In the plain-text clipboard representation (`text/plain`), the Unicode object replacement character `\uFFFC` is automatically replaced with `[Screenshot]` to avoid broken box characters when pasting into text terminals or Notepad.
+
+### 8.2 Access Points & Shortcuts
+1. **Highlight & Copy:** Select any text and images using mouse or `Ctrl+A`, then press `Ctrl+C` or right-click `Copy`.
+2. **Copy Note Button (`📋 Copy Note`):** Click the ribbon button directly or press `Ctrl+Shift+C` to copy the entire active note formatted with rich text and images.
+3. **Tab Context Menu:** Right-click any primary or secondary tab header and choose `📋 Copy Formatted Note (Rich Text & Images)`.
+4. **Editor Context Menu:** Right-click anywhere inside the editor and choose `📋 Copy Entire Formatted Note (Ctrl+Shift+C)`.
+
 

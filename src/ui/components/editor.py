@@ -1,10 +1,11 @@
 """Customized QTextEdit for rich text, screenshots, drag-drop, and clickable links."""
 
+import base64
 from datetime import datetime
 from pathlib import Path
 import re
 from typing import Dict, Optional, Tuple
-from PySide6.QtCore import QMimeData, QPoint, Qt, QUrl, Signal
+from PySide6.QtCore import QBuffer, QIODevice, QMimeData, QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
@@ -201,6 +202,123 @@ class TechPadEditor(QTextEdit):
 
         super().insertFromMimeData(source)
 
+    def _enrich_html_with_base64_images(self, html: str) -> Tuple[str, Optional[QImage]]:
+        """Converts internal 'image://local/...' URIs into embedded 'data:image/jpeg;base64,...' URIs.
+
+        Guarantees full fidelity when pasting formatted text, colors, and screenshots into
+        external applications (Microsoft Word, Outlook, Teams, Slack, Google Docs, Chrome, etc.).
+        """
+        img_pattern = re.compile(r'(<img\s+[^>]*src=["\'])([^"\']+)(["\'][^>]*>)', re.IGNORECASE)
+        first_qimage: Optional[QImage] = None
+
+        def repl(m: re.Match) -> str:
+            nonlocal first_qimage
+            prefix = m.group(1)
+            src = m.group(2)
+            suffix = m.group(3)
+
+            # Skip if already a data URI or external web URL
+            if src.startswith("data:") or src.startswith("http://") or src.startswith("https://"):
+                return m.group(0)
+
+            # Extract resource filename (e.g. from image://local/abc.jpg)
+            raw_name = src.replace(LOCAL_IMAGE_URL_PREFIX, "").split("/")[-1]
+
+            jpeg_bytes: Optional[bytes] = None
+
+            # 1. Check in-memory cache
+            if raw_name in self.in_memory_images:
+                jpeg_bytes = self.in_memory_images[raw_name]
+
+            # 2. Check database repository if available
+            if not jpeg_bytes and self.image_service and getattr(self.image_service, "repo", None):
+                try:
+                    jpeg_bytes = self.image_service.repo.get_image(self.scratchpad_id, raw_name)
+                except Exception:
+                    pass
+
+            # 3. Retrieve QImage from QTextDocument resources
+            res = self.document().resource(QTextDocument.ImageResource, QUrl(src))
+            if not isinstance(res, QImage) or res.isNull():
+                res = self.document().resource(QTextDocument.ImageResource, QUrl(f"{LOCAL_IMAGE_URL_PREFIX}{raw_name}"))
+
+            if isinstance(res, QImage) and not res.isNull():
+                if first_qimage is None:
+                    first_qimage = res
+                if not jpeg_bytes:
+                    buffer = QBuffer()
+                    buffer.open(QIODevice.WriteOnly)
+                    res.save(buffer, "JPEG", 85)
+                    jpeg_bytes = bytes(buffer.data())
+                    buffer.close()
+            elif jpeg_bytes and first_qimage is None:
+                loaded_img = QImage()
+                if loaded_img.loadFromData(jpeg_bytes, "JPEG"):
+                    first_qimage = loaded_img
+
+            if jpeg_bytes:
+                b64 = base64.b64encode(jpeg_bytes).decode("ascii")
+                data_uri = f"data:image/jpeg;base64,{b64}"
+                return f"{prefix}{data_uri}{suffix}"
+
+            return m.group(0)
+
+        enriched_html = img_pattern.sub(repl, html)
+
+        # Sanitize task://toggle anchors for external applications so they don't appear as dead links
+        enriched_html = re.sub(
+            r'<a\s+[^>]*href=["\']task://toggle["\'][^>]*>(.*?)</a>',
+            r'<span style="font-family: Consolas, monospace; font-size: 13px; font-weight: bold; color: #4ade80;">\1</span>',
+            enriched_html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        return enriched_html, first_qimage
+
+    def createMimeDataFromSelection(self) -> QMimeData:
+        """Generates self-contained clipboard data preserving rich text, colors, and embedded images.
+
+        When highlighting text, formatting, and images, the images are embedded as Base64 data URIs
+        inside the HTML clipboard payload. If only an image is selected, raw image data is also set.
+        """
+        mime_data = super().createMimeDataFromSelection()
+        if not mime_data:
+            return mime_data
+
+        if mime_data.hasHtml():
+            html = mime_data.html()
+            enriched_html, first_qimage = self._enrich_html_with_base64_images(html)
+            mime_data.setHtml(enriched_html)
+
+            # If user selected solely an image (plain text is empty or only \uFFFC),
+            # provide raw bitmap data for image-only paste targets (Paint, Photoshop)
+            plain_text = mime_data.text()
+            plain_text_clean = plain_text.replace("\uFFFC", "").strip()
+
+            if not plain_text_clean and first_qimage is not None and not first_qimage.isNull():
+                mime_data.setImageData(first_qimage)
+
+            # In plain text, replace Unicode object replacement character \uFFFC with [Screenshot]
+            if "\uFFFC" in plain_text:
+                mime_data.setText(plain_text.replace("\uFFFC", " [Screenshot] "))
+
+        return mime_data
+
+    def copy_formatted_note(self) -> None:
+        """Copies the entire note with rich formatting, colors, and embedded Base64 images to clipboard."""
+        full_html = self.toHtml()
+        enriched_html, first_qimage = self._enrich_html_with_base64_images(full_html)
+
+        clean_plain = self.toPlainText().replace("\uFFFC", " [Screenshot] ")
+
+        mime_data = QMimeData()
+        mime_data.setHtml(enriched_html)
+        mime_data.setText(clean_plain)
+        if first_qimage is not None and not first_qimage.isNull() and not clean_plain.strip():
+            mime_data.setImageData(first_qimage)
+
+        QApplication.clipboard().setMimeData(mime_data)
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handles browser-style tab shortcuts and auto-formats typed URLs."""
         mods = event.modifiers()
@@ -209,7 +327,14 @@ class TechPadEditor(QTextEdit):
 
         # 1. Slide / Move tab left or right: Ctrl+Shift+PageDown / PageUp
         if has_ctrl and has_shift:
-            if event.key() == Qt.Key_PageDown:
+            if event.key() == Qt.Key_C:
+                self.copy_formatted_note()
+                if parent_win := self.window():
+                    if hasattr(parent_win, "status_bar"):
+                        parent_win.status_bar.showMessage("✓ Copied formatted note (rich text & images) to clipboard!", 3500)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_PageDown:
                 self.move_tab_requested.emit(+1)
                 event.accept()
                 return
@@ -481,6 +606,12 @@ class TechPadEditor(QTextEdit):
 
         menu.addSeparator()
 
+        act_copy_note = menu.addAction("📋 Copy Entire Formatted Note (Ctrl+Shift+C)")
+        act_copy_note.setToolTip("Copies all note text, formatting, colors, and embedded images to clipboard")
+        act_copy_note.triggered.connect(self._copy_entire_formatted_note_action)
+
+        menu.addSeparator()
+
         # 3. Technician quick formatting actions
         act_checklist = menu.addAction("☑ Insert Checklist Item (Ctrl+Alt+L)")
         act_checklist.triggered.connect(self.insert_checklist_item)
@@ -492,6 +623,13 @@ class TechPadEditor(QTextEdit):
         act_code.triggered.connect(self._insert_code_block)
 
         menu.exec(event.globalPos())
+
+    def _copy_entire_formatted_note_action(self) -> None:
+        """Copies the whole formatted note and surfaces a status bar message."""
+        self.copy_formatted_note()
+        if parent_win := self.window():
+            if hasattr(parent_win, "status_bar"):
+                parent_win.status_bar.showMessage("✓ Copied formatted note (rich text & images) to clipboard!", 3500)
 
     def _insert_timestamp(self) -> None:
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

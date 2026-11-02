@@ -766,6 +766,73 @@ def test_ui_tab_drag_trigger_split_view(main_window):
     assert tw == main_window.secondary_tab_widget
 
 
+def test_ui_copy_selection_with_rich_text_colors_and_images(main_window):
+    """Verifies that copying text with colors, formatting, and images embeds Base64 data URIs."""
+    editor = main_window._get_active_editor()
+    assert editor is not None
+
+    # Insert colored text and an embedded image
+    img = QImage(16, 16, QImage.Format_RGB32)
+    img.fill(0x0000ff)
+
+    editor.insertHtml('<p style="color: #ff0000; font-weight: bold;">Red Bold Title</p>')
+    editor.insert_embedded_image(img)
+    editor.insertHtml('<p style="color: #00ff00;">Green Step 2</p>')
+
+    # Select all content and invoke createMimeDataFromSelection
+    editor.selectAll()
+    mime = editor.createMimeDataFromSelection()
+
+    assert mime.hasHtml()
+    html = mime.html()
+
+    # Verify colors and formatting are preserved in HTML
+    assert "color:#ff0000" in html or "color: #ff0000" in html
+    assert "color:#00ff00" in html or "color: #00ff00" in html
+
+    # Verify internal image://local/ URI was replaced with self-contained data:image/jpeg;base64,...
+    assert "image://local/" not in html
+    assert "data:image/jpeg;base64," in html
+
+    # Plain text fallback should replace object replacement char \uFFFC with [Screenshot]
+    plain = mime.text()
+    assert "\uFFFC" not in plain
+    assert "[Screenshot]" in plain
+
+
+def test_ui_copy_formatted_note_toolbar_and_context_menu(main_window, monkeypatch):
+    """Verifies that Copy Note button and copy_formatted_note place enriched HTML onto clipboard."""
+    editor = main_window._get_active_editor()
+    assert editor is not None
+
+    # Insert content with image
+    img = QImage(20, 20, QImage.Format_RGB32)
+    img.fill(0xff00ff)
+    editor.insertHtml('<h2 style="color: #33aaff;">Section Header</h2>')
+    editor.insert_embedded_image(img)
+
+    captured_html = []
+    captured_text = []
+    original_set_mime = QApplication.clipboard().setMimeData
+
+    def mock_set_mime(mime):
+        captured_html.append(mime.html() if mime.hasHtml() else "")
+        captured_text.append(mime.text() if mime.hasText() else "")
+        original_set_mime(mime)
+
+    monkeypatch.setattr(QApplication.clipboard(), "setMimeData", mock_set_mime)
+
+    # Trigger via toolbar button
+    main_window.toolbar.btn_copy_note.click()
+
+    assert len(captured_html) >= 1
+    last_html = captured_html[-1]
+    assert "data:image/jpeg;base64," in last_html
+    assert "image://local/" not in last_html
+    assert "Section Header" in captured_text[-1]
+
+
+
 
 
 

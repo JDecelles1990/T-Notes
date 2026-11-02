@@ -178,6 +178,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.image_requested.connect(self._on_insert_image_file)
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
         self.toolbar.checklist_requested.connect(self._on_insert_checklist)
+        self.toolbar.copy_formatted_requested.connect(self._on_copy_formatted_note)
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.split_view_requested.connect(self._toggle_split_view)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
@@ -727,6 +728,16 @@ class TechPadMainWindow(QMainWindow):
         if editor:
             editor.insert_checklist_item()
 
+    def _on_copy_formatted_note(self) -> None:
+        """Copies the entire active note with rich formatting, colors, and embedded images to clipboard."""
+        editor = self._get_active_editor()
+        if not editor:
+            return
+
+        self._execute_save(editor.scratchpad_id)
+        editor.copy_formatted_note()
+        self.status_bar.showMessage("✓ Copied formatted note (rich text & images) to clipboard!", 3500)
+
     def _on_export_note(self) -> None:
         """Copies clean plain text / Markdown note from active editor to clipboard for ticketing tool."""
         editor = self._get_active_editor()
@@ -757,8 +768,12 @@ class TechPadMainWindow(QMainWindow):
             act_duplicate = menu.addAction("📋 Duplicate Ticket Note")
             act_duplicate.triggered.connect(lambda: self._duplicate_tab(index))
 
-            # Copy Note for Ticketing Tool
-            act_copy = menu.addAction("📤 Copy Note for Ticket Tool")
+            # Copy Formatted Note (Rich Text & Images)
+            act_copy_rich = menu.addAction("📋 Copy Formatted Note (Rich Text & Images)")
+            act_copy_rich.triggered.connect(lambda: self._copy_tab_formatted_note_from(self.tab_widget, index))
+
+            # Copy Clean Note for Ticketing Tool
+            act_copy = menu.addAction("📤 Copy Clean Note for Ticket Tool")
             act_copy.triggered.connect(lambda: self._copy_tab_note(index))
 
             menu.addSeparator()
@@ -815,7 +830,11 @@ class TechPadMainWindow(QMainWindow):
             act_move = menu.addAction("◫ Move to Left Pane")
             act_move.triggered.connect(lambda: self._move_tab_between_panes(self.secondary_tab_widget, self.tab_widget, index))
 
-            act_copy = menu.addAction("📤 Copy Note for Ticket Tool")
+            # Copy Formatted Note (Rich Text & Images)
+            act_copy_rich = menu.addAction("📋 Copy Formatted Note (Rich Text & Images)")
+            act_copy_rich.triggered.connect(lambda: self._copy_tab_formatted_note_from(self.secondary_tab_widget, index))
+
+            act_copy = menu.addAction("📤 Copy Clean Note for Ticket Tool")
             act_copy.triggered.connect(lambda: self._copy_tab_note_from(self.secondary_tab_widget, index))
 
             menu.addSeparator()
@@ -1164,6 +1183,15 @@ class TechPadMainWindow(QMainWindow):
         self._remove_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+
+    def _copy_tab_formatted_note_from(self, tab_widget: TechPadTabWidget, index: int) -> None:
+        """Copies the entire note of a specific tab with rich formatting, colors, and embedded images."""
+        editor = tab_widget.get_editor_at(index)
+        if not editor:
+            return
+        self._execute_save(editor.scratchpad_id)
+        editor.copy_formatted_note()
+        self.status_bar.showMessage("✓ Copied formatted note (rich text & images) to clipboard!", 3500)
 
     def _copy_tab_note(self, index: int) -> None:
         """Copies formatted plain text / Markdown note of a primary tab to clipboard."""

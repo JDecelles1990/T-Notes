@@ -94,4 +94,20 @@ When right-clicking directly on any embedded image in `TechPadEditor`:
 - **`📋 Copy Image`:** Copies raw uncompressed pixel data into the system clipboard via `QApplication.clipboard().setImage(qimage)`, enabling instantaneous pasting (`Ctrl+V`) into Slack, Teams, Outlook, Jira, or Paint.
 - **`💾 Save Image As...`:** Prompts standard `QFileDialog.getSaveFileName` for PNG or JPEG export. If the user saves as JPEG, the original stored JPEG bytes are written directly without generational quality loss from re-compression.
 
+---
+
+## 6. Multi-Selection & Rich Text Clipboard Export (Base64 Embedding)
+
+When users copy highlighted content containing both text, formatting, colors, and embedded images:
+- **Challenge:** Qt's native `createMimeDataFromSelection()` generates HTML containing internal URI references (`<img src="image://local/<uuid>.jpg">`). External applications (Microsoft Word, Outlook, Teams, Slack, Google Docs, Chrome, etc.) cannot resolve `image://local/` and will fail to display or drop the images.
+- **Solution (`_enrich_html_with_base64_images`):**
+  1. `TechPadEditor.createMimeDataFromSelection()` intercepts the HTML clipboard payload.
+  2. Parses all `<img>` tags and matches internal image resource names against `in_memory_images`, the database repository `scratchpad_images`, or `document().resource()`.
+  3. Replaces internal references with self-contained **Base64 Data URIs** (`data:image/jpeg;base64,...`).
+  4. Preserves all font colors, backgrounds, code blocks, and headings.
+  5. If an image is selected alone without text, also provides raw bitmap data via `mime_data.setImageData(first_qimage)` for bitmap-only paste targets (e.g. Paint).
+  6. Replaces the Unicode object replacement character `\uFFFC` in plain-text with `[Screenshot]` for clean terminal or Notepad pasting.
+- **Full Note Copy (`copy_formatted_note`):** Clicking `📋 Copy Note` on the ribbon or pressing `Ctrl+Shift+C` packages the entire active document with Base64-embedded images and rich styles onto the clipboard.
+
+
 

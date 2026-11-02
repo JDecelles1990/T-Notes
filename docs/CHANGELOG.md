@@ -5,6 +5,15 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Rich Text, Color & Inline Image Clipboard Copying**:
+  - Overrode `TechPadEditor.createMimeDataFromSelection()` to automatically resolve and convert internal `image://local/...` image URLs into self-contained Base64 Data URIs (`data:image/jpeg;base64,...`).
+  - Enables copying large blocks of highlighted text along with custom font colors, highlights, code blocks, bold/italics, and embedded screenshots, and pasting directly into Microsoft Word, Microsoft Outlook, Microsoft Teams, Slack, Google Docs, Gmail, and web browsers with full visual fidelity.
+  - Image-only selection automatically populates raw bitmap data (`mime_data.setImageData`) for bitmap-only paste targets (e.g. Paint).
+  - Plain-text clipboard fallback replaces Unicode object replacement markers (`\uFFFC`) with clean `[Screenshot]` text tags.
+  - Upgraded **`📋 Copy Note`** ribbon button into a dual-action menu button:
+    - Default button click or **`Ctrl+Shift+C`**: Copies the entire active note formatted with rich text, custom colors, and embedded Base64 images.
+    - Dropdown menu or **`Ctrl+Alt+N`**: Exports stripped clean Markdown/plain-text note for ticketing PSA tools (ServiceNow, Jira).
+  - Added `📋 Copy Formatted Note (Rich Text & Images)` to tab header context menus and editor right-click menu.
 - **Application Rebranding to T-Notes**:
   - Rebranded the application name from `TechPad` to `T-Notes` across the entire interface.
   - Window title bar at the top-left now dynamically displays `T-Notes v1.0.0 — Technician Scratchpad`.

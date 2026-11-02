@@ -26,6 +26,7 @@ class TechPadToolBar(QToolBar):
     image_requested = Signal()
     timestamp_requested = Signal()
     skeleton_selected = Signal(str)
+    copy_formatted_requested = Signal() # Emits when rich formatted copy requested
     export_note_requested = Signal()
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
@@ -182,11 +183,31 @@ class TechPadToolBar(QToolBar):
 
         self.secondary_toolbar.addSeparator()
 
-        # 3. Copy For Ticket Note (PSA Export - Ctrl+Alt+N)
-        self.act_export = self.secondary_toolbar.addAction("📤 Copy Note")
-        self.act_export.setToolTip("Copy stripped clean text/markdown for PSA ticket (Ctrl+Alt+N)")
+        # 3. Copy Note: Formatted (Rich Text & Images) or Clean PSA (Markdown)
+        self.btn_copy_note = QToolButton(self.secondary_toolbar)
+        self.btn_copy_note.setText("📋 Copy Note")
+        self.btn_copy_note.setPopupMode(QToolButton.MenuButtonPopup)
+        self.btn_copy_note.setToolTip("Copy Note: Click to copy rich formatted note with images & colors (Ctrl+Shift+C), or open menu for clean PSA export (Ctrl+Alt+N)")
+        self.btn_copy_note.setStyleSheet("padding: 2px 6px;")
+
+        copy_menu = QMenu(self.btn_copy_note)
+
+        self.act_copy_formatted = QAction("📋 Copy Formatted Note (Rich Text & Images)", self.secondary_toolbar)
+        self.act_copy_formatted.setShortcut(QKeySequence("Ctrl+Shift+C"))
+        self.act_copy_formatted.setToolTip("Preserves colors, headings, code blocks, and embedded images")
+        self.act_copy_formatted.triggered.connect(self.copy_formatted_requested.emit)
+        copy_menu.addAction(self.act_copy_formatted)
+
+        self.act_export = QAction("📤 Copy Clean Note for Ticket Tool", self.secondary_toolbar)
         self.act_export.setShortcut(QKeySequence("Ctrl+Alt+N"))
+        self.act_export.setToolTip("Stripped clean markdown/plain-text for PSA ticket systems (ServiceNow, Jira)")
         self.act_export.triggered.connect(self.export_note_requested.emit)
+        copy_menu.addAction(self.act_export)
+
+        self.btn_copy_note.setMenu(copy_menu)
+        self.btn_copy_note.clicked.connect(self.copy_formatted_requested.emit)
+        self.secondary_toolbar.addWidget(self.btn_copy_note)
+
         self.stopwatch.psa_export_requested.connect(self.export_note_requested.emit)
 
         self.secondary_toolbar.addSeparator()
