@@ -40,39 +40,27 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 
 ---
 
-## 4. Top Header Micro-Controls
+## 4. Two-Row Top Header Architecture & Micro-Controls
 
-### 4.1 Opacity Slider (60% to 100%)
-Positioned at the top right of the application toolbar:
-- Range: `60%` (translucent) to `100%` (fully opaque).
-- Live adjustment via `window.setWindowOpacity(val / 100.0)`.
-- Use Case: Enables technicians to read background CLI output, server management consoles, or remote desktop sessions behind the scratchpad while taking troubleshooting notes.
-- Saved across restarts in `app_session`.
+The top header is structured into two dedicated rows to prevent button truncation and completely eliminate the 3-dots (`...`) toolbar overflow menu on standard display resolutions:
 
-### 4.2 Settings Gear Icon (`⚙️`)
-Clicking `⚙️` or pressing `Ctrl+,` opens `SettingsDialog`:
-- **Default Ticket Prefix:** Custom prefix for new tabs (e.g. `INC-`, `REQ-`, `T-`).
-- **Auto-Save Delay:** Configurable debounce delay between 500ms and 5000ms (default 1500ms).
-- **Screenshot JPEG Quality:** Compression quality slider (50% to 100%, default 85%).
-- **Tab Close Action:** Choice between prompting or immediately archiving to the History Drawer.
-- **Default Opacity:** Default window translucency on startup.
+### 4.1 Row 1: Note Formatting & Authoring Toolbar
+Dedicated strictly to rich-text authoring and triage markup:
+- **Text Styling:** Bold (`B`), Italic (`I`), Underline (`U`)
+- **Code Container:** Monospace CLI container (`</>`)
+- **Triage Tagging:** Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`)
+- **Colors:** Text Color picker (`🎨`), Text Highlight background picker (`🖍️`)
+- **Media & Injections:** Screenshot/Image insertion (`🖼️`), Current timestamp injection (`🕒`)
+- **Templates & Export:** Structured Skeleton templates (`📋 Template`), Clean note export for PSA (`📤 Copy Note`)
 
-### 4.3 History & Archive Toggle (`🕰️`)
-Positioned in the toolbar header alongside the Settings gear:
-- Compact emoji icon conserving horizontal toolbar space.
-- Clicking `🕰️` or pressing `Ctrl+H` toggles the History & Archive side drawer.
-
-### 4.4 Ticket Stopwatch & MSP Billing (`⏱️`)
-Integrated directly in the toolbar for tracking cumulative active troubleshooting time per tab:
-- **Display:** Consolas monospace counter (`⏱️ HH:MM:SS`) with live duration updates.
-- **Micro-Controls:**
-  - `▶️` / `⏸️` (Start / Pause): Resumes or pauses the timer.
-  - `🔄` (Reset): Resets the ticket's elapsed time back to `00:00:00`.
-  - `📋 Time` Dropdown Menu:
-    - **Copy Exact (`HH:MM:SS`):** e.g. `00:14:32`.
-    - **Copy Decimal:** e.g. `0.24h` (hours with two decimal points).
-    - **Copy 15m Rounded Block:** e.g. `0.25h` (rounds up to the nearest 15-minute billable block standard in MSPs).
-    - **Copy Note for Ticket Tool:** Copies the full stripped Markdown note with billable time header.
+### 4.2 Row 2: Ticket Workflow & System Utilities Toolbar
+Dedicated to real-time troubleshooting duration, translucency, and workspace management:
+- **Ticket Stopwatch & MSP Billing (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), Play/Pause (`▶️`/`⏸️`), Reset (`🔄`), and `📋 Time` dropdown (Exact, Decimal, 15m rounded blocks, Copy Note with billable time).
+- **Expanding Spacer:** Pushes system controls cleanly to the right side.
+- **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% enabling technicians to read underlying terminal outputs or remote desktop sessions.
+- **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.
+- **Settings Gear (`⚙️`):** Launches preferences modal for defaults, delays, and compression.
+- **Zero Overflow (No 3-Dots Menu):** Both rows feature non-movable fixed layouts with `QToolBarExtension` suppressed via QSS and programmatic bounds, ensuring all buttons remain accessible directly on the screen without clicking overflow menus.
 - **Auto-Pause on Lock or 5-Minute Inactivity:**
   - Uses Windows system APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
   - If the technician locks their screen (`Win + L`) or leaves the workstation idle for more than 5 minutes (300 seconds), the stopwatch automatically pauses to prevent accidental billing overages.

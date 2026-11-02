@@ -46,6 +46,7 @@ class TechPadMainWindow(QMainWindow):
 
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — Technician Scratchpad")
         self.resize(1100, 750)
+        self.setMinimumSize(800, 500)
 
         # Pending saves tracking: {scratchpad_id: DebounceTimer}
         self._debounce_timers: dict[int, DebounceTimer] = {}
@@ -128,7 +129,7 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget.currentChanged.connect(self._on_current_tab_changed)
         self.setCentralWidget(self.tab_widget)
 
-        # Formatting Toolbar
+        # Formatting & System Toolbars (Two-Row Header)
         self.toolbar = TechPadToolBar(self)
         self.toolbar.image_requested.connect(self._on_insert_image_file)
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
@@ -137,7 +138,13 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
         self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
+
+        # Row 1: Formatting Actions
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
+        # Line break between toolbar rows
+        self.addToolBarBreak(Qt.TopToolBarArea)
+        # Row 2: Ticket Workflow, Stopwatch, Opacity & Preferences
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar.secondary_toolbar)
 
         # History / Archive Side Drawer
         self.history_drawer = HistoryDrawer(self.scratchpad_service, self)

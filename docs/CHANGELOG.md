@@ -5,6 +5,11 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Two-Row Top Header Architecture (Zero Overflow / No 3-Dots Menu)**:
+  - Re-architected the application header into two dedicated, non-movable toolbars via `addToolBarBreak()`:
+    - **Row 1 (Formatting & Authoring):** Bold, Italic, Underline, Code Block, Log Badges, Text & Highlight Colors, Image Insertion, Timestamp, Templates, and Copy Clean Note.
+    - **Row 2 (Workflow & System Utilities):** Ticket Stopwatch (`⏱️`), Play/Pause/Reset, Billing Copy Menu, Opacity Slider (`👁️ 100%`), History Drawer Toggle (`🕰️`), and Settings Gear (`⚙️`).
+  - Completely eliminated the 3-dots (`...`) overflow button by providing ample horizontal breathing room across both rows and styling `QToolBarExtension` to 0px.
 - **Ticket Stopwatch & MSP Billing Suite (`StopwatchService`, `TicketStopwatchWidget`)**:
   - Live Consolas monospace timer (`⏱️ HH:MM:SS`) tracking cumulative active troubleshooting time per tab.
   - Per-tab persistence: `elapsed_seconds` column in SQLite `scratchpads` table updated synchronously on tab switch, window close, and auto-save.

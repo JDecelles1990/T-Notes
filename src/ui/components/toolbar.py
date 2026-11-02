@@ -21,7 +21,7 @@ from src.ui.components.stopwatch_widget import TicketStopwatchWidget
 
 
 class TechPadToolBar(QToolBar):
-    """Compact technician formatting toolbar with opacity control and settings gear."""
+    """Two-row technician formatting and system toolbar with zero overflow button."""
 
     image_requested = Signal()
     timestamp_requested = Signal()
@@ -35,12 +35,38 @@ class TechPadToolBar(QToolBar):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__("Formatting", parent)
         self.setMovable(False)
+        self.setFloatable(False)
         self._current_editor = None
+
+        # Row 2 Toolbar: Ticket Workflow, Stopwatch & System Tools
+        self.secondary_toolbar = QToolBar("Workflow & Tools", parent)
+        self.secondary_toolbar.setMovable(False)
+        self.secondary_toolbar.setFloatable(False)
+
         self._setup_actions()
+        self._suppress_extension_buttons()
 
     def set_active_editor(self, editor) -> None:
         """Binds toolbar formatting actions to the currently active editor."""
         self._current_editor = editor
+
+    def _suppress_extension_buttons(self) -> None:
+        """Suppresses the 3-dots overflow extension button across both toolbars."""
+        for tb in (self, getattr(self, "secondary_toolbar", None)):
+            if tb is not None:
+                ext = tb.findChild(QToolButton, "qt_toolbar_ext_button")
+                if ext:
+                    ext.setVisible(False)
+                    ext.setMaximumSize(0, 0)
+                    ext.resize(0, 0)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._suppress_extension_buttons()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._suppress_extension_buttons()
 
     def _setup_actions(self) -> None:
         # Standard formatting: Bold, Italic, Underline
@@ -141,24 +167,29 @@ class TechPadToolBar(QToolBar):
         self.act_export.setShortcut(QKeySequence("Ctrl+Alt+N"))
         self.act_export.triggered.connect(self.export_note_requested.emit)
 
-        self.addSeparator()
+        # -------------------------------------------------------------
+        # Row 2: Workflow, Stopwatch, Opacity & Preferences
+        # -------------------------------------------------------------
 
         # Stopwatch Widget for tracking ticket troubleshooting time
-        self.stopwatch = TicketStopwatchWidget(parent=self)
+        self.stopwatch = TicketStopwatchWidget(parent=self.secondary_toolbar)
         self.stopwatch.psa_export_requested.connect(self.export_note_requested.emit)
-        self.addWidget(self.stopwatch)
+        self.secondary_toolbar.addWidget(self.stopwatch)
+
+        # Separator on row 2
+        self.secondary_toolbar.addSeparator()
 
         # Expanding spacer pushing Opacity & Settings to the right side
-        spacer = QWidget()
+        spacer = QWidget(self.secondary_toolbar)
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.addWidget(spacer)
+        self.secondary_toolbar.addWidget(spacer)
 
         # Opacity Slider (60% to 100%)
-        self.lbl_opacity = QLabel("👁️ 100%")
+        self.lbl_opacity = QLabel("👁️ 100%", self.secondary_toolbar)
         self.lbl_opacity.setStyleSheet("color: #9cdcfe; font-size: 11px; padding-right: 2px;")
-        self.addWidget(self.lbl_opacity)
+        self.secondary_toolbar.addWidget(self.lbl_opacity)
 
-        self.slider_opacity = QSlider(Qt.Horizontal)
+        self.slider_opacity = QSlider(Qt.Horizontal, self.secondary_toolbar)
         self.slider_opacity.setRange(60, 100)
         self.slider_opacity.setValue(100)
         self.slider_opacity.setFixedWidth(85)
@@ -185,23 +216,25 @@ class TechPadToolBar(QToolBar):
             }
         """)
         self.slider_opacity.valueChanged.connect(self._on_opacity_changed)
-        self.addWidget(self.slider_opacity)
+        self.secondary_toolbar.addWidget(self.slider_opacity)
+
+        self.secondary_toolbar.addSeparator()
 
         # History Section Toggle Button (🕰️)
-        self.btn_history = QToolButton(self)
+        self.btn_history = QToolButton(self.secondary_toolbar)
         self.btn_history.setText("🕰️")
         self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
         self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px; margin-left: 4px;")
         self.btn_history.clicked.connect(self.history_requested.emit)
-        self.addWidget(self.btn_history)
+        self.secondary_toolbar.addWidget(self.btn_history)
 
         # Settings Gear Icon Button (⚙️)
-        self.btn_settings = QToolButton(self)
+        self.btn_settings = QToolButton(self.secondary_toolbar)
         self.btn_settings.setText("⚙️")
-        self.btn_settings.setToolTip("Preferences & Settings")
+        self.btn_settings.setToolTip("Preferences & Settings (Ctrl+,)")
         self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px; margin-left: 4px;")
         self.btn_settings.clicked.connect(self.settings_requested.emit)
-        self.addWidget(self.btn_settings)
+        self.secondary_toolbar.addWidget(self.btn_settings)
 
     def set_opacity_value(self, val: int) -> None:
         """Sets the slider value without emitting signals."""

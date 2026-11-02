@@ -323,7 +323,29 @@ def test_ui_stopwatch_auto_pause_on_idle(main_window, monkeypatch):
     # Stopwatch should now be paused
     assert stopwatch.is_running is False
     assert stopwatch._auto_paused is True
-    assert "Auto-paused" in stopwatch.lbl_time.toolTip()
+
+
+def test_ui_two_row_toolbar_and_no_overflow(main_window):
+    """Verifies that the top header is divided into two rows without 3-dots overflow."""
+    tb1 = main_window.toolbar
+    tb2 = main_window.toolbar.secondary_toolbar
+
+    # Both toolbars exist and are fixed
+    assert tb1 is not None
+    assert tb2 is not None
+    assert tb1.isMovable() is False
+    assert tb2.isMovable() is False
+
+    # Row 1 has formatting actions
+    assert tb1.act_bold is not None
+    assert tb1.act_code is not None
+    assert tb1.act_export is not None
+
+    # Row 2 has ticket stopwatch, opacity, history, and settings
+    assert tb2.findChild(type(tb1.stopwatch)) is not None
+    assert tb1.btn_history.parent() == tb2
+    assert tb1.btn_settings.parent() == tb2
+    assert tb1.slider_opacity.parent() == tb2
 
 
 

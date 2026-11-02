@@ -16,8 +16,22 @@ QToolBar {
     background-color: #252526;
     border: none;
     border-bottom: 1px solid #333333;
-    padding: 3px 6px;
+    padding: 2px 6px;
     spacing: 4px;
+}
+
+/* Suppress 3-dots toolbar overflow extension button */
+QToolBarExtension,
+QToolButton#qt_toolbar_ext_button {
+    width: 0px;
+    height: 0px;
+    max-width: 0px;
+    max-height: 0px;
+    padding: 0px;
+    margin: 0px;
+    border: none;
+    background: transparent;
+    qproperty-icon: none;
 }
 
 QToolButton {
