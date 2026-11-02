@@ -5,6 +5,11 @@ All notable changes to the TechPad (T-Notes) project will be documented in this 
 ## [1.3.0] - 2026-11-01
 
 ### Added
+- **Image Context Menu (Copy Image & Save Image As...)**:
+  - Right-clicking directly on any embedded screenshot or image in `TechPadEditor` surfaces dedicated image actions:
+    - **`📋 Copy Image`**: Copies full-fidelity bitmap data to system clipboard (`QApplication.clipboard().setImage`), enabling direct pasting (`Ctrl+V`) into Teams, Slack, Outlook, Jira, or graphics apps.
+    - **`💾 Save Image As...`**: Prompts file save dialog to export as PNG or JPEG on disk. Preserves raw stored JPEG bytes when exporting to JPEG to avoid generational recompression artifacts.
+  - Automatically detects embedded image bounds via `_get_image_at_pos()`, seamlessly differentiating image clicks from standard text cursor positions.
 - **Side-by-Side Split View & Dual Ticket Workspace (`Alt+Z` / `◫`)**:
   - Implemented dual side-by-side editing panes using a central horizontal `QSplitter` containing Primary (`TechPadTabWidget`) and Secondary (`TechPadTabWidget`) ticket workspaces.
   - Dedicated **`◫`** toggle button on Row 2 toolbar and global application shortcut **`Alt+Z`** to toggle Split View ON/OFF.

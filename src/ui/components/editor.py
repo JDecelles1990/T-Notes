@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from PySide6.QtCore import QMimeData, QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
@@ -18,7 +18,14 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextDocument,
 )
-from PySide6.QtWidgets import QMenu, QMessageBox, QTextEdit
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QMenu,
+    QMessageBox,
+    QTextEdit,
+)
+from src.core.constants import LOCAL_IMAGE_URL_PREFIX
 from src.services.image_service import ImageService
 
 
@@ -373,11 +380,108 @@ class TechPadEditor(QTextEdit):
         super().focusInEvent(event)
         self.editor_focused.emit(self.scratchpad_id)
 
+    def _get_image_at_pos(self, pos: QPoint) -> Optional[Tuple[str, QImage]]:
+        """Checks if the given viewport position is over an embedded image.
+
+        Returns (resource_url, qimage) if found, else None.
+        """
+        cursor = self.cursorForPosition(pos)
+
+        def check_format(c: QTextCursor) -> Optional[str]:
+            fmt = c.charFormat()
+            if fmt.isImageFormat():
+                return fmt.toImageFormat().name()
+            return None
+
+        # 1. Direct cursor position check
+        name = check_format(cursor)
+
+        # 2. Check char immediately to the left
+        if not name:
+            c_left = QTextCursor(cursor)
+            if c_left.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor):
+                name = check_format(c_left)
+
+        # 3. Check char immediately to the right
+        if not name:
+            c_right = QTextCursor(cursor)
+            if c_right.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor):
+                name = check_format(c_right)
+
+        if not name:
+            return None
+
+        # Retrieve QImage from document resources
+        res = self.document().resource(QTextDocument.ImageResource, QUrl(name))
+        if isinstance(res, QImage) and not res.isNull():
+            return name, res
+
+        return None
+
+    def _copy_image_to_clipboard(self, qimage: QImage) -> None:
+        """Copies image to system clipboard and notifies status bar."""
+        QApplication.clipboard().setImage(qimage)
+        if parent_win := self.window():
+            if hasattr(parent_win, "status_bar"):
+                parent_win.status_bar.showMessage("✓ Copied image to clipboard!", 3000)
+
+    def _save_image_to_file(self, image_url: str, qimage: QImage) -> None:
+        """Prompts save dialog and exports the image to PNG or JPEG on disk."""
+        base_name = image_url.replace(LOCAL_IMAGE_URL_PREFIX, "").split("/")[-1]
+        if not base_name.lower().endswith((".png", ".jpg", ".jpeg")):
+            base_name = f"{base_name}.png"
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Image As",
+            base_name,
+            "PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;All Files (*)",
+        )
+        if not file_path:
+            return
+
+        # Check if we have original JPEG bytes cached in memory or in SQLite
+        raw_name = image_url.replace(LOCAL_IMAGE_URL_PREFIX, "")
+        raw_bytes = self.in_memory_images.get(raw_name)
+        if not raw_bytes and self.image_service:
+            raw_bytes = self.image_service.repo.get_image(self.scratchpad_id, raw_name)
+
+        if raw_bytes and (file_path.lower().endswith(".jpg") or file_path.lower().endswith(".jpeg")):
+            with open(file_path, "wb") as f:
+                f.write(raw_bytes)
+        else:
+            qimage.save(file_path)
+
+        if parent_win := self.window():
+            if hasattr(parent_win, "status_bar"):
+                parent_win.status_bar.showMessage(f"✓ Saved image to {file_path}", 3500)
+
     def contextMenuEvent(self, event) -> None:
-        """Provides enhanced context menu with screenshot paste and technician quick-actions."""
-        menu = self.createStandardContextMenu()
+        """Provides enhanced context menu with image copy/export and technician quick-actions."""
+        img_info = self._get_image_at_pos(event.pos())
+        menu = QMenu(self)
+
+        # 1. Image Actions (if right-clicking an embedded screenshot/image)
+        if img_info:
+            img_url, qimage = img_info
+            act_copy_img = menu.addAction("📋 Copy Image")
+            act_copy_img.setToolTip("Copies raw image data to clipboard")
+            act_copy_img.triggered.connect(lambda: self._copy_image_to_clipboard(qimage))
+
+            act_save_img = menu.addAction("💾 Save Image As...")
+            act_save_img.setToolTip("Export image to PNG or JPEG file on disk")
+            act_save_img.triggered.connect(lambda: self._save_image_to_file(img_url, qimage))
+
+            menu.addSeparator()
+
+        # 2. Standard text editing context actions (Undo, Redo, Cut, Copy, Paste, Select All)
+        standard_menu = self.createStandardContextMenu()
+        for act in standard_menu.actions():
+            menu.addAction(act)
+
         menu.addSeparator()
 
+        # 3. Technician quick formatting actions
         act_checklist = menu.addAction("☑ Insert Checklist Item (Ctrl+Alt+L)")
         act_checklist.triggered.connect(self.insert_checklist_item)
 

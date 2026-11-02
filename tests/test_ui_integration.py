@@ -75,6 +75,48 @@ def test_ui_editor_image_insert_and_autosave(main_window):
     assert image_name in db_images
 
 
+def test_ui_editor_image_context_menu_copy_and_save(main_window, tmp_path, monkeypatch):
+    """Verifies image detection, clipboard copy, and disk export from right-click context menu."""
+    from PySide6.QtWidgets import QFileDialog
+
+    main_window.show()
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+
+    qimg = QImage(64, 64, QImage.Format_RGB32)
+    qimg.fill(0xFF112233)
+    editor.insert_embedded_image(qimg)
+
+    # Image is at cursor position 0..1 in empty doc
+    img_info = editor._get_image_at_pos(QPoint(10, 10))
+    assert img_info is not None
+    img_url, detected_qimg = img_info
+    assert img_url.startswith("image://local/")
+    assert not detected_qimg.isNull()
+
+    # Test copy to clipboard
+    copied_images = []
+    monkeypatch.setattr(QApplication.clipboard(), "setImage", lambda img: copied_images.append(img))
+    editor._copy_image_to_clipboard(detected_qimg)
+    assert len(copied_images) == 1
+    assert not copied_images[0].isNull()
+
+    # Test save image as PNG
+    png_path = tmp_path / "exported_screenshot.png"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args, **kwargs: (str(png_path), "PNG Image (*.png)"))
+    editor._save_image_to_file(img_url, detected_qimg)
+    assert png_path.exists()
+    assert png_path.stat().st_size > 0
+
+    # Test save image as JPG
+    jpg_path = tmp_path / "exported_screenshot.jpg"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args, **kwargs: (str(jpg_path), "JPEG Image (*.jpg *.jpeg)"))
+    editor._save_image_to_file(img_url, detected_qimg)
+    assert jpg_path.exists()
+    assert jpg_path.stat().st_size > 0
+
+
+
 def test_ui_history_drawer_toggle(main_window):
     main_window.show()
     initial_hidden = main_window.history_drawer.isHidden()

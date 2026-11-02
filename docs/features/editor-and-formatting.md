@@ -155,3 +155,13 @@ When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text 
 - `ScratchpadService.convert_html_to_clean_text()` automatically converts `<a href="task://toggle">[ ]</a>` into standard Markdown `- [ ] `.
 - Automatically converts `<a href="task://toggle">[✔]</a>` into standard Markdown `- [x] `.
 - This ensures notes copied into PSA ticket portals (ConnectWise, ServiceNow, Jira, GitHub Issues) render clean, native markdown checkboxes with zero proprietary HTML tags.
+
+---
+
+## 7. Image Context Menu: Copy & Save As...
+
+When right-clicking on any embedded screenshot or image in `TechPadEditor`:
+- **📋 Copy Image:** Copies the full-resolution bitmap directly into the system clipboard (`QApplication.clipboard().setImage`), ready to paste (`Ctrl+V`) into external applications such as Slack, Microsoft Teams, Outlook, Word, or Jira.
+- **💾 Save Image As...:** Opens a file dialog allowing export to `.png` (lossless) or `.jpg` (raw original bytes without recompression artifacts).
+- Both actions display instantaneous feedback in the window status bar (`✓ Copied image to clipboard!` / `✓ Saved image to <path>`).
+

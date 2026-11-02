@@ -85,3 +85,13 @@ In `ImageService`:
 | 4K Monitor Window Snip | ~16.5 MB (ARGB32) | ~450 KB – 750 KB | **~95%** |
 | Terminal / CLI Error Snip | ~2.1 MB (ARGB32) | ~60 KB – 120 KB | **~94%** |
 
+---
+
+## 5. Image Export & Clipboard Copy (Context Menu)
+
+When right-clicking directly on any embedded image in `TechPadEditor`:
+- **Image Hit Detection (`_get_image_at_pos`):** Resolves the character format under cursor (and adjacent character positions) to verify `fmt.isImageFormat()`, retrieving the associated `QImage` directly from `QTextDocument.resource()`.
+- **`📋 Copy Image`:** Copies raw uncompressed pixel data into the system clipboard via `QApplication.clipboard().setImage(qimage)`, enabling instantaneous pasting (`Ctrl+V`) into Slack, Teams, Outlook, Jira, or Paint.
+- **`💾 Save Image As...`:** Prompts standard `QFileDialog.getSaveFileName` for PNG or JPEG export. If the user saves as JPEG, the original stored JPEG bytes are written directly without generational quality loss from re-compression.
+
+
