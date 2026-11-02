@@ -13,10 +13,17 @@ flowchart TD
         TB["TechPadToolBar"]
         HD["HistoryDrawer (QDockWidget)"]
         ETD["EditTicketDialog"]
+        SWW["TicketStopwatchWidget"]
+        SD["SettingsDialog"]
+    end
+
+    subgraph NativeOS ["Operating System Integration"]
+        W32["Win32 APIs (user32.dll)<br/>• GetLastInputInfo<br/>• OpenInputDesktop"]
     end
 
     subgraph Services ["Service Layer (src/services/)"]
-        SPS["ScratchpadService<br/>• Auto-save orchestration<br/>• Note export<br/>• Skeleton formatting"]
+        SPS["ScratchpadService<br/>• Auto-save orchestration<br/>• Note export & audit summary<br/>• Skeleton formatting"]
+        SWS["StopwatchService<br/>• Decimal & 15m rounded blocks<br/>• Wall-clock duration math"]
         IMS["ImageService<br/>• JPEG 85% compression<br/>• Resource URI mapping<br/>• Orphan image pruning"]
         SES["SessionService<br/>• Workspace state restoration<br/>• Tab order serialization"]
         DBT["DebounceTimer<br/>• 1500ms QTimer debounce"]
@@ -26,6 +33,7 @@ flowchart TD
         SPR["ScratchpadRepository"]
         IMR["ImageRepository"]
         SER["SessionRepository"]
+        SETR["SettingsRepository"]
     end
 
     subgraph Database ["Storage Layer (src/database/)"]
@@ -33,6 +41,7 @@ flowchart TD
         T_PADS[("scratchpads")]
         T_IMGS[("scratchpad_images")]
         T_SESS[("app_session")]
+        T_SETT[("app_settings")]
         T_FTS[("scratchpad_fts (FTS5)")]
     end
 
@@ -41,22 +50,29 @@ flowchart TD
     MW --> TB
     MW --> HD
     MW --> ETD
+    TB --> SWW
+    MW --> SD
 
+    SWW -.-> W32
+    SWW --> SWS
     TW --> SPS
     ED --> IMS
     ED --> DBT
     DBT --> SPS
     MW --> SES
+    MW --> SETR
     HD --> SPS
 
     SPS --> SPR
     IMS --> IMR
     SES --> SER
+    SD --> SETR
 
     SPR --> T_PADS
     SPR --> T_FTS
     IMR --> T_IMGS
     SER --> T_SESS
+    SETR --> T_SETT
 ```
 
 ---
@@ -65,20 +81,23 @@ flowchart TD
 
 ### Presentation Layer (`src/ui/`)
 - **Role:** Handles user input, window layouts, rendering, shortcuts, and event handling.
-- **Rule:** UI components must **never** execute raw SQL queries. All data operations are delegated exclusively to `src/services/`.
+- **Rule:** UI components must **never** execute raw SQL queries. All data operations are delegated exclusively to `src/services/` or `src/repositories/`.
 - **Components:**
-  - `MainWindow`: Orchestrates application lifecycle, dock panels, status bar, and central tabs.
-  - `TechPadTabWidget`: Movable, closable tabs with double-click modal trigger.
+  - `MainWindow`: Orchestrates application lifecycle, dock panels, opacity slider, settings modal, status bar, and central tabs. Houses application-wide `eventFilter` on `QApplication.instance()` to handle keyboard shortcuts across physical hardware modifier variations.
+  - `TechPadTabWidget`: Movable, closable tabs with live running minutes (`#101 (14m) — Acme`) and context menu operations.
   - `TechPadEditor`: Subclass of `QTextEdit` intercepting clipboard images, drag-and-drop, and clickable URLs.
   - `TechPadToolBar`: Compact micro-controls for rich text, monospace code blocks, triage badges, and templates.
-  - `HistoryDrawer`: Collapsible side drawer with real-time FTS5 search.
+  - `TicketStopwatchWidget`: Toolbar component managing per-tab active troubleshooting duration, play/pause toggles, and MSP billing copy menus.
+  - `HistoryDrawer`: Collapsible side drawer with real-time FTS5 search, ticket lifespan metadata, and tab restoration.
+  - `SettingsDialog`: User configuration modal for ticket prefixes, auto-save debounce delay, JPEG quality, tab closure behavior, and default window opacity.
 
 ### Service Layer (`src/services/`)
-- **Role:** Encapsulates business logic, data formatting, debounced auto-saving, media compression, and session reconciliation.
+- **Role:** Encapsulates business logic, data formatting, debounced auto-saving, media compression, session reconciliation, and billing math.
 - **Components:**
-  - `ScratchpadService`: Ticket CRUD, note conversion for PSA tools ("Copy for Ticket Note"), and skeleton templates.
+  - `ScratchpadService`: Ticket CRUD, note conversion for PSA tools ("Copy for Ticket Note"), skeleton templates, and automated audit summaries.
+  - `StopwatchService`: Calculates human-readable time strings (`HH:MM:SS`), decimal billing hours (`0.25h`), and 15-minute rounded MSP billing increments (`0.50h`).
   - `ImageService`: Image conversion, JPEG 85% compression, resource URL management, and synchronization/pruning.
-  - `SessionService`: Loads and saves workspace session (active tabs, active index, window geometry).
+  - `SessionService`: Loads and saves workspace session (active tabs, active index, window geometry, window opacity).
 
 ### Repository Layer (`src/repositories/`)
 - **Role:** Manages SQL transactions, query parameterization, and row-to-dictionary mapping.
@@ -87,6 +106,7 @@ flowchart TD
   - `ScratchpadRepository`: CRUD operations and FTS5 search queries.
   - `ImageRepository`: BLOB storage and cascading garbage collection.
   - `SessionRepository`: Singleton session row management.
+  - `SettingsRepository`: Key-value storage for application preferences in `app_settings`.
 
 ### Database Layer (`src/database/`)
 - **Role:** SQLite connection lifecycle, PRAGMA configuration, schema initialization, and migration execution.
@@ -97,7 +117,7 @@ flowchart TD
 
 ---
 
-## 3. Threading Model & Responsibilities
+## 3. Threading Model & System Event Interception
 
 T-Notes operates within the standard PySide6 / Qt Event Loop:
 1. **Main GUI Event Loop:** Handles keyboard strokes, mouse interactions, clipboard paste interception, cursor positioning, and UI rendering.
@@ -107,6 +127,13 @@ T-Notes operates within the standard PySide6 / Qt Event Loop:
    - Closing an active tab (`tabCloseRequested`).
    - Window closing (`closeEvent`).
 4. **Lightweight Transactions:** Because images are pre-compressed to compact JPEGs (typically 100–300 KB) and SQLite runs in WAL mode, database operations execute in milliseconds without freezing the main thread.
+5. **Native Win32 Workstation Lock & Inactivity Auto-Pause:**
+   A low-overhead 1-second pulse timer invokes Windows native APIs:
+   - `user32.dll:GetLastInputInfo`: Measures idle milliseconds since last user keyboard or mouse input.
+   - `user32.dll:OpenInputDesktop`: Verifies if the desktop is locked (`Win + L` or secure screensaver).
+   If idle exceeds 300 seconds (5 minutes) or the session locks, active stopwatches pause automatically to prevent technician billing overages.
+6. **Centralized Application Event Filter:**
+   To guarantee shortcut execution regardless of which widget holds focus (e.g., inside `TechPadEditor` or `TechPadTabBar`), `MainWindow.eventFilter` is registered on `QApplication.instance()`. Modifiers are parsed with bitwise masks (`mods & Qt.ControlModifier`, `mods & Qt.ShiftModifier`), isolating hotkeys from keyboard driver flags such as `Qt.KeypadModifier`.
 
 ---
 

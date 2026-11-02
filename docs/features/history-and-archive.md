@@ -11,7 +11,13 @@ The **History Drawer** is a collapsible side panel (`QDockWidget`) that stores c
 - **Live Search Field (`QLineEdit`):** Positioned at the top of the drawer with clear button. Typing immediately filters tickets in real time.
 - **Ticket List (`QListWidget`):** Displays archived tickets with:
   - Header: `#{ticket_number} — {client_name} ({title})`
-  - Subtitle: `📅 {YYYY-MM-DD} | {Snippet preview}`
+  - Subtitle: `⏱️ {minutes}m | 📅 {YYYY-MM-DD} | {Snippet preview}` (time badge omitted if elapsed time is 0)
+  - Detailed Tooltip: Surfaces comprehensive metadata on hover:
+    - Ticket Number & Client Name
+    - Title / Summary
+    - Created timestamp (UTC)
+    - Archived timestamp (UTC)
+    - Total Active Troubleshooting duration in seconds
 - **Action Buttons:**
   - `Restore Tab`: Re-opens the selected ticket as an active tab.
   - `Delete`: Prompts for permanent deletion of the ticket and its images.
@@ -60,8 +66,9 @@ When a tab is closed via `✕`, `Ctrl+W`, or right-click **Archive to History**:
 
 ### 3.3 Restoring an Archived Ticket
 1. The technician selects an archived ticket in the list and clicks **Restore Tab** (or double-clicks the item).
-2. If the ticket is already open in an active tab, the tab widget immediately focuses that tab.
-3. If not open:
+2. Alternatively, pressing `Ctrl+Shift+T` at any time restores the most recently archived ticket immediately without opening the drawer.
+3. If the ticket is already open in an active tab, the tab widget immediately focuses that tab.
+4. If not open:
    - `ScratchpadService.restore_ticket(scratchpad_id)` sets `status = 'active'` and calculates the next `tab_order`.
    - A new tab is instantiated with its saved HTML and images loaded from SQLite.
    - The drawer list refreshes, removing the item from archive.

@@ -2,6 +2,53 @@
 
 All notable changes to the TechPad (T-Notes) project will be documented in this file.
 
+## [1.3.0] - 2026-11-01
+
+### Added
+- **Ticket Stopwatch & MSP Billing Suite (`StopwatchService`, `TicketStopwatchWidget`)**:
+  - Live Consolas monospace timer (`⏱️ HH:MM:SS`) tracking cumulative active troubleshooting time per tab.
+  - Per-tab persistence: `elapsed_seconds` column in SQLite `scratchpads` table updated synchronously on tab switch, window close, and auto-save.
+  - Formatted billing exports via `StopwatchService`:
+    - Exact duration: `HH:MM:SS` (e.g. `00:14:32`).
+    - Decimal hours: `0.24h` formatted with two decimals.
+    - 15-minute rounded blocks: Rounds up to nearest 15-minute increment (e.g. `0.25h`, `0.50h`), standard in MSP/PSA client billing.
+  - One-click copy dropdown (`📋 Time`) copying exact, decimal, or rounded blocks directly to clipboard with visual tooltip confirmation.
+  - "Copy Note for Ticket Tool" option prepending billable troubleshooting time directly to clean plain-text/Markdown notes.
+- **System Inactivity & Workstation Lock Auto-Pause**:
+  - Low-overhead 1-second pulse timer polling Windows native APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
+  - Automatically pauses active ticket stopwatch if the technician locks their workstation (`Win + L`) or leaves the workstation idle for > 300 seconds (5 minutes), preventing inflated billing hours.
+  - Automatically resets pause state on manual resume (`▶️`) or when switching between tabs.
+- **Dynamic Tab Header Minutes**:
+  - Tab titles automatically append elapsed duration in minutes: `#{ticket_number} ({minutes}m) — {client_name | title}`.
+  - Tab titles update live every minute while the stopwatch runs.
+  - Automatically reverts to standard title without clutter when elapsed time is 0 or under 1 minute.
+- **Ticket Archival Audit Trail**:
+  - On ticket archival (`✕`, `Ctrl+W`, or context menu), `ScratchpadService.archive_ticket()` automatically calculates and appends an audit block to the note HTML:
+    - Tab Created timestamp (UTC).
+    - Tab Archived timestamp (UTC).
+    - Total Tab Open Lifespan duration (wall-clock elapsed time).
+    - Active Troubleshooting Time (exact stopwatch seconds and billable hours).
+  - Idempotent styling prevents duplicate audit blocks if a restored ticket is re-archived.
+- **Toolbar Quick History Access Button (`🕰️`)**:
+  - Compact emoji button added to the top window toolbar between the Settings gear (`⚙️`) and Opacity Slider.
+  - Enables 1-click toggling of the History & Archive Drawer.
+- **History Drawer Metadata Enhancements**:
+  - History list items now display billable elapsed time tags: `⏱️ {minutes}m | 📅 {YYYY-MM-DD} | {preview}`.
+  - Hover tooltips display complete ticket audit metadata: Ticket #, Client, Title, Created timestamp, Archived timestamp, and exact Troubleshooting seconds.
+- **Global Application Shortcut Event Filter**:
+  - Installed a centralized `eventFilter` on `QApplication.instance()` to handle `Ctrl+Shift+PageUp` and `Ctrl+Shift+PageDown` tab sliding.
+  - Bitwise modifier masking (`mods & Qt.ControlModifier`, `mods & Qt.ShiftModifier`) reliably circumvents Windows hardware keypad modifier flags (`Qt.KeypadModifier`).
+  - Restores active editor focus immediately after tab movement.
+- **Database Schema Upgrades & Migrations**:
+  - Safe, idempotent schema migrations in `src/database/migrations.py`.
+  - Added `elapsed_seconds` and `archived_at` columns to `scratchpads`.
+  - Added `window_opacity` column to `app_session` before singleton row insertion to prevent startup crashes on fresh databases.
+  - Automated migration for legacy `scratchpad_fts` virtual tables: detects legacy schemas containing `content_text`, drops legacy triggers, rebuilds external content virtual table referencing `content_html`, and runs `rebuild`.
+- **Expanded Test Suite**:
+  - Expanded test coverage from 22 to 39 automated tests covering stopwatch formatting, 15-minute rounding, idle detection, archival audit injection, database migrations, and application event filter shortcut handling.
+
+---
+
 ## [1.2.0] - 2026-11-01
 
 ### Added

@@ -13,15 +13,17 @@ docs/
 │   ├── system-overview.md                # Layered design, threading model, and bootstrap
 │   └── image-pipeline.md                 # Screenshot capture, JPEG compression, and BLOB lifecycle
 ├── database/
-│   ├── schema.md                         # Relational schema, SQLite PRAGMAs, and data dictionary
+│   ├── schema.md                         # Relational schema, migrations, SQLite PRAGMAs, and data dictionary
 │   └── fts-and-search.md                 # FTS5 virtual table, triggers, and search syntax
 ├── features/
-│   ├── tab-lifecycle.md                  # Tab creation, reordering, renaming, and closing
-│   ├── editor-and-formatting.md          # Custom QTextEdit, hotkeys, code blocks, and badges
-│   └── history-and-archive.md            # Archive drawer, state transitions, and restoration
+│   ├── tab-lifecycle.md                  # Tab creation, reordering, live minutes, and shortcuts
+│   ├── editor-and-formatting.md          # Custom QTextEdit, hotkeys, code blocks, stopwatch, and badges
+│   └── history-and-archive.md            # Archive drawer, audit trail, search, and restoration
 └── decisions/
     ├── template.md                       # Architecture Decision Record (ADR) template
-    └── 0001-sqlite-wal-and-jpeg-blobs.md # ADR 0001: SQLite WAL & Embedded JPEG BLOB Storage
+    ├── 0001-sqlite-wal-and-jpeg-blobs.md # ADR 0001: SQLite WAL & Embedded JPEG BLOB Storage
+    ├── 0002-win32-idle-and-lock-detection.md # ADR 0002: Win32 Idle & Lock Auto-Pause
+    └── 0003-global-event-filtering-for-shortcuts.md # ADR 0003: Global Event Filtering for Shortcuts
 ```
 
 ---
@@ -30,14 +32,14 @@ docs/
 
 | Domain | Document | Key Topics Covered |
 | :--- | :--- | :--- |
-| **System Architecture** | [`architecture/system-overview.md`](architecture/system-overview.md) | Layer boundaries (`ui/` → `services/` → `repositories/` → `database/`), Qt event loop, startup/teardown sequence. |
+| **System Architecture** | [`architecture/system-overview.md`](architecture/system-overview.md) | Layer boundaries (`ui/` → `services/` → `repositories/` → `database/`), Qt event loop, stopwatch service, settings repository, and bootstrap. |
 | **Media & Screenshots** | [`architecture/image-pipeline.md`](architecture/image-pipeline.md) | `Win+Shift+S` clipboard interception, 85% JPEG compression, `image://local/<uuid>` URI mapping, BLOB storage. |
-| **Relational Data** | [`database/schema.md`](database/schema.md) | Data dictionary for `scratchpads`, `scratchpad_images`, `app_session`, foreign keys, cascade deletes, and migrations. |
-| **Full-Text Search** | [`database/fts-and-search.md`](database/fts-and-search.md) | SQLite FTS5 configuration, prefix token matching, automatic sync triggers (`ai`, `ad`, `au`). |
-| **Workspace & Tabs** | [`features/tab-lifecycle.md`](features/tab-lifecycle.md) | Multi-tab tracking, drag-and-drop reordering, double-click modal renaming, archive-on-close confirmation. |
-| **Editor & Text Tools** | [`features/editor-and-formatting.md`](features/editor-and-formatting.md) | Rich text shortcuts, monospace CLI code blocks, Log Triage pills (`PASS`/`FAIL`/`WARN`), PSA note export. |
-| **History & Drawer** | [`features/history-and-archive.md`](features/history-and-archive.md) | Collapsible side drawer (`Ctrl+H`), real-time FTS filtering, ticket restoration, permanent deletion. |
-| **Architecture Decisions** | [`decisions/`](decisions/0001-sqlite-wal-and-jpeg-blobs.md) | Historical record of key technical and architectural decisions (ADRs). |
+| **Relational Data** | [`database/schema.md`](database/schema.md) | Data dictionary for `scratchpads`, `scratchpad_images`, `app_session`, `app_settings`, foreign keys, cascade deletes, and schema migrations. |
+| **Full-Text Search** | [`database/fts-and-search.md`](database/fts-and-search.md) | SQLite FTS5 configuration, prefix token matching, automatic sync triggers (`ai`, `ad`, `au`), and legacy table rebuild migrations. |
+| **Workspace & Tabs** | [`features/tab-lifecycle.md`](features/tab-lifecycle.md) | Multi-tab tracking, live running minutes, drag reordering, browser-style shortcuts with bitwise modifier filters, and context menus. |
+| **Editor & Text Tools** | [`features/editor-and-formatting.md`](features/editor-and-formatting.md) | Rich text shortcuts, monospace CLI code blocks, Log Triage pills, Ticket Stopwatch (`⏱️`), MSP billing copy, and opacity slider. |
+| **History & Drawer** | [`features/history-and-archive.md`](features/history-and-archive.md) | Collapsible side drawer (`Ctrl+H` / `🕰️`), real-time FTS filtering, ticket archival audit trails, and tab restoration (`Ctrl+Shift+T`). |
+| **Architecture Decisions** | [`decisions/`](decisions/) | Historical record of key technical and architectural decisions (ADRs 0001, 0002, 0003). |
 
 ---
 

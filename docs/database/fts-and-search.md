@@ -86,3 +86,22 @@ LIMIT 100;
 ### Resilient Fallback
 If an unexpected FTS syntax error occurs (e.g. malformed inputs), the repository gracefully catches `sqlite3.OperationalError` and falls back to a standard SQL `LIKE %...%` query across all columns, ensuring the search UI never crashes.
 
+---
+
+## 5. Virtual Table Migration & Index Rebuilding
+
+When migrating schemas or importing historical scratchpad databases:
+- **Legacy Schema Collision:** Early versions of T-Notes declared `content_text` in the FTS virtual table definition. When transitioning to full HTML notes (`content_html`), calling SQLite's native index rebuild `INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild')` failed with `sqlite3.OperationalError: no such column: T.content_text` because SQLite attempted to evaluate the underlying shadow table against obsolete column definitions.
+- **Automated Detection & Migration:** In `src/database/migrations.py`:
+  ```python
+  fts_row = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'scratchpad_fts';").fetchone()
+  if fts_row and "content_text" in fts_row[0]:
+      conn.execute("DROP TRIGGER IF EXISTS scratchpads_ai;")
+      conn.execute("DROP TRIGGER IF EXISTS scratchpads_ad;")
+      conn.execute("DROP TRIGGER IF EXISTS scratchpads_au;")
+      conn.execute("DROP TABLE IF EXISTS scratchpad_fts;")
+      # Re-creates scratchpad_fts with content_html and sets up new triggers
+  ```
+- **Index Rebuild:** After table structure validation, `INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');` is executed within a guarded block, re-indexing all existing tickets without downtime or loss of note content.
+
+

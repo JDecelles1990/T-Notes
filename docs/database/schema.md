@@ -101,12 +101,46 @@ PRAGMA busy_timeout = 5000;
 
 ---
 
-## 4. Migration Strategy
+## 4. Migration Strategy & Version History
 
-Database migrations are defined and managed in `src/database/migrations.py`.
-- On application boot, `init_database(db_manager)` executes `src/database/schema.sql` idempotently using `CREATE TABLE IF NOT EXISTS`.
-- If new tables or columns are introduced in future versions:
-  1. Add new DDL statements to `src/database/schema.sql`.
-  2. Implement idempotent `ALTER TABLE ... ADD COLUMN ...` checks in `src/database/migrations.py`.
-  3. Ensure all automated tests in `tests/test_database.py` pass.
+Database migrations are managed idempotently in `src/database/migrations.py`. On startup, `init_database(db_manager)` executes `schema.sql` and checks existing table pragmas to safely upgrade existing installations without data loss:
+
+### 4.1 Implemented Migrations
+
+1. **`app_session` Column Migration (`window_opacity`)**:
+   - *Problem:* In earlier versions, `app_session` lacked `window_opacity`. Inserting the singleton row on older databases raised `sqlite3.OperationalError: table app_session has no column named window_opacity`.
+   - *Resolution:* Before executing the singleton `INSERT OR IGNORE`, `init_database` inspects `PRAGMA table_info(app_session)`. If missing, it executes:
+     ```sql
+     ALTER TABLE app_session ADD COLUMN window_opacity INTEGER DEFAULT 100;
+     ```
+
+2. **`scratchpads` Time Tracking Columns (`elapsed_seconds`, `archived_at`)**:
+   - *Problem:* The stopwatch and audit log system requires persistent tracking of active troubleshooting seconds and archival timestamps.
+   - *Resolution:* Inspects `PRAGMA table_info(scratchpads)` and conditionally applies:
+     ```sql
+     ALTER TABLE scratchpads ADD COLUMN elapsed_seconds INTEGER DEFAULT 0;
+     ALTER TABLE scratchpads ADD COLUMN archived_at DATETIME;
+     ```
+
+3. **`scratchpad_fts` External Content Rebuild**:
+   - *Problem:* Early iterations of the FTS schema indexed a legacy column `content_text`. When updated to `content_html`, calling FTS index rebuild commands resulted in `no such column: T.content_text`.
+   - *Resolution:* Inspects `SELECT sql FROM sqlite_master WHERE name = 'scratchpad_fts'`. If `content_text` is detected:
+     - Drops existing triggers `scratchpads_ai`, `scratchpads_ad`, `scratchpads_au`.
+     - Drops legacy virtual table `scratchpad_fts`.
+     - Recreates `scratchpad_fts` referencing `content_html`.
+     - Recreates synchronization triggers.
+     - Runs `INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');`.
+
+4. **Settings Singleton & Defaults**:
+   - Populates missing keys into `app_settings` via `INSERT OR IGNORE` (`auto_save_delay_ms=1500`, `jpeg_quality=85`, `ticket_prefix=INC-`, `close_tab_action=prompt`, `window_opacity=100`).
+
+---
+
+## 5. Adding Future Migrations
+
+If new tables or columns are introduced:
+1. Add standard DDL to `src/database/schema.sql`.
+2. Add safe `PRAGMA table_info` checks and `ALTER TABLE ... ADD COLUMN` statements in `src/database/migrations.py`.
+3. Wrap all migration steps inside the atomic transaction block (`with conn:`).
+4. Validate with automated migration tests in `tests/test_database.py`.
 
