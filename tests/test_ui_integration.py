@@ -281,23 +281,26 @@ def test_ui_stopwatch_integration_and_dynamic_tab_minutes(main_window):
     assert "00:14:00" in stopwatch.lbl_time.text()
 
 
-def test_ui_stopwatch_copy_and_reset(main_window):
+def test_ui_stopwatch_copy_and_reset(main_window, monkeypatch):
     """Tests stopwatch copy menu actions and reset button."""
     stopwatch = main_window.toolbar.stopwatch
     stopwatch._seconds = 930  # 15m 30s -> 0.26h decimal, 0.50h rounded
     stopwatch._update_display()
 
+    copied = []
+    monkeypatch.setattr(QApplication.clipboard(), "setText", lambda t: copied.append(t))
+
     # Test copy exact
     stopwatch._copy_to_clipboard("display")
-    assert QApplication.clipboard().text() == "00:15:30"
+    assert copied[-1] == "00:15:30"
 
     # Test copy decimal
     stopwatch._copy_to_clipboard("decimal")
-    assert QApplication.clipboard().text() == "0.26h"
+    assert copied[-1] == "0.26h"
 
     # Test copy 15m rounded
     stopwatch._copy_to_clipboard("rounded")
-    assert QApplication.clipboard().text() == "0.50h"
+    assert copied[-1] == "0.50h"
 
     # Test reset timer
     stopwatch.reset_timer()

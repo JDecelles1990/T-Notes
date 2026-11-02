@@ -64,3 +64,4 @@ In a single-pane tabbed workspace, comparing two tickets requires constantly swi
 ### Trade-offs & Mitigations
 - *Focus Ambiguity:* Having two editors visible simultaneously could cause confusion over which ticket is receiving formatting commands.
   - *Mitigation:* The status bar clearly displays `Active Ticket: #...`, and `focusInEvent` automatically synchronizes the ribbon and stopwatch the moment the user clicks or types into either editor.
+
