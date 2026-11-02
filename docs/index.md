@@ -33,6 +33,11 @@ docs/
 
 ## 🧭 Quick Component Navigation
 
+S001 implementation candidate: [ADR 0008](decisions/0008-m365-workspace-foundation.md)
+and the [system overview](architecture/system-overview.md) document the M365 GUI
+foundation, pending independent review/integration. PowerShell contract drafts
+and future backend functionality are not adopted by this candidate.
+
 | Domain | Document | Key Topics Covered |
 | :--- | :--- | :--- |
 | **System Architecture** | [`architecture/system-overview.md`](architecture/system-overview.md) | Layer boundaries (`ui/` → `services/` → `repositories/` → `database/`), central `QSplitter` presentation layer, Qt event loop, system tray lifecycle, and Win32 F8 hotkey. |

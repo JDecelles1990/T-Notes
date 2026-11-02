@@ -1,5 +1,31 @@
 # Rich-Text Editor & Technician Formatting Tools
 
+## S001 workspace shortcut boundary
+
+The S001 candidate suspends existing Notes QActions (including nested toolbar-menu
+actions), Ctrl+S, Ctrl+H, Ctrl+comma and Alt+Z shortcuts while M365 is displayed.
+Its application event filter bypasses ticket Ctrl+T/W/F4/Tab/PageUp/PageDown/number
+handling there, preventing accidental edits, closing or reordering of hidden tabs.
+Back restores exact prior enabled states, including previously disabled actions.
+Notes shortcut behavior is unchanged. F8 remains global; Alt+T returns to Notes
+before existing Mini-HUD behavior. Back and ticket-placeholder collapse controls
+are keyboard-focusable; Space activates Back.
+
+The original editor retains document, cursor/selection, undo and image resources.
+The M365 page contains no QTextEdit and implements neither note synchronization
+nor result insertion. Independent review/integration of this candidate is pending.
+
+Alt+F8 is the application-level S001 workspace toggle. It remains enabled when
+Notes-only shortcuts are suspended and works from editor, toolbar, Back or future
+M365 form focus. Exactly one QShortcut owns it, with context set explicitly to
+ApplicationShortcut and auto-repeat disabled; eventFilter does not also dispatch
+this combination. Both visible navigation buttons call the same shared guard.
+Modal/shutdown/reentrant or hidden/minimized states suppress it. Plain F8 keeps
+its existing window/global-hotkey behavior; Alt+T and Alt+Z retain their existing
+HUD and Notes split-view rules. The button tooltips advertise Alt+F8. Window flag
+transitions when toggling Mini-HUD trigger `_activate_and_focus()` to guarantee
+native window activation and focused controls survive handle changes on Windows.
+
 ## 1. Overview
 The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `QTextEdit` component integrated with `TechPadToolBar`. It balances rich-text capabilities (bold, italics, colors, embedded images) with developer-grade controls (monospace CLI blocks, timestamping, triage badges, URL auto-detection, and clean markdown export).
 
@@ -185,4 +211,59 @@ When copying highlighted selections or copying the entire note for use in other 
 3. **Tab Context Menu:** Right-click any primary or secondary tab header and choose `📋 Copy Formatted Note (Rich Text & Images)`.
 4. **Editor Context Menu:** Right-click anywhere inside the editor and choose `📋 Copy Entire Formatted Note (Ctrl+Shift+C)`.
 
+
+
+---
+
+## 9. M365 Adaptive & High-DPI Viewport Layout
+
+To support compact displays and Windows high-DPI scaling (125% and 150% scaling on 1280x720 and 1600x900 screens):
+
+### 9.1 Responsive Column Reflow (1-Column vs 2-Column)
+- **Viewport Width Detection:** `M365LauncherWidget` dynamically measures center viewport width in `resizeEvent`.
+- **Adaptive Stacking:** When available center width is `< 500px`, the 6 administrative sections automatically reflow into a single vertical column (`index, 0`), ensuring titles like `"Authentication & Tenant Context"` have ample horizontal space without clipping or truncation.
+- **2-Column Mode:** When center width is `>= 500px`, sections arrange in a balanced `3x2` grid.
+- **Instance Preservation:** Rearrangement retains identical widget instances without recreating or re-instantiating widgets during resizing.
+
+### 9.2 Collapsible Navigation & Active Ticket Sidebars
+- **Collapsible Splitter:** `workspace_splitter.setChildrenCollapsible(True)` allows both sidebars to collapse down cleanly.
+- **Category Navigation Toggle:** A compact `☰ Categories` toggle button (`nav_toggle`) allows collapsing the left list to reclaim 130px+ of horizontal space on narrow screens.
+- **Active Ticket Notes Toggle:** The `Active Ticket Notes (future)` toggle button (`ticket_panel_toggle`) allows hiding the right sidebar placeholder to reclaim 140px+ for the main workspace.
+- **State Preservation:** Navigation selection, scroll position, and panel collapsed/expanded states survive across Alt+F8 workspace switches.
+
+### 9.3 Workspace-Specific Minimum Dimensions & Bounds Clamping
+- **M365 Minimum Size:** Set to `640x380` on entering M365 workspace, allowing the window to fit comfortably within 720p displays at 150% scaling without pushing bottom content off-screen.
+- **Notes Minimum Size:** Restored to `660x400` when returning to Notes, preserving the two-row formatting ribbon, tabs, and editor on portrait monitors down to 700 logical pixels.
+- **Geometry Clamping:** Restoring normal geometry from Mini-HUD clamps window boundaries to the active monitor's available desktop work area (`screen.availableGeometry()`), preventing off-screen window drift.
+
+### 9.4 Save Barrier & Data Integrity on Workspace Switch and Exit
+- **Atomic Save Barrier (`flush_all_saves() -> bool`):** Before switching to the M365 Launcher or closing the application, all active debounce timers and dirty scratchpad IDs are immediately flushed and saved to SQLite.
+- **Save Status Accuracy:** If any ticket fails to persist or dirty notes remain, the status bar displays `● Save Failed` in bold red (never falsely showing `● Saved`).
+- **Guarded Navigation & Refused Exit:** Failed saves immediately abort workspace switching (`show_m365_workspace()` returns `False`), and `closeEvent()` calls `event.ignore()` with a status bar alert to keep the window open and preserve all in-memory drafts and images. Subsequent user actions cleanly retry the stopped timers without data loss.
+
+---
+
+## 10. Responsive Formatting Toolbar, History Drawer & Split View
+
+To support portrait monitors (e.g. 1050x1680 at 150% scaling yielding a 700-logical-pixel viewport) and constrained screen widths:
+
+### 10.1 Responsive Formatting Toolbar (`TechPadToolBar`)
+- **Normal Mode (width >= 800px):** All primary formatting tools, log triage badge selector, timestamp, and screenshot buttons are displayed directly inline on row 1. Overflow action button `More ▾` is hidden.
+- **Compact Mode (width < 775px):** Secondary tools (`act_badge`, `act_timestamp`, `act_image`) automatically move their toolbar representations into the compact `More ▾` popup menu (`btn_more` / `menu_more`). Dedicated toolbar button widgets (`act_timestamp_btn`, `act_image_btn`) are hidden from the toolbar row, while their underlying `QAction` objects remain active and visible in the `More ▾` menu. All keyboard shortcuts (`Alt+1..4`, `F5`/`Ctrl+Alt+T`, `Ctrl+Alt+I`) remain fully operational with 100% action parity. Triggering any action from the `More ▾` menu restores keyboard focus to the active `TechPadEditor`.
+- **Hysteresis:** Thresholds (compact < 775px, normal >= 800px) prevent resize flickering or oscillating layouts during window dragging.
+- **Secondary Micro-Toolbar Adaptations:** Under compact mode, `Copy Note` shortens to `Copy`, `Template` shortens, and opacity slider width contracts from 85px to 50px, ensuring row 2 controls never clip or overflow.
+- **M365 Launcher Button:** Remains persistently visible and accessible on row 1 across all window widths.
+
+### 10.2 Responsive History Drawer Auto-Collapse
+- **Automatic Collapse:** When horizontal workspace width falls below 850px, the History drawer automatically hides (`history_auto_collapsed = True`) to prioritize the active ticket editor canvas.
+- **Automatic Restoration:** When width expands to 900px or greater, the History drawer automatically reopens (`history_auto_collapsed = False`).
+- **User Intent Preservation:** The user's explicit visibility preference (`_user_history_drawer_open`) is tracked separately from responsive overrides. If the user explicitly toggles the drawer (via `Ctrl+H` or toolbar button) while in narrow mode, their explicit choice takes precedence and clears the auto-collapse flag.
+- **Session Persistence Safety:** Saving workspace state on window close records the user's explicit preference, ensuring an auto-collapsed drawer is never permanently marked as closed in persistent session storage.
+
+### 10.3 Responsive Compact Split View (Single-Pane Mode)
+- **Automatic Single-Pane Transition:** When Split View is active and window width falls below 750px, the workspace automatically collapses to display only one editor pane (`split_auto_single_pane = True`).
+- **Active Pane Retention:** The currently focused ticket editor remains visible, while the inactive split pane is hidden.
+- **Pane Switcher Control:** A status bar button (`⇋ Switch Pane (Alt+Shift+Z)`) appears dynamically in compact mode, allowing technicians to toggle between primary and secondary panes.
+- **Data & Identity Integrity:** Both `TechPadTabWidget` instances, `TechPadEditor` widgets, `QTextDocument` structures, undo stacks, in-memory images, and scratchpad IDs remain alive and unmodified. Auto-save continues flushing modifications in either pane without data loss.
+- **Side-by-Side Restoration:** When window width expands to 780px or greater, two-pane side-by-side editing is restored with previously saved splitter proportions.
 

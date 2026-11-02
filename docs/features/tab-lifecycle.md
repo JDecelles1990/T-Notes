@@ -1,5 +1,50 @@
 # Tab Lifecycle & Workspace Management
 
+## S001 Notes/M365 workspace navigation candidate
+
+Notes remains the default startup workspace on page 0 of MainWindow.workspace_stack;
+the original splitter and both tab panes remain intact. Page 1 is the separate
+M365LauncherWidget skeleton. M365 Launcher and Back switch pages in the same window
+without editor copies, editor transfer, document reconstruction, schema changes or
+a second application database. The future ticket sidebar is a placeholder only.
+
+Before leaving Notes, cancel pending debounce timers and call the existing saver
+directly for pending/dirty IDs. Successful persistence clears dirty tracking and
+image caches. A failure keeps Notes active, retains unsaved state, and displays a
+safe status message. A later explicit navigation attempt retries dirty IDs; an
+idle failed timer does not count as saved. Ordinary 1500ms debounce behavior remains.
+
+Switching preserves active ticket/pane, selection/cursor/undo, document/editor
+identity, image resources, split membership, opacity, and stopwatch running/paused
+state. Back restores prior Notes toolbars, history visibility and enabled controls.
+Split/history controls are unavailable on M365. F8 restores the current page.
+Alt+T from M365 returns to Notes before entering Mini-HUD; leaving HUD stays on
+Notes. Opening M365 from HUD first exits through the existing HUD restoration path.
+Tray New Ticket intentionally returns to Notes before creating a ticket.
+
+Close-to-tray saves notes and session state and keeps the current page in RAM;
+F8 reopens that page. A new MainWindow restores existing tickets and defaults to
+Notes. History preference uses its saved Notes visibility rather than temporary
+M365 hiding. No M365 state is added to SQLite. Existing combined tab-order/session
+semantics and their split-pane restoration limits remain unchanged. This candidate
+is uncommitted and pending independent review/integration.
+
+### S001 Alt+F8 addendum
+
+Alt+F8 toggles Notes and M365 from focus inside either workspace. The visible
+M365 Launcher and Back buttons use the same `switch_workspace()` entry point,
+including the pending/dirty save barrier and failure refusal. Repeated keys reuse
+the same pages, tabs and editors. Auto-repeat is disabled to prevent held-key
+page cycling. This is an application shortcut, not a Windows global hotkey.
+
+An application-modal dialog, shutdown, hidden/minimized window or already-active
+transition suppresses this route. From Mini-HUD it restores the saved normal
+window geometry, topmost flag and control visibility before opening M365; Back
+then shows the original normal Notes view. Focus changes during the transition
+cannot reload/start/pause the selected ticket's timer. Active ticket, draft edits,
+split state and stopwatch state remain preserved. No workspace persistence,
+database field or PowerShell functionality is added by this addendum.
+
 ## 1. Overview
 The multi-tab architecture in T-Notes organizes concurrent troubleshooting sessions into dedicated scratchpads. Each tab maps 1-to-1 with an active ticket record in SQLite.
 

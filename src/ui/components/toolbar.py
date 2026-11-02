@@ -35,12 +35,14 @@ class TechPadToolBar(QToolBar):
     opacity_changed = Signal(int)       # Emits opacity value (60 to 100)
     history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
+    m365_requested = Signal()           # Workspace navigation only
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__("Formatting", parent)
         self.setMovable(False)
         self.setFloatable(False)
         self._current_editor = None
+        self._is_compact: bool = False
 
         # Row 2 Toolbar: Ticket Workflow, Stopwatch & System Tools
         self.secondary_toolbar = QToolBar("Workflow & Tools", parent)
@@ -67,10 +69,12 @@ class TechPadToolBar(QToolBar):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._suppress_extension_buttons()
+        self.check_responsive_mode(self.width())
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._suppress_extension_buttons()
+        self.check_responsive_mode(self.width())
 
     def _setup_actions(self) -> None:
         # Standard formatting: Bold, Italic, Underline
@@ -114,11 +118,12 @@ class TechPadToolBar(QToolBar):
         self.act_code.triggered.connect(self._insert_or_toggle_code_block)
 
         # Log Triage Badges Menu / Quick Buttons
-        btn_badge = QToolButton(self)
-        btn_badge.setText("🏷️ Tag")
-        btn_badge.setPopupMode(QToolButton.InstantPopup)
-        btn_badge.setToolTip("Insert Log Triage Badge (Alt+1..4)")
-        badge_menu = QMenu(btn_badge)
+        self.sep_badge = self.addSeparator()
+        self.btn_badge = QToolButton(self)
+        self.btn_badge.setText("🏷️ Tag")
+        self.btn_badge.setPopupMode(QToolButton.InstantPopup)
+        self.btn_badge.setToolTip("Insert Log Triage Badge (Alt+1..4)")
+        self.badge_menu = QMenu(self.btn_badge)
 
         badge_shortcuts = {
             "PASS": "Alt+1",
@@ -130,14 +135,14 @@ class TechPadToolBar(QToolBar):
         for tag_key, info in LOG_BADGES.items():
             sc = badge_shortcuts.get(tag_key, "")
             label = f"{info['label']} ({sc})" if sc else info["label"]
-            act = badge_menu.addAction(label)
+            act = self.badge_menu.addAction(label)
             if sc:
                 act.setShortcut(QKeySequence(sc))
             act.triggered.connect(lambda checked=False, k=tag_key: self._insert_badge(k))
-        btn_badge.setMenu(badge_menu)
-        self.addWidget(btn_badge)
+        self.btn_badge.setMenu(self.badge_menu)
+        self.act_badge = self.addWidget(self.btn_badge)
 
-        self.addSeparator()
+        self.sep_checklist = self.addSeparator()
 
         # Interactive Task / Checkbox Button (Ctrl+Alt+L)
         self.act_checklist = self.addAction("☑ Checkbox")
@@ -145,19 +150,59 @@ class TechPadToolBar(QToolBar):
         self.act_checklist.setShortcut(QKeySequence("Ctrl+Alt+L"))
         self.act_checklist.triggered.connect(self.checklist_requested.emit)
 
-        self.addSeparator()
+        self.sep_media = self.addSeparator()
 
-        # Timestamp Insertion (F5 / Ctrl+Alt+T)
-        self.act_timestamp = self.addAction("🕒")
+        # Timestamp Action & Toolbar Button (F5 / Ctrl+Alt+T)
+        self.act_timestamp = QAction("🕒", self)
         self.act_timestamp.setToolTip("Insert Current Timestamp (F5 / Ctrl+Alt+T)")
         self.act_timestamp.setShortcut(QKeySequence("F5"))
         self.act_timestamp.triggered.connect(self._insert_timestamp)
 
-        # Media: Insert Image (Ctrl+Alt+I)
-        self.act_image = self.addAction("🖼️")
+        self.btn_timestamp = QToolButton(self)
+        self.btn_timestamp.setDefaultAction(self.act_timestamp)
+        self.act_timestamp_btn = self.addWidget(self.btn_timestamp)
+
+        # Media Action & Toolbar Button (Ctrl+Alt+I)
+        self.act_image = QAction("🖼️", self)
         self.act_image.setToolTip("Insert Image File... (Ctrl+Alt+I)")
         self.act_image.setShortcut(QKeySequence("Ctrl+Alt+I"))
         self.act_image.triggered.connect(self.image_requested.emit)
+
+        self.btn_image = QToolButton(self)
+        self.btn_image.setDefaultAction(self.act_image)
+        self.act_image_btn = self.addWidget(self.btn_image)
+
+        # Responsive More Tools overflow menu button for compact viewports
+        self.btn_more = QToolButton(self)
+        self.btn_more.setText("More ▾")
+        self.btn_more.setObjectName("btnToolbarMore")
+        self.btn_more.setToolTip("Additional formatting and insertion tools")
+        self.btn_more.setPopupMode(QToolButton.InstantPopup)
+        self.menu_more = QMenu(self.btn_more)
+
+        badge_sub = self.menu_more.addMenu("🏷️ Log Badges")
+        for tag_key, info in LOG_BADGES.items():
+            sc = badge_shortcuts.get(tag_key, "")
+            label = f"{info['label']} ({sc})" if sc else info["label"]
+            act = badge_sub.addAction(label)
+            if sc:
+                act.setShortcut(QKeySequence(sc))
+            act.triggered.connect(lambda checked=False, k=tag_key: self._insert_badge(k))
+
+        self.menu_more.addSeparator()
+        self.menu_more.addAction(self.act_timestamp)
+        self.menu_more.addAction(self.act_image)
+        self.btn_more.setMenu(self.menu_more)
+        self.act_more = self.addWidget(self.btn_more)
+        self.act_more.setVisible(False)
+
+        self.btn_m365 = QToolButton(self)
+        self.btn_m365.setText("M365 Launcher")
+        self.btn_m365.setToolTip("Open the M365 Launcher workspace in this window (Alt+F8)")
+        self.btn_m365.setAccessibleName("M365 Launcher")
+        self.btn_m365.setFocusPolicy(Qt.StrongFocus)
+        self.btn_m365.clicked.connect(self.m365_requested.emit)
+        self.addWidget(self.btn_m365)
 
         # -------------------------------------------------------------
         # Row 2: Workflow, Templates, Stopwatch & Utilities
@@ -284,11 +329,64 @@ class TechPadToolBar(QToolBar):
         self.btn_settings.clicked.connect(self.settings_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_settings)
 
+    @property
+    def is_compact(self) -> bool:
+        """Returns True if the toolbar is currently displayed in compact mode."""
+        return getattr(self, "_is_compact", False)
+
+    def set_compact_mode(self, compact: bool) -> None:
+        """Toggles between normal and compact layout modes."""
+        if getattr(self, "_is_compact", None) == compact:
+            return
+        self._is_compact = compact
+
+        # Row 1: Move low-priority tools to 'More ▾' menu
+        if hasattr(self, "act_badge"):
+            self.act_badge.setVisible(not compact)
+        if hasattr(self, "sep_badge"):
+            self.sep_badge.setVisible(not compact)
+        if hasattr(self, "act_timestamp_btn"):
+            self.act_timestamp_btn.setVisible(not compact)
+        if hasattr(self, "act_image_btn"):
+            self.act_image_btn.setVisible(not compact)
+        if hasattr(self, "sep_media"):
+            self.sep_media.setVisible(not compact)
+        if hasattr(self, "act_more"):
+            self.act_more.setVisible(compact)
+
+        # Row 2: Compact controls sizing
+        if compact:
+            self.btn_copy_note.setText("📋 Copy")
+            self.btn_skeleton.setText("Template")
+            self.slider_opacity.setFixedWidth(50)
+            self.lbl_opacity.setText(f"{self.slider_opacity.value()}%")
+            for btn in (self.btn_split, self.btn_pin, self.btn_history, self.btn_settings):
+                btn.setStyleSheet("font-size: 12px; padding: 2px 3px;")
+            self.stopwatch.btn_copy.setText("📋")
+        else:
+            self.btn_copy_note.setText("📋 Copy Note")
+            self.btn_skeleton.setText("📋 Template")
+            self.slider_opacity.setFixedWidth(85)
+            self.lbl_opacity.setText(f"👁️ {self.slider_opacity.value()}%")
+            self.btn_split.setStyleSheet("font-size: 14px; padding: 2px 6px;")
+            self.btn_pin.setStyleSheet("font-size: 13px; padding: 2px 6px;")
+            self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px;")
+            self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px;")
+            self.stopwatch.btn_copy.setText("📋 Time")
+
+    def check_responsive_mode(self, available_width: int) -> None:
+        """Applies responsive compact mode using actual measured width with hysteresis."""
+        if available_width < 775 and not self.is_compact:
+            self.set_compact_mode(True)
+        elif available_width >= 800 and self.is_compact:
+            self.set_compact_mode(False)
+
     def set_opacity_value(self, val: int) -> None:
         """Sets the slider value without emitting signals."""
         self.slider_opacity.blockSignals(True)
         self.slider_opacity.setValue(val)
-        self.lbl_opacity.setText(f"👁️ {val}%")
+        prefix = "" if self.is_compact else "👁️ "
+        self.lbl_opacity.setText(f"{prefix}{val}%")
         self.slider_opacity.blockSignals(False)
 
     def set_mini_hud_state(self, active: bool) -> None:
@@ -298,7 +396,8 @@ class TechPadToolBar(QToolBar):
         self.btn_pin.blockSignals(False)
 
     def _on_opacity_changed(self, value: int) -> None:
-        self.lbl_opacity.setText(f"👁️ {value}%")
+        prefix = "" if self.is_compact else "👁️ "
+        self.lbl_opacity.setText(f"{prefix}{value}%")
         self.opacity_changed.emit(value)
 
     def _toggle_bold(self) -> None:
@@ -358,6 +457,7 @@ class TechPadToolBar(QToolBar):
         badge_html = f'&nbsp;<span style="background-color: {info["bg_color"]}; color: {info["text_color"]}; border: 1px solid {info["border_color"]}; border-radius: 3px; padding: 2px 6px; font-weight: bold; font-size: 11px;">{info["label"]}</span>&nbsp;'
         cursor = self._current_editor.textCursor()
         cursor.insertHtml(badge_html)
+        self._current_editor.setFocus()
 
     def _insert_timestamp(self) -> None:
         if not self._current_editor:
@@ -366,6 +466,7 @@ class TechPadToolBar(QToolBar):
         tag = f'<strong>[{now_str}]</strong> '
         cursor = self._current_editor.textCursor()
         cursor.insertHtml(tag)
+        self._current_editor.setFocus()
 
     def update_format_states(self, format: QTextCharFormat) -> None:
         """Updates bold/italic/underline action states based on current cursor position."""
