@@ -1,0 +1,1002 @@
+{
+  "provenance": "SYNTHETIC ONLY; fixture release hashes are not approvals",
+  "context": {
+    "contract_version": "0.3.0-proposed.1",
+    "correlation_id": "55555555-5555-4555-8555-555555555555",
+    "script_id": "M365.ENTRA.USER_IDENTITY",
+    "company_id": "11111111-1111-4111-8111-111111111111",
+    "tenant_id": "22222222-2222-4222-8222-222222222222",
+    "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+    "session_generation": 1,
+    "target": {
+      "kind": "upn",
+      "value": "synthetic.user@example.invalid"
+    },
+    "ticket_context": {
+      "ticket_id": "101"
+    },
+    "release_binding": {
+      "script_version": "0.1.0-proposed.1",
+      "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "verified_account_upn": "synthetic.admin@example.invalid",
+    "connections": [
+      {
+        "service": "Graph",
+        "connection_id": "66666666-6666-4666-8666-666666666666",
+        "owner_worker_id": "77777777-7777-4777-8777-777777777777",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "verified_account_upn": "synthetic.admin@example.invalid",
+        "state": "verified",
+        "verified_at": "2026-11-02T12:00:00Z",
+        "expires_at": null,
+        "graph_scopes": [
+          "User.Read.All"
+        ],
+        "effective_roles": []
+      }
+    ]
+  },
+  "user": {
+    "Id": "44444444-4444-4444-8444-444444444444",
+    "UserPrincipalName": "synthetic.user@example.invalid",
+    "DisplayName": "Synthetic User",
+    "AccountEnabled": true,
+    "UserType": "Member",
+    "AccessToken": "SYNTHETIC_SECRET_SENTINEL",
+    "PasswordProfile": {
+      "password": "SYNTHETIC_SECRET_SENTINEL"
+    },
+    "CreatedDateTime": "2020-01-01T00:00:00Z"
+  },
+  "cases": [
+    {
+      "name": "valid-upn",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "valid-object-id",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "upn-ordinal-case-comparison",
+      "mode": "user",
+      "context_changes": {
+        "target.value": "SYNTHETIC.USER@example.invalid"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "guest-upn",
+      "mode": "user",
+      "context_changes": {
+        "target.value": "guest_example.invalid#EXT#@tenant.example.invalid"
+      },
+      "user_changes": {
+        "UserPrincipalName": "guest_example.invalid#EXT#@tenant.example.invalid"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "dollar-upn",
+      "mode": "user",
+      "context_changes": {
+        "target.value": "$synthetic@example.invalid"
+      },
+      "user_changes": {
+        "UserPrincipalName": "$synthetic@example.invalid"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "unicode-upn",
+      "mode": "user",
+      "context_changes": {
+        "target.value": "synthetiqué@example.invalid"
+      },
+      "user_changes": {
+        "UserPrincipalName": "synthetiqué@example.invalid"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "account-disabled-is-false",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "AccountEnabled": false
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "guest-user-type",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "UserType": "Guest"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "success",
+        "outcome": "succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "wildcard-upn",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "upn",
+          "value": "*@example.invalid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "control-upn",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "upn",
+          "value": "x\ny@example.invalid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "trim-required",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "upn",
+          "value": " synthetic@example.invalid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "bad-object-id",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "object_id",
+          "value": "not-a-guid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "unsupported-kind",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "email",
+          "value": "synthetic.user@example.invalid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "extra-target-field",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid",
+          "extra": true
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "non-nfc-upn",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "upn",
+          "value": "synthetiqué@example.invalid"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "unknown-parameter",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {
+        "Unexpected": true
+      },
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "INVALID_PARAMETER"
+      }
+    },
+    {
+      "name": "missing-accountenabled",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [
+        "AccountEnabled"
+      ],
+      "parameters": {},
+      "expected": {
+        "status": "partial",
+        "outcome": "partially_succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "missing-displayname",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [
+        "DisplayName"
+      ],
+      "parameters": {},
+      "expected": {
+        "status": "partial",
+        "outcome": "partially_succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "missing-usertype",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [
+        "UserType"
+      ],
+      "parameters": {},
+      "expected": {
+        "status": "partial",
+        "outcome": "partially_succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "partial-all-null",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "AccountEnabled": null,
+        "DisplayName": null,
+        "UserType": null
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "partial",
+        "outcome": "partially_succeeded",
+        "calls": 1,
+        "code": ""
+      }
+    },
+    {
+      "name": "missing-required-id",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [
+        "Id"
+      ],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "missing-required-userprincipalname",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [
+        "UserPrincipalName"
+      ],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "wrong-id-type",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "Id": 123
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "wrong-bool-type",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "AccountEnabled": "true"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "unknown-user-type",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "UserType": "Superuser"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "long-display",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "DisplayName": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "mismatched-upn",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "UserPrincipalName": "other@example.invalid"
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "mismatched-object-id",
+      "mode": "user",
+      "context_changes": {
+        "target": {
+          "kind": "object_id",
+          "value": "88888888-8888-4888-8888-888888888888"
+        }
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "http-401",
+      "mode": "http_error",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "AUTH_REQUIRED"
+      },
+      "http_status": 401
+    },
+    {
+      "name": "http-403",
+      "mode": "http_error",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "ACCESS_DENIED"
+      },
+      "http_status": 403
+    },
+    {
+      "name": "http-404",
+      "mode": "http_error",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "TARGET_NOT_FOUND"
+      },
+      "http_status": 404
+    },
+    {
+      "name": "http-429",
+      "mode": "http_error",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "API_THROTTLED"
+      },
+      "http_status": 429
+    },
+    {
+      "name": "http-503",
+      "mode": "http_error",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "SERVICE_UNAVAILABLE"
+      },
+      "http_status": 503
+    },
+    {
+      "name": "no-account-found",
+      "mode": "no_rows",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "failed",
+        "calls": 1,
+        "code": "TARGET_NOT_FOUND"
+      }
+    },
+    {
+      "name": "multiple-provider-rows",
+      "mode": "multiple",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "malformed-provider-string",
+      "mode": "string",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "sanitized-exception",
+      "mode": "throw",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "INTERNAL_ERROR"
+      }
+    },
+    {
+      "name": "missing-module",
+      "mode": "module_missing",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "MODULE_MISSING"
+      }
+    },
+    {
+      "name": "cancel-before",
+      "mode": "cancel_before",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "cancelled",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "CANCELLED"
+      }
+    },
+    {
+      "name": "cancel-after-provider",
+      "mode": "cancel_during",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "cancelled",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CANCELLED"
+      }
+    },
+    {
+      "name": "cancel-provider-exception",
+      "mode": "cancel_throw",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "cancelled",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CANCELLED"
+      }
+    },
+    {
+      "name": "wrong-contract",
+      "mode": "user",
+      "context_changes": {
+        "contract_version": "1.0.0"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "wrong-script",
+      "mode": "user",
+      "context_changes": {
+        "script_id": "M365.ENTRA.OTHER"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "unknown-context-field",
+      "mode": "user",
+      "context_changes": {
+        "unexpected": true
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "negative-generation",
+      "mode": "user",
+      "context_changes": {
+        "session_generation": -1
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "wrong-tenant",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.tenant_id": "88888888-8888-4888-8888-888888888888"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "TENANT_MISMATCH"
+      }
+    },
+    {
+      "name": "wrong-generation",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.session_generation": 2
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "TENANT_MISMATCH"
+      }
+    },
+    {
+      "name": "wrong-account",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.verified_account_upn": "other.admin@example.invalid"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "ACCOUNT_MISMATCH"
+      }
+    },
+    {
+      "name": "disconnected-lease",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.state": "disconnected"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "AUTH_REQUIRED"
+      }
+    },
+    {
+      "name": "expired-lease",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.expires_at": "2000-01-01T00:00:00Z"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "AUTH_REQUIRED"
+      }
+    },
+    {
+      "name": "invalid-lease-date",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.verified_at": "2026-02-30T00:00:00Z"
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "AUTH_REQUIRED"
+      }
+    },
+    {
+      "name": "missing-lease",
+      "mode": "user",
+      "context_changes": {
+        "connections": []
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "AUTH_REQUIRED"
+      }
+    },
+    {
+      "name": "missing-scope",
+      "mode": "user",
+      "context_changes": {
+        "connections.0.graph_scopes": []
+      },
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "not_started",
+        "calls": 0,
+        "code": "ACCESS_DENIED"
+      }
+    },
+    {
+      "name": "provider-error-stream-sanitized",
+      "mode": "nonterminating",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "INTERNAL_ERROR"
+      }
+    },
+    {
+      "name": "array-id",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "Id": [
+          "44444444-4444-4444-8444-444444444444"
+        ]
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "array-upn",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "UserPrincipalName": [
+          "synthetic.user@example.invalid"
+        ]
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "array-bool",
+      "mode": "user",
+      "context_changes": {},
+      "user_changes": {
+        "AccountEnabled": [
+          true
+        ]
+      },
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "CONTRACT_VIOLATION"
+      }
+    },
+    {
+      "name": "nested-provider-command-missing",
+      "mode": "nested_command_missing",
+      "context_changes": {},
+      "user_changes": {},
+      "remove_user_fields": [],
+      "parameters": {},
+      "expected": {
+        "status": "error",
+        "outcome": "unknown",
+        "calls": 1,
+        "code": "INTERNAL_ERROR"
+      }
+    }
+  ]
+}

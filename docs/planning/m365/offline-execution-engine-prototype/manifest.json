@@ -1,0 +1,89 @@
+{
+  "contract_version": "0.3.0-proposed.1",
+  "script_id": "M365.TEST.ABI",
+  "title": "Offline ABI Fixture",
+  "description": "TEST ONLY: deterministic protocol fixture; no M365 operation.",
+  "category": "Entra ID / Users",
+  "tags": [
+    "synthetic"
+  ],
+  "script_path": "scripts/Fixture-Operation.ps1",
+  "script_version": "0.0.1-provisional",
+  "script_sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "Scenario",
+      "type": "string",
+      "required": false,
+      "description": "Synthetic test case only",
+      "allowed_values": [
+        "success",
+        "error",
+        "partial",
+        "throw",
+        "extra_output",
+        "console_noise",
+        "immutable",
+        "delay",
+        "process_nonzero",
+        "malformed",
+        "duplicate_keys",
+        "invalid_utf8",
+        "two_envelopes",
+        "bad_correlation",
+        "bad_version",
+        "bad_date",
+        "stderr_secret",
+        "leak_data",
+        "unknown_payload",
+        "wrong_logical_exit",
+        "oversize",
+        "child_hang"
+      ],
+      "default": "success",
+      "max_length": 32
+    },
+    {
+      "name": "DelayMs",
+      "type": "integer",
+      "required": false,
+      "description": "Synthetic cancellable wait",
+      "minimum": 0,
+      "maximum": 15000,
+      "default": 0
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 20,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}

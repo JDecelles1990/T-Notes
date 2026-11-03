@@ -1,0 +1,44 @@
+# COPY AS A REFERENCE ONLY. Replace the operation-specific preflight and payload
+# only after separate contract/release approval. Do not add invocation parameters.
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory)]
+    [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Context,
+    [Parameter(Mandatory)]
+    [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Parameters,
+    [Parameter(Mandatory)]
+    [System.Threading.CancellationToken] $CancellationToken
+)
+throw 'PROVISIONAL_REFERENCE_ONLY'
+
+# Host preflight: validate pinned schemas/release; recursively freeze both maps;
+# validate descriptors/effective parameters and exact normalized target; verify
+# owned service leases, actual tenant/account/generation, effective permissions
+# and service RBAC. No caller field alone establishes authorization.
+# Use Get-UserIdentity.ps1.reference as the worked defensive-validation example.
+if ($CancellationToken.IsCancellationRequested) {
+    return [pscustomobject]@{
+        status = 'cancelled'; operation_outcome = 'not_started'; data = $null
+        warnings = [object[]]@()
+        errors = [object[]]@([pscustomobject]@{code='CANCELLED';message='Cancelled before dispatch.';retryable=$false})
+    }
+}
+# Add exactly bounded read calls with fixed typed arguments; never authenticate,
+# install modules, write data, serialize JSON, retry automatically, or call exit.
+# Check cancellation before first call, between batches, and before returning.
+# Host owns deadlines, TIMEOUT arbitration and eventual owned-worker termination;
+# CancellationToken does not interrupt a synchronous SDK call by itself.
+# Construct an allowlisted schema-valid PSCustomObject payload. Missing required
+# identity -> null data/error. Missing schema-nullable diagnostic fields -> null
+# fields and partial/partially_succeeded plus PROPERTY_UNAVAILABLE warning.
+# success/succeeded -> non-null data, empty errors. All returns have exactly five
+# fields and object[] warnings/errors. After dispatch cancellation -> unknown.
+# The adapter validates operation_return and selected payload, then owns the sole
+# wire envelope, correlation, timestamps, logical exits and JSON serialization.
+return [pscustomobject]@{
+    status = 'error'; operation_outcome = 'not_started'; data = $null
+    warnings = [object[]]@()
+    errors = [object[]]@([pscustomobject]@{
+        code='MODULE_MISSING';message='Reference template has no provider implementation.';retryable=$false
+    })
+}

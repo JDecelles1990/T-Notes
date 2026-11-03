@@ -1,0 +1,345 @@
+........F......................................F..FFFF......F........FF. [ 69%]
+...F......FF...................                                          [100%]
+================================== FAILURES ===================================
+___________ test_search_filters_and_single_authoritative_definition ___________
+
+self = <src.services.m365_catalog_service.M365CatalogService object at 0x0000026FBD30EE50>
+operation_id = 'M365.TEST.CATALOG'
+
+    def operation(self, operation_id):
+        try:
+>           return self._operations[operation_id]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'M365.TEST.CATALOG'
+
+src\services\m365_catalog_service.py:293: KeyError
+
+The above exception was the direct cause of the following exception:
+
+registration = (<function registration.<locals>.build at 0x0000026FBCC0DBC0>, {'contract_version': '0.3.0-proposed.1', 'script_id': '...d_single0/metadata'), WindowsPath('C:/Dev/T-Notes/.cache/category-focused-01/test_search_filters_and_single0/library'))
+
+    def test_search_filters_and_single_authoritative_definition(registration):
+        build, manifest, _, _ = registration
+        second = copy.deepcopy(manifest)
+        second.update(script_id="M365.TEST.ARCHIVED", title="Historic inspection")
+        service = build([manifest, second], lambda entries: (entries[0].update(category_ids=["general", "other"]),
+                                                             entries[1].update(lifecycle="archived")))
+>       operation = service.operation(manifest["script_id"])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_m365_catalog.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.services.m365_catalog_service.M365CatalogService object at 0x0000026FBD30EE50>
+operation_id = 'M365.TEST.CATALOG'
+
+    def operation(self, operation_id):
+        try:
+            return self._operations[operation_id]
+        except KeyError as exc:
+>           raise CatalogError("Unknown or invalid operation ID.") from exc
+E           src.services.m365_catalog_service.CatalogError: Unknown or invalid operation ID.
+
+src\services\m365_catalog_service.py:295: CatalogError
+___________ test_unapproved_metadata_details_search_and_no_dispatch ___________
+
+registration = (<function registration.<locals>.build at 0x0000026FBCF1AB90>, {'contract_version': '0.3.0-proposed.1', 'script_id': '...ta_detai0/metadata'), WindowsPath('C:/Dev/T-Notes/.cache/category-focused-01/test_unapproved_metadata_detai0/library'))
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000026FBCEF1810>
+
+    def test_unapproved_metadata_details_search_and_no_dispatch(registration, qapp, monkeypatch):
+        build, _, _, _ = registration
+        service = build()
+        def forbidden(*args, **kwargs):
+            pytest.fail("Catalog controls attempted process or network dispatch")
+        monkeypatch.setattr(subprocess, "Popen", forbidden)
+        monkeypatch.setattr(subprocess, "run", forbidden)
+        monkeypatch.setattr(socket, "create_connection", forbidden)
+        widget = M365LauncherWidget(catalog_service=service)
+        try:
+            widget.show()
+            widget.navigation.setCurrentRow(EXPECTED.index("general"))
+            qapp.processEvents()
+>           assert widget.operation_list.count() == 1
+E           assert 0 == 1
+E            +  where 0 = <built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40>()
+E            +    where <built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40> = <PySide6.QtWidgets.QListWidget(0x26fbb2cd220) at 0x0000026FBD17AF40>.count
+E            +      where <PySide6.QtWidgets.QListWidget(0x26fbb2cd220) at 0x0000026FBD17AF40> = <src.ui.m365.launcher_widget.M365LauncherWidget(0x26fbb2d3760, name="m365LauncherWorkspace") at 0x0000026FBD0FB080>.operation_list
+
+tests\test_m365_catalog.py:220: AssertionError
+_________________ test_default_page_and_accessible_navigation _________________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b113a0) at 0x0000026FBD292580>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+
+    def test_default_page_and_accessible_navigation(main_window, qapp):
+        show(main_window, qapp)
+        stack = main_window.workspace_stack
+        original = main_window.workspace_splitter
+        editor = main_window._get_active_editor()
+        assert stack.count() == 2
+        assert stack.widget(0) is original
+        assert stack.currentWidget() is original
+        button = main_window.toolbar.btn_m365
+>       assert button.isVisible() and button.isEnabled()
+E       assert (False)
+E        +  where False = <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40>()
+E        +    where <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40> = <PySide6.QtWidgets.QToolButton(0x26fb8211990) at 0x0000026FBCFB3C40>.isVisible
+
+tests\test_m365_workspace.py:32: AssertionError
+_______________ test_toolbar_controls_fit_without_overflow[700] _______________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD26C340>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+width = 700
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+>               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (<PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0> is not None and False)
+E                +  where False = <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0>()
+E                +    where <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0> = <PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0>.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError
+_______________ test_toolbar_controls_fit_without_overflow[800] _______________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b12630) at 0x0000026FBCD03FC0>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+width = 800
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+>               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (<PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040> is not None and False)
+E                +  where False = <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040>()
+E                +    where <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040> = <PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040>.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError
+______________ test_toolbar_controls_fit_without_overflow[1100] _______________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b0fdb0) at 0x0000026FBCE8BB00>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+width = 1100
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+>               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (<PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140> is not None and False)
+E                +  where False = <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140>()
+E                +    where <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140> = <PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140>.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError
+________ test_active_secondary_ticket_split_and_history_state_survive _________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b10980) at 0x0000026FBCC29340>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+
+    def test_active_secondary_ticket_split_and_history_state_survive(main_window, qapp):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        qapp.processEvents()
+        editor = main_window.secondary_tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+        original = (main_window.tab_widget.currentIndex(), main_window.secondary_tab_widget.currentIndex())
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        sizes = main_window.workspace_splitter.sizes()
+        main_window.show_m365_workspace()
+        assert main_window.history_drawer.isHidden()
+        assert not main_window.btn_toggle_split.isEnabled()
+        assert not main_window.btn_toggle_drawer.isEnabled()
+        main_window.show_notes_workspace()
+        qapp.processEvents()
+        assert main_window._get_active_editor() is editor
+        assert (main_window.tab_widget.currentIndex(), main_window.secondary_tab_widget.currentIndex()) == original
+        assert main_window.secondary_tab_widget.isVisible()
+>       assert main_window.history_drawer.isVisible()
+E       assert False
+E        +  where False = <built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80>()
+E        +    where <built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80> = <src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80>.isVisible
+E        +      where <src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80> = <src.ui.main_window.TechPadMainWindow(0x26fb8b10980) at 0x0000026FBCC29340>.history_drawer
+
+tests\test_m365_workspace.py:186: AssertionError
+_________ test_hud_from_m365_returns_notes_and_restores_split_history _________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b10620) at 0x0000026FBD34A680>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+
+    def test_hud_from_m365_returns_notes_and_restores_split_history(main_window, qapp):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        main_window.show_m365_workspace()
+        main_window.toggle_mini_hud_mode()
+        assert not main_window.is_m365_workspace
+        assert main_window.is_mini_hud
+        assert main_window.toolbar.isHidden()
+        main_window.toggle_mini_hud_mode()
+        qapp.processEvents()
+        assert main_window.toolbar.isVisible()
+        assert main_window.secondary_tab_widget.isVisible()
+>       assert main_window.history_drawer.isVisible()
+E       assert False
+E        +  where False = <built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80>()
+E        +    where <built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80> = <src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80>.isVisible
+E        +      where <src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80> = <src.ui.main_window.TechPadMainWindow(0x26fb8b10620) at 0x0000026FBD34A680>.history_drawer
+
+tests\test_m365_workspace.py:249: AssertionError
+_______________ test_f8_and_tray_reopen_keep_current_workspace ________________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD339B80>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000026FBCEA8490>
+
+    def test_f8_and_tray_reopen_keep_current_workspace(main_window, qapp, monkeypatch):
+        show(main_window, qapp)
+        main_window.history_drawer.show()
+        main_window.show_m365_workspace()
+        main_window.close()
+        assert main_window.isHidden() and main_window.tray_icon.isVisible()
+        session = main_window.session_service.session_repo.get_session()
+        assert session["history_drawer_open"] == 1
+        main_window.global_hotkey.activated.emit()
+        qapp.processEvents()
+        assert main_window.isVisible() and main_window.is_m365_workspace
+>       assert QApplication.focusWidget() is main_window.m365_workspace.back_button
+E       assert None is <PySide6.QtWidgets.QPushButton(0x26fb8210770, name="btnBackToNotes") at 0x0000026FBCD2DC40>
+E        +  where None = <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10>()
+E        +    where <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10> = QApplication.focusWidget
+E        +  and   <PySide6.QtWidgets.QPushButton(0x26fb8210770, name="btnBackToNotes") at 0x0000026FBCD2DC40> = <src.ui.m365.launcher_widget.M365LauncherWidget(0x26fb8b10470, name="m365LauncherWorkspace") at 0x0000026FBCD2E100>.back_button
+E        +    where <src.ui.m365.launcher_widget.M365LauncherWidget(0x26fb8b10470, name="m365LauncherWorkspace") at 0x0000026FBCD2E100> = <src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD339B80>.m365_workspace
+
+tests\test_m365_workspace.py:267: AssertionError
+________________ test_themed_navigation_row_fits_minimum_width ________________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb888f080) at 0x0000026FBCC1ABC0>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+
+    def test_themed_navigation_row_fits_minimum_width(main_window, qapp):
+        previous = qapp.styleSheet()
+        qapp.setStyleSheet((Path(__file__).parents[1] / "assets/styles/dark_theme.qss").read_text())
+        try:
+            main_window.resize(800, 750)
+            show(main_window, qapp)
+            toolbar = main_window.toolbar
+            for action in toolbar.actions():
+                if action.isVisible() and not action.isSeparator():
+                    widget = toolbar.widgetForAction(action)
+>                   assert widget.isVisible() and toolbar.rect().contains(widget.geometry())
+E                   assert (False)
+E                    +  where False = <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340>()
+E                    +    where <built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340> = <PySide6.QtWidgets.QToolButton(0x26fb82105a0) at 0x0000026FBCEB9340>.isVisible
+
+tests\test_m365_workspace.py:355: AssertionError
+_______ test_alt_f8_safely_leaves_hud_and_preserves_normal_state[False] _______
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fb8d5b590) at 0x0000026FBD359F00>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+running = False
+
+    @pytest.mark.parametrize("running", [False, True])
+    def test_alt_f8_safely_leaves_hud_and_preserves_normal_state(main_window, qapp, running):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        normal_geometry = main_window.geometry()
+        main_window.toggle_mini_hud_mode()
+        # HUD hides the secondary pane and recreates the native window flags. Send
+        # input to its visible focused editor, not a cached pre-HUD hidden widget.
+        main_window.activateWindow()
+        assert QTest.qWaitForWindowActive(main_window, 1000)
+        editor = main_window.tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+>       assert editor.isVisible() and QApplication.focusWidget() is editor
+E       assert (True and None is <src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80>)
+E        +  where True = <built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80>()
+E        +    where <built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80> = <src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80>.isVisible
+E        +  and   None = <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10>()
+E        +    where <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10> = QApplication.focusWidget
+
+tests\test_m365_workspace.py:467: AssertionError
+_______ test_alt_f8_safely_leaves_hud_and_preserves_normal_state[True] ________
+
+main_window = <src.ui.main_window.TechPadMainWindow(0x26fbb4d3590) at 0x0000026FBCC4F300>
+qapp = <PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40>
+running = True
+
+    @pytest.mark.parametrize("running", [False, True])
+    def test_alt_f8_safely_leaves_hud_and_preserves_normal_state(main_window, qapp, running):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        normal_geometry = main_window.geometry()
+        main_window.toggle_mini_hud_mode()
+        # HUD hides the secondary pane and recreates the native window flags. Send
+        # input to its visible focused editor, not a cached pre-HUD hidden widget.
+        main_window.activateWindow()
+        assert QTest.qWaitForWindowActive(main_window, 1000)
+        editor = main_window.tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+>       assert editor.isVisible() and QApplication.focusWidget() is editor
+E       assert (True and None is <src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980>)
+E        +  where True = <built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980>()
+E        +    where <built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980> = <src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980>.isVisible
+E        +  and   None = <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10>()
+E        +    where <built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10> = QApplication.focusWidget
+
+tests\test_m365_workspace.py:467: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\cacheprovider.py:487
+  C:\Dev\T-Notes\.venv\Lib\site-packages\_pytest\cacheprovider.py:487: PytestCacheWarning: could not create cache path C:\Dev\T-Notes\.pytest_cache\v\cache\nodeids: [WinError 183] Cannot create a file when that file already exists: 'C:\\Dev\\T-Notes\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/nodeids", sorted(str(n) for n in self.cached_nodeids))
+
+.venv\Lib\site-packages\_pytest\cacheprovider.py:439
+  C:\Dev\T-Notes\.venv\Lib\site-packages\_pytest\cacheprovider.py:439: PytestCacheWarning: could not create cache path C:\Dev\T-Notes\.pytest_cache\v\cache\lastfailed: [WinError 183] Cannot create a file when that file already exists: 'C:\\Dev\\T-Notes\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/lastfailed", current_lastfailed)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_m365_catalog.py::test_search_filters_and_single_authoritative_definition
+FAILED tests/test_m365_catalog.py::test_unapproved_metadata_details_search_and_no_dispatch
+FAILED tests/test_m365_workspace.py::test_default_page_and_accessible_navigation
+FAILED tests/test_m365_workspace.py::test_toolbar_controls_fit_without_overflow[700]
+FAILED tests/test_m365_workspace.py::test_toolbar_controls_fit_without_overflow[800]
+FAILED tests/test_m365_workspace.py::test_toolbar_controls_fit_without_overflow[1100]
+FAILED tests/test_m365_workspace.py::test_active_secondary_ticket_split_and_history_state_survive
+FAILED tests/test_m365_workspace.py::test_hud_from_m365_returns_notes_and_restores_split_history
+FAILED tests/test_m365_workspace.py::test_f8_and_tray_reopen_keep_current_workspace
+FAILED tests/test_m365_workspace.py::test_themed_navigation_row_fits_minimum_width
+FAILED tests/test_m365_workspace.py::test_alt_f8_safely_leaves_hud_and_preserves_normal_state[False]
+FAILED tests/test_m365_workspace.py::test_alt_f8_safely_leaves_hud_and_preserves_normal_state[True]
+12 failed, 91 passed, 2 warnings in 18.72s

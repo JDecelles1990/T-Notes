@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tnotes.invalid/m365/0.3.0/schemas/script-manifest.schema.json",
+  "title": "T-Notes proposed script-manifest",
+  "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/manifest",
+  "description": "Discovery entry; target policies and service permissions are normative. Cross-field descriptor validity also requires semantic catalog validation."
+}

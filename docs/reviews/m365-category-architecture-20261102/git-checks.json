@@ -1,0 +1,30 @@
+{
+  "task_whitespace": {
+    "status": "PASS",
+    "argv": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "docs/architecture/system-overview.md",
+      "pyproject.toml",
+      "requirements.txt",
+      "src/ui/m365/launcher_widget.py",
+      "tests/test_m365_workspace.py"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "warning: in the working copy of 'pyproject.toml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'requirements.txt', LF will be replaced by CRLF the next time Git touches it\n"
+  },
+  "repository_whitespace": {
+    "status": "FAIL",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 2,
+    "stdout": "docs/decisions/0007-always-on-top-mini-hud.md:52: new blank line at EOF.\n",
+    "stderr": "warning: in the working copy of 'docs/decisions/0007-always-on-top-mini-hud.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'pyproject.toml', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'requirements.txt', LF will be replaced by CRLF the next time Git touches it\n"
+  }
+}

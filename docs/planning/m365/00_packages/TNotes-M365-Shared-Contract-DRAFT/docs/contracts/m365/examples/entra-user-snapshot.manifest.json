@@ -1,0 +1,28 @@
+{
+  "contract_version": "1.0.0-draft.1",
+  "script_id": "M365.ENTRA.GET_USER_SNAPSHOT",
+  "title": "Get User Snapshot",
+  "description": "Fetch the basic identity and account status of one user in the verified tenant.",
+  "category": "Entra ID / Users",
+  "service": "Graph",
+  "relative_script_path": "powershell/scripts/entra/Get-M365UserSnapshot.psm1",
+  "entrypoint": "Get-M365UserSnapshot",
+  "risk": "read",
+  "auth_mode": "delegated_interactive",
+  "modules": [
+    "Microsoft.Graph.Users"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "role_notes": "Use least-privilege delegated Graph permissions; confirm role/consent for current tenant before executing.",
+  "parameters": [
+    {
+      "name": "UserPrincipalName",
+      "type": "string",
+      "required": true,
+      "description": "Target user UPN within verified tenant."
+    }
+  ],
+  "timeout_seconds": 90
+}

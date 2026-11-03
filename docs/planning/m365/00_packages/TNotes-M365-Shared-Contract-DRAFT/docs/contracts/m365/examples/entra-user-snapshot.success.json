@@ -1,0 +1,17 @@
+{
+  "contract_version": "1.0.0-draft.1",
+  "request_id": "b3d21cec-64ae-4c43-8ff8-9f769759b4f5",
+  "script_id": "M365.ENTRA.GET_USER_SNAPSHOT",
+  "tenant_id": "85b9dafd-2941-4a3b-90b2-f44747bb1848",
+  "status": "success",
+  "data": {
+    "display_name": "Example User",
+    "user_principal_name": "user@contoso.example",
+    "account_enabled": true
+  },
+  "warnings": [],
+  "errors": [],
+  "started_at_utc": "2026-11-02T15:00:00Z",
+  "finished_at_utc": "2026-11-02T15:00:01Z",
+  "duration_ms": 1000
+}

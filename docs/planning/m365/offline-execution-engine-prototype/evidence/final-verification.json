@@ -1,0 +1,172 @@
+{
+  "timestamp": "2026-11-02T23:49:14.637944Z",
+  "engine_tests": "PASS",
+  "passed": 38,
+  "failed": 0,
+  "native_report": "evidence/tests-20261102T234813Z-52f6c56b.json",
+  "native_report_sha256": "31e645e661e8b323b6052ebdf5aec8309fe4800451f2b483779dac8430b59df2",
+  "contract_artifacts": "PASS",
+  "contract_checks": [
+    {
+      "path": "AGENT_HANDOFF.md",
+      "expected_sha256": "08da329a91168c14ee92af1f99b31d0b67b087853c49a46044ea3bd15c5b9f74",
+      "actual_sha256": "08da329a91168c14ee92af1f99b31d0b67b087853c49a46044ea3bd15c5b9f74"
+    },
+    {
+      "path": "CONTRACT.md",
+      "expected_sha256": "80bd4adb5dfcf29aeba897759b91bb5e280c84c8975d9b9e9614de2ecc6253a1",
+      "actual_sha256": "80bd4adb5dfcf29aeba897759b91bb5e280c84c8975d9b9e9614de2ecc6253a1"
+    },
+    {
+      "path": "CONTRACT_CORRECTION_HANDOFF.md",
+      "expected_sha256": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9",
+      "actual_sha256": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9"
+    },
+    {
+      "path": "examples/fixtures.json",
+      "expected_sha256": "c5c00937df8c2b4052f1fa2dc196f10e8dce0e961b507452f8adfe3ec1ff1b58",
+      "actual_sha256": "c5c00937df8c2b4052f1fa2dc196f10e8dce0e961b507452f8adfe3ec1ff1b58"
+    },
+    {
+      "path": "examples/mock-compatibility.json",
+      "expected_sha256": "b3d04a1929375e6893d631f02552fa17474e0f583b996ed327ae4bc8c23ca087",
+      "actual_sha256": "b3d04a1929375e6893d631f02552fa17474e0f583b996ed327ae4bc8c23ca087"
+    },
+    {
+      "path": "GEMINI.md",
+      "expected_sha256": "0313e1677c8fbffc406f6d39b849b0841e6e4e898949672069ba6d1323021f3b",
+      "actual_sha256": "0313e1677c8fbffc406f6d39b849b0841e6e4e898949672069ba6d1323021f3b"
+    },
+    {
+      "path": "README.md",
+      "expected_sha256": "e1d6f059a991386c005e4708f77f30aceaa93c28cec7ef57b3e554919507fa76",
+      "actual_sha256": "e1d6f059a991386c005e4708f77f30aceaa93c28cec7ef57b3e554919507fa76"
+    },
+    {
+      "path": "schemas/common.schema.json",
+      "expected_sha256": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef",
+      "actual_sha256": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef"
+    },
+    {
+      "path": "schemas/company-profile.schema.json",
+      "expected_sha256": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f",
+      "actual_sha256": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f"
+    },
+    {
+      "path": "schemas/error.schema.json",
+      "expected_sha256": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508",
+      "actual_sha256": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508"
+    },
+    {
+      "path": "schemas/execution-request.schema.json",
+      "expected_sha256": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886",
+      "actual_sha256": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886"
+    },
+    {
+      "path": "schemas/execution-result.schema.json",
+      "expected_sha256": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022",
+      "actual_sha256": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022"
+    },
+    {
+      "path": "schemas/operation-data.schema.json",
+      "expected_sha256": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e",
+      "actual_sha256": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e"
+    },
+    {
+      "path": "schemas/script-manifest.schema.json",
+      "expected_sha256": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2",
+      "actual_sha256": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2"
+    },
+    {
+      "path": "security-and-execution.md",
+      "expected_sha256": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe",
+      "actual_sha256": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe"
+    },
+    {
+      "path": "user-snapshot.md",
+      "expected_sha256": "3eab4be639e13bb689fb9ac9c0306b8bda53733a8ff126ddb8af64443f293604",
+      "actual_sha256": "3eab4be639e13bb689fb9ac9c0306b8bda53733a8ff126ddb8af64443f293604"
+    },
+    {
+      "path": "validation/correction_checks.py",
+      "expected_sha256": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b",
+      "actual_sha256": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b"
+    },
+    {
+      "path": "validation/source-snapshot.json",
+      "expected_sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6",
+      "actual_sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6"
+    },
+    {
+      "path": "validation/validate_contract.py",
+      "expected_sha256": "74f39afe21fb132cb2b832632a9f8cae4ed3bbabc5291c7cb77f7daeef10ab3f",
+      "actual_sha256": "74f39afe21fb132cb2b832632a9f8cae4ed3bbabc5291c7cb77f7daeef10ab3f"
+    },
+    {
+      "path": "validation-and-roadmap.md",
+      "expected_sha256": "da09be92c26f29a59e909729c25570a3c23ce9968f243bfd0d97b32f42f521a8",
+      "actual_sha256": "da09be92c26f29a59e909729c25570a3c23ce9968f243bfd0d97b32f42f521a8"
+    },
+    {
+      "path": "workspace-architecture.md",
+      "expected_sha256": "6c9686ca25324dc67fdc68db78d01f1fc4c40ea073cb7f709bf773ab8281ffa6",
+      "actual_sha256": "6c9686ca25324dc67fdc68db78d01f1fc4c40ea073cb7f709bf773ab8281ffa6"
+    }
+  ],
+  "tested_runtime_artifacts_unchanged": "PASS",
+  "post_test_document_updates": [
+    "ENGINE_CHECKPOINT.md",
+    "evidence/DIAGNOSES.md"
+  ],
+  "full_entry_byte_preservation": "FAIL",
+  "unchanged_entry_files": 105,
+  "concurrent_external_drift": [
+    {
+      "path": "docs/architecture/system-overview.md",
+      "entry_sha256": "8ffc2ba02c7c616ad5de4158ed72cb80e269d1b8541d52a6d5bfd76ffe478b60",
+      "observed_sha256": "4232dbe4fda46baa1d7448d7c43fa648b3df812d8c56e1267edaa7a5e1b7da14"
+    },
+    {
+      "path": "docs/features/editor-and-formatting.md",
+      "entry_sha256": "20223bcb76fb46655021d2fec52c7124be63533aa60572f5a10bafb1e75b4cb7",
+      "observed_sha256": "cf2c0176beb242c5d581b996f2f94048812bb24125031332d20a4a9e2fe25507"
+    },
+    {
+      "path": "docs/features/history-and-archive.md",
+      "entry_sha256": "1257ef456172848bf1c0963b45ea57b3cfd459fb7e8781b68d9f8b5b94bf4654",
+      "observed_sha256": "c0ae56d6eeee2004cdb87aa6d2b9b385b530f8a6f39eda5e7eb5373ffdc7a2a7"
+    },
+    {
+      "path": "docs/features/tab-lifecycle.md",
+      "entry_sha256": "6f6ca4ef4f2e0509b91eb32af0baef783df2678064b94ee175bf4623fb9ae84c",
+      "observed_sha256": "0befd21a15a7ba6d5aea2587e4a9bad05fe28ff1d27ee0648e96da10973d795d"
+    },
+    {
+      "path": "docs/index.md",
+      "entry_sha256": "3f7f0470a5e7fcd2870e18d186dc816ac2b6e648b5f4804ed56d7546cb846e64",
+      "observed_sha256": "02faef647e8020db08466b66ef6f80e5cb5aa1705629747d8b1d91e54f002751"
+    },
+    {
+      "path": "src/ui/components/toolbar.py",
+      "entry_sha256": "eb137e64e09eda15aca7ec25002f519dc32ef04437b45523db256d001b450984",
+      "observed_sha256": "310ecd9a3a0f5fb26123e6e9d661aba8857c8987e0a7fb343d7df99a703f48b4"
+    },
+    {
+      "path": "src/ui/main_window.py",
+      "entry_sha256": "05749e7725f6b763dbc76be03bba17201414e7ce2a1a328ddbc959da7fb85bc4",
+      "observed_sha256": "28c783e7bf399193168ad1dfec1f840f5f0811be13632a4d0b79be55d328ca5c"
+    },
+    {
+      "path": "tests/test_ui_integration.py",
+      "entry_sha256": "258fa11a6786ac0a8c12d2d1434e89c6f9fcf71791da503973230bf201b259ff",
+      "observed_sha256": "a2356e08584a48917cd4b6f647abc7f0733ee6ce42761ec32248c51b2af7111d"
+    }
+  ],
+  "named_protected_files_unchanged": [
+    "GEMINI.md",
+    "AGENTS.md",
+    "docs/decisions/0007-always-on-top-mini-hud.md"
+  ],
+  "scope": "All writes by this implementation task confined to offline-execution-engine-prototype; external drift origin NOT VERIFIED",
+  "independent_review": "NOT RUN"
+}

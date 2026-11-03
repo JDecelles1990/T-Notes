@@ -1,0 +1,240 @@
+{
+  "provenance": "PROVISIONAL OFFLINE ENGINE; author-run real Windows/Python/PowerShell tests",
+  "status": "FAIL",
+  "started_at": "2026-11-02T23:35:41.366624Z",
+  "completed_at": "2026-11-02T23:36:03.659920Z",
+  "command": [
+    "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "-B",
+    "C:\\Dev\\T-Notes\\docs\\planning\\m365\\offline-execution-engine-prototype\\run_tests.py",
+    "--case",
+    "test_success"
+  ],
+  "python": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "win32",
+  "powershell": "7.6.9 (see gate1.json; executable hash pinned)",
+  "passed": 0,
+  "failed": 1,
+  "tests": [
+    {
+      "test": "test_engine.EngineTests.test_success",
+      "result": "FAIL",
+      "elapsed_ms": 22246,
+      "execution": {
+        "error_code": "TIMEOUT",
+        "process_exit_code": 50,
+        "logical_exit_code": 40,
+        "telemetry": {
+          "worker_pid": 27836,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": true,
+          "forced": false,
+          "elapsed_ms": 20089,
+          "states": [
+            "starting",
+            "running",
+            "cancelling",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 33
+        }
+      },
+      "exception_type": "AssertionError",
+      "locations": [
+        {
+          "file": "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\unittest\\case.py",
+          "line": 58
+        },
+        {
+          "file": "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\unittest\\case.py",
+          "line": 669
+        },
+        {
+          "file": "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\unittest\\case.py",
+          "line": 615
+        },
+        {
+          "file": "C:\\Dev\\T-Notes\\docs\\planning\\m365\\offline-execution-engine-prototype\\tests\\test_engine.py",
+          "line": 49
+        }
+      ]
+    }
+  ],
+  "preservation_failures": [],
+  "protected_files_verified": 113,
+  "artifacts": [
+    {
+      "path": "catalog.json",
+      "sha256": "865006dfc5a4314a28d6428e1c33c67b8523637699a75a1ca3dc98b8a29fbb61"
+    },
+    {
+      "path": "contracts.py",
+      "sha256": "655e85c6a0554077b8bf03a58cce0fcc375101dff654f4bd2436d0eaa08216a8"
+    },
+    {
+      "path": "examples/request.json",
+      "sha256": "38626a3c87cd22b3cb6941ae905acdb4dd76e501ff334cfb8d0b82468e4532bf"
+    },
+    {
+      "path": "host.py",
+      "sha256": "1c8b6e5bac153b366db043751d2880a9fcd5277ed5c42bf5ed46a6a76169a1f7"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e"
+    },
+    {
+      "path": "prepare_fixtures.py",
+      "sha256": "67762b8a8d7d8dbcd3d3225c794b89cc1ad16c6456552161bb5c8a71cce817b2"
+    },
+    {
+      "path": "protocol.ps1",
+      "sha256": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2"
+    },
+    {
+      "path": "run_tests.py",
+      "sha256": "87efb7af0802ad72d78403b61d367cbabef5d8a40578e31dc0b6e1a3389395b3"
+    },
+    {
+      "path": "schema-check.ps1",
+      "sha256": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda"
+    },
+    {
+      "path": "scripts/Fixture-Operation.ps1",
+      "sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2"
+    },
+    {
+      "path": "synthetic-context.json",
+      "sha256": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a"
+    },
+    {
+      "path": "tests/anchors/bad_descriptor.json",
+      "sha256": "d1b70966a14704c8cc6aeb11ba556a7e3c4f14723d20f5402e66cd5b44d878ac"
+    },
+    {
+      "path": "tests/anchors/dependency_mismatch.json",
+      "sha256": "678a77f522af61e0125383107718ac28774132ff13b27d1bc58e619a9a48fc4b"
+    },
+    {
+      "path": "tests/anchors/fault.json",
+      "sha256": "fe6e24b674b19a9bacc248c5db29dc3b67c138c880e2c9997ad15322dd5eaa2f"
+    },
+    {
+      "path": "tests/anchors/fault_timeout.json",
+      "sha256": "9f49d2bbce1f0cb76e3eda16ce2cfc16f63a2fce7ea8307e417e825550db164f"
+    },
+    {
+      "path": "tests/anchors/hash_mismatch.json",
+      "sha256": "dc92b11c5b2e1ea9be5320b8afc999e5720ea5be2ce80591f5d667090418f58c"
+    },
+    {
+      "path": "tests/anchors/missing_executable.json",
+      "sha256": "47eec07eb5349500c456a673b5b94f40e31dfc5dc5a2138d1da33bf89472de1e"
+    },
+    {
+      "path": "tests/anchors/timeout.json",
+      "sha256": "0befe1f76f063186c902062c894301cbe26e62936bf1bde7c19f3bb79b0e0060"
+    },
+    {
+      "path": "tests/anchors/traversal.json",
+      "sha256": "51219ae1d7a955524753551f2d6832d113ec74db4d2bee19d1d874b3f529da5c"
+    },
+    {
+      "path": "tests/anchors/untrusted.json",
+      "sha256": "38ea146a0f9e0e8cf403fd54592b511b87d592838e9511aae0d94dbf435f0654"
+    },
+    {
+      "path": "tests/catalogs/bad_descriptor.json",
+      "sha256": "43f6c5713b37ae8df4f71360bb383ab633bce0c009ae1cdd0972ff2728906d99"
+    },
+    {
+      "path": "tests/catalogs/dependency_mismatch.json",
+      "sha256": "865006dfc5a4314a28d6428e1c33c67b8523637699a75a1ca3dc98b8a29fbb61"
+    },
+    {
+      "path": "tests/catalogs/fault.json",
+      "sha256": "f543bd1706ff5c3d0b8ebc09e919f14de3a7e009bff46fcd18ff30f2024f867d"
+    },
+    {
+      "path": "tests/catalogs/fault_timeout.json",
+      "sha256": "643c544635ff452bab106173fbc4fde2e29ba03dc9e3534a4d4f977bf4e36d7d"
+    },
+    {
+      "path": "tests/catalogs/hash_mismatch.json",
+      "sha256": "ce9651c0f26df48ae32fe1e50b1d97a723fe8e175f50e47b33dc6a86597bbb87"
+    },
+    {
+      "path": "tests/catalogs/missing_executable.json",
+      "sha256": "865006dfc5a4314a28d6428e1c33c67b8523637699a75a1ca3dc98b8a29fbb61"
+    },
+    {
+      "path": "tests/catalogs/timeout.json",
+      "sha256": "313e8a8fdfbc786382ee57226ff52ff7fe1ee3b948915ea5e38deb07d5f4151e"
+    },
+    {
+      "path": "tests/catalogs/traversal.json",
+      "sha256": "2349d6bfb8404da91fafb2bacb87fcbb285f63c53f602226abafffb23c667fa4"
+    },
+    {
+      "path": "tests/catalogs/untrusted.json",
+      "sha256": "41b2122b3e8c7d0ef1e32ed509fd621b73fa0216a35cff9a9cc8ed31e4178408"
+    },
+    {
+      "path": "tests/fixture-pins.json",
+      "sha256": "652bcce1ec29cce7ce226cb7e4c3508fec6612a4a06ee14a6cc130a04a927c3e"
+    },
+    {
+      "path": "tests/fixtures/Child-Sleeper.ps1",
+      "sha256": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9"
+    },
+    {
+      "path": "tests/fixtures/Fault-Worker.ps1",
+      "sha256": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee"
+    },
+    {
+      "path": "tests/fixtures/manifest-bad_descriptor.json",
+      "sha256": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822"
+    },
+    {
+      "path": "tests/fixtures/manifest-hash_mismatch.json",
+      "sha256": "076dd487276e3079fe1ae5240724af45493e15b0043c7c5b1519d8ef54647a01"
+    },
+    {
+      "path": "tests/fixtures/manifest-timeout.json",
+      "sha256": "31d5722122ddfb12d6aa2e216f39971eacd6207e6296813ec12fe9ad580c2c5b"
+    },
+    {
+      "path": "tests/fixtures/manifest-traversal.json",
+      "sha256": "e873602a66f676d2f13c76070739b8859025b69f57b306edd531c81c2239de0a"
+    },
+    {
+      "path": "tests/fixtures/manifest-untrusted.json",
+      "sha256": "841d4a3cb10154f37ca1ee4e8e213ed2cac07a1ea68798354ece6f0c7c2e1074"
+    },
+    {
+      "path": "tests/test_engine.py",
+      "sha256": "68b94d29b1b2bb6f0665e3479ff64f33f07325552edd625255e00ed47047c105"
+    },
+    {
+      "path": "trust-anchor.json",
+      "sha256": "508a2850ca91401d9553723f723b7eaf9c511f336fdff75fdd94e89ec9c52dbd"
+    },
+    {
+      "path": "win_process.py",
+      "sha256": "00b4d68d207a38d2538a7de54ccfde7a0b245c9e136d0725d128297984c320f9"
+    },
+    {
+      "path": "worker.ps1",
+      "sha256": "e29335dd18033c24b35818356aaa0893b286916fadff954660cdb057f24df0b4"
+    }
+  ],
+  "not_run": [
+    "Independent review",
+    "live M365/authentication",
+    "production integration",
+    "GUI/SQLite/notes regression",
+    "non-Windows platforms"
+  ]
+}

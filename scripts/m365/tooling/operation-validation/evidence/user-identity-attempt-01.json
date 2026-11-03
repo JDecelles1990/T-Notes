@@ -1,0 +1,233 @@
+{
+  "report_version": 1,
+  "scope": "OFFLINE_STATIC_AND_SYNTHETIC_ONLY",
+  "operation_id": "M365.ENTRA.USER_IDENTITY",
+  "contract_version": "0.3.0-proposed.1",
+  "package_path": "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity",
+  "contract_root": "C:\\Dev\\T-Notes\\docs\\contracts\\m365",
+  "contract_status": "PROPOSED_NOT_APPROVED",
+  "requested_state": "VALIDATED_CANDIDATE",
+  "dispatchable": false,
+  "checks": [
+    {
+      "category": "contract",
+      "name": "pinned_local_schemas",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "identity",
+      "name": "package_identity_and_manifest",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "identity",
+      "name": "manifest_schema",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "parameters",
+      "name": "descriptor_semantics",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "contract",
+      "name": "selected_payload_schema",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "integrity",
+      "name": "complete_file_inventory_and_hashes",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "security",
+      "name": "contained_source_and_nonpromotion",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "identity",
+      "name": "unique_operation_identifiers",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "dependencies",
+      "name": "installed_module_hashes_and_sdk_compatibility",
+      "status": "NOT RUN",
+      "blocking": false
+    },
+    {
+      "category": "dependencies",
+      "name": "declared_dependency_inventory",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "abi",
+      "name": "powershell_ast",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "abi",
+      "name": "exact_callable_abi",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "security",
+      "name": "unconditional_reference_guard",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "security",
+      "name": "static_policy_and_host_auth_boundary",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "synthetic_probe_setup",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "success",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "failure",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "partial",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "cancellation",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "missing_field",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "invalid_type",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "wrong_correlation",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "invalid_timestamp",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "results",
+      "name": "missing_payload_fields",
+      "status": "PASS",
+      "blocking": true
+    },
+    {
+      "category": "security",
+      "name": "independent_security_review_and_live_auth",
+      "status": "NOT RUN",
+      "blocking": false
+    },
+    {
+      "category": "tests",
+      "name": "operation_behavior_tests_not_executed_by_static_validator",
+      "status": "NOT RUN",
+      "blocking": false
+    },
+    {
+      "category": "release",
+      "name": "reference_remains_unapproved",
+      "status": "PASS",
+      "blocking": true
+    }
+  ],
+  "source_hashes": {
+    "assets\\m365\\contract-review-pins.json": "822bdf9072dfe9ff22884325d741d9e6b75a18596e344f6ebbf274d626522b34",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\CONTRACT.md": "a1ad2fa6ed6091f5b902e18503b2f1a253edc52b793086b96156b3de3e10ddf5",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\README.md": "2ccdaaa83cda91129ac2003973fabf4ec69fcf38953707966c1a666a6c6f977e",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\CONTRACT_CORRECTION_HANDOFF.md": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\examples\\fixtures.json": "c5c00937df8c2b4052f1fa2dc196f10e8dce0e961b507452f8adfe3ec1ff1b58",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\common.schema.json": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\company-profile.schema.json": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\error.schema.json": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\execution-request.schema.json": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\execution-result.schema.json": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\operation-data.schema.json": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e",
+    "C:\\Dev\\T-Notes\\docs\\contracts\\m365\\schemas\\script-manifest.schema.json": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\CHECKPOINT.md": "d415a52da134acd98c35a2f4c59766d0f5dc03941287a843be5491b00350c307",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\COMPATIBILITY.md": "cc026c7d508572514cc7d0374862090da53d25ea9ef89bb1f946d7608840a9f1",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\Get-UserIdentity.ps1.reference": "f9037639c3c5b49477bbd9bd137a9435df2cc7533b604356deffbdf4e947f6ae",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\operation.design.json": "520894bc868640a0708639c5b7f0d2ef48023977ca6dbbeba6249927c20bf111",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\Operation.Template.ps1.reference": "a03b3d2b56e5839712eb9f56fd41c37b7088e61de0d211e05a4527ef59bdc722",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\README.md": "92eb15e1f4637e8ad6f2027e3fa0572f7f01830a0380df381d6cd3d6e4ab526d",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\attempt-01.log": "f8880ebf9a021b04c3cd3600c2597967f53f8f0fc240b41626a83c4637ec1527",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\attempt-02.log": "98bd6c573e7d72bbea26e23c9c37bdc67854ab8c1e18bec804a972476b688c0c",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\DIAGNOSES.md": "40edaaa4bd47a94cbf66bddcd5ad162d157cee560a46c1f49ee1785e39938f06",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\entry-preservation.json": "c97897e22013bf83cc1ae29227a8e60572292c529d7bc8ac871b22467b7085a9",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\preservation.json": "99f8a96ea0a2eff15bfb0eda34c131371ef5a98486b0cdab162a5a8ce0663ce8",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\validation-20261103T004214Z-71b521c1.json": "60a65f40f257c5d76770836ecc2b0bcced24e7c7665478757edfb098205375d8",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\validation-20261103T004548Z-77eabc15.json": "a7eac672cf137da674138de1ff42774c299cff8eb1172fe23b501f0504f4f2f7",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\evidence\\validation-20261103T004733Z-2975eabb.json": "34b59e01a2606445d3e34717671e1acf4ea9b0afb623d4c418cf98fd0704c070",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\fixtures.json": "0291059c1c1aecc6688ae086683580c7f7b20c56b99b3cd161ad7c1e7810990a",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\OfflineHarness.ps1": "62daf2e47d21dc3390f0771369ad6c4f8052ceed865a7192a99c15fdffc53c44",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\Run-OfflineTests.ps1": "344c2a32e7fb6811ec89fabad61b4c01bca88901ca73092d7670b55ec0bb1d92",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\UserIdentity.Tests.ps1": "85828ec61a303607f83d070aa9038bbdcb353716cc36b73abd6c808cb5392bec",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\validate.py": "ec823cf1be675b84007abd46619331edf3bb1a8e0014f84473ca25a7972a0c63",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\SHA256SUMS.json": "8d87441a22b3e75aa878afb4aad1e55008c2345b6c62ac8b0621300132023834",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\Framework.Tests.ps1": "105429d2d4edc47cab4aaf3e5ad2fdf16fb9dc5b5774c83c2311b17546da1fcf",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\Inspect-Operation.ps1": "8290b0fd2378ac6bfe2b56f980076b1bddfe6d89fe36c4ff50d8fb041cffd6a1",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\Run-FrameworkTests.ps1": "3cefcff6bcdfc321527f64536d1ab820dcb92a48bbaa17ddb2e7340f6ca35ebc",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\run_tests.py": "affe58dedb7989281cdbc90c968467e0f62479f8ba8ae7eb3f204031757cf20d",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\test_validator.py": "b36ab4aae9743431be04171029eee6418de1ba8ac74442b7ace1a126f15d7d81",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\tooling\\operation-validation\\validate_operation.py": "ce9012299e70c7ed81a494d62e06705336d518dfe9f2c2b5ee45f90fd419e9b6"
+  },
+  "runtime_versions": {
+    "python": "3.14.5",
+    "jsonschema": "4.26.0",
+    "powershell": "7.6.9",
+    "pester": "3.4.0"
+  },
+  "started_at": "2026-11-03T01:03:54.753517Z",
+  "package_kind": "NON_DISPATCHABLE_REFERENCE",
+  "declared_dependencies": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "final_disposition": "VALIDATED_CANDIDATE",
+  "validation_status": "PASS",
+  "blocking_findings": [],
+  "completed_at": "2026-11-03T01:03:56.137894Z"
+}

@@ -57,12 +57,12 @@ def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
     assert main_window.toolbar.btn_m365.isVisible()
 
 
-def test_skeleton_contains_only_labeled_placeholders(main_window, qapp):
+def test_catalog_shell_preserves_notes_boundary_and_placeholders(main_window, qapp):
     show(main_window, qapp)
     main_window.show_m365_workspace()
     widget = main_window.m365_workspace
-    assert widget.navigation.count() == 12
-    assert not widget.navigation.isEnabled()
+    assert widget.navigation.count() == 14
+    assert widget.navigation.isEnabled()
     names = {group.title() for group in widget.findChildren(QGroupBox)}
     assert {"Company Selection", "Authentication & Tenant Context", "Script Catalog",
             "Parameters", "Execution Workspace", "Parsed Results", "Active Ticket Notes"} <= names

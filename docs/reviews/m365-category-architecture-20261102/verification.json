@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "head": "30eef020e9ef6162ea10321db6741046e7aa2a88",
+  "branch": "main",
+  "index_bytes_preserved": true,
+  "candidate_files_checked": 38,
+  "candidate_mismatches": [],
+  "entry_files_checked": 173,
+  "preservation_mismatches": [],
+  "s002_files_checked": 64,
+  "s002_mismatches": []
+}

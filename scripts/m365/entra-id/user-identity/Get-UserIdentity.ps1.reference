@@ -1,0 +1,187 @@
+# PROVISIONAL, NON-DISPATCHABLE REFERENCE. No approved executable or manifest.
+# Tests inspect the AST and remove only the guard in an isolated synthetic runspace.
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory)]
+    [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Context,
+    [Parameter(Mandatory)]
+    [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Parameters,
+    [Parameter(Mandatory)]
+    [System.Threading.CancellationToken] $CancellationToken
+)
+throw 'PROVISIONAL_REFERENCE_ONLY'
+
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version 3.0
+
+function New-OperationFailure([string] $Code, [string] $Message, [string] $Outcome = 'not_started') {
+    $status = if ($Code -eq 'CANCELLED') { 'cancelled' } else { 'error' }
+    [pscustomobject]@{
+        status = $status; operation_outcome = $Outcome; data = $null
+        warnings = [object[]]@()
+        errors = [object[]]@([pscustomobject]@{ code = $Code; message = $Message; retryable = $false })
+    }
+}
+function Test-GuidText($Value) {
+    $Value -is [string] -and $Value -cmatch '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+}
+function Test-UpnText($Value) {
+    $Value -is [string] -and $Value.Length -ge 3 -and $Value.Length -le 254 -and
+        $Value -cmatch '^[^\s@\x00-\x1f*?]+@[^\s@\x00-\x1f*?]+\.[^\s@\x00-\x1f*?]+$' -and
+        $Value.IsNormalized([Text.NormalizationForm]::FormC)
+}
+function Test-UtcText($Value) {
+    if ($Value -isnot [string] -or $Value -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?Z$') { return $false }
+    $instant = [DateTimeOffset]::MinValue
+    [DateTimeOffset]::TryParse($Value, [Globalization.CultureInfo]::InvariantCulture,
+        [Globalization.DateTimeStyles]::None, [ref]$instant)
+}
+function Get-ProviderField($User, [string] $Name) {
+    $property = $User.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    # Preserve malformed singleton arrays for type rejection; the success pipeline
+    # would otherwise silently unwrap them into apparently valid scalar fields.
+    return ,$property.Value
+}
+
+# The host already validates the complete schema, release, immutable snapshot and
+# owned live lease before dispatch AND before accepting data. These defensive
+# checks cannot authenticate a caller or establish effective permission/RBAC.
+if ($Parameters.Count -ne 0) {
+    return New-OperationFailure 'INVALID_PARAMETER' 'This operation accepts no extra parameters.'
+}
+$contextKeys = @('contract_version','correlation_id','script_id','company_id','tenant_id',
+    'admin_identity_ref','session_generation','target','ticket_context','release_binding',
+    'verified_account_upn','connections')
+if ($Context.Count -ne $contextKeys.Count) {
+    return New-OperationFailure 'CONTRACT_VIOLATION' 'The invocation context has invalid fields.'
+}
+foreach ($key in $contextKeys) {
+    if (-not $Context.ContainsKey($key)) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The invocation context is incomplete.'
+    }
+}
+if ($Context['contract_version'] -cne '0.3.0-proposed.1' -or
+    $Context['script_id'] -cne 'M365.ENTRA.USER_IDENTITY' -or
+    $Context['session_generation'] -isnot [long] -or $Context['session_generation'] -lt 0 -or
+    -not (Test-UpnText $Context['verified_account_upn'])) {
+    return New-OperationFailure 'CONTRACT_VIOLATION' 'The invocation context is incompatible.'
+}
+foreach ($key in @('correlation_id','company_id','tenant_id','admin_identity_ref')) {
+    if (-not (Test-GuidText $Context[$key])) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The invocation identity is invalid.'
+    }
+}
+$target = $Context['target']
+if ($target -isnot [System.Collections.Generic.IReadOnlyDictionary[string,object]] -or
+    $target.Count -ne 2 -or -not $target.ContainsKey('kind') -or -not $target.ContainsKey('value') -or
+    ($target['kind'] -cne 'upn' -and $target['kind'] -cne 'object_id')) {
+    return New-OperationFailure 'INVALID_PARAMETER' 'A supported exact target is required.'
+}
+if (($target['kind'] -ceq 'upn' -and -not (Test-UpnText $target['value'])) -or
+    ($target['kind'] -ceq 'object_id' -and -not (Test-GuidText $target['value']))) {
+    return New-OperationFailure 'INVALID_PARAMETER' 'The target identifier is invalid or not normalized.'
+}
+$leases = @($Context['connections'])
+if ($leases.Count -ne 1 -or $leases[0]['service'] -cne 'Graph' -or $leases[0]['state'] -cne 'verified') {
+    return New-OperationFailure 'AUTH_REQUIRED' 'A host-verified Graph lease is required.'
+}
+$lease = $leases[0]
+foreach ($key in @('company_id','tenant_id','admin_identity_ref','session_generation')) {
+    if ($lease[$key] -cne $Context[$key]) {
+        return New-OperationFailure 'TENANT_MISMATCH' 'The Graph lease does not match the invocation context.'
+    }
+}
+if (-not (Test-UpnText $lease['verified_account_upn']) -or
+    -not [string]::Equals($lease['verified_account_upn'], $Context['verified_account_upn'], [StringComparison]::OrdinalIgnoreCase)) {
+    return New-OperationFailure 'ACCOUNT_MISMATCH' 'The Graph account does not match the invocation context.'
+}
+if (-not (Test-GuidText $lease['connection_id']) -or -not (Test-GuidText $lease['owner_worker_id']) -or
+    -not (Test-UtcText $lease['verified_at']) -or
+    ($null -ne $lease['expires_at'] -and (-not (Test-UtcText $lease['expires_at']) -or
+        [DateTimeOffset]::Parse($lease['expires_at'], [Globalization.CultureInfo]::InvariantCulture) -le [DateTimeOffset]::UtcNow))) {
+    return New-OperationFailure 'AUTH_REQUIRED' 'The Graph lease is invalid or expired.'
+}
+if (@($lease['graph_scopes']) -cnotcontains 'User.Read.All') {
+    return New-OperationFailure 'ACCESS_DENIED' 'The proposed Graph read scope is unavailable.'
+}
+if ($CancellationToken.IsCancellationRequested) {
+    return New-OperationFailure 'CANCELLED' 'Cancelled before the provider call.'
+}
+if ($null -eq (Get-Command -Name Get-MgUser -ListImported -ErrorAction SilentlyContinue)) {
+    return New-OperationFailure 'MODULE_MISSING' 'The required approved Graph command is unavailable.'
+}
+
+# Fixed Get parameter set, one exact lookup, minimal explicit property selection.
+# No filters, wildcards, pagination, writes, authentication or automatic retry.
+# AccountEnabled may be null under approved read permissions: do not escalate.
+$properties = [string[]]@('id','userPrincipalName','displayName','accountEnabled','userType')
+try {
+    $rows = @(Get-MgUser -UserId ([string]$target['value']) -Property $properties -ErrorAction Stop)
+    if ($CancellationToken.IsCancellationRequested) {
+        return New-OperationFailure 'CANCELLED' 'Cancelled after provider dispatch; data discarded.' 'unknown'
+    }
+    if ($rows.Count -eq 0) {
+        return New-OperationFailure 'TARGET_NOT_FOUND' 'No user was returned for the exact target.' 'failed'
+    }
+    if ($rows.Count -ne 1 -or $null -eq $rows[0] -or $rows[0] -is [string]) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The provider returned an invalid identity response.' 'unknown'
+    }
+    $user = $rows[0]
+    $id = Get-ProviderField $user 'Id'
+    $upn = Get-ProviderField $user 'UserPrincipalName'
+    if (-not (Test-GuidText $id) -or -not (Test-UpnText $upn)) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The provider omitted or malformed required identity fields.' 'unknown'
+    }
+    if (($target['kind'] -ceq 'object_id' -and $id -cne $target['value']) -or
+        ($target['kind'] -ceq 'upn' -and -not [string]::Equals($upn, $target['value'], [StringComparison]::OrdinalIgnoreCase))) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The returned identity does not match the exact target.' 'unknown'
+    }
+    $displayName = Get-ProviderField $user 'DisplayName'
+    $enabled = Get-ProviderField $user 'AccountEnabled'
+    $userType = Get-ProviderField $user 'UserType'
+    if (($null -ne $displayName -and ($displayName -isnot [string] -or $displayName.Length -gt 256)) -or
+        ($null -ne $enabled -and $enabled -isnot [bool]) -or
+        ($null -ne $userType -and ($userType -isnot [string] -or $userType -cnotin @('Member','Guest')))) {
+        return New-OperationFailure 'CONTRACT_VIOLATION' 'The provider returned malformed diagnostic properties.' 'unknown'
+    }
+    $warnings = [object[]]@()
+    if ($null -eq $displayName -or $null -eq $enabled -or $null -eq $userType) {
+        $warnings = [object[]]@([pscustomobject]@{
+            code = 'PROPERTY_UNAVAILABLE'; message = 'One or more optional identity properties are unavailable; null does not mean healthy.'
+        })
+    }
+    if ($CancellationToken.IsCancellationRequested) {
+        return New-OperationFailure 'CANCELLED' 'Cancelled before returning data.' 'unknown'
+    }
+    return [pscustomobject]@{
+        status = $(if ($warnings.Count) { 'partial' } else { 'success' })
+        operation_outcome = $(if ($warnings.Count) { 'partially_succeeded' } else { 'succeeded' })
+        data = [pscustomobject]@{ id = $id; user_principal_name = $upn; display_name = $displayName; account_enabled = $enabled; user_type = $userType }
+        warnings = $warnings; errors = [object[]]@()
+    }
+} catch [System.Management.Automation.CommandNotFoundException] {
+    return New-OperationFailure 'INTERNAL_ERROR' 'A provider dependency failed during dispatch.' 'unknown'
+} catch [System.OperationCanceledException] {
+    return New-OperationFailure 'CANCELLED' 'Cancelled during provider dispatch; data discarded.' 'unknown'
+} catch {
+    if ($CancellationToken.IsCancellationRequested) {
+        return New-OperationFailure 'CANCELLED' 'Cancelled during provider dispatch; data discarded.' 'unknown'
+    }
+    # Read only typed numeric status; never inspect or echo raw exception messages.
+    $exception = $_.Exception
+    $statusProperty = $exception.PSObject.Properties['ResponseStatusCode']
+    if ($null -eq $statusProperty) { $statusProperty = $exception.PSObject.Properties['StatusCode'] }
+    $httpStatus = 0
+    if ($null -ne $statusProperty -and ($statusProperty.Value -is [int] -or $statusProperty.Value -is [Net.HttpStatusCode])) {
+        $httpStatus = [int]$statusProperty.Value
+    }
+    switch ($httpStatus) {
+        401 { return New-OperationFailure 'AUTH_REQUIRED' 'The provider requires renewed host authentication.' 'failed' }
+        403 { return New-OperationFailure 'ACCESS_DENIED' 'The provider denied access to this identity.' 'failed' }
+        404 { return New-OperationFailure 'TARGET_NOT_FOUND' 'The provider could not find this identity.' 'failed' }
+        429 { return New-OperationFailure 'API_THROTTLED' 'The provider throttled this read; explicit retry requires review.' 'failed' }
+        503 { return New-OperationFailure 'SERVICE_UNAVAILABLE' 'The identity service is unavailable.' 'failed' }
+        default { return New-OperationFailure 'INTERNAL_ERROR' 'The identity read failed; consult sanitized host diagnostics.' 'unknown' }
+    }
+}

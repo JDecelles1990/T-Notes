@@ -1,0 +1,21 @@
+{
+  "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
+  "assets": {
+    "protocol.ps1": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2",
+    "schema-check.ps1": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda",
+    "worker.ps1": "1ef4b8de48e7a63cb9ab03f5ea0f0ce7cb57b38d069da014a8acb4b5131095f6",
+    "synthetic-context.json": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a",
+    "manifest.json": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e",
+    "scripts/Fixture-Operation.ps1": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2",
+    "tests/fixtures/Fault-Worker.ps1": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee",
+    "tests/fixtures/Child-Sleeper.ps1": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9",
+    "tests/fixtures/manifest-bad_descriptor.json": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822"
+  },
+  "operations": [
+    {
+      "script_id": "M365.TEST.ABI",
+      "manifest": "tests/fixtures/manifest-bad_descriptor.json",
+      "worker": "worker.ps1"
+    }
+  ]
+}

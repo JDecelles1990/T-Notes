@@ -1,9 +1,10 @@
 # System Overview & Architecture
 
-## S001 M365 workspace foundation candidate
+## M365 workspace foundation and category catalog
 
-Status: implemented in an isolated feature worktree; independent review and
-integration pending. The existing Notes workspace remains the startup page.
+S001 is merged into main. The category/catalog extension is an implementation
+candidate pending independent review. The existing Notes workspace remains the
+startup page.
 
 During initial UI construction MainWindow adds its existing Notes QSplitter and
 both original tab panes as page 0 of `workspace_stack` (QStackedWidget), then adds
@@ -25,12 +26,17 @@ Notes before entering existing HUD behavior. See tab-lifecycle.md and ADR 0008.
 
 M365LauncherWidget exposes `back_requested`, `back_button`, `navigation`,
 `content_layout`, `workspace_splitter`, `ticket_sidebar` and `ticket_panel_toggle`
-for Gemini expansion after independent review/approval. Twelve disabled categories,
-six labeled content placeholders and an empty collapsible/resizable ticket sidebar
-are presentation only. There are no services, company persistence, credentials,
-manifest processing, worker/network dispatch, result parsing or note insertion.
-The page explicitly states that no Microsoft 365 connection/execution exists.
-No shared PowerShell contract draft is adopted or changed.
+for future expansion after independent review/approval. Fourteen flat categories
+now come from an application-owned JSON registry through M365CatalogService.
+The service provides schema-checked, unavailable-operation metadata snapshots;
+the shipped production catalog is empty. Search, risk/lifecycle filters and
+read-only plain-text details stay inside the existing scrollable shell. The
+remaining execution/parameter/result and ticket placeholders remain unimplemented.
+No company persistence, credentials, worker/network dispatch, result parsing or
+note insertion exists. The corrected proposed contract schemas are compatibility
+inputs only, hash-bound for review and loaded only for nonempty catalogs. No
+contract or offline engine is approved or integrated. See
+[M365 catalog](../features/m365-catalog.md) and [ADR 0009](../decisions/0009-m365-metadata-catalog.md).
 
 Alt+F8 is part of S001: one `workspace_shortcut` uses explicit
 `Qt.ApplicationShortcut` context and disables auto-repeat. It has no parallel

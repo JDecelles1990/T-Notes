@@ -1,0 +1,46 @@
+{
+  "good": {
+    "file": "trust-anchor.json",
+    "sha256": "7d92a9ec34493c68cb963c2320d901b13eaa7508fd04101a2dbb99c8d3e618ff"
+  },
+  "fault": {
+    "file": "tests/anchors/fault.json",
+    "sha256": "585566e2f6662640831199db5cfc11228f0a304cfd323b7cb08abdd1a32f2461"
+  },
+  "untrusted": {
+    "file": "tests/anchors/untrusted.json",
+    "sha256": "69f16ba950fffe4ac41de34a0ca8208e94d149aa933e987009ae6864f81a12ec"
+  },
+  "traversal": {
+    "file": "tests/anchors/traversal.json",
+    "sha256": "2e662e5d66aa340b56c6d88a70bc9891e666ea9dfce86dbe24e7403812794c3c"
+  },
+  "hash_mismatch": {
+    "file": "tests/anchors/hash_mismatch.json",
+    "sha256": "70a11cde3d58d421f373e1b93a3ee7e6560e9945a2ae7167a64d7a8ec9025f36"
+  },
+  "bad_descriptor": {
+    "file": "tests/anchors/bad_descriptor.json",
+    "sha256": "c301459aea78a9f29707960fb0c3b44e14732ebaab5206b17068bc1a7d4b3119"
+  },
+  "timeout": {
+    "file": "tests/anchors/timeout.json",
+    "sha256": "17a5d48b7a60614eea84e028ece732acb098e41556399ce763e6c83813319d60"
+  },
+  "write_risk": {
+    "file": "tests/anchors/write_risk.json",
+    "sha256": "a8f92bd02cc018b72caf0550d9bbb4b42d6242e3b55079e57e640270efd234e7"
+  },
+  "missing_executable": {
+    "file": "tests/anchors/missing_executable.json",
+    "sha256": "6d40273b7cd6b5ef70de454c5c4d47cb793dc2b5642fe9a7a48bf03d2d7a27a9"
+  },
+  "dependency_mismatch": {
+    "file": "tests/anchors/dependency_mismatch.json",
+    "sha256": "01f294737dc84d1ded0f7f175fc744e4e65fbec0633a60ea492e8336d617ac13"
+  },
+  "fault_timeout": {
+    "file": "tests/anchors/fault_timeout.json",
+    "sha256": "34dd3aa55e048beaad6f6daf0bc64974e31ac2eddf976eb6282af41963ec306c"
+  }
+}

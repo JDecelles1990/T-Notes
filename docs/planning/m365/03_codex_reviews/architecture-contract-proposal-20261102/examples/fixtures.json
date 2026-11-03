@@ -1,0 +1,1523 @@
+{
+  "contract_version": "0.3.0-proposed.1",
+  "provenance": "SYNTHETIC ONLY; zero hashes approve no executable",
+  "fixtures": [
+    {
+      "name": "user_identity.manifest",
+      "schema": "script-manifest.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "title": "Get-UserIdentity",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Entra ID / Users",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/entra/Get-UserIdentity.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "Microsoft.Graph.Users",
+            "minimum_version": "2.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "Graph"
+        ],
+        "graph_scopes": [
+          "User.Read.All"
+        ],
+        "required_roles": [],
+        "risk": "read_only",
+        "parameters": [],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "upn",
+            "object_id"
+          ],
+          "requires_resolved_identity": false,
+          "output_binding": {
+            "object_id_field": "id",
+            "upn_field": "user_principal_name"
+          }
+        }
+      }
+    },
+    {
+      "name": "user_identity.request",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "user_identity.success",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "user_identity.data",
+      "schema": "operation-data.schema.json",
+      "fragment": "#/$defs/user_identity",
+      "valid": true,
+      "instance": {
+        "id": "44444444-4444-4444-8444-444444444444",
+        "display_name": "Synthetic User",
+        "user_principal_name": "synthetic.user@example.invalid",
+        "account_enabled": true,
+        "user_type": "Member"
+      }
+    },
+    {
+      "name": "user_licenses.manifest",
+      "schema": "script-manifest.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.ENTRA.USER_LICENSES",
+        "title": "Get-UserLicenses",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Microsoft 365 Licensing",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/entra/Get-UserLicenses.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "Microsoft.Graph.Users",
+            "minimum_version": "2.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "Graph"
+        ],
+        "graph_scopes": [
+          "LicenseAssignment.Read.All"
+        ],
+        "required_roles": [
+          {
+            "service": "Graph",
+            "any_of": [
+              "Directory.Readers"
+            ]
+          }
+        ],
+        "risk": "read_only",
+        "parameters": [],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_licenses",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "object_id"
+          ],
+          "requires_resolved_identity": true,
+          "output_binding": {
+            "object_id_field": "target_user_id",
+            "upn_field": null
+          }
+        }
+      }
+    },
+    {
+      "name": "user_licenses.request",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_LICENSES",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "user_licenses.success",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_LICENSES",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "target_user_id": "44444444-4444-4444-8444-444444444444",
+          "licenses": [],
+          "returned_count": 0,
+          "truncated": false
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "user_licenses.data",
+      "schema": "operation-data.schema.json",
+      "fragment": "#/$defs/user_licenses",
+      "valid": true,
+      "instance": {
+        "target_user_id": "44444444-4444-4444-8444-444444444444",
+        "licenses": [],
+        "returned_count": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "user_signins.manifest",
+      "schema": "script-manifest.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.ENTRA.USER_SIGNINS",
+        "title": "Get-UserSignIns",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Security / Defender",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/entra/Get-UserSignIns.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "Microsoft.Graph.Reports",
+            "minimum_version": "2.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "Graph"
+        ],
+        "graph_scopes": [
+          "AuditLog.Read.All"
+        ],
+        "required_roles": [
+          {
+            "service": "Graph",
+            "any_of": [
+              "Reports.Reader"
+            ]
+          }
+        ],
+        "risk": "read_only",
+        "parameters": [
+          {
+            "name": "LookbackDays",
+            "type": "integer",
+            "required": true,
+            "description": "UTC lookback",
+            "minimum": 1,
+            "maximum": 30,
+            "default": 7
+          },
+          {
+            "name": "MaxRecords",
+            "type": "integer",
+            "required": true,
+            "description": "Record cap",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        ],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "object_id"
+          ],
+          "requires_resolved_identity": true,
+          "output_binding": {
+            "object_id_field": "target_user_id",
+            "upn_field": null
+          }
+        }
+      }
+    },
+    {
+      "name": "user_signins.request",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_SIGNINS",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {
+          "LookbackDays": 7,
+          "MaxRecords": 20
+        },
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "user_signins.success",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_SIGNINS",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "target_user_id": "44444444-4444-4444-8444-444444444444",
+          "lookback_start": "2026-10-26T12:00:00Z",
+          "events": [],
+          "returned_count": 0,
+          "truncated": false
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "user_signins.data",
+      "schema": "operation-data.schema.json",
+      "fragment": "#/$defs/user_signins",
+      "valid": true,
+      "instance": {
+        "target_user_id": "44444444-4444-4444-8444-444444444444",
+        "lookback_start": "2026-10-26T12:00:00Z",
+        "events": [],
+        "returned_count": 0,
+        "truncated": false
+      }
+    },
+    {
+      "name": "mailbox_summary.manifest",
+      "schema": "script-manifest.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.EXCHANGE.MAILBOX_SUMMARY",
+        "title": "Get-MailboxSummary",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Exchange Online / Outlook",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/exchange/Get-MailboxSummary.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "ExchangeOnlineManagement",
+            "minimum_version": "3.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "ExchangeOnline"
+        ],
+        "graph_scopes": [],
+        "required_roles": [
+          {
+            "service": "ExchangeOnline",
+            "any_of": [
+              "cmdlet.Get-EXOMailbox"
+            ]
+          },
+          {
+            "service": "ExchangeOnline",
+            "any_of": [
+              "cmdlet.Get-EXOMailboxStatistics"
+            ]
+          }
+        ],
+        "risk": "read_only",
+        "parameters": [],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/mailbox_summary",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "object_id"
+          ],
+          "requires_resolved_identity": true,
+          "output_binding": {
+            "object_id_field": "target_user_id",
+            "upn_field": null
+          }
+        }
+      }
+    },
+    {
+      "name": "mailbox_summary.request",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.EXCHANGE.MAILBOX_SUMMARY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "mailbox_summary.success",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.EXCHANGE.MAILBOX_SUMMARY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "target_user_id": "44444444-4444-4444-8444-444444444444",
+          "mailbox_exists": true,
+          "recipient_type_details": "UserMailbox",
+          "primary_smtp_address": "synthetic.user@example.invalid",
+          "total_item_size_bytes": 1024,
+          "prohibit_send_quota_bytes": 2048
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "object_id",
+          "value": "44444444-4444-4444-8444-444444444444"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "mailbox_summary.data",
+      "schema": "operation-data.schema.json",
+      "fragment": "#/$defs/mailbox_summary",
+      "valid": true,
+      "instance": {
+        "target_user_id": "44444444-4444-4444-8444-444444444444",
+        "mailbox_exists": true,
+        "recipient_type_details": "UserMailbox",
+        "primary_smtp_address": "synthetic.user@example.invalid",
+        "total_item_size_bytes": 1024,
+        "prohibit_send_quota_bytes": 2048
+      }
+    },
+    {
+      "name": "company.synthetic",
+      "schema": "company-profile.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "display_name": "Synthetic Company",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "tenant_domain": "example.invalid",
+        "administrator_upn": "admin@example.invalid"
+      }
+    },
+    {
+      "name": "error.INVALID_PARAMETER",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "INVALID_PARAMETER",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.AUTH_REQUIRED",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "AUTH_REQUIRED",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.TENANT_MISMATCH",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "TENANT_MISMATCH",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.ACCOUNT_MISMATCH",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "ACCOUNT_MISMATCH",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.ACCESS_DENIED",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "ACCESS_DENIED",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.TARGET_NOT_FOUND",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "TARGET_NOT_FOUND",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.MAILBOX_NOT_FOUND",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "MAILBOX_NOT_FOUND",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.MODULE_MISSING",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "MODULE_MISSING",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.API_THROTTLED",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "API_THROTTLED",
+        "message": "Synthetic safe message",
+        "retryable": true
+      }
+    },
+    {
+      "name": "error.SERVICE_UNAVAILABLE",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "SERVICE_UNAVAILABLE",
+        "message": "Synthetic safe message",
+        "retryable": true
+      }
+    },
+    {
+      "name": "error.CONNECTION_FAILED",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "CONNECTION_FAILED",
+        "message": "Synthetic safe message",
+        "retryable": true
+      }
+    },
+    {
+      "name": "error.TIMEOUT",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "TIMEOUT",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.CANCELLED",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "CANCELLED",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.OUTPUT_LIMIT",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "OUTPUT_LIMIT",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.CONTRACT_VIOLATION",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "CONTRACT_VIOLATION",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "error.INTERNAL_ERROR",
+      "schema": "error.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "code": "INTERNAL_ERROR",
+        "message": "Synthetic safe message",
+        "retryable": false
+      }
+    },
+    {
+      "name": "result.partial",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "partially_succeeded",
+        "status": "partial",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": null,
+          "user_type": "Member"
+        },
+        "warnings": [
+          {
+            "code": "PROPERTY_UNAVAILABLE",
+            "message": "Synthetic property unavailable"
+          }
+        ],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 2
+      }
+    },
+    {
+      "name": "result.error",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": null,
+        "context_state": "unverified",
+        "origin": "host",
+        "operation_outcome": "not_started",
+        "status": "error",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": null,
+        "warnings": [],
+        "errors": [
+          {
+            "code": "AUTH_REQUIRED",
+            "message": "Synthetic safe failure",
+            "retryable": false
+          }
+        ],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 20
+      }
+    },
+    {
+      "name": "result.cancelled",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": null,
+        "context_state": "unverified",
+        "origin": "host",
+        "operation_outcome": "unknown",
+        "status": "cancelled",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": null,
+        "warnings": [],
+        "errors": [
+          {
+            "code": "CANCELLED",
+            "message": "Synthetic safe failure",
+            "retryable": false
+          }
+        ],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 40
+      }
+    },
+    {
+      "name": "result.timeout",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": true,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": null,
+        "context_state": "unverified",
+        "origin": "host",
+        "operation_outcome": "unknown",
+        "status": "timeout",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": null,
+        "warnings": [],
+        "errors": [
+          {
+            "code": "TIMEOUT",
+            "message": "Synthetic safe failure",
+            "retryable": false
+          }
+        ],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 40
+      }
+    },
+    {
+      "name": "negative.old_version",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.1.0",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "negative.secret_field",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "password": "SYNTHETIC_SECRET_SENTINEL",
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "negative.bad_guid",
+      "schema": "execution-request.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "wrong",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "parameters": {},
+        "requested_execution_mode": "isolated_worker",
+        "authorization": {
+          "confirmation_ref": null
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      }
+    },
+    {
+      "name": "negative.path_traversal",
+      "schema": "script-manifest.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "title": "Get-UserIdentity",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Entra ID / Users",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/../escape.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "Microsoft.Graph.Users",
+            "minimum_version": "2.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "Graph"
+        ],
+        "graph_scopes": [
+          "User.Read.All"
+        ],
+        "required_roles": [],
+        "risk": "read_only",
+        "parameters": [],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "upn",
+            "object_id"
+          ],
+          "requires_resolved_identity": false,
+          "output_binding": {
+            "object_id_field": "id",
+            "upn_field": "user_principal_name"
+          }
+        }
+      }
+    },
+    {
+      "name": "negative.host_success",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "host",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "negative.bad_status",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "failed",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 30
+      }
+    },
+    {
+      "name": "negative.bad_date",
+      "schema": "execution-result.schema.json",
+      "fragment": null,
+      "valid": false,
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "context_state": "verified",
+        "origin": "worker",
+        "operation_outcome": "succeeded",
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-02-30T12:00:00Z",
+        "duration_ms": 1000,
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": [],
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "operation_exit_code": 0
+      }
+    },
+    {
+      "name": "callable.context",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/invocation_context",
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        },
+        "ticket_context": {
+          "ticket_id": "101"
+        },
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "verified_account_upn": "admin@synthetic.example",
+        "connections": [
+          {
+            "service": "Graph",
+            "connection_id": "77777777-7777-4777-8777-777777777777",
+            "owner_worker_id": "88888888-8888-4888-8888-888888888888",
+            "verified_account_upn": "admin@synthetic.example",
+            "state": "verified",
+            "verified_at": "2026-11-02T18:00:00Z",
+            "expires_at": null,
+            "graph_scopes": [
+              "User.Read.All"
+            ],
+            "effective_roles": [],
+            "company_id": "11111111-1111-4111-8111-111111111111",
+            "tenant_id": "22222222-2222-4222-8222-222222222222",
+            "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+            "session_generation": 1
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "name": "callable.return",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/operation_return",
+      "instance": {
+        "status": "success",
+        "operation_outcome": "succeeded",
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": []
+      },
+      "valid": true
+    },
+    {
+      "name": "callable.cancel",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/cancel_control",
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "session_generation": 1,
+        "message_type": "cancel",
+        "reason": "user_cancel"
+      },
+      "valid": true
+    },
+    {
+      "name": "history.success",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/history_record",
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "script_id": "M365.ENTRA.USER_IDENTITY",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "tenant_id": "22222222-2222-4222-8222-222222222222",
+        "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+        "session_generation": 1,
+        "operation_outcome": "succeeded",
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "status": "success",
+        "started_at": "2026-11-02T12:00:00Z",
+        "completed_at": "2026-11-02T12:00:01Z",
+        "duration_ms": 1000,
+        "origin": "worker",
+        "workflow_id": null,
+        "stage": "completion",
+        "requested_at": "2026-11-02T12:00:00Z",
+        "codes": [],
+        "provenance": "synthetic"
+      },
+      "valid": true
+    },
+    {
+      "name": "trust.synthetic",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/trust_state",
+      "instance": {
+        "trusted": true,
+        "release_binding": {
+          "script_version": "0.1.0-proposed.1",
+          "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output_schema_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "inventory_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "approval_ref": "SYNTHETIC-NOT-AN-APPROVAL",
+        "checked_at": "2026-11-02T18:00:00Z",
+        "reason_codes": []
+      },
+      "valid": true
+    },
+    {
+      "name": "eligibility.blocked",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/eligibility",
+      "instance": {
+        "eligible": false,
+        "reasons": [
+          {
+            "code": "TARGET_KIND_UNSUPPORTED",
+            "message": "This action requires a UPN target."
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "name": "dynamic.manifest",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/manifest",
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "script_id": "M365.CUSTOM.DIAGNOSTIC",
+        "title": "Synthetic metadata-only action",
+        "description": "Synthetic manifest; no executable is approved.",
+        "category": "Entra ID / Users",
+        "tags": [
+          "synthetic"
+        ],
+        "script_path": "scripts/custom/Diagnostic.ps1",
+        "script_version": "0.1.0-proposed.1",
+        "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "supported_powershell": {
+          "edition": "Core",
+          "minimum_version": "7.0.0"
+        },
+        "required_modules": [
+          {
+            "name": "Microsoft.Graph.Users",
+            "minimum_version": "2.0.0"
+          }
+        ],
+        "execution_mode": "isolated_worker",
+        "connection_requirements": [
+          "Graph"
+        ],
+        "graph_scopes": [
+          "User.Read.All"
+        ],
+        "required_roles": [],
+        "risk": "read_only",
+        "parameters": [],
+        "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+        "timeout_seconds": 90,
+        "cancellation_support": "cooperative_then_terminate",
+        "data_sensitivity": "customer_personal",
+        "approval_requirements": {
+          "explicit_run": true,
+          "confirmation_required": false
+        },
+        "target_policy": {
+          "accepted_kinds": [
+            "upn"
+          ],
+          "requires_resolved_identity": false,
+          "output_binding": {
+            "object_id_field": "id",
+            "upn_field": "user_principal_name"
+          }
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "negative.cancel_target",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/cancel_control",
+      "instance": {
+        "contract_version": "0.3.0-proposed.1",
+        "correlation_id": "55555555-5555-4555-8555-555555555555",
+        "company_id": "11111111-1111-4111-8111-111111111111",
+        "session_generation": 1,
+        "message_type": "cancel",
+        "reason": "user_cancel",
+        "target": {
+          "kind": "upn",
+          "value": "synthetic.user@example.invalid"
+        }
+      },
+      "valid": false
+    },
+    {
+      "name": "negative.callable_stdout",
+      "schema": "common.schema.json",
+      "fragment": "#/$defs/operation_return",
+      "instance": {
+        "status": "success",
+        "operation_outcome": "succeeded",
+        "data": {
+          "id": "44444444-4444-4444-8444-444444444444",
+          "display_name": "Synthetic User",
+          "user_principal_name": "synthetic.user@example.invalid",
+          "account_enabled": true,
+          "user_type": "Member"
+        },
+        "warnings": [],
+        "errors": [],
+        "stdout": "banner"
+      },
+      "valid": false
+    }
+  ]
+}

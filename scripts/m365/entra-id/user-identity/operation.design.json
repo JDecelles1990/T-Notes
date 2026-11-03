@@ -1,0 +1,33 @@
+{
+  "status": "PROVISIONAL_REFERENCE_ONLY_NOT_A_MANIFEST",
+  "contract_id": "tnotes.m365",
+  "contract_version": "0.3.0-proposed.1",
+  "script_id": "M365.ENTRA.USER_IDENTITY",
+  "reference_source": "Get-UserIdentity.ps1.reference",
+  "category": "entra-id",
+  "risk": "read_only",
+  "parameters": [],
+  "target_policy": {
+    "accepted_kinds": ["upn", "object_id"],
+    "requires_resolved_identity": false,
+    "output_binding": {"object_id_field": "id", "upn_field": "user_principal_name"}
+  },
+  "connection_requirements": ["Graph"],
+  "graph_scopes": ["User.Read.All"],
+  "required_roles": [],
+  "required_modules": [{"name": "Microsoft.Graph.Users", "minimum_version": "2.0.0"}],
+  "supported_powershell": {"edition": "Core", "minimum_version": "7.0.0"},
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 90,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {"explicit_run": true, "confirmation_required": false},
+  "limitations": [
+    "No script_path, executable hash, release approval or production trust pin is supplied.",
+    "Module/runtime minima are inherited design placeholders; actual SDK compatibility is NOT VERIFIED.",
+    "Graph scopes are service-qualified by the Graph requirement and graph_scopes field; they are not RBAC or authorization evidence.",
+    "No mandatory elevated role is invented for the basic identity read. Host still independently verifies effective permissions and applicable tenant policy.",
+    "Creation date and extra diagnostic attributes are omitted: the selected payload schema forbids additional properties.",
+    "Account status may be unavailable under approved read permissions. Never acquire write-capable permissions automatically."
+  ]
+}

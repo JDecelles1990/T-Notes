@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "T-Notes M365 Script Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "script_id",
+    "title",
+    "category",
+    "service",
+    "relative_script_path",
+    "entrypoint",
+    "risk",
+    "auth_mode",
+    "modules",
+    "graph_scopes",
+    "role_notes",
+    "parameters",
+    "timeout_seconds",
+    "description"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0.0-draft.1"
+    },
+    "script_id": {
+      "type": "string",
+      "pattern": "^M365\\.[A-Z][A-Z0-9_]*\\.[A-Z][A-Z0-9_]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "service": {
+      "enum": [
+        "Graph",
+        "Exchange",
+        "Teams",
+        "SharePoint",
+        "Intune",
+        "Security",
+        "Local"
+      ]
+    },
+    "relative_script_path": {
+      "type": "string",
+      "pattern": "^(powershell/scripts/)[A-Za-z0-9_./-]+\\.psm1$",
+      "not": {
+        "pattern": "(^|/)\\.\\.(/|$)"
+      }
+    },
+    "entrypoint": {
+      "type": "string",
+      "pattern": "^Get-M365[A-Za-z0-9]+$|^Test-M365[A-Za-z0-9]+$|^Set-M365[A-Za-z0-9]+$|^Invoke-M365[A-Za-z0-9]+$"
+    },
+    "risk": {
+      "enum": [
+        "read",
+        "change",
+        "high_impact"
+      ]
+    },
+    "auth_mode": {
+      "const": "delegated_interactive"
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160
+      }
+    },
+    "graph_scopes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "role_notes": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1200
+    },
+    "parameters": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type",
+          "required",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "integer",
+              "number",
+              "boolean",
+              "string_array"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 900
+    }
+  }
+}

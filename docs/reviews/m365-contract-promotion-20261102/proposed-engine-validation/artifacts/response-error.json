@@ -1,0 +1,36 @@
+{
+  "completed_at": "2026-11-03T01:08:55.292729Z",
+  "target": {
+    "kind": "upn",
+    "value": "synthetic.user@example.invalid"
+  },
+  "status": "error",
+  "origin": "worker",
+  "contract_version": "0.3.0-proposed.1",
+  "script_id": "M365.TEST.ABI",
+  "warnings": [],
+  "company_id": "11111111-1111-4111-8111-111111111111",
+  "release_binding": {
+    "script_version": "0.0.1-provisional",
+    "script_sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2",
+    "manifest_sha256": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e",
+    "output_schema_sha256": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e"
+  },
+  "duration_ms": 2304,
+  "correlation_id": "55555555-5555-4555-8555-555555555555",
+  "context_state": "verified",
+  "data": null,
+  "errors": [
+    {
+      "code": "ACCESS_DENIED",
+      "message": "This operation is unavailable under the configured offline policy.",
+      "retryable": false
+    }
+  ],
+  "operation_exit_code": 20,
+  "tenant_id": "22222222-2222-4222-8222-222222222222",
+  "session_generation": 1,
+  "operation_outcome": "failed",
+  "admin_identity_ref": "33333333-3333-4333-8333-333333333333",
+  "started_at": "2026-11-03T01:08:55.173859Z"
+}

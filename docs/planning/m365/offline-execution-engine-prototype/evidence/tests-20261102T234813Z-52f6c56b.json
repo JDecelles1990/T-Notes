@@ -1,0 +1,1020 @@
+{
+  "provenance": "PROVISIONAL OFFLINE ENGINE; author-run real Windows/Python/PowerShell tests",
+  "status": "PASS",
+  "status_scope": "Engine test cases only; preservation is reported separately",
+  "started_at": "2026-11-02T23:45:57.511097Z",
+  "completed_at": "2026-11-02T23:48:13.349518Z",
+  "command": [
+    "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "-B",
+    "C:\\Dev\\T-Notes\\docs\\planning\\m365\\offline-execution-engine-prototype\\run_tests.py"
+  ],
+  "python": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "win32",
+  "powershell": "7.6.9 (see gate1.json; executable hash pinned)",
+  "passed": 38,
+  "failed": 0,
+  "tests": [
+    {
+      "test": "test_engine.EngineTests.test_bad_descriptor",
+      "result": "PASS",
+      "elapsed_ms": 2215,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_cancellation",
+      "result": "PASS",
+      "elapsed_ms": 4667,
+      "execution": {
+        "error_code": "CANCELLED",
+        "process_exit_code": 0,
+        "logical_exit_code": 40,
+        "telemetry": {
+          "worker_pid": 44052,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": true,
+          "forced": false,
+          "elapsed_ms": 2432,
+          "states": [
+            "starting",
+            "running",
+            "cancelling",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_cancellation_before_dispatch",
+      "result": "PASS",
+      "elapsed_ms": 2260,
+      "execution": {
+        "error_code": "CANCELLED",
+        "process_exit_code": null,
+        "logical_exit_code": 40,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_child_process_cleanup",
+      "result": "PASS",
+      "elapsed_ms": 9569,
+      "execution": {
+        "error_code": "CANCELLED",
+        "process_exit_code": 40,
+        "logical_exit_code": 40,
+        "telemetry": {
+          "worker_pid": 11308,
+          "max_job_active": 4,
+          "final_job_active": 0,
+          "control_sent": true,
+          "forced": true,
+          "elapsed_ms": 7194,
+          "states": [
+            "starting",
+            "running",
+            "cancelling",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_correlation_consistency",
+      "result": "PASS",
+      "elapsed_ms": 4152,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 24208,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 619,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_dependency_hash_mismatch",
+      "result": "PASS",
+      "elapsed_ms": 5,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_descriptor_semantics",
+      "result": "PASS",
+      "elapsed_ms": 0
+    },
+    {
+      "test": "test_engine.EngineTests.test_extra_operation_output",
+      "result": "PASS",
+      "elapsed_ms": 4740,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 45628,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 931,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_immutable_abi",
+      "result": "PASS",
+      "elapsed_ms": 4750,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 0,
+        "telemetry": {
+          "worker_pid": 18388,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 923,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_impossible_calendar_date",
+      "result": "PASS",
+      "elapsed_ms": 3748,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 44196,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 620,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_input_limit",
+      "result": "PASS",
+      "elapsed_ms": 0,
+      "execution": {
+        "error_code": "OUTPUT_LIMIT",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_invalid_parameters",
+      "result": "PASS",
+      "elapsed_ms": 10747,
+      "execution": {
+        "error_code": "INVALID_PARAMETER",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_invalid_protocol",
+      "result": "PASS",
+      "elapsed_ms": 14673,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 3008,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 638,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_invalid_target",
+      "result": "PASS",
+      "elapsed_ms": 1498,
+      "execution": {
+        "error_code": "INVALID_PARAMETER",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_missing_executable",
+      "result": "PASS",
+      "elapsed_ms": 2,
+      "execution": {
+        "error_code": "MODULE_MISSING",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_missing_trust_anchor_evidence",
+      "result": "PASS",
+      "elapsed_ms": 2,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_nonzero_process_exit",
+      "result": "PASS",
+      "elapsed_ms": 2711,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 23,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 10928,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 600,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_object_id_target",
+      "result": "PASS",
+      "elapsed_ms": 4519,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 0,
+        "telemetry": {
+          "worker_pid": 3112,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 894,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_output_limit",
+      "result": "PASS",
+      "elapsed_ms": 2781,
+      "execution": {
+        "error_code": "OUTPUT_LIMIT",
+        "process_exit_code": 40,
+        "logical_exit_code": 30,
+        "telemetry": {
+          "worker_pid": 29092,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": true,
+          "elapsed_ms": 599,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_partial",
+      "result": "PASS",
+      "elapsed_ms": 4800,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 2,
+        "telemetry": {
+          "worker_pid": 21788,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 946,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_pinned_file_cannot_be_opened_for_write",
+      "result": "PASS",
+      "elapsed_ms": 1
+    },
+    {
+      "test": "test_engine.EngineTests.test_recovery_after_malformed_output",
+      "result": "PASS",
+      "elapsed_ms": 7312,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 0,
+        "telemetry": {
+          "worker_pid": 2432,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 579,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_remaining_descriptor_types",
+      "result": "PASS",
+      "elapsed_ms": 0
+    },
+    {
+      "test": "test_engine.EngineTests.test_request_version_mismatch",
+      "result": "PASS",
+      "elapsed_ms": 0,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_response_version_mismatch",
+      "result": "PASS",
+      "elapsed_ms": 3484,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 21468,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 578,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_script_hash_mismatch",
+      "result": "PASS",
+      "elapsed_ms": 1942,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_sensitive_data_handling",
+      "result": "PASS",
+      "elapsed_ms": 10308,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 0,
+        "telemetry": {
+          "worker_pid": 31988,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 567,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_sensitive_request_rejected_without_echo",
+      "result": "PASS",
+      "elapsed_ms": 0,
+      "execution": {
+        "error_code": "INVALID_PARAMETER",
+        "process_exit_code": null,
+        "logical_exit_code": null,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ]
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_structured_error",
+      "result": "PASS",
+      "elapsed_ms": 5819,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 20,
+        "telemetry": {
+          "worker_pid": 21776,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 898,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_success",
+      "result": "PASS",
+      "elapsed_ms": 5782,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 0,
+        "telemetry": {
+          "worker_pid": 10900,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 865,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_terminating_error",
+      "result": "PASS",
+      "elapsed_ms": 4565,
+      "execution": {
+        "error_code": null,
+        "process_exit_code": 0,
+        "logical_exit_code": 50,
+        "telemetry": {
+          "worker_pid": 44936,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 934,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_timeout",
+      "result": "PASS",
+      "elapsed_ms": 5484,
+      "execution": {
+        "error_code": "TIMEOUT",
+        "process_exit_code": 0,
+        "logical_exit_code": 40,
+        "telemetry": {
+          "worker_pid": 8456,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": true,
+          "forced": false,
+          "elapsed_ms": 1334,
+          "states": [
+            "starting",
+            "running",
+            "cancelling",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_traversal_path",
+      "result": "PASS",
+      "elapsed_ms": 2051,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_unknown_operation",
+      "result": "PASS",
+      "elapsed_ms": 1648,
+      "execution": {
+        "error_code": "INVALID_PARAMETER",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_untrusted_script_path",
+      "result": "PASS",
+      "elapsed_ms": 1514,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": null,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_write_operations_not_supported",
+      "result": "PASS",
+      "elapsed_ms": 1619,
+      "execution": {
+        "error_code": "ACCESS_DENIED",
+        "process_exit_code": null,
+        "logical_exit_code": 20,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_wrong_context",
+      "result": "PASS",
+      "elapsed_ms": 2300,
+      "execution": {
+        "error_code": "TENANT_MISMATCH",
+        "process_exit_code": null,
+        "logical_exit_code": 20,
+        "telemetry": {
+          "states": [
+            "rejected"
+          ],
+          "dispatched": false
+        }
+      }
+    },
+    {
+      "test": "test_engine.EngineTests.test_wrong_logical_exit",
+      "result": "PASS",
+      "elapsed_ms": 4091,
+      "execution": {
+        "error_code": "CONTRACT_VIOLATION",
+        "process_exit_code": 0,
+        "logical_exit_code": 10,
+        "telemetry": {
+          "worker_pid": 8368,
+          "max_job_active": 2,
+          "final_job_active": 0,
+          "control_sent": false,
+          "forced": false,
+          "elapsed_ms": 815,
+          "states": [
+            "starting",
+            "running",
+            "completed"
+          ],
+          "dispatched": true,
+          "stderr_bytes": 0
+        }
+      }
+    }
+  ],
+  "preservation_result": "FAIL",
+  "preservation_failures": [
+    "docs/architecture/system-overview.md",
+    "docs/features/editor-and-formatting.md",
+    "docs/features/history-and-archive.md",
+    "docs/features/tab-lifecycle.md",
+    "docs/index.md",
+    "src/ui/components/toolbar.py",
+    "src/ui/main_window.py",
+    "tests/test_ui_integration.py"
+  ],
+  "concurrent_raw_byte_drift": [
+    {
+      "path": "docs/architecture/system-overview.md",
+      "entry_sha256": "8ffc2ba02c7c616ad5de4158ed72cb80e269d1b8541d52a6d5bfd76ffe478b60",
+      "observed_sha256": "4232dbe4fda46baa1d7448d7c43fa648b3df812d8c56e1267edaa7a5e1b7da14"
+    },
+    {
+      "path": "docs/features/editor-and-formatting.md",
+      "entry_sha256": "20223bcb76fb46655021d2fec52c7124be63533aa60572f5a10bafb1e75b4cb7",
+      "observed_sha256": "cf2c0176beb242c5d581b996f2f94048812bb24125031332d20a4a9e2fe25507"
+    },
+    {
+      "path": "docs/features/history-and-archive.md",
+      "entry_sha256": "1257ef456172848bf1c0963b45ea57b3cfd459fb7e8781b68d9f8b5b94bf4654",
+      "observed_sha256": "c0ae56d6eeee2004cdb87aa6d2b9b385b530f8a6f39eda5e7eb5373ffdc7a2a7"
+    },
+    {
+      "path": "docs/features/tab-lifecycle.md",
+      "entry_sha256": "6f6ca4ef4f2e0509b91eb32af0baef783df2678064b94ee175bf4623fb9ae84c",
+      "observed_sha256": "0befd21a15a7ba6d5aea2587e4a9bad05fe28ff1d27ee0648e96da10973d795d"
+    },
+    {
+      "path": "docs/index.md",
+      "entry_sha256": "3f7f0470a5e7fcd2870e18d186dc816ac2b6e648b5f4804ed56d7546cb846e64",
+      "observed_sha256": "02faef647e8020db08466b66ef6f80e5cb5aa1705629747d8b1d91e54f002751"
+    },
+    {
+      "path": "src/ui/components/toolbar.py",
+      "entry_sha256": "eb137e64e09eda15aca7ec25002f519dc32ef04437b45523db256d001b450984",
+      "observed_sha256": "310ecd9a3a0f5fb26123e6e9d661aba8857c8987e0a7fb343d7df99a703f48b4"
+    },
+    {
+      "path": "src/ui/main_window.py",
+      "entry_sha256": "05749e7725f6b763dbc76be03bba17201414e7ce2a1a328ddbc959da7fb85bc4",
+      "observed_sha256": "28c783e7bf399193168ad1dfec1f840f5f0811be13632a4d0b79be55d328ca5c"
+    },
+    {
+      "path": "tests/test_ui_integration.py",
+      "entry_sha256": "258fa11a6786ac0a8c12d2d1434e89c6f9fcf71791da503973230bf201b259ff",
+      "observed_sha256": "a2356e08584a48917cd4b6f647abc7f0733ee6ce42761ec32248c51b2af7111d"
+    }
+  ],
+  "protected_files_verified": 105,
+  "artifacts": [
+    {
+      "path": "catalog.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "contracts.py",
+      "sha256": "a10f9d4d25f1163cadacf98df363bd97a8f34841c242c3ebb715f6d9be15f60a"
+    },
+    {
+      "path": "ENGINE_CHECKPOINT.md",
+      "sha256": "cbac2f603113251b9b66324794cc599e92ea40ea4d292b6ecbc5a66806a017da"
+    },
+    {
+      "path": "examples/request.json",
+      "sha256": "38626a3c87cd22b3cb6941ae905acdb4dd76e501ff334cfb8d0b82468e4532bf"
+    },
+    {
+      "path": "examples/response-error.json",
+      "sha256": "4b0eda798468f6d08edda298f657070680d5d23bc9d79e8bd3e2dc23e50be7f3"
+    },
+    {
+      "path": "examples/response-partial.json",
+      "sha256": "bb657b4dbe37b7e915f40618298252e935b6a7d1aeb82459fab876966684f1ef"
+    },
+    {
+      "path": "examples/response-success.json",
+      "sha256": "a66dea628dad89012e5fdbf04313f1202afe8a1a13ae14325db1a246cf586ee6"
+    },
+    {
+      "path": "host.py",
+      "sha256": "8d9613f8d865d7c4d4bd0bd1f6d302fa856eb290f5708d190a34ba3c9f1f8564"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e"
+    },
+    {
+      "path": "prepare_fixtures.py",
+      "sha256": "bd48cfe71951e6766e857dba63677f76b46f254900f92f9d367761268881fd22"
+    },
+    {
+      "path": "protocol.ps1",
+      "sha256": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2"
+    },
+    {
+      "path": "README.md",
+      "sha256": "0b840d157bc8932814e1462a6b42df1d4bd2ff8f42fe641ec38cda212ea962ef"
+    },
+    {
+      "path": "run_tests.py",
+      "sha256": "24e6d4b39fd0d4cf89f27d0af1c4c97248a5bdd1647a0b3263d1afa4a4d18ae2"
+    },
+    {
+      "path": "schema-check.ps1",
+      "sha256": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda"
+    },
+    {
+      "path": "scripts/Fixture-Operation.ps1",
+      "sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2"
+    },
+    {
+      "path": "synthetic-context.json",
+      "sha256": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a"
+    },
+    {
+      "path": "tests/anchors/bad_descriptor.json",
+      "sha256": "c301459aea78a9f29707960fb0c3b44e14732ebaab5206b17068bc1a7d4b3119"
+    },
+    {
+      "path": "tests/anchors/dependency_mismatch.json",
+      "sha256": "01f294737dc84d1ded0f7f175fc744e4e65fbec0633a60ea492e8336d617ac13"
+    },
+    {
+      "path": "tests/anchors/fault.json",
+      "sha256": "585566e2f6662640831199db5cfc11228f0a304cfd323b7cb08abdd1a32f2461"
+    },
+    {
+      "path": "tests/anchors/fault_timeout.json",
+      "sha256": "34dd3aa55e048beaad6f6daf0bc64974e31ac2eddf976eb6282af41963ec306c"
+    },
+    {
+      "path": "tests/anchors/hash_mismatch.json",
+      "sha256": "70a11cde3d58d421f373e1b93a3ee7e6560e9945a2ae7167a64d7a8ec9025f36"
+    },
+    {
+      "path": "tests/anchors/missing_executable.json",
+      "sha256": "6d40273b7cd6b5ef70de454c5c4d47cb793dc2b5642fe9a7a48bf03d2d7a27a9"
+    },
+    {
+      "path": "tests/anchors/timeout.json",
+      "sha256": "17a5d48b7a60614eea84e028ece732acb098e41556399ce763e6c83813319d60"
+    },
+    {
+      "path": "tests/anchors/traversal.json",
+      "sha256": "2e662e5d66aa340b56c6d88a70bc9891e666ea9dfce86dbe24e7403812794c3c"
+    },
+    {
+      "path": "tests/anchors/untrusted.json",
+      "sha256": "69f16ba950fffe4ac41de34a0ca8208e94d149aa933e987009ae6864f81a12ec"
+    },
+    {
+      "path": "tests/anchors/write_risk.json",
+      "sha256": "a8f92bd02cc018b72caf0550d9bbb4b42d6242e3b55079e57e640270efd234e7"
+    },
+    {
+      "path": "tests/catalogs/bad_descriptor.json",
+      "sha256": "e295470c08e7d2ac4498109b02f465c96dd2857b8accd1b0afd21852625b7542"
+    },
+    {
+      "path": "tests/catalogs/dependency_mismatch.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "tests/catalogs/fault.json",
+      "sha256": "80e117c06d40efbeab43daed30b6ea6b9afc4e14fa34a69b5ede7287b4aa11e2"
+    },
+    {
+      "path": "tests/catalogs/fault_timeout.json",
+      "sha256": "08889f12e28e312b73c8d804929f4f1f32ff2ee16a7f1916169a4fb0b47b1520"
+    },
+    {
+      "path": "tests/catalogs/hash_mismatch.json",
+      "sha256": "e8f8ae38202cd62febf081681e4c0c4e6307b27d84d2102ac6aab77f1bb2a75d"
+    },
+    {
+      "path": "tests/catalogs/missing_executable.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "tests/catalogs/timeout.json",
+      "sha256": "a8c868d83d94a810c12b8176a3e51faf3a65d2820104465e3e5df6f4c2951ba4"
+    },
+    {
+      "path": "tests/catalogs/traversal.json",
+      "sha256": "9adb2b2582f80fb6754c205a74bc5121e200579c440dd013630665691fb79f02"
+    },
+    {
+      "path": "tests/catalogs/untrusted.json",
+      "sha256": "3161b064ae214d6e9e443e224985963dc9f0654741e548ef6b58ef597acd9ce6"
+    },
+    {
+      "path": "tests/catalogs/write_risk.json",
+      "sha256": "f7ae3b01c7c5d30971ef3f4af9d5c488158534aa685901e030457a95e5f7935d"
+    },
+    {
+      "path": "tests/fixture-pins.json",
+      "sha256": "eb043aae47567f80e3ee4896daecf299b74395e9eda5d3867645d35aa152601b"
+    },
+    {
+      "path": "tests/fixtures/Child-Sleeper.ps1",
+      "sha256": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9"
+    },
+    {
+      "path": "tests/fixtures/Fault-Worker.ps1",
+      "sha256": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee"
+    },
+    {
+      "path": "tests/fixtures/manifest-bad_descriptor.json",
+      "sha256": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822"
+    },
+    {
+      "path": "tests/fixtures/manifest-hash_mismatch.json",
+      "sha256": "076dd487276e3079fe1ae5240724af45493e15b0043c7c5b1519d8ef54647a01"
+    },
+    {
+      "path": "tests/fixtures/manifest-timeout.json",
+      "sha256": "31d5722122ddfb12d6aa2e216f39971eacd6207e6296813ec12fe9ad580c2c5b"
+    },
+    {
+      "path": "tests/fixtures/manifest-traversal.json",
+      "sha256": "e873602a66f676d2f13c76070739b8859025b69f57b306edd531c81c2239de0a"
+    },
+    {
+      "path": "tests/fixtures/manifest-untrusted.json",
+      "sha256": "841d4a3cb10154f37ca1ee4e8e213ed2cac07a1ea68798354ece6f0c7c2e1074"
+    },
+    {
+      "path": "tests/fixtures/manifest-write_risk.json",
+      "sha256": "94c80cac26e3421be7e605298e21ae5316c3a426b114832473d489df178c510e"
+    },
+    {
+      "path": "tests/test_engine.py",
+      "sha256": "2a80d2052573e20a1fb752c77e2b49d45e3d30e7fab7f5d54fa6e4af81cbcada"
+    },
+    {
+      "path": "trust-anchor.json",
+      "sha256": "7d92a9ec34493c68cb963c2320d901b13eaa7508fd04101a2dbb99c8d3e618ff"
+    },
+    {
+      "path": "win_process.py",
+      "sha256": "9b2228452f64451a3c01ae71069d45a91ff93706b230158fde164b3028d275a7"
+    },
+    {
+      "path": "worker.ps1",
+      "sha256": "1ef4b8de48e7a63cb9ab03f5ea0f0ce7cb57b38d069da014a8acb4b5131095f6"
+    }
+  ],
+  "not_run": [
+    "Independent review",
+    "live M365/authentication",
+    "production integration",
+    "GUI/SQLite/notes regression",
+    "non-Windows platforms"
+  ]
+}

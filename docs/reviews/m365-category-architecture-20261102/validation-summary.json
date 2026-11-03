@@ -1,0 +1,306 @@
+{
+  "python": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "C:\\Dev\\T-Notes\\.venv\\Scripts\\python.exe",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "packages": {
+    "PySide6": "6.12.0",
+    "Pillow": "13.0.0",
+    "pytest": "9.2.0",
+    "jsonschema": "4.26.0",
+    "referencing": "0.37.0"
+  },
+  "runs": [
+    {
+      "tests": "103",
+      "failures": "12",
+      "errors": "0",
+      "skipped": "0",
+      "time": "18.638",
+      "timestamp": "2026-11-02T19:04:38.950814-05:00",
+      "file": "focused-01.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 50,
+        "tests.test_m365_workspace": 53
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "--basetemp",
+        ".cache/category-focused-01",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/focused-01.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "offscreen",
+        "QT_SCALE_FACTOR": "unset",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "focused-01.log",
+      "status": "FAIL"
+    },
+    {
+      "tests": "103",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "21.274",
+      "timestamp": "2026-11-02T19:05:50.492985-05:00",
+      "file": "focused-windows-02.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 50,
+        "tests.test_m365_workspace": 53
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        ".cache/category-windows-02",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/focused-windows-02.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "unset",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "focused-windows-02.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "174",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "30.221",
+      "timestamp": "2026-11-02T19:08:17.243093-05:00",
+      "file": "full-windows-03.xml",
+      "by_module": {
+        "tests.test_database": 7,
+        "tests.test_image_service": 5,
+        "tests.test_m365_catalog": 55,
+        "tests.test_m365_workspace": 53,
+        "tests.test_scratchpad_service": 7,
+        "tests.test_stopwatch_service": 9,
+        "tests.test_ui_integration": 38
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        ".cache/category-full-03",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/full-windows-03.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "unset",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "full-windows-03.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "174",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "28.807",
+      "timestamp": "2026-11-02T19:10:52.216922-05:00",
+      "file": "full-windows-06.xml",
+      "by_module": {
+        "tests.test_database": 7,
+        "tests.test_image_service": 5,
+        "tests.test_m365_catalog": 55,
+        "tests.test_m365_workspace": 53,
+        "tests.test_scratchpad_service": 7,
+        "tests.test_stopwatch_service": 9,
+        "tests.test_ui_integration": 38
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--basetemp",
+        ".cache/category-full-06",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/full-windows-06.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "unset",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "full-windows-06.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.521",
+      "timestamp": "2026-11-02T19:09:17.930636-05:00",
+      "file": "scale125-04.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 5,
+        "tests.test_m365_workspace": 3
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-k",
+        "navigation_ids or narrow_and_portrait or m365_responsive or m365_collapsible",
+        "--basetemp",
+        ".cache/category-scale125-04",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/scale125-04.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "1.25",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "scale125-04.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "4.119",
+      "timestamp": "2026-11-02T19:12:02.545452-05:00",
+      "file": "scale125-07.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 5,
+        "tests.test_m365_workspace": 3
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-k",
+        "navigation_ids or narrow_and_portrait or m365_responsive or m365_collapsible",
+        "--basetemp",
+        ".cache/category-scale125-07",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/scale125-07.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "1.25",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "scale125-07.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.828",
+      "timestamp": "2026-11-02T19:09:48.742174-05:00",
+      "file": "scale150-05.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 5,
+        "tests.test_m365_workspace": 3
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-k",
+        "navigation_ids or narrow_and_portrait or m365_responsive or m365_collapsible",
+        "--basetemp",
+        ".cache/category-scale150-05",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/scale150-05.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "1.5",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "scale150-05.log",
+      "status": "PASS"
+    },
+    {
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.722",
+      "timestamp": "2026-11-02T19:12:24.770311-05:00",
+      "file": "scale150-08.xml",
+      "by_module": {
+        "tests.test_m365_catalog": 5,
+        "tests.test_m365_workspace": 3
+      },
+      "argv": [
+        ".venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "pytest",
+        "tests/test_m365_catalog.py",
+        "tests/test_m365_workspace.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "-k",
+        "navigation_ids or narrow_and_portrait or m365_responsive or m365_collapsible",
+        "--basetemp",
+        ".cache/category-scale150-08",
+        "--junitxml",
+        "docs/reviews/m365-category-architecture-20261102/scale150-08.xml"
+      ],
+      "environment": {
+        "QT_QPA_PLATFORM": "windows",
+        "QT_SCALE_FACTOR": "1.5",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "log": "scale150-08.log",
+      "status": "PASS"
+    }
+  ]
+}

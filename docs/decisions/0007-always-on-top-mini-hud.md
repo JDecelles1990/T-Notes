@@ -49,3 +49,4 @@ IT support technicians and MSP engineers routinely troubleshoot systems across r
 - Technicians can take notes and monitor timers during RDP and remote console sessions without window layering battles.
 - Combines seamlessly with the opacity slider (60%–100%) for see-through capability over background remote consoles.
 - Full keyboard and mouse access to the active note remains active in HUD mode.
+

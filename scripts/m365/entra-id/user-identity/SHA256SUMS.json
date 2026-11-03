@@ -1,0 +1,25 @@
+{
+  "algorithm": "SHA-256",
+  "provenance": "Review inventory only; no executable approval or trust pin",
+  "files": {
+    "CHECKPOINT.md": "d415a52da134acd98c35a2f4c59766d0f5dc03941287a843be5491b00350c307",
+    "COMPATIBILITY.md": "cc026c7d508572514cc7d0374862090da53d25ea9ef89bb1f946d7608840a9f1",
+    "Get-UserIdentity.ps1.reference": "f9037639c3c5b49477bbd9bd137a9435df2cc7533b604356deffbdf4e947f6ae",
+    "operation.design.json": "520894bc868640a0708639c5b7f0d2ef48023977ca6dbbeba6249927c20bf111",
+    "Operation.Template.ps1.reference": "a03b3d2b56e5839712eb9f56fd41c37b7088e61de0d211e05a4527ef59bdc722",
+    "README.md": "92eb15e1f4637e8ad6f2027e3fa0572f7f01830a0380df381d6cd3d6e4ab526d",
+    "tests/evidence/attempt-01.log": "f8880ebf9a021b04c3cd3600c2597967f53f8f0fc240b41626a83c4637ec1527",
+    "tests/evidence/attempt-02.log": "98bd6c573e7d72bbea26e23c9c37bdc67854ab8c1e18bec804a972476b688c0c",
+    "tests/evidence/DIAGNOSES.md": "40edaaa4bd47a94cbf66bddcd5ad162d157cee560a46c1f49ee1785e39938f06",
+    "tests/evidence/entry-preservation.json": "c97897e22013bf83cc1ae29227a8e60572292c529d7bc8ac871b22467b7085a9",
+    "tests/evidence/preservation.json": "99f8a96ea0a2eff15bfb0eda34c131371ef5a98486b0cdab162a5a8ce0663ce8",
+    "tests/evidence/validation-20261103T004214Z-71b521c1.json": "60a65f40f257c5d76770836ecc2b0bcced24e7c7665478757edfb098205375d8",
+    "tests/evidence/validation-20261103T004548Z-77eabc15.json": "a7eac672cf137da674138de1ff42774c299cff8eb1172fe23b501f0504f4f2f7",
+    "tests/evidence/validation-20261103T004733Z-2975eabb.json": "34b59e01a2606445d3e34717671e1acf4ea9b0afb623d4c418cf98fd0704c070",
+    "tests/fixtures.json": "0291059c1c1aecc6688ae086683580c7f7b20c56b99b3cd161ad7c1e7810990a",
+    "tests/OfflineHarness.ps1": "62daf2e47d21dc3390f0771369ad6c4f8052ceed865a7192a99c15fdffc53c44",
+    "tests/Run-OfflineTests.ps1": "344c2a32e7fb6811ec89fabad61b4c01bca88901ca73092d7670b55ec0bb1d92",
+    "tests/UserIdentity.Tests.ps1": "85828ec61a303607f83d070aa9038bbdcb353716cc36b73abd6c808cb5392bec",
+    "tests/validate.py": "ec823cf1be675b84007abd46619331edf3bb1a8e0014f84473ca25a7972a0c63"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "contract_version": "0.3.0-proposed.1",
+  "script_id": "M365.TEST.CATALOG",
+  "title": "Synthetic catalog inspection",
+  "description": "TEST ONLY: cross-service metadata for search and unavailable-state tests.",
+  "category": "general",
+  "tags": ["synthetic", "diagnostics"],
+  "script_path": "general/catalog-inspection/Inspect-Catalog.ps1",
+  "script_version": "0.0.1-test",
+  "script_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "supported_powershell": {"edition": "Core", "minimum_version": "7.0.0"},
+  "required_modules": [],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": ["Graph"],
+  "graph_scopes": ["User.Read.All"],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {"name": "Limit", "description": "Synthetic bounded integer", "type": "integer", "required": false, "minimum": 1, "maximum": 10, "default": 5}
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 20,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {"explicit_run": true, "confirmation_required": false},
+  "target_policy": {
+    "accepted_kinds": ["upn", "object_id"],
+    "requires_resolved_identity": false,
+    "output_binding": {"object_id_field": "id", "upn_field": "user_principal_name"}
+  }
+}

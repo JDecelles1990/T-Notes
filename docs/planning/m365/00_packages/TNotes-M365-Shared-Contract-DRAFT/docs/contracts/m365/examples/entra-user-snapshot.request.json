@@ -1,0 +1,15 @@
+{
+  "contract_version": "1.0.0-draft.1",
+  "request_id": "b3d21cec-64ae-4c43-8ff8-9f769759b4f5",
+  "script_id": "M365.ENTRA.GET_USER_SNAPSHOT",
+  "context": {
+    "company_id": "demo-contoso",
+    "tenant_id": "85b9dafd-2941-4a3b-90b2-f44747bb1848",
+    "admin_upn": "admin@contoso.example",
+    "target_user_upn": "user@contoso.example",
+    "ticket_id": "INC-104"
+  },
+  "parameters": {
+    "UserPrincipalName": "user@contoso.example"
+  }
+}

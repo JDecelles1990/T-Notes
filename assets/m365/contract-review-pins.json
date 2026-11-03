@@ -1,0 +1,13 @@
+{
+  "contract_version": "0.3.0-proposed.1",
+  "status": "PROVISIONAL_REVIEW_IDENTITY_NOT_APPROVAL",
+  "schemas": {
+    "common": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef",
+    "company-profile": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f",
+    "error": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508",
+    "execution-request": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886",
+    "execution-result": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022",
+    "operation-data": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e",
+    "script-manifest": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2"
+  }
+}

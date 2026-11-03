@@ -57,3 +57,26 @@ To prevent architectural drift and knowledge rot, agents must update the corresp
 1. **Atomic Documentation Commits:** Any code change that alters component behavior must include the corresponding documentation adjustment within the same task.
 2. **Contract Preservation:** Keep data contracts, URI schemes (`image://local/<uuid>`), and database schemas in sync across code and documentation.
 3. **No Redundant Summaries:** Update the specific topic file directly; do not bloat the root `README.md` or `AGENTS.md` with operational details.
+
+## 6. Mandatory M365 PowerShell Contract
+
+Every future M365 PowerShell operation must use the official
+[M365 contract](docs/contracts/m365/CONTRACT.md) and its complete local schema
+package as the mandatory implementation reference. The required baseline is
+`tnotes.m365 / 0.3.0`, with status `APPROVED — IMPLEMENTATION CONTRACT` and a
+verifiable effective approval record. Read the [contract index](docs/contracts/m365/README.md)
+for the applicable architecture, security requirements and validation instructions.
+
+Before implementing or modifying an operation, verify the exact contract version,
+source revision and hashes, callable ABI, manifest validity, host-owned authentication
+boundary, execution trust requirements, permissions/RBAC, operation-specific tests
+and independent approval requirements. Missing approval evidence or incompatible
+versions/hashes block implementation; never silently substitute a planning draft
+or treat a proposed contract as official. Existing proposed-version consumers need
+explicit migration and compatibility tests.
+
+Keep reusable operations independent of T-Notes GUI state, PySide6, SQLite and
+ticket editors for eventual F7Hub reuse. Contract approval authorizes development
+against the specification; live authentication, tenant execution, executable
+registration and production integration require separate authorization and release
+approval.

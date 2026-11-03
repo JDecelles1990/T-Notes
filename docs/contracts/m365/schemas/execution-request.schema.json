@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tnotes.invalid/m365/0.3.0/schemas/execution-request.schema.json",
+  "title": "T-Notes proposed execution-request",
+  "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/request",
+  "description": "Effective frozen request bound to approved release identities; no caller field establishes trust or authentication."
+}

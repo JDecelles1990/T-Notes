@@ -1,0 +1,242 @@
+{
+  "provenance": "Final new-file inventory for PROVISIONAL OFFLINE ENGINE; excludes this self-referential inventory file",
+  "file_count": 59,
+  "files": [
+    {
+      "path": "catalog.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "contracts.py",
+      "sha256": "a10f9d4d25f1163cadacf98df363bd97a8f34841c242c3ebb715f6d9be15f60a"
+    },
+    {
+      "path": "ENGINE_CHECKPOINT.md",
+      "sha256": "99aa61004f3b55167e9c2cb8d93862a232d1f34e31365413a5e3ffa7de3f4163"
+    },
+    {
+      "path": "evidence/DIAGNOSES.md",
+      "sha256": "404e6ee63d51f879e2c5b5e5e03caebfb4fbd49bb836ec63f9a97854a4d1988d"
+    },
+    {
+      "path": "evidence/entry-preservation.json",
+      "sha256": "6a33dcfe530230fd655cd932644c73acf7523078896b94b22b635fc8f6e47b65"
+    },
+    {
+      "path": "evidence/final-verification.json",
+      "sha256": "43414e6181a2f1268cdf70949af66872e142f770b2e1e8ad57cb6ece5f3fdf36"
+    },
+    {
+      "path": "evidence/gate1.json",
+      "sha256": "a4bc0d2f5d8aed102a6dbf4b0987cc1e25b2b7cbc7f5123a990621cee81f83d7"
+    },
+    {
+      "path": "evidence/tests-20261102T233428Z-14fb1d3d.json",
+      "sha256": "314d99f8493952592fae7001402918925dda44050aaeb3a72ead0dd629c7e869"
+    },
+    {
+      "path": "evidence/tests-20261102T233603Z-b772e9df.json",
+      "sha256": "d9f4da1e53ee238c985b05cff3afffb5809a856b4b87439a475871877fa75fd8"
+    },
+    {
+      "path": "evidence/tests-20261102T233710Z-aae96c3a.json",
+      "sha256": "64d7e5d7a60580b53560920ee6853435df53a5dd350214e3fb9078a8636612ed"
+    },
+    {
+      "path": "evidence/tests-20261102T234037Z-fb968547.json",
+      "sha256": "20ff5a45c70e24eddfa2c9bb0304686611cd17a54679efdd951b64d663a13178"
+    },
+    {
+      "path": "evidence/tests-20261102T234518Z-73311df2.json",
+      "sha256": "045a5a0fcbeba0da30087ba773c0aa1bcf8ce259492d6d8f3b670079728fca1b"
+    },
+    {
+      "path": "evidence/tests-20261102T234813Z-52f6c56b.json",
+      "sha256": "31e645e661e8b323b6052ebdf5aec8309fe4800451f2b483779dac8430b59df2"
+    },
+    {
+      "path": "examples/request.json",
+      "sha256": "38626a3c87cd22b3cb6941ae905acdb4dd76e501ff334cfb8d0b82468e4532bf"
+    },
+    {
+      "path": "examples/response-error.json",
+      "sha256": "4b0eda798468f6d08edda298f657070680d5d23bc9d79e8bd3e2dc23e50be7f3"
+    },
+    {
+      "path": "examples/response-partial.json",
+      "sha256": "bb657b4dbe37b7e915f40618298252e935b6a7d1aeb82459fab876966684f1ef"
+    },
+    {
+      "path": "examples/response-success.json",
+      "sha256": "a66dea628dad89012e5fdbf04313f1202afe8a1a13ae14325db1a246cf586ee6"
+    },
+    {
+      "path": "host.py",
+      "sha256": "8d9613f8d865d7c4d4bd0bd1f6d302fa856eb290f5708d190a34ba3c9f1f8564"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e"
+    },
+    {
+      "path": "prepare_fixtures.py",
+      "sha256": "bd48cfe71951e6766e857dba63677f76b46f254900f92f9d367761268881fd22"
+    },
+    {
+      "path": "protocol.ps1",
+      "sha256": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2"
+    },
+    {
+      "path": "README.md",
+      "sha256": "0b840d157bc8932814e1462a6b42df1d4bd2ff8f42fe641ec38cda212ea962ef"
+    },
+    {
+      "path": "run_tests.py",
+      "sha256": "24e6d4b39fd0d4cf89f27d0af1c4c97248a5bdd1647a0b3263d1afa4a4d18ae2"
+    },
+    {
+      "path": "schema-check.ps1",
+      "sha256": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda"
+    },
+    {
+      "path": "scripts/Fixture-Operation.ps1",
+      "sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2"
+    },
+    {
+      "path": "synthetic-context.json",
+      "sha256": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a"
+    },
+    {
+      "path": "tests/anchors/bad_descriptor.json",
+      "sha256": "c301459aea78a9f29707960fb0c3b44e14732ebaab5206b17068bc1a7d4b3119"
+    },
+    {
+      "path": "tests/anchors/dependency_mismatch.json",
+      "sha256": "01f294737dc84d1ded0f7f175fc744e4e65fbec0633a60ea492e8336d617ac13"
+    },
+    {
+      "path": "tests/anchors/fault.json",
+      "sha256": "585566e2f6662640831199db5cfc11228f0a304cfd323b7cb08abdd1a32f2461"
+    },
+    {
+      "path": "tests/anchors/fault_timeout.json",
+      "sha256": "34dd3aa55e048beaad6f6daf0bc64974e31ac2eddf976eb6282af41963ec306c"
+    },
+    {
+      "path": "tests/anchors/hash_mismatch.json",
+      "sha256": "70a11cde3d58d421f373e1b93a3ee7e6560e9945a2ae7167a64d7a8ec9025f36"
+    },
+    {
+      "path": "tests/anchors/missing_executable.json",
+      "sha256": "6d40273b7cd6b5ef70de454c5c4d47cb793dc2b5642fe9a7a48bf03d2d7a27a9"
+    },
+    {
+      "path": "tests/anchors/timeout.json",
+      "sha256": "17a5d48b7a60614eea84e028ece732acb098e41556399ce763e6c83813319d60"
+    },
+    {
+      "path": "tests/anchors/traversal.json",
+      "sha256": "2e662e5d66aa340b56c6d88a70bc9891e666ea9dfce86dbe24e7403812794c3c"
+    },
+    {
+      "path": "tests/anchors/untrusted.json",
+      "sha256": "69f16ba950fffe4ac41de34a0ca8208e94d149aa933e987009ae6864f81a12ec"
+    },
+    {
+      "path": "tests/anchors/write_risk.json",
+      "sha256": "a8f92bd02cc018b72caf0550d9bbb4b42d6242e3b55079e57e640270efd234e7"
+    },
+    {
+      "path": "tests/catalogs/bad_descriptor.json",
+      "sha256": "e295470c08e7d2ac4498109b02f465c96dd2857b8accd1b0afd21852625b7542"
+    },
+    {
+      "path": "tests/catalogs/dependency_mismatch.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "tests/catalogs/fault.json",
+      "sha256": "80e117c06d40efbeab43daed30b6ea6b9afc4e14fa34a69b5ede7287b4aa11e2"
+    },
+    {
+      "path": "tests/catalogs/fault_timeout.json",
+      "sha256": "08889f12e28e312b73c8d804929f4f1f32ff2ee16a7f1916169a4fb0b47b1520"
+    },
+    {
+      "path": "tests/catalogs/hash_mismatch.json",
+      "sha256": "e8f8ae38202cd62febf081681e4c0c4e6307b27d84d2102ac6aab77f1bb2a75d"
+    },
+    {
+      "path": "tests/catalogs/missing_executable.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "tests/catalogs/timeout.json",
+      "sha256": "a8c868d83d94a810c12b8176a3e51faf3a65d2820104465e3e5df6f4c2951ba4"
+    },
+    {
+      "path": "tests/catalogs/traversal.json",
+      "sha256": "9adb2b2582f80fb6754c205a74bc5121e200579c440dd013630665691fb79f02"
+    },
+    {
+      "path": "tests/catalogs/untrusted.json",
+      "sha256": "3161b064ae214d6e9e443e224985963dc9f0654741e548ef6b58ef597acd9ce6"
+    },
+    {
+      "path": "tests/catalogs/write_risk.json",
+      "sha256": "f7ae3b01c7c5d30971ef3f4af9d5c488158534aa685901e030457a95e5f7935d"
+    },
+    {
+      "path": "tests/fixture-pins.json",
+      "sha256": "eb043aae47567f80e3ee4896daecf299b74395e9eda5d3867645d35aa152601b"
+    },
+    {
+      "path": "tests/fixtures/Child-Sleeper.ps1",
+      "sha256": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9"
+    },
+    {
+      "path": "tests/fixtures/Fault-Worker.ps1",
+      "sha256": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee"
+    },
+    {
+      "path": "tests/fixtures/manifest-bad_descriptor.json",
+      "sha256": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822"
+    },
+    {
+      "path": "tests/fixtures/manifest-hash_mismatch.json",
+      "sha256": "076dd487276e3079fe1ae5240724af45493e15b0043c7c5b1519d8ef54647a01"
+    },
+    {
+      "path": "tests/fixtures/manifest-timeout.json",
+      "sha256": "31d5722122ddfb12d6aa2e216f39971eacd6207e6296813ec12fe9ad580c2c5b"
+    },
+    {
+      "path": "tests/fixtures/manifest-traversal.json",
+      "sha256": "e873602a66f676d2f13c76070739b8859025b69f57b306edd531c81c2239de0a"
+    },
+    {
+      "path": "tests/fixtures/manifest-untrusted.json",
+      "sha256": "841d4a3cb10154f37ca1ee4e8e213ed2cac07a1ea68798354ece6f0c7c2e1074"
+    },
+    {
+      "path": "tests/fixtures/manifest-write_risk.json",
+      "sha256": "94c80cac26e3421be7e605298e21ae5316c3a426b114832473d489df178c510e"
+    },
+    {
+      "path": "tests/test_engine.py",
+      "sha256": "2a80d2052573e20a1fb752c77e2b49d45e3d30e7fab7f5d54fa6e4af81cbcada"
+    },
+    {
+      "path": "trust-anchor.json",
+      "sha256": "7d92a9ec34493c68cb963c2320d901b13eaa7508fd04101a2dbb99c8d3e618ff"
+    },
+    {
+      "path": "win_process.py",
+      "sha256": "9b2228452f64451a3c01ae71069d45a91ff93706b230158fde164b3028d275a7"
+    },
+    {
+      "path": "worker.ps1",
+      "sha256": "1ef4b8de48e7a63cb9ab03f5ea0f0ce7cb57b38d069da014a8acb4b5131095f6"
+    }
+  ]
+}

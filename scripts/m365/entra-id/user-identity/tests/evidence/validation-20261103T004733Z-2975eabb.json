@@ -1,0 +1,444 @@
+{
+  "scope": "PROVISIONAL_SYNTHETIC_OFFLINE_ONLY",
+  "started_at": "2026-11-03T00:47:33.434352Z",
+  "checks": [
+    {
+      "name": "read_inputs_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "synthetic_frozen_context_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "category_is_presentation_only",
+      "status": "PASS"
+    },
+    {
+      "name": "production_catalog_remains_empty",
+      "status": "PASS"
+    },
+    {
+      "name": "no_live_executable_or_manifest",
+      "status": "PASS"
+    },
+    {
+      "name": "creation_date_not_in_contract",
+      "status": "PASS"
+    },
+    {
+      "name": "in_memory_design_manifest_schema_and_semantics",
+      "status": "PASS"
+    },
+    {
+      "name": "reject_reserved_parameter_descriptor",
+      "status": "PASS"
+    },
+    {
+      "name": "reject_inverted_parameter_descriptor",
+      "status": "PASS"
+    },
+    {
+      "name": "powershell_test_runner_exit",
+      "status": "PASS"
+    },
+    {
+      "name": "pester",
+      "status": "PASS"
+    },
+    {
+      "name": "syntax_and_abi",
+      "status": "PASS"
+    },
+    {
+      "name": "all_fixture_cases_exercised",
+      "status": "PASS"
+    },
+    {
+      "name": "valid-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "valid-object-id.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "upn-ordinal-case-comparison.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "guest-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "dollar-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "unicode-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "account-disabled-is-false.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "guest-user-type.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wildcard-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "control-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "trim-required.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "bad-object-id.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "unsupported-kind.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "extra-target-field.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "non-nfc-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "unknown-parameter.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-accountenabled.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-displayname.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-usertype.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "partial-all-null.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-required-id.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-required-userprincipalname.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-id-type.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-bool-type.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "unknown-user-type.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "long-display.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "mismatched-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "mismatched-object-id.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "http-401.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "http-403.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "http-404.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "http-429.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "http-503.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "no-account-found.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "multiple-provider-rows.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "malformed-provider-string.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "sanitized-exception.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-module.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel-before.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel-after-provider.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel-provider-exception.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-contract.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-script.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "unknown-context-field.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "negative-generation.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-tenant.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-generation.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong-account.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "disconnected-lease.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "expired-lease.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid-lease-date.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-lease.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "missing-scope.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "provider-error-stream-sanitized.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "array-id.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "array-upn.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "array-bool.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "nested-provider-command-missing.return_and_payload_schema",
+      "status": "PASS"
+    },
+    {
+      "name": "reference_input_identities_after_tests",
+      "status": "PASS"
+    }
+  ],
+  "inputs": {
+    "src/services/m365_catalog_service.py": "9b3ea9732801ab69d36fe7d99e194de9aa9b319c15dff31568680d4788c405c4",
+    "assets/m365/catalog.json": "5d46f595680650e80411a63f7600abeadcb8096d71ebb8dfd1858fa99fd25f35",
+    "assets/m365/categories.json": "2a4d1af7e044229eeab5fa50e4e05f79e3ec34b22e7588798dc206c060ed9bce",
+    "assets/m365/contract-review-pins.json": "822bdf9072dfe9ff22884325d741d9e6b75a18596e344f6ebbf274d626522b34",
+    "docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65",
+    "docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92",
+    "docs/planning/m365/offline-execution-engine-prototype/catalog.json": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac",
+    "docs/planning/m365/offline-execution-engine-prototype/contracts.py": "a10f9d4d25f1163cadacf98df363bd97a8f34841c242c3ebb715f6d9be15f60a",
+    "docs/planning/m365/offline-execution-engine-prototype/ENGINE_CHECKPOINT.md": "99aa61004f3b55167e9c2cb8d93862a232d1f34e31365413a5e3ffa7de3f4163",
+    "docs/planning/m365/offline-execution-engine-prototype/host.py": "8d9613f8d865d7c4d4bd0bd1f6d302fa856eb290f5708d190a34ba3c9f1f8564",
+    "docs/planning/m365/offline-execution-engine-prototype/manifest.json": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e",
+    "docs/planning/m365/offline-execution-engine-prototype/prepare_fixtures.py": "bd48cfe71951e6766e857dba63677f76b46f254900f92f9d367761268881fd22",
+    "docs/planning/m365/offline-execution-engine-prototype/protocol.ps1": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2",
+    "docs/planning/m365/offline-execution-engine-prototype/README.md": "0b840d157bc8932814e1462a6b42df1d4bd2ff8f42fe641ec38cda212ea962ef",
+    "docs/planning/m365/offline-execution-engine-prototype/run_tests.py": "24e6d4b39fd0d4cf89f27d0af1c4c97248a5bdd1647a0b3263d1afa4a4d18ae2",
+    "docs/planning/m365/offline-execution-engine-prototype/schema-check.ps1": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda",
+    "docs/planning/m365/offline-execution-engine-prototype/synthetic-context.json": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a",
+    "docs/planning/m365/offline-execution-engine-prototype/trust-anchor.json": "7d92a9ec34493c68cb963c2320d901b13eaa7508fd04101a2dbb99c8d3e618ff",
+    "docs/planning/m365/offline-execution-engine-prototype/win_process.py": "9b2228452f64451a3c01ae71069d45a91ff93706b230158fde164b3028d275a7",
+    "docs/planning/m365/offline-execution-engine-prototype/worker.ps1": "1ef4b8de48e7a63cb9ab03f5ea0f0ce7cb57b38d069da014a8acb4b5131095f6",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/DIAGNOSES.md": "404e6ee63d51f879e2c5b5e5e03caebfb4fbd49bb836ec63f9a97854a4d1988d",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/entry-preservation.json": "6a33dcfe530230fd655cd932644c73acf7523078896b94b22b635fc8f6e47b65",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/final-verification.json": "43414e6181a2f1268cdf70949af66872e142f770b2e1e8ad57cb6ece5f3fdf36",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/gate1.json": "a4bc0d2f5d8aed102a6dbf4b0987cc1e25b2b7cbc7f5123a990621cee81f83d7",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/implementation-inventory.json": "e0f662a9b708dde7b282aa28f82ecd2a7a2afc0e517b80af6159841d6a9dbdc7",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233428Z-14fb1d3d.json": "314d99f8493952592fae7001402918925dda44050aaeb3a72ead0dd629c7e869",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233603Z-b772e9df.json": "d9f4da1e53ee238c985b05cff3afffb5809a856b4b87439a475871877fa75fd8",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233710Z-aae96c3a.json": "64d7e5d7a60580b53560920ee6853435df53a5dd350214e3fb9078a8636612ed",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234037Z-fb968547.json": "20ff5a45c70e24eddfa2c9bb0304686611cd17a54679efdd951b64d663a13178",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234518Z-73311df2.json": "045a5a0fcbeba0da30087ba773c0aa1bcf8ce259492d6d8f3b670079728fca1b",
+    "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234813Z-52f6c56b.json": "31e645e661e8b323b6052ebdf5aec8309fe4800451f2b483779dac8430b59df2",
+    "docs/planning/m365/offline-execution-engine-prototype/examples/request.json": "38626a3c87cd22b3cb6941ae905acdb4dd76e501ff334cfb8d0b82468e4532bf",
+    "docs/planning/m365/offline-execution-engine-prototype/examples/response-error.json": "4b0eda798468f6d08edda298f657070680d5d23bc9d79e8bd3e2dc23e50be7f3",
+    "docs/planning/m365/offline-execution-engine-prototype/examples/response-partial.json": "bb657b4dbe37b7e915f40618298252e935b6a7d1aeb82459fab876966684f1ef",
+    "docs/planning/m365/offline-execution-engine-prototype/examples/response-success.json": "a66dea628dad89012e5fdbf04313f1202afe8a1a13ae14325db1a246cf586ee6",
+    "docs/planning/m365/offline-execution-engine-prototype/scripts/Fixture-Operation.ps1": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixture-pins.json": "eb043aae47567f80e3ee4896daecf299b74395e9eda5d3867645d35aa152601b",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/test_engine.py": "2a80d2052573e20a1fb752c77e2b49d45e3d30e7fab7f5d54fa6e4af81cbcada",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/bad_descriptor.json": "c301459aea78a9f29707960fb0c3b44e14732ebaab5206b17068bc1a7d4b3119",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/dependency_mismatch.json": "01f294737dc84d1ded0f7f175fc744e4e65fbec0633a60ea492e8336d617ac13",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/fault.json": "585566e2f6662640831199db5cfc11228f0a304cfd323b7cb08abdd1a32f2461",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/fault_timeout.json": "34dd3aa55e048beaad6f6daf0bc64974e31ac2eddf976eb6282af41963ec306c",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/hash_mismatch.json": "70a11cde3d58d421f373e1b93a3ee7e6560e9945a2ae7167a64d7a8ec9025f36",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/missing_executable.json": "6d40273b7cd6b5ef70de454c5c4d47cb793dc2b5642fe9a7a48bf03d2d7a27a9",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/timeout.json": "17a5d48b7a60614eea84e028ece732acb098e41556399ce763e6c83813319d60",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/traversal.json": "2e662e5d66aa340b56c6d88a70bc9891e666ea9dfce86dbe24e7403812794c3c",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/untrusted.json": "69f16ba950fffe4ac41de34a0ca8208e94d149aa933e987009ae6864f81a12ec",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/write_risk.json": "a8f92bd02cc018b72caf0550d9bbb4b42d6242e3b55079e57e640270efd234e7",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/bad_descriptor.json": "e295470c08e7d2ac4498109b02f465c96dd2857b8accd1b0afd21852625b7542",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/dependency_mismatch.json": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/fault.json": "80e117c06d40efbeab43daed30b6ea6b9afc4e14fa34a69b5ede7287b4aa11e2",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/fault_timeout.json": "08889f12e28e312b73c8d804929f4f1f32ff2ee16a7f1916169a4fb0b47b1520",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/hash_mismatch.json": "e8f8ae38202cd62febf081681e4c0c4e6307b27d84d2102ac6aab77f1bb2a75d",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/missing_executable.json": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/timeout.json": "a8c868d83d94a810c12b8176a3e51faf3a65d2820104465e3e5df6f4c2951ba4",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/traversal.json": "9adb2b2582f80fb6754c205a74bc5121e200579c440dd013630665691fb79f02",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/untrusted.json": "3161b064ae214d6e9e443e224985963dc9f0654741e548ef6b58ef597acd9ce6",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/write_risk.json": "f7ae3b01c7c5d30971ef3f4af9d5c488158534aa685901e030457a95e5f7935d",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/Child-Sleeper.ps1": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/Fault-Worker.ps1": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-bad_descriptor.json": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-hash_mismatch.json": "076dd487276e3079fe1ae5240724af45493e15b0043c7c5b1519d8ef54647a01",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-timeout.json": "31d5722122ddfb12d6aa2e216f39971eacd6207e6296813ec12fe9ad580c2c5b",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-traversal.json": "e873602a66f676d2f13c76070739b8859025b69f57b306edd531c81c2239de0a",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-untrusted.json": "841d4a3cb10154f37ca1ee4e8e213ed2cac07a1ea68798354ece6f0c7c2e1074",
+    "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-write_risk.json": "94c80cac26e3421be7e605298e21ae5316c3a426b114832473d489df178c510e",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/AGENT_HANDOFF.md": "08da329a91168c14ee92af1f99b31d0b67b087853c49a46044ea3bd15c5b9f74",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT.md": "80bd4adb5dfcf29aeba897759b91bb5e280c84c8975d9b9e9614de2ecc6253a1",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT_CORRECTION_HANDOFF.md": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/GEMINI.md": "0313e1677c8fbffc406f6d39b849b0841e6e4e898949672069ba6d1323021f3b",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/README.md": "e1d6f059a991386c005e4708f77f30aceaa93c28cec7ef57b3e554919507fa76",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/security-and-execution.md": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/user-snapshot.md": "3eab4be639e13bb689fb9ac9c0306b8bda53733a8ff126ddb8af64443f293604",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation-and-roadmap.md": "da09be92c26f29a59e909729c25570a3c23ce9968f243bfd0d97b32f42f521a8",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/workspace-architecture.md": "6c9686ca25324dc67fdc68db78d01f1fc4c40ea073cb7f709bf773ab8281ffa6",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/examples/fixtures.json": "c5c00937df8c2b4052f1fa2dc196f10e8dce0e961b507452f8adfe3ec1ff1b58",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/examples/mock-compatibility.json": "b3d04a1929375e6893d631f02552fa17474e0f583b996ed327ae4bc8c23ca087",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/common.schema.json": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/company-profile.schema.json": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/error.schema.json": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/execution-request.schema.json": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/execution-result.schema.json": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/operation-data.schema.json": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/script-manifest.schema.json": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-baseline.json": "7687bae19cdb97ebd93623ec21d257173f4c59f97fa5edaedd86deaff10094a1",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results-20261102T231348-70847299.json": "cfb3f96cd5cd59526506f72437547eca5b8422ca3b11a4268c63e1dd5e54d841",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results-20261102T231941-41d04d19.json": "180705af359e1db2d500411538e32259ea40ed474570357dfdf213e5614ae309",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results.json": "180705af359e1db2d500411538e32259ea40ed474570357dfdf213e5614ae309",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction_checks.py": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181323-01b9bf6a.json": "14a200b23f3ffe1e966683918094d09059a3c98ee2f30ffbb05807394e319b82",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181359-56add14f.json": "6312573c9d83e63f8fecfca5e91313ab464578375696843013b98cbee3b3685a",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181435-77cb8fac.json": "d448b7881befa20abbe95e061912b2072afa0697774fbca450b6b299fcad6a28",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181603-e7af2932.json": "307b56fa09ab05c511f5ccf971cc7ea9e357dced116cd33670ec749514145020",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181810-9b7d32df.json": "e5706637e2be4a01cfc11588a4e3d789b29484ee0bd2550605ab4b7a8de24a76",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results.json": "e5706637e2be4a01cfc11588a4e3d789b29484ee0bd2550605ab4b7a8de24a76",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/source-snapshot.json": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6",
+    "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/validate_contract.py": "74f39afe21fb132cb2b832632a9f8cae4ed3bbabc5291c7cb77f7daeef10ab3f",
+    "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65",
+    "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md": "73128f1c3efd318ba5399c936a28babd1ba39e0353779ed40821017ab986a750",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md": "58b28ba90e4e0cca195bf35ac86e0e0df9f2ea061e5d79181d82d66cdb643d0f",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md": "fd8bef503218919a495fc6fea9eb8209f5078dc4d21ca130a659881c6030fe03",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json": "324d60c5f628b128460a4e61a94beca5dcc43e9954b8f34eb0e8d6d0526a52d2",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json": "87b1b9c43c9b1533856c0871cd7fb5b9247d725e100dcca5a90af9ff3f18b677",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json": "aa91f9700e8dcd13f93633f53a93ab20dbbc6d52d8bd588f3585eb2da6a0556c",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json": "e8def96d63d9a2abb16ed5dc7da2999c2cda91836ecbf632f75095a265b8a3b8",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md": "b0b810970e1ccc1c88fc4ec58b54a88b1d10e9cb673f9755eef6130b2560ad5e",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md": "1f86a36cbabaea31d8bf9fd2355db10dd796af09782a1817f2bed01b9a10bd1d",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json": "1f498afa9c4b68098e6e67aa00d36788ae6afe7b1a7d0e9e31bb0c7e37d74b2f",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json": "ddf4f9f7f1caef058190278cce4a49dac1439fe1a60cf10774b903cd1c45570d",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json": "e5a0bcc140e42a8fdc0b47ed1cadca4689f2756d90e84a3230fb1a43ea215165",
+    "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py": "742dbd72d609426bcb89c1de05aac170cb0e0c0eaa108c4b1574e61cd830b725",
+    "scripts/m365/README.md": "f8327ff464e790e2d2244178a6fa8cfee95cf8476f7ae2b3b5ded63242ec0bca",
+    "AGENTS.md": "6d02b9e5e215940d035495e08202deed81d50a243563a83d1f8956a5a2fa08fc",
+    "GEMINI.md": "c3ec445e4f18b255ad55987effc7a94e5e3d6b76fdc16c3f7dba6dfb28e4ef04"
+  },
+  "status": "PASS",
+  "input_mismatches": [],
+  "command": [
+    "C:\\Program Files\\PowerShell\\7\\pwsh.EXE",
+    "-NoLogo",
+    "-NoProfile",
+    "-NonInteractive",
+    "-File",
+    "C:\\Dev\\T-Notes\\scripts\\m365\\entra-id\\user-identity\\tests\\Run-OfflineTests.ps1"
+  ],
+  "powershell_exit_code": 0,
+  "test_stdout": "{\"evidence_kind\":\"SYNTHETIC_OFFLINE_ONLY\",\"powershell\":\"7.6.9\",\"pester\":{\"status\":\"PASS\",\"version\":\"3.4.0\",\"passed\":60,\"failed\":0},\"offline_cases\":[{\"name\":\"valid-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"valid-object-id\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"44444444-4444-4444-8444-444444444444\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"upn-ordinal-case-comparison\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"SYNTHETIC.USER@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"guest-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"guest_example.invalid#EXT#@tenant.example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"guest_example.invalid#EXT#@tenant.example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"dollar-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"$synthetic@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"$synthetic@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"unicode-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetiqu\u00e9@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetiqu\u00e9@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"account-disabled-is-false\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":false,\"user_type\":\"Member\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"guest-user-type\",\"status\":\"PASS\",\"return_object\":{\"status\":\"success\",\"operation_outcome\":\"succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":\"Guest\"},\"warnings\":[],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"wildcard-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"The target identifier is invalid or not normalized.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"control-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"The target identifier is invalid or not normalized.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"trim-required\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"The target identifier is invalid or not normalized.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"bad-object-id\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"The target identifier is invalid or not normalized.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"unsupported-kind\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"A supported exact target is required.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"extra-target-field\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"A supported exact target is required.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"non-nfc-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"The target identifier is invalid or not normalized.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"unknown-parameter\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INVALID_PARAMETER\",\"message\":\"This operation accepts no extra parameters.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"missing-accountenabled\",\"status\":\"PASS\",\"return_object\":{\"status\":\"partial\",\"operation_outcome\":\"partially_succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":null,\"user_type\":\"Member\"},\"warnings\":[{\"code\":\"PROPERTY_UNAVAILABLE\",\"message\":\"One or more optional identity properties are unavailable; null does not mean healthy.\"}],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"missing-displayname\",\"status\":\"PASS\",\"return_object\":{\"status\":\"partial\",\"operation_outcome\":\"partially_succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":null,\"account_enabled\":true,\"user_type\":\"Member\"},\"warnings\":[{\"code\":\"PROPERTY_UNAVAILABLE\",\"message\":\"One or more optional identity properties are unavailable; null does not mean healthy.\"}],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"missing-usertype\",\"status\":\"PASS\",\"return_object\":{\"status\":\"partial\",\"operation_outcome\":\"partially_succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":\"Synthetic User\",\"account_enabled\":true,\"user_type\":null},\"warnings\":[{\"code\":\"PROPERTY_UNAVAILABLE\",\"message\":\"One or more optional identity properties are unavailable; null does not mean healthy.\"}],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"partial-all-null\",\"status\":\"PASS\",\"return_object\":{\"status\":\"partial\",\"operation_outcome\":\"partially_succeeded\",\"data\":{\"id\":\"44444444-4444-4444-8444-444444444444\",\"user_principal_name\":\"synthetic.user@example.invalid\",\"display_name\":null,\"account_enabled\":null,\"user_type\":null},\"warnings\":[{\"code\":\"PROPERTY_UNAVAILABLE\",\"message\":\"One or more optional identity properties are unavailable; null does not mean healthy.\"}],\"errors\":[]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"missing-required-id\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider omitted or malformed required identity fields.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"missing-required-userprincipalname\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider omitted or malformed required identity fields.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"wrong-id-type\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider omitted or malformed required identity fields.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"wrong-bool-type\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned malformed diagnostic properties.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"unknown-user-type\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned malformed diagnostic properties.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"long-display\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned malformed diagnostic properties.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"mismatched-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The returned identity does not match the exact target.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"mismatched-object-id\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The returned identity does not match the exact target.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"88888888-8888-4888-8888-888888888888\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"http-401\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"AUTH_REQUIRED\",\"message\":\"The provider requires renewed host authentication.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"http-403\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"ACCESS_DENIED\",\"message\":\"The provider denied access to this identity.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"http-404\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"TARGET_NOT_FOUND\",\"message\":\"The provider could not find this identity.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"http-429\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"API_THROTTLED\",\"message\":\"The provider throttled this read; explicit retry requires review.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"http-503\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"SERVICE_UNAVAILABLE\",\"message\":\"The identity service is unavailable.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"no-account-found\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"failed\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"TARGET_NOT_FOUND\",\"message\":\"No user was returned for the exact target.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"multiple-provider-rows\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned an invalid identity response.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"malformed-provider-string\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned an invalid identity response.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"sanitized-exception\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INTERNAL_ERROR\",\"message\":\"The identity read failed; consult sanitized host diagnostics.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"missing-module\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"MODULE_MISSING\",\"message\":\"The required approved Graph command is unavailable.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"cancel-before\",\"status\":\"PASS\",\"return_object\":{\"status\":\"cancelled\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CANCELLED\",\"message\":\"Cancelled before the provider call.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"cancel-after-provider\",\"status\":\"PASS\",\"return_object\":{\"status\":\"cancelled\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CANCELLED\",\"message\":\"Cancelled after provider dispatch; data discarded.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"cancel-provider-exception\",\"status\":\"PASS\",\"return_object\":{\"status\":\"cancelled\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CANCELLED\",\"message\":\"Cancelled during provider dispatch; data discarded.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"wrong-contract\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The invocation context is incompatible.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"wrong-script\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The invocation context is incompatible.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"unknown-context-field\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The invocation context has invalid fields.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"negative-generation\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The invocation context is incompatible.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"wrong-tenant\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"TENANT_MISMATCH\",\"message\":\"The Graph lease does not match the invocation context.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"wrong-generation\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"TENANT_MISMATCH\",\"message\":\"The Graph lease does not match the invocation context.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"wrong-account\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"ACCOUNT_MISMATCH\",\"message\":\"The Graph account does not match the invocation context.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"disconnected-lease\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"AUTH_REQUIRED\",\"message\":\"A host-verified Graph lease is required.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"expired-lease\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"AUTH_REQUIRED\",\"message\":\"The Graph lease is invalid or expired.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"invalid-lease-date\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"AUTH_REQUIRED\",\"message\":\"The Graph lease is invalid or expired.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"missing-lease\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"AUTH_REQUIRED\",\"message\":\"A host-verified Graph lease is required.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"missing-scope\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"not_started\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"ACCESS_DENIED\",\"message\":\"The proposed Graph read scope is unavailable.\",\"retryable\":false}]},\"provider_calls\":[]},{\"name\":\"provider-error-stream-sanitized\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INTERNAL_ERROR\",\"message\":\"The identity read failed; consult sanitized host diagnostics.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"array-id\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider omitted or malformed required identity fields.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"array-upn\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider omitted or malformed required identity fields.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"array-bool\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"CONTRACT_VIOLATION\",\"message\":\"The provider returned malformed diagnostic properties.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]},{\"name\":\"nested-provider-command-missing\",\"status\":\"PASS\",\"return_object\":{\"status\":\"error\",\"operation_outcome\":\"unknown\",\"data\":null,\"warnings\":[],\"errors\":[{\"code\":\"INTERNAL_ERROR\",\"message\":\"A provider dependency failed during dispatch.\",\"retryable\":false}]},\"provider_calls\":[{\"UserId\":\"synthetic.user@example.invalid\",\"Property\":[\"id\",\"userPrincipalName\",\"displayName\",\"accountEnabled\",\"userType\"],\"ErrorAction\":\"Stop\"}]}],\"syntax_and_abi\":\"PASS\"}\n",
+  "test_stderr": "",
+  "powershell": "7.6.9",
+  "pester": {
+    "status": "PASS",
+    "version": "3.4.0",
+    "passed": 60,
+    "failed": 0
+  },
+  "finished_at": "2026-11-03T00:47:44.415114Z",
+  "operation_source_hashes": {
+    "COMPATIBILITY.md": "cc026c7d508572514cc7d0374862090da53d25ea9ef89bb1f946d7608840a9f1",
+    "Get-UserIdentity.ps1.reference": "f9037639c3c5b49477bbd9bd137a9435df2cc7533b604356deffbdf4e947f6ae",
+    "operation.design.json": "520894bc868640a0708639c5b7f0d2ef48023977ca6dbbeba6249927c20bf111",
+    "Operation.Template.ps1.reference": "a03b3d2b56e5839712eb9f56fd41c37b7088e61de0d211e05a4527ef59bdc722",
+    "README.md": "92eb15e1f4637e8ad6f2027e3fa0572f7f01830a0380df381d6cd3d6e4ab526d",
+    "tests/fixtures.json": "0291059c1c1aecc6688ae086683580c7f7b20c56b99b3cd161ad7c1e7810990a",
+    "tests/OfflineHarness.ps1": "62daf2e47d21dc3390f0771369ad6c4f8052ceed865a7192a99c15fdffc53c44",
+    "tests/Run-OfflineTests.ps1": "344c2a32e7fb6811ec89fabad61b4c01bca88901ca73092d7670b55ec0bb1d92",
+    "tests/UserIdentity.Tests.ps1": "85828ec61a303607f83d070aa9038bbdcb353716cc36b73abd6c808cb5392bec",
+    "tests/validate.py": "ec823cf1be675b84007abd46619331edf3bb1a8e0014f84473ca25a7972a0c63"
+  }
+}

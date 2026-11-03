@@ -1,0 +1,163 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "AGENTS.md: Every future M365 PowerShell operation must use the official",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: docs/contracts/m365/CONTRACT.md",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: tnotes.m365 / 0.3.0",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: APPROVED \u2014 IMPLEMENTATION CONTRACT",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: approval record",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: ABI",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: manifest validity",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: authentication",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: trust requirements",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: permissions/RBAC",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: operation-specific tests",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: independent approval",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: F7Hub",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: PySide6",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: SQLite",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: separate authorization",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: link docs/contracts/m365/CONTRACT.md",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: link docs/contracts/m365/README.md",
+      "status": "PASS"
+    },
+    {
+      "name": "AGENTS.md: existing rules preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: Every future M365 PowerShell operation must use the official",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: docs/contracts/m365/CONTRACT.md",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: tnotes.m365 / 0.3.0",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: APPROVED \u2014 IMPLEMENTATION CONTRACT",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: approval record",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: ABI",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: manifest validity",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: authentication",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: trust requirements",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: permissions/RBAC",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: operation-specific tests",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: independent approval",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: F7Hub",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: PySide6",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: SQLite",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: separate authorization",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: link docs/contracts/m365/CONTRACT.md",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: link docs/contracts/m365/README.md",
+      "status": "PASS"
+    },
+    {
+      "name": "GEMINI.md: existing rules preserved",
+      "status": "PASS"
+    }
+  ],
+  "files": {
+    "AGENTS.md": "e37b71cd84d6d5f7c7ed52c6262f3831c6586a3ce61e0460f9f53bfe6c79c39d",
+    "GEMINI.md": "217f7025a2e7d7e79a76680a0a5f7ca774e88e21a7c1347acb23692ec6eb2d9c"
+  },
+  "official_contract_promotion": "PENDING; canonical CONTRACT.md still declares proposed version",
+  "scope": "Documentation references only; no promotion or operation execution"
+}

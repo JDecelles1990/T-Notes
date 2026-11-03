@@ -1,0 +1,3805 @@
+{
+  "schema_version": 1,
+  "contract_version": "0.3.0-proposed.1",
+  "result": "PASS",
+  "provenance": "FRESH synthetic/offline design validation only",
+  "started_at": "2026-11-02T23:13:47.384398Z",
+  "finished_at": "2026-11-02T23:13:48.520192Z",
+  "command": [
+    "C:\\Users\\Jo\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+    "-B",
+    "C:\\Dev\\T-Notes\\docs\\planning\\m365\\03_codex_reviews\\architecture-contract-proposal-20261102\\validation\\validate_contract.py",
+    "--pwsh",
+    "C:\\Program Files\\PowerShell\\7\\pwsh.EXE"
+  ],
+  "environment": {
+    "python": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+    "powershell_path": "C:\\Program Files\\PowerShell\\7\\pwsh.EXE",
+    "powershell": "7.6.9",
+    "engine": "JsonSchema.Net",
+    "engine_version": "7.0.0.0"
+  },
+  "checks_passed": 578,
+  "checks_failed": 0,
+  "checks": [
+    {
+      "name": "syntax.common.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.common.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.company-profile.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.company-profile.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.error.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.error.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.operation-data.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.operation-data.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "syntax.script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "offline-refs.script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "fixture-version",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.common.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.company-profile.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.error.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.operation-data.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "metaschemas.engine-negative-metaschema-probe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "schema-and-format.user_identity.manifest",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_identity.request",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_identity.success",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_identity.data",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_licenses.manifest",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_licenses.request",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_licenses.success",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_licenses.data",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_signins.manifest",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_signins.request",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_signins.success",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.user_signins.data",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.mailbox_summary.manifest",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.mailbox_summary.request",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.mailbox_summary.success",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.mailbox_summary.data",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.company.synthetic",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.INVALID_PARAMETER",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.AUTH_REQUIRED",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.TENANT_MISMATCH",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.ACCOUNT_MISMATCH",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.ACCESS_DENIED",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.TARGET_NOT_FOUND",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.MAILBOX_NOT_FOUND",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.MODULE_MISSING",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.API_THROTTLED",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.SERVICE_UNAVAILABLE",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.CONNECTION_FAILED",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.TIMEOUT",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.CANCELLED",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.OUTPUT_LIMIT",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.CONTRACT_VIOLATION",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.error.INTERNAL_ERROR",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.result.partial",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.result.error",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.result.cancelled",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.result.timeout",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.old_version",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.secret_field",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.bad_guid",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path_traversal",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.host_success",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.bad_status",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.bad_date",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": true,
+      "calendar_valid": false
+    },
+    {
+      "name": "schema-and-format.correction.context",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.return",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.trust",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.history",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.eligible",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.ineligible",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.dynamic_manifest",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.extra-return-context",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.extra-return-parameters",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.extra-return-raw_exception",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.return-partial",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.return-error",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.return-cancelled",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.return-timeout",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.partial-without-warning",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.success-with-errors",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.trusted-without-approval",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.eligible-with-reasons",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.ineligible-without-reasons",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.history-missing-completion",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.history-date-2026-11-02T18:00:00+00:00",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": false
+    },
+    {
+      "name": "schema-and-format.correction.history-date-2026-11-02T18:00:00",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": false
+    },
+    {
+      "name": "schema-and-format.correction.history-date-2026-02-30T18:00:00Z",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": true,
+      "calendar_valid": false
+    },
+    {
+      "name": "schema-and-format.correction.descriptor-string",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.bad-descriptor-string",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.descriptor-integer",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.bad-descriptor-integer",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.descriptor-number",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.bad-descriptor-number",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.descriptor-boolean",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.bad-descriptor-boolean",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.descriptor-string_array",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.correction.bad-descriptor-string_array",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.selected-payload.user_identity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.selected-payload.user_licenses",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.selected-payload.user_signins",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.selected-payload.mailbox_summary",
+      "result": "PASS",
+      "actual": true,
+      "expected": true,
+      "schema_engine_valid": true,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.0",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.2",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.3",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.4",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.path.5",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.errors-on-success",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.unverified-context",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.partial-without-warning",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.secret-payload",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.company-password",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.non-powershell-file",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "schema-and-format.negative.excessive-timeout",
+      "result": "PASS",
+      "actual": false,
+      "expected": false,
+      "schema_engine_valid": false,
+      "calendar_valid": true
+    },
+    {
+      "name": "semantic.preflight.user_identity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.result-binding.user_identity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.payload-ref.user_identity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.preflight.user_identity.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_identity.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_identity.admin_identity_ref",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_identity.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_identity.target",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_identity.correlation_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_identity.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_identity.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_identity.script_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.nonzero-success.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unapproved-release.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.tampered-hash.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unknown-parameter.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.preflight.user_licenses",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.result-binding.user_licenses",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.payload-ref.user_licenses",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.preflight.user_licenses.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_licenses.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_licenses.admin_identity_ref",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_licenses.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_licenses.target",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_licenses.correlation_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_licenses.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_licenses.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_licenses.script_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.nonzero-success.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unapproved-release.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.tampered-hash.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unknown-parameter.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.preflight.user_signins",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.result-binding.user_signins",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.payload-ref.user_signins",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.preflight.user_signins.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_signins.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_signins.admin_identity_ref",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_signins.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.user_signins.target",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_signins.correlation_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_signins.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_signins.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.user_signins.script_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.nonzero-success.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unapproved-release.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.tampered-hash.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unknown-parameter.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.preflight.mailbox_summary",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.result-binding.mailbox_summary",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "semantic.payload-ref.mailbox_summary",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.preflight.mailbox_summary.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.mailbox_summary.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.mailbox_summary.admin_identity_ref",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.mailbox_summary.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.preflight.mailbox_summary.target",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.mailbox_summary.correlation_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.mailbox_summary.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.mailbox_summary.company_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.result.mailbox_summary.script_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.nonzero-success.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unapproved-release.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.tampered-hash.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unknown-parameter.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.record-bound.True",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.record-bound.0",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.record-bound.51",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.record-bound.'20'",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.record-bound.None",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.manifest.bad_default",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.manifest.duplicate_parameter",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.manifest.inverted_bounds",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unauthorized.write",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.unauthorized.high_impact",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.synthetic-confirmation",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.confirmation.confirmation_expired",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.confirmation.confirmation_used",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.confirmation.confirmed_parameters",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.false-count.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.false-count.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.incomplete-success.user_identity.account_enabled",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.partial-property.user_identity.account_enabled",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.incomplete-success.mailbox_summary.total_item_size_bytes",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.partial-property.mailbox_summary.total_item_size_bytes",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.incomplete-success.mailbox_summary.prohibit_send_quota_bytes",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "semantic.partial-property.mailbox_summary.prohibit_send_quota_bytes",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.synthetic-secret-in-message",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "exit.success",
+      "result": "PASS",
+      "actual": 0,
+      "expected": 0
+    },
+    {
+      "name": "exit.partial",
+      "result": "PASS",
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "exit.error",
+      "result": "PASS",
+      "actual": 20,
+      "expected": 20
+    },
+    {
+      "name": "exit.cancelled",
+      "result": "PASS",
+      "actual": 40,
+      "expected": 40
+    },
+    {
+      "name": "exit.timeout",
+      "result": "PASS",
+      "actual": 40,
+      "expected": 40
+    },
+    {
+      "name": "exit-code.INVALID_PARAMETER",
+      "result": "PASS",
+      "actual": 10,
+      "expected": 10
+    },
+    {
+      "name": "exit-code.AUTH_REQUIRED",
+      "result": "PASS",
+      "actual": 20,
+      "expected": 20
+    },
+    {
+      "name": "exit-code.TENANT_MISMATCH",
+      "result": "PASS",
+      "actual": 20,
+      "expected": 20
+    },
+    {
+      "name": "exit-code.ACCOUNT_MISMATCH",
+      "result": "PASS",
+      "actual": 20,
+      "expected": 20
+    },
+    {
+      "name": "exit-code.ACCESS_DENIED",
+      "result": "PASS",
+      "actual": 20,
+      "expected": 20
+    },
+    {
+      "name": "exit-code.TARGET_NOT_FOUND",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.MAILBOX_NOT_FOUND",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.MODULE_MISSING",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.API_THROTTLED",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.SERVICE_UNAVAILABLE",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.CONNECTION_FAILED",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.TIMEOUT",
+      "result": "PASS",
+      "actual": 40,
+      "expected": 40
+    },
+    {
+      "name": "exit-code.CANCELLED",
+      "result": "PASS",
+      "actual": 40,
+      "expected": 40
+    },
+    {
+      "name": "exit-code.OUTPUT_LIMIT",
+      "result": "PASS",
+      "actual": 30,
+      "expected": 30
+    },
+    {
+      "name": "exit-code.CONTRACT_VIOLATION",
+      "result": "PASS",
+      "actual": 10,
+      "expected": 10
+    },
+    {
+      "name": "exit-code.INTERNAL_ERROR",
+      "result": "PASS",
+      "actual": 50,
+      "expected": 50
+    },
+    {
+      "name": "correction.eligibility.user_identity",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.reject-connection.user_identity.state",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.owner_worker_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.verified_account_upn",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.verified_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_identity.expires_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_identity.approved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_identity.dependencies_match",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_identity.bytes_pinned",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_identity.path_safe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_identity.script_version",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_identity.script_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_identity.manifest_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_identity.output_schema_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-scopes.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-logical-exit.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-result-release.user_identity",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.eligibility.user_licenses",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.state",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.owner_worker_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.verified_account_upn",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.verified_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_licenses.expires_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_licenses.approved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_licenses.dependencies_match",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_licenses.bytes_pinned",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_licenses.path_safe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_licenses.script_version",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_licenses.script_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_licenses.manifest_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_licenses.output_schema_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-scopes.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-role.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-unresolved.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-followon-upn.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-logical-exit.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-result-release.user_licenses",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.eligibility.user_signins",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.reject-connection.user_signins.state",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.owner_worker_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.verified_account_upn",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.verified_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.user_signins.expires_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_signins.approved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_signins.dependencies_match",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_signins.bytes_pinned",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.user_signins.path_safe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_signins.script_version",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_signins.script_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_signins.manifest_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.user_signins.output_schema_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-scopes.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-role.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-unresolved.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-followon-upn.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-logical-exit.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-result-release.user_signins",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.eligibility.mailbox_summary",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.state",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.owner_worker_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.tenant_id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.verified_account_upn",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.session_generation",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.verified_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-connection.mailbox_summary.expires_at",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.mailbox_summary.approved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.mailbox_summary.dependencies_match",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.mailbox_summary.bytes_pinned",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-trust.mailbox_summary.path_safe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.mailbox_summary.script_version",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.mailbox_summary.script_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.mailbox_summary.manifest_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-binding.mailbox_summary.output_schema_sha256",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-role.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-unresolved.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-followon-upn.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-logical-exit.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-result-release.mailbox_summary",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.dynamic-unknown-id-eligible",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.dynamic-upn-only-rejects-id",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.identity-object-id-eligible",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.identity-object-id-result",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.identity-object-id-mismatch",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.defaults-before-required",
+      "result": "PASS",
+      "actual": {
+        "LookbackDays": 7,
+        "MaxRecords": 20
+      },
+      "expected": {
+        "LookbackDays": 7,
+        "MaxRecords": 20
+      }
+    },
+    {
+      "name": "correction.reject-descriptor.case-duplicate",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.reserved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.common-reserved",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.inverted-string",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.inverted-array",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.inverted-item",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.bad-array-default",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.default-outside-enum",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.enum-outside-bounds",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.wrong-enum-type",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.duplicate-enum",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.fractional-integer-bound",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-descriptor.numeric-on-string",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-metadata.scope-without-graph",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-metadata.role-wrong-service",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-metadata.missing-schema",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-metadata.unknown-fragment",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.notes-ack.all-current-saved",
+      "result": "PASS",
+      "actual": [
+        true
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "correction.notes-transition.all-current-saved",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.notes-ack.failed-save-hidden-editor",
+      "result": "PASS",
+      "actual": [
+        false
+      ],
+      "expected": [
+        false
+      ]
+    },
+    {
+      "name": "correction.notes-transition.failed-save-hidden-editor",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.notes-ack.newer-edit-during-save",
+      "result": "PASS",
+      "actual": [
+        false
+      ],
+      "expected": [
+        false
+      ]
+    },
+    {
+      "name": "correction.notes-transition.newer-edit-during-save",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.notes-ack.image-still-pending",
+      "result": "PASS",
+      "actual": [
+        false
+      ],
+      "expected": [
+        false
+      ]
+    },
+    {
+      "name": "correction.notes-transition.image-still-pending",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.notes-ack.one-of-two-saves-failed",
+      "result": "PASS",
+      "actual": [
+        true,
+        false
+      ],
+      "expected": [
+        true,
+        false
+      ]
+    },
+    {
+      "name": "correction.notes-transition.one-of-two-saves-failed",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.notes-ack.explicit-retry-latest-revision",
+      "result": "PASS",
+      "actual": [
+        true
+      ],
+      "expected": [
+        true
+      ]
+    },
+    {
+      "name": "correction.notes-transition.explicit-retry-latest-revision",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-success",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.queued",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.running",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.rejected",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.partial",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.error",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.cancelled",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.history-coverage.timeout",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.reject-history.requested_at.2026-11-02T19:00:00Z",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-history.completed_at.2026-11-02T00:00:00Z",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-history.started_at.2026-02-30T18:00:00Z",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-history.completed_at.None",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.reject-history.duration_ms.-1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "correction.parsed-fractional-time",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "wire.single-envelope",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "calendar.valid-leap-day",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "calendar.invalid-leap-day",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "request.synthetic-byte-cap",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "request.oversize-rejected",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.two-envelopes",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.truncated",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.invalid-utf8",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.bom",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.duplicate",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.nested-duplicate",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.nan",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.overflow",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.extra-text",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.array-root",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.size",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.wire.depth",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "reject.lexical-path.../escape.ps1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.lexical-path.scripts/x.exe",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.lexical-path.C:/x.ps1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.lexical-path.//server/x.ps1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.lexical-path.scripts/%2e%2e/x.ps1",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "reject.lexical-path.scripts/x.ps1:stream",
+      "result": "PASS",
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "markdown.fences.AGENT_HANDOFF.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.AGENT_HANDOFF.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.README.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.README.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.workspace-architecture.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.security-and-execution.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.user-snapshot.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.validation-and-roadmap.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.AGENT_HANDOFF.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "link.README.md.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.security-and-execution.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.security-and-execution.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.user-snapshot.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.user-snapshot.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.validation-and-roadmap.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.validation-and-roadmap.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.fences.workspace-architecture.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "markdown.whitespace.workspace-architecture.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.AGENTS.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.ARCHITECTURE.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.README.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/architecture/image-pipeline.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/architecture/system-overview.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/database/schema.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/features/editor-and-formatting.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/features/tab-lifecycle.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/index.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/config.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/core/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/core/constants.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/core/debouncer.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/core/global_hotkey.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/database/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/database/connection.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/database/migrations.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/database/schema.sql",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/main.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/repositories/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/repositories/image_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/repositories/scratchpad_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/repositories/session_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/services/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/services/image_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/services/scratchpad_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/services/session_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/services/stopwatch_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/editor.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/history_drawer.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/stopwatch_widget.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/system_tray.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/tab_widget.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/components/toolbar.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/dialogs/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/dialogs/edit_ticket_dialog.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/dialogs/settings_dialog.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.src/ui/main_window.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/conftest.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/test_database.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/test_image_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/test_scratchpad_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/test_stopwatch_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.tests/test_ui_integration.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.AGENTS.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/decisions/0007-always-on-top-mini-hud.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "preservation.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation..gitignore",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.AGENTS.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.ARCHITECTURE.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.README.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.assets/icons/.gitkeep",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.assets/icons/app_icon.png",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.assets/styles/dark_theme.qss",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/CHANGELOG.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/architecture/image-pipeline.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/architecture/system-overview.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/database/fts-and-search.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/database/schema.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0001-sqlite-wal-and-jpeg-blobs.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0002-win32-idle-and-lock-detection.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0003-global-event-filtering-for-shortcuts.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0004-system-tray-and-f8-global-hotkey.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0005-interactive-checklists-and-tab-progress.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0006-side-by-side-split-view.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/0007-always-on-top-mini-hud.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/decisions/template.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/features/editor-and-formatting.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/features/history-and-archive.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/features/tab-lifecycle.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/index.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181323-01b9bf6a.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181359-56add14f.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181435-77cb8fac.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181603-e7af2932.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181810-9b7d32df.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/source-snapshot.json",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.pyproject.toml",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.requirements.txt",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/config.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/core/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/core/constants.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/core/debouncer.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/core/global_hotkey.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/database/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/database/connection.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/database/migrations.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/database/schema.sql",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/main.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/repositories/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/repositories/image_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/repositories/scratchpad_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/repositories/session_repository.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/services/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/services/image_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/services/scratchpad_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/services/session_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/services/stopwatch_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/editor.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/history_drawer.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/stopwatch_widget.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/system_tray.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/tab_widget.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/components/toolbar.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/dialogs/__init__.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/dialogs/edit_ticket_dialog.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/dialogs/settings_dialog.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.src/ui/main_window.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/conftest.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/test_database.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/test_image_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/test_scratchpad_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/test_stopwatch_service.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "correction.preservation.tests/test_ui_integration.py",
+      "result": "PASS",
+      "actual": true,
+      "expected": true
+    }
+  ],
+  "not_run": [
+    "production parser/worker",
+    "actual filesystem ACL/reparse/integrity enforcement",
+    "Pester operation scripts",
+    "Qt/native Windows GUI",
+    "live Microsoft authentication or tenant operations",
+    "independent review"
+  ],
+  "artifacts": [
+    {
+      "path": "AGENT_HANDOFF.md",
+      "sha256": "fb8650fd146470b0c01839c667482a70856a63743aeb5da1643648672afa11d0"
+    },
+    {
+      "path": "CONTRACT.md",
+      "sha256": "03c1f25ad6c0efd537f1679f3aa8be1f6b04b57259513cb8463efe4cfe737dbf"
+    },
+    {
+      "path": "examples/fixtures.json",
+      "sha256": "eefcbcd96e9be6c41d38e578cecfc1056519b384dd4b9430a4157cecf0e6b2bf"
+    },
+    {
+      "path": "examples/mock-compatibility.json",
+      "sha256": "b834a6d078007466ec7da77da7e95ddb89f60ee14fbbb8b7d12b5c81defdb638"
+    },
+    {
+      "path": "GEMINI.md",
+      "sha256": "1276a3bdd4f2cbafa2b2ad0deb97131d288351da9fe23e4e0e6fadc9b5faaefc"
+    },
+    {
+      "path": "README.md",
+      "sha256": "1ce7b514fcb99c90a5663eac90788d3081f3efea5082aa84b6852b5693129e80"
+    },
+    {
+      "path": "schemas/common.schema.json",
+      "sha256": "011716a40a6c2095a43a99a6b0e654c6348e954e659fadc1fea08ab1063a4afc"
+    },
+    {
+      "path": "schemas/company-profile.schema.json",
+      "sha256": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f"
+    },
+    {
+      "path": "schemas/error.schema.json",
+      "sha256": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508"
+    },
+    {
+      "path": "schemas/execution-request.schema.json",
+      "sha256": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886"
+    },
+    {
+      "path": "schemas/execution-result.schema.json",
+      "sha256": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022"
+    },
+    {
+      "path": "schemas/operation-data.schema.json",
+      "sha256": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e"
+    },
+    {
+      "path": "schemas/script-manifest.schema.json",
+      "sha256": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2"
+    },
+    {
+      "path": "security-and-execution.md",
+      "sha256": "a97a747ba39aa04750e9548c3ed93cc7a29ef2b52de0e082c9ead869bf8e1c67"
+    },
+    {
+      "path": "user-snapshot.md",
+      "sha256": "3eab4be639e13bb689fb9ac9c0306b8bda53733a8ff126ddb8af64443f293604"
+    },
+    {
+      "path": "validation/correction_checks.py",
+      "sha256": "5a0f1d0f3d071fb51ab4b820c520a2b48a9fd40d591ad5019f635112957e5327"
+    },
+    {
+      "path": "validation/source-snapshot.json",
+      "sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6"
+    },
+    {
+      "path": "validation/validate_contract.py",
+      "sha256": "7a1b9f3bad3e6435496657a24b81fb120223caa5f2f523b15bbdd6638f348799"
+    },
+    {
+      "path": "validation-and-roadmap.md",
+      "sha256": "84dfece657eb5dc842d0ed0404b8d0b2ebf1ce81902a780ec3429aab70a4d66f"
+    },
+    {
+      "path": "workspace-architecture.md",
+      "sha256": "6c9686ca25324dc67fdc68db78d01f1fc4c40ea073cb7f709bf773ab8281ffa6"
+    }
+  ],
+  "attempt_file": "correction-results-20261102T231348-70847299.json"
+}

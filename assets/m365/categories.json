@@ -1,0 +1,19 @@
+{
+  "format_version": 1,
+  "categories": [
+    {"id": "dashboard", "label": "Dashboard", "description": "Status summaries, saved shortcuts, recent activity and service overviews.", "icon": "◫", "order": 10, "kind": "view"},
+    {"id": "companies", "label": "Companies", "description": "Company selection, verified tenant identity and connection context.", "icon": "🏢", "order": 20, "kind": "view"},
+    {"id": "general", "label": "General", "description": "Common administrative diagnostics and reusable cross-service health checks.", "icon": "🧭", "order": 30, "kind": "operations"},
+    {"id": "entra-id", "label": "Entra ID", "description": "Users, authentication, groups, applications, roles and identity diagnostics.", "icon": "👤", "order": 40, "kind": "operations"},
+    {"id": "exchange-online", "label": "Exchange Online", "description": "Mailboxes, distribution groups, mail flow, delegates and permissions.", "icon": "✉", "order": 50, "kind": "operations"},
+    {"id": "licensing", "label": "Licensing", "description": "Subscriptions, assignments, service plans, usage and licensing diagnostics.", "icon": "🔑", "order": 60, "kind": "operations"},
+    {"id": "teams", "label": "Teams", "description": "Teams configuration, memberships, policies, meetings and diagnostics.", "icon": "👥", "order": 70, "kind": "operations"},
+    {"id": "sharepoint", "label": "SharePoint", "description": "Sites, permissions, storage, sharing and diagnostics.", "icon": "🌐", "order": 80, "kind": "operations"},
+    {"id": "onedrive", "label": "OneDrive", "description": "User storage, sync information, sharing, permissions and diagnostics.", "icon": "☁", "order": 90, "kind": "operations"},
+    {"id": "intune", "label": "Intune", "description": "Managed devices, enrollment, compliance and configuration policies.", "icon": "💻", "order": 100, "kind": "operations"},
+    {"id": "security", "label": "Security", "description": "Security posture, Defender, Purview, DLP, retention and sensitivity labels.", "icon": "🛡", "order": 110, "kind": "operations"},
+    {"id": "reports", "label": "Reports", "description": "Read-only audit reports, exports, summaries and historical reporting.", "icon": "📊", "order": 120, "kind": "operations"},
+    {"id": "workflows", "label": "Workflows", "description": "Guided orchestration of individually validated and authorized operations.", "icon": "⇄", "order": 130, "kind": "workflow"},
+    {"id": "other", "label": "Other", "description": "Approved miscellaneous M365 utilities with no suitable primary category.", "icon": "🧰", "order": 140, "kind": "operations"}
+  ]
+}

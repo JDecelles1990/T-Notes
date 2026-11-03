@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tnotes.invalid/m365/0.3.0/schemas/execution-result.schema.json",
+  "title": "T-Notes proposed execution-result",
+  "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/result",
+  "description": "Host adapter envelope; logical operation_exit_code is independent from persistent worker process exit."
+}

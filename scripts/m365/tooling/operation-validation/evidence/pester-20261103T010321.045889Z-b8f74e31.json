@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "pester": "3.4.0",
+  "powershell": "7.6.9",
+  "passed": 2,
+  "failed": 0
+}

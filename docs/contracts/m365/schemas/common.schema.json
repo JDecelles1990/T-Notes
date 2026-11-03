@@ -1,0 +1,2482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json",
+  "title": "T-Notes proposed common",
+  "$defs": {
+    "version": {
+      "const": "0.3.0"
+    },
+    "guid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "upn": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 254,
+      "pattern": "^[^\\s@\\x00-\\x1f*?]+@[^\\s@\\x00-\\x1f*?]+\\.[^\\s@\\x00-\\x1f*?]+$"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "path": {
+      "type": "string",
+      "maxLength": 240,
+      "pattern": "^(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+(?:\\.[A-Za-z0-9_-]+)+$"
+    },
+    "script_id": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^M365\\.[A-Z][A-Z0-9_]*\\.[A-Z][A-Z0-9_]*$"
+    },
+    "risk": {
+      "enum": [
+        "read_only",
+        "write",
+        "high_impact"
+      ]
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "INVALID_PARAMETER",
+            "AUTH_REQUIRED",
+            "TENANT_MISMATCH",
+            "ACCOUNT_MISMATCH",
+            "ACCESS_DENIED",
+            "TARGET_NOT_FOUND",
+            "MAILBOX_NOT_FOUND",
+            "MODULE_MISSING",
+            "API_THROTTLED",
+            "SERVICE_UNAVAILABLE",
+            "CONNECTION_FAILED",
+            "TIMEOUT",
+            "CANCELLED",
+            "OUTPUT_LIMIT",
+            "CONTRACT_VIOLATION",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "retry_after_seconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 3600
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "upn"
+            },
+            "value": {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "object_id"
+            },
+            "value": {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z0-9]{0,63}$"
+        },
+        "type": {
+          "enum": [
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "string_array"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "min_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "max_length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "default": {
+          "type": [
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "array"
+          ]
+        },
+        "allowed_values": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "min_items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "item_min_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "item_max_length": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "required",
+        "description"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "allowed_values": {
+                "items": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "item_max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "item_min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "maximum"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "minimum"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "integer"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "integer"
+              },
+              "allowed_values": {
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "minimum": {
+                "type": "integer"
+              },
+              "maximum": {
+                "type": "integer"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "item_max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "item_min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_length"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "number"
+              },
+              "allowed_values": {
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "item_max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "item_min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_length"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "boolean"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "boolean"
+              },
+              "allowed_values": {
+                "items": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "item_max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "item_min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "maximum"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_items"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "minimum"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string_array"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "maxItems": 1000
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "allowed_values"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "maximum"
+                  ]
+                },
+                {
+                  "required": [
+                    "min_length"
+                  ]
+                },
+                {
+                  "required": [
+                    "minimum"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9.]{0,127}$"
+        },
+        "minimum_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        }
+      },
+      "required": [
+        "name",
+        "minimum_version"
+      ]
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "script_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/script_id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "subcategory": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "maxItems": 20
+        },
+        "script_path": {
+          "allOf": [
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/path"
+            },
+            {
+              "pattern": "\\.ps1$"
+            }
+          ]
+        },
+        "script_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "script_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "supported_powershell": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "edition": {
+              "const": "Core"
+            },
+            "minimum_version": {
+              "type": "string",
+              "pattern": "^7\\.\\d+\\.\\d+$"
+            }
+          },
+          "required": [
+            "edition",
+            "minimum_version"
+          ]
+        },
+        "required_modules": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/module"
+          },
+          "maxItems": 10
+        },
+        "execution_mode": {
+          "const": "isolated_worker"
+        },
+        "connection_requirements": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "Graph",
+              "ExchangeOnline"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "graph_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 30,
+          "uniqueItems": true
+        },
+        "required_roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "service": {
+                "enum": [
+                  "Graph",
+                  "ExchangeOnline"
+                ]
+              },
+              "any_of": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "uniqueItems": true,
+                "minItems": 1,
+                "maxItems": 10
+              }
+            },
+            "required": [
+              "service",
+              "any_of"
+            ]
+          },
+          "maxItems": 30
+        },
+        "risk": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/risk"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/parameter"
+          },
+          "maxItems": 30
+        },
+        "expected_output_schema": {
+          "type": "string",
+          "pattern": "^schemas/[a-z][a-z0-9-]*\\.schema\\.json#/\\$defs/[a-z_]+$"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        },
+        "cancellation_support": {
+          "enum": [
+            "cooperative_then_terminate",
+            "terminate_only"
+          ]
+        },
+        "data_sensitivity": {
+          "enum": [
+            "internal",
+            "customer_personal",
+            "restricted"
+          ]
+        },
+        "approval_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "explicit_run": {
+              "const": true
+            },
+            "confirmation_required": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "explicit_run",
+            "confirmation_required"
+          ]
+        },
+        "target_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accepted_kinds": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "upn",
+                  "object_id"
+                ]
+              },
+              "uniqueItems": true,
+              "minItems": 1,
+              "maxItems": 2
+            },
+            "requires_resolved_identity": {
+              "type": "boolean"
+            },
+            "output_binding": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "object_id_field": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                },
+                "upn_field": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                }
+              },
+              "required": [
+                "object_id_field",
+                "upn_field"
+              ]
+            }
+          },
+          "required": [
+            "accepted_kinds",
+            "requires_resolved_identity",
+            "output_binding"
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "script_id",
+        "title",
+        "description",
+        "category",
+        "script_path",
+        "script_version",
+        "script_sha256",
+        "supported_powershell",
+        "required_modules",
+        "execution_mode",
+        "connection_requirements",
+        "graph_scopes",
+        "required_roles",
+        "risk",
+        "parameters",
+        "expected_output_schema",
+        "timeout_seconds",
+        "cancellation_support",
+        "data_sensitivity",
+        "approval_requirements",
+        "target_policy"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "risk": {
+                "enum": [
+                  "write",
+                  "high_impact"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "approval_requirements": {
+                "properties": {
+                  "confirmation_required": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "correlation_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "script_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/script_id"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "admin_identity_ref": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "target": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/target"
+        },
+        "ticket_context": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "ticket_id": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]{0,18}$"
+                }
+              },
+              "required": [
+                "ticket_id"
+              ]
+            }
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "maxProperties": 30
+        },
+        "requested_execution_mode": {
+          "const": "isolated_worker"
+        },
+        "authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "confirmation_ref": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+                }
+              ]
+            }
+          },
+          "required": [
+            "confirmation_ref"
+          ]
+        },
+        "release_binding": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/release_binding"
+        }
+      },
+      "required": [
+        "contract_version",
+        "correlation_id",
+        "script_id",
+        "company_id",
+        "tenant_id",
+        "admin_identity_ref",
+        "session_generation",
+        "target",
+        "ticket_context",
+        "parameters",
+        "requested_execution_mode",
+        "authorization",
+        "release_binding"
+      ]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "correlation_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "script_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/script_id"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+            }
+          ]
+        },
+        "context_state": {
+          "enum": [
+            "verified",
+            "unverified"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "worker",
+            "host"
+          ]
+        },
+        "operation_outcome": {
+          "enum": [
+            "not_started",
+            "succeeded",
+            "partially_succeeded",
+            "failed",
+            "unknown"
+          ]
+        },
+        "status": {
+          "enum": [
+            "success",
+            "partial",
+            "error",
+            "cancelled",
+            "timeout"
+          ]
+        },
+        "started_at": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+        },
+        "completed_at": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 305000
+        },
+        "data": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/warning"
+          },
+          "maxItems": 50
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/error"
+          },
+          "maxItems": 50
+        },
+        "diagnostics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "stage": {
+              "enum": [
+                "preflight",
+                "authentication",
+                "dispatch",
+                "capture",
+                "validation",
+                "completion"
+              ]
+            },
+            "attempt_count": {
+              "const": 1
+            },
+            "worker_exit_code": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "output_truncated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "stage"
+          ]
+        },
+        "release_binding": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/release_binding"
+        },
+        "admin_identity_ref": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "target": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/target"
+        },
+        "operation_exit_code": {
+          "enum": [
+            0,
+            2,
+            10,
+            20,
+            30,
+            40,
+            50
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "correlation_id",
+        "script_id",
+        "company_id",
+        "tenant_id",
+        "context_state",
+        "origin",
+        "operation_outcome",
+        "status",
+        "started_at",
+        "completed_at",
+        "duration_ms",
+        "data",
+        "warnings",
+        "errors",
+        "release_binding",
+        "admin_identity_ref",
+        "session_generation",
+        "target",
+        "operation_exit_code"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "context_state": {
+                "const": "unverified"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tenant_id": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "tenant_id": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "success"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "origin": {
+                "const": "worker"
+              },
+              "context_state": {
+                "const": "verified"
+              },
+              "operation_outcome": {
+                "const": "succeeded"
+              },
+              "data": {
+                "type": "object"
+              },
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "partial"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "origin": {
+                "const": "worker"
+              },
+              "context_state": {
+                "const": "verified"
+              },
+              "operation_outcome": {
+                "const": "partially_succeeded"
+              },
+              "data": {
+                "type": "object",
+                "minProperties": 1
+              }
+            },
+            "anyOf": [
+              {
+                "properties": {
+                  "warnings": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "errors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "error",
+                  "cancelled",
+                  "timeout"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "null"
+              },
+              "errors": {
+                "minItems": 1
+              },
+              "operation_outcome": {
+                "enum": [
+                  "not_started",
+                  "failed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "origin": {
+                "const": "host"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "type": "null"
+              },
+              "status": {
+                "enum": [
+                  "error",
+                  "cancelled",
+                  "timeout"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "timeout"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "errors": {
+                "contains": {
+                  "properties": {
+                    "code": {
+                      "const": "TIMEOUT"
+                    }
+                  }
+                }
+              },
+              "operation_outcome": {
+                "enum": [
+                  "not_started",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "cancelled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "errors": {
+                "contains": {
+                  "properties": {
+                    "code": {
+                      "const": "CANCELLED"
+                    }
+                  }
+                }
+              },
+              "operation_outcome": {
+                "enum": [
+                  "not_started",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "success"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_exit_code": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "partial"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_exit_code": {
+                "const": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "cancelled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_exit_code": {
+                "const": 40
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "timeout"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_exit_code": {
+                "const": 40
+              }
+            }
+          }
+        }
+      ]
+    },
+    "company": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "tenant_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_domain": {
+          "type": "string",
+          "maxLength": 253,
+          "pattern": "^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\\.[a-z]{2,63}$"
+        },
+        "administrator_upn": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+        },
+        "technician_notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024
+        },
+        "preferences": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "default_category": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "notes_panel_collapsed": {
+              "type": "boolean"
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [
+        "contract_version",
+        "company_id",
+        "display_name",
+        "tenant_id",
+        "tenant_domain",
+        "administrator_upn"
+      ]
+    },
+    "user_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "display_name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        },
+        "user_principal_name": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+        },
+        "account_enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "user_type": {
+          "enum": [
+            "Member",
+            "Guest",
+            null
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "display_name",
+        "user_principal_name",
+        "account_enabled",
+        "user_type"
+      ]
+    },
+    "user_licenses": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_user_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sku_id": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+              },
+              "sku_part_number": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "service_plans": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "service_plan_id": {
+                      "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+                    },
+                    "service_plan_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "provisioning_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    }
+                  },
+                  "required": [
+                    "service_plan_id",
+                    "service_plan_name",
+                    "provisioning_status"
+                  ]
+                },
+                "maxItems": 100
+              }
+            },
+            "required": [
+              "sku_id",
+              "sku_part_number",
+              "service_plans"
+            ]
+          },
+          "maxItems": 100
+        },
+        "returned_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "target_user_id",
+        "licenses",
+        "returned_count",
+        "truncated"
+      ]
+    },
+    "user_signins": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_user_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "lookback_start": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "created_at": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+              },
+              "app_display_name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 256
+              },
+              "success": {
+                "type": "boolean"
+              },
+              "error_code": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "created_at",
+              "app_display_name",
+              "success",
+              "error_code"
+            ]
+          },
+          "maxItems": 50
+        },
+        "returned_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "target_user_id",
+        "lookback_start",
+        "events",
+        "returned_count",
+        "truncated"
+      ]
+    },
+    "mailbox_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_user_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "mailbox_exists": {
+          "const": true
+        },
+        "recipient_type_details": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "primary_smtp_address": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+        },
+        "total_item_size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "prohibit_send_quota_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "required": [
+        "target_user_id",
+        "mailbox_exists",
+        "recipient_type_details",
+        "primary_smtp_address",
+        "total_item_size_bytes",
+        "prohibit_send_quota_bytes"
+      ]
+    },
+    "release_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "script_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "script_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "output_schema_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "script_version",
+        "script_sha256",
+        "manifest_sha256",
+        "output_schema_sha256"
+      ]
+    },
+    "connection_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "service": {
+          "enum": [
+            "Graph",
+            "ExchangeOnline"
+          ]
+        },
+        "connection_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "owner_worker_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "admin_identity_ref": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verified_account_upn": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+        },
+        "state": {
+          "enum": [
+            "disconnected",
+            "connecting",
+            "verified",
+            "expired",
+            "mismatch",
+            "error"
+          ]
+        },
+        "verified_at": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+            }
+          ]
+        },
+        "expires_at": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+            }
+          ]
+        },
+        "graph_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "uniqueItems": true,
+          "maxItems": 30
+        },
+        "effective_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "uniqueItems": true,
+          "maxItems": 30
+        }
+      },
+      "required": [
+        "service",
+        "connection_id",
+        "owner_worker_id",
+        "company_id",
+        "tenant_id",
+        "admin_identity_ref",
+        "session_generation",
+        "verified_account_upn",
+        "state",
+        "verified_at",
+        "expires_at",
+        "graph_scopes",
+        "effective_roles"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "verified"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "verified_at": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "invocation_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "correlation_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "script_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/script_id"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "admin_identity_ref": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "target": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/target"
+        },
+        "ticket_context": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "ticket_id": {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]{0,18}$"
+                }
+              },
+              "required": [
+                "ticket_id"
+              ]
+            }
+          ]
+        },
+        "release_binding": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/release_binding"
+        },
+        "verified_account_upn": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/upn"
+        },
+        "connections": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/connection_state"
+          },
+          "minItems": 1,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "contract_version",
+        "correlation_id",
+        "script_id",
+        "company_id",
+        "tenant_id",
+        "admin_identity_ref",
+        "session_generation",
+        "target",
+        "ticket_context",
+        "release_binding",
+        "verified_account_upn",
+        "connections"
+      ]
+    },
+    "operation_return": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "success",
+            "partial",
+            "error",
+            "cancelled",
+            "timeout"
+          ]
+        },
+        "operation_outcome": {
+          "enum": [
+            "not_started",
+            "succeeded",
+            "partially_succeeded",
+            "failed",
+            "unknown"
+          ]
+        },
+        "data": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/warning"
+          },
+          "maxItems": 50
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/error"
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "status",
+        "operation_outcome",
+        "data",
+        "warnings",
+        "errors"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "success"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_outcome": {
+                "enum": [
+                  "succeeded"
+                ]
+              },
+              "data": {
+                "type": "object"
+              },
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "partial"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_outcome": {
+                "enum": [
+                  "partially_succeeded"
+                ]
+              },
+              "data": {
+                "type": "object"
+              }
+            },
+            "anyOf": [
+              {
+                "properties": {
+                  "warnings": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "errors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "error"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_outcome": {
+                "enum": [
+                  "failed",
+                  "not_started",
+                  "unknown"
+                ]
+              },
+              "data": {
+                "type": "null"
+              },
+              "errors": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "cancelled"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_outcome": {
+                "enum": [
+                  "not_started",
+                  "unknown"
+                ]
+              },
+              "data": {
+                "type": "null"
+              },
+              "errors": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "code": {
+                      "const": "CANCELLED"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "timeout"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "operation_outcome": {
+                "enum": [
+                  "not_started",
+                  "unknown"
+                ]
+              },
+              "data": {
+                "type": "null"
+              },
+              "errors": {
+                "minItems": 1,
+                "contains": {
+                  "properties": {
+                    "code": {
+                      "const": "TIMEOUT"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "disabled_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "INVALID_MANIFEST",
+            "UNTRUSTED_EXECUTABLE",
+            "UNSUPPORTED_RUNTIME",
+            "MODULE_MISSING",
+            "TARGET_REQUIRED",
+            "TARGET_KIND_UNSUPPORTED",
+            "TARGET_UNRESOLVED",
+            "CONNECTION_UNVERIFIED",
+            "TENANT_MISMATCH",
+            "ACCOUNT_MISMATCH",
+            "STALE_CONTEXT",
+            "SCOPE_MISSING",
+            "ROLE_UNVERIFIED",
+            "INVALID_PARAMETER",
+            "CONFIRMATION_REQUIRED",
+            "HIGH_IMPACT_DISABLED"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eligible": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/disabled_reason"
+          },
+          "maxItems": 30
+        }
+      },
+      "required": [
+        "eligible",
+        "reasons"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "eligible": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reasons": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "reasons": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "trust_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trusted": {
+          "type": "boolean"
+        },
+        "release_binding": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/release_binding"
+        },
+        "inventory_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "approval_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "checked_at": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "NOT_APPROVED",
+              "HASH_MISMATCH",
+              "PATH_UNSAFE",
+              "DEPENDENCY_MISMATCH",
+              "BYTES_NOT_PINNED"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 5
+        }
+      },
+      "required": [
+        "trusted",
+        "release_binding",
+        "inventory_sha256",
+        "approval_ref",
+        "checked_at",
+        "reason_codes"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "trusted": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "approval_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason_codes": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "reason_codes": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "history_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "correlation_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "script_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/script_id"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "tenant_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+            }
+          ]
+        },
+        "admin_identity_ref": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operation_outcome": {
+          "enum": [
+            "not_started",
+            "succeeded",
+            "partially_succeeded",
+            "failed",
+            "unknown"
+          ]
+        },
+        "workflow_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+            }
+          ]
+        },
+        "release_binding": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/release_binding"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "rejected",
+            "success",
+            "partial",
+            "error",
+            "cancelled",
+            "timeout"
+          ]
+        },
+        "stage": {
+          "enum": [
+            "preflight",
+            "authentication",
+            "dispatch",
+            "capture",
+            "validation",
+            "completion"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "host",
+            "worker"
+          ]
+        },
+        "requested_at": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+        },
+        "started_at": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+            }
+          ]
+        },
+        "completed_at": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+            }
+          ]
+        },
+        "duration_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "codes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+          },
+          "maxItems": 50
+        },
+        "provenance": {
+          "enum": [
+            "synthetic",
+            "runtime"
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "correlation_id",
+        "script_id",
+        "company_id",
+        "tenant_id",
+        "admin_identity_ref",
+        "session_generation",
+        "operation_outcome",
+        "workflow_id",
+        "release_binding",
+        "status",
+        "stage",
+        "origin",
+        "requested_at",
+        "started_at",
+        "completed_at",
+        "duration_ms",
+        "codes",
+        "provenance"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "queued"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "started_at": {
+                "type": "null"
+              },
+              "completed_at": {
+                "type": "null"
+              },
+              "duration_ms": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "running"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "started_at": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+              },
+              "completed_at": {
+                "type": "null"
+              },
+              "duration_ms": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "rejected",
+                  "success",
+                  "partial",
+                  "error",
+                  "cancelled",
+                  "timeout"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "completed_at": {
+                "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/utc"
+              },
+              "duration_ms": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cancel_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "message_type": {
+          "const": "cancel"
+        },
+        "contract_version": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/version"
+        },
+        "correlation_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "company_id": {
+          "$ref": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json#/$defs/guid"
+        },
+        "session_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reason": {
+          "enum": [
+            "user_cancel",
+            "deadline",
+            "context_change",
+            "quit"
+          ]
+        }
+      },
+      "required": [
+        "message_type",
+        "contract_version",
+        "correlation_id",
+        "company_id",
+        "session_generation",
+        "reason"
+      ]
+    }
+  },
+  "description": "Normative shared definitions, including adapter-only ABI state; all cross-object proof requires offline semantic checks and future runtime enforcement."
+}

@@ -1,0 +1,354 @@
+{
+  "protected_at_task_entry": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "6d02b9e5e215940d035495e08202deed81d50a243563a83d1f8956a5a2fa08fc"
+    },
+    {
+      "path": "docs/decisions/0007-always-on-top-mini-hud.md",
+      "sha256": "04531505ff92043eea275e95347447433c7d9dc6588b2b31c66c170de976441b"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "sha256": "fd8bef503218919a495fc6fea9eb8209f5078dc4d21ca130a659881c6030fe03"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "sha256": "324d60c5f628b128460a4e61a94beca5dcc43e9954b8f34eb0e8d6d0526a52d2"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "sha256": "87b1b9c43c9b1533856c0871cd7fb5b9247d725e100dcca5a90af9ff3f18b677"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "sha256": "aa91f9700e8dcd13f93633f53a93ab20dbbc6d52d8bd588f3585eb2da6a0556c"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "sha256": "e8def96d63d9a2abb16ed5dc7da2999c2cda91836ecbf632f75095a265b8a3b8"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "sha256": "b0b810970e1ccc1c88fc4ec58b54a88b1d10e9cb673f9755eef6130b2560ad5e"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "sha256": "1f86a36cbabaea31d8bf9fd2355db10dd796af09782a1817f2bed01b9a10bd1d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "sha256": "1f498afa9c4b68098e6e67aa00d36788ae6afe7b1a7d0e9e31bb0c7e37d74b2f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "sha256": "ddf4f9f7f1caef058190278cce4a49dac1439fe1a60cf10774b903cd1c45570d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "sha256": "e5a0bcc140e42a8fdc0b47ed1cadca4689f2756d90e84a3230fb1a43ea215165"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "sha256": "742dbd72d609426bcb89c1de05aac170cb0e0c0eaa108c4b1574e61cd830b725"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "sha256": "73128f1c3efd318ba5399c936a28babd1ba39e0353779ed40821017ab986a750"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "sha256": "58b28ba90e4e0cca195bf35ac86e0e0df9f2ea061e5d79181d82d66cdb643d0f"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    },
+    {
+      "path": "GEMINI.md",
+      "sha256": "c3ec445e4f18b255ad55987effc7a94e5e3d6b76fdc16c3f7dba6dfb28e4ef04"
+    }
+  ],
+  "branch": "main",
+  "head": "3b8485fa874c7f5a4506089d0189270d72743da7",
+  "applicable_instructions": [
+    "AGENTS.md"
+  ],
+  "inspection": "Static only; no application or tenant operations",
+  "inputs": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "6d02b9e5e215940d035495e08202deed81d50a243563a83d1f8956a5a2fa08fc"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "sha256": "57bb9a01d49c550547dc28108d020c843a5ded9ca01f26e2b8c2a983373ac1eb"
+    },
+    {
+      "path": "GEMINI.md",
+      "sha256": "c3ec445e4f18b255ad55987effc7a94e5e3d6b76fdc16c3f7dba6dfb28e4ef04"
+    },
+    {
+      "path": "README.md",
+      "sha256": "cf539daf66282ebbaf6fdbf0f03e66699ade393f842019e82e66c60afeb0fb32"
+    },
+    {
+      "path": "docs/architecture/image-pipeline.md",
+      "sha256": "ad28d1a211b1c5ad748bfa34136637f321dd2e670cff12c81b333957a2b36211"
+    },
+    {
+      "path": "docs/architecture/system-overview.md",
+      "sha256": "8ffc2ba02c7c616ad5de4158ed72cb80e269d1b8541d52a6d5bfd76ffe478b60"
+    },
+    {
+      "path": "docs/database/schema.md",
+      "sha256": "7dabe2850a5434f9095c73efb984836005a4a5d44545feee1f83595568a7f15d"
+    },
+    {
+      "path": "docs/features/editor-and-formatting.md",
+      "sha256": "20223bcb76fb46655021d2fec52c7124be63533aa60572f5a10bafb1e75b4cb7"
+    },
+    {
+      "path": "docs/features/tab-lifecycle.md",
+      "sha256": "6f6ca4ef4f2e0509b91eb32af0baef783df2678064b94ee175bf4623fb9ae84c"
+    },
+    {
+      "path": "docs/index.md",
+      "sha256": "3f7f0470a5e7fcd2870e18d186dc816ac2b6e648b5f4804ed56d7546cb846e64"
+    },
+    {
+      "path": "src/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/config.py",
+      "sha256": "db8527747171e214ac668a40835951d02f7ad6fb159a51922f479ae761ffa446"
+    },
+    {
+      "path": "src/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/core/constants.py",
+      "sha256": "9cddd610cb86fc13f8fa31e90e95b63113e638054510cf028216a1ac6e111081"
+    },
+    {
+      "path": "src/core/debouncer.py",
+      "sha256": "1d69a0b9f32fd7d9a10f27d572bd8c45ea59095d24f9d1249d1aed47f8e83aa0"
+    },
+    {
+      "path": "src/core/global_hotkey.py",
+      "sha256": "e169722150800bebdd750e06abc874377471c0826c270b2c7d09d3592d7d852b"
+    },
+    {
+      "path": "src/database/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/database/connection.py",
+      "sha256": "fcc203b280981d2542665fa26d72cb8e437b8ece67a95f979d20d2d7f618ca9c"
+    },
+    {
+      "path": "src/database/migrations.py",
+      "sha256": "1c7790364bd5a467ac838c814c5551e05e97a94c6ae6da217fe8ca2feea968ee"
+    },
+    {
+      "path": "src/database/schema.sql",
+      "sha256": "bde3632e88ea01757e13aabc6b7c3beda03414c03ed3d51f1ac4ac16dffd16f4"
+    },
+    {
+      "path": "src/main.py",
+      "sha256": "27fad1ff3833c178895a136e793288f4df8f7b71420dfb30a0ad0c44844b3cf5"
+    },
+    {
+      "path": "src/repositories/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/repositories/image_repository.py",
+      "sha256": "b1b8437a1de9b059fc3239eb9276e1d549acdb8f73c84e40104c989561710b6e"
+    },
+    {
+      "path": "src/repositories/scratchpad_repository.py",
+      "sha256": "f399b0a2078587eda6742a099f90a99eb503c9c6e98cf7b1a99d6201bd8f4410"
+    },
+    {
+      "path": "src/repositories/session_repository.py",
+      "sha256": "2544fe8b9aa55b4cf4137198771fb422ec89a3f2a22f8e7ab3afab846a65f8fe"
+    },
+    {
+      "path": "src/services/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/services/image_service.py",
+      "sha256": "29f06d075cf6ae046ccf67eeb3924701e74c8230198329c27fd8dfe2034cbff1"
+    },
+    {
+      "path": "src/services/scratchpad_service.py",
+      "sha256": "ae67e205121d158fdd89d2c7af241080817dd8073fa991c2f470743c3dd5d3a5"
+    },
+    {
+      "path": "src/services/session_service.py",
+      "sha256": "c9ba4507988b2025cfcc336f6e0f20ceecf0eb86d0b90f0de57e828854b198ca"
+    },
+    {
+      "path": "src/services/stopwatch_service.py",
+      "sha256": "daa17cd8c67bc5eca71dc03cd6012c5e6f2456f09d9c973b443bfbf6142a8905"
+    },
+    {
+      "path": "src/ui/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/components/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/components/editor.py",
+      "sha256": "22e5eba14279c40c6d50bd69c89dfb05c05567366d09ce2cb2f77f4aed59c8b0"
+    },
+    {
+      "path": "src/ui/components/history_drawer.py",
+      "sha256": "e6863d3b6ed96b18126a3786184bd7ee3b251cc4ff08cb0c6769532806171aea"
+    },
+    {
+      "path": "src/ui/components/stopwatch_widget.py",
+      "sha256": "e8c65a5809e6fd26072b04a165392ac191cbda7fc1a5c78fe63574e7a383067f"
+    },
+    {
+      "path": "src/ui/components/system_tray.py",
+      "sha256": "e50fa71806bc14eef666a887e10ba54043d8a2755cf5d249f6ddf2fab2247c8f"
+    },
+    {
+      "path": "src/ui/components/tab_widget.py",
+      "sha256": "36d576d4362f85c1bdf65a274bf9c906c008b06dbcaed4a18fc41442fdc32cf2"
+    },
+    {
+      "path": "src/ui/components/toolbar.py",
+      "sha256": "eb137e64e09eda15aca7ec25002f519dc32ef04437b45523db256d001b450984"
+    },
+    {
+      "path": "src/ui/dialogs/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/dialogs/edit_ticket_dialog.py",
+      "sha256": "6a953e734b4c27c3b03c0148aff158a08374d40aa50f0289a2a2cc6fa38bc0d2"
+    },
+    {
+      "path": "src/ui/dialogs/settings_dialog.py",
+      "sha256": "73ae18ad0b465ec9a97b1056f362a13865d793907e393b42a730167c9bd6678c"
+    },
+    {
+      "path": "src/ui/main_window.py",
+      "sha256": "05749e7725f6b763dbc76be03bba17201414e7ce2a1a328ddbc959da7fb85bc4"
+    },
+    {
+      "path": "tests/conftest.py",
+      "sha256": "27dc54d93654c0cd5107d532a7ac5eaaeebe9f334408266ca7e2be08597c29c9"
+    },
+    {
+      "path": "tests/test_database.py",
+      "sha256": "12b3a3546b365e6d15ec948d85b0ae234a454bbaab9db7e06a10c07f2272364e"
+    },
+    {
+      "path": "tests/test_image_service.py",
+      "sha256": "db17e1447c06ee3cd7909b88fd97dfb3dece59fce11f893c53e6b18c6de84377"
+    },
+    {
+      "path": "tests/test_scratchpad_service.py",
+      "sha256": "51fb8b6144e1422652d55dbb629c3990bbd2c72fbf20b89d649cba92f5e27594"
+    },
+    {
+      "path": "tests/test_stopwatch_service.py",
+      "sha256": "15b2476682c65755022c8aa38fbd15e620a1ab49850783fbc7779ea937b40d5f"
+    },
+    {
+      "path": "tests/test_ui_integration.py",
+      "sha256": "258fa11a6786ac0a8c12d2d1434e89c6f9fcf71791da503973230bf201b259ff"
+    }
+  ],
+  "prior_drafts": [
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "sha256": "73128f1c3efd318ba5399c936a28babd1ba39e0353779ed40821017ab986a750"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "sha256": "58b28ba90e4e0cca195bf35ac86e0e0df9f2ea061e5d79181d82d66cdb643d0f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "sha256": "fd8bef503218919a495fc6fea9eb8209f5078dc4d21ca130a659881c6030fe03"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "sha256": "324d60c5f628b128460a4e61a94beca5dcc43e9954b8f34eb0e8d6d0526a52d2"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "sha256": "87b1b9c43c9b1533856c0871cd7fb5b9247d725e100dcca5a90af9ff3f18b677"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "sha256": "aa91f9700e8dcd13f93633f53a93ab20dbbc6d52d8bd588f3585eb2da6a0556c"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "sha256": "e8def96d63d9a2abb16ed5dc7da2999c2cda91836ecbf632f75095a265b8a3b8"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "sha256": "b0b810970e1ccc1c88fc4ec58b54a88b1d10e9cb673f9755eef6130b2560ad5e"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "sha256": "1f86a36cbabaea31d8bf9fd2355db10dd796af09782a1817f2bed01b9a10bd1d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "sha256": "1f498afa9c4b68098e6e67aa00d36788ae6afe7b1a7d0e9e31bb0c7e37d74b2f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "sha256": "ddf4f9f7f1caef058190278cce4a49dac1439fe1a60cf10774b903cd1c45570d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "sha256": "e5a0bcc140e42a8fdc0b47ed1cadca4689f2756d90e84a3230fb1a43ea215165"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "sha256": "742dbd72d609426bcb89c1de05aac170cb0e0c0eaa108c4b1574e61cd830b725"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="103" time="18.638" timestamp="2026-11-02T19:04:38.950814-05:00" hostname="🌈💎👻"><testcase classname="tests.test_m365_catalog" name="test_exact_category_taxonomy_unique_order_and_empty_production_catalog" time="0.002" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[id-general]" time="0.017" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[order-30]" time="0.013" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[label-General]" time="0.012" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[id-Bad ID]" time="0.013" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[order-True]" time="0.015" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[icon-]" time="0.013" /><testcase classname="tests.test_m365_catalog" name="test_invalid_category_metadata_rejected[kind-executable]" time="0.013" /><testcase classname="tests.test_m365_catalog" name="test_search_filters_and_single_authoritative_definition" time="0.929"><failure message="src.services.m365_catalog_service.CatalogError: Unknown or invalid operation ID.">self = &lt;src.services.m365_catalog_service.M365CatalogService object at 0x0000026FBD30EE50&gt;
+operation_id = 'M365.TEST.CATALOG'
+
+    def operation(self, operation_id):
+        try:
+&gt;           return self._operations[operation_id]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'M365.TEST.CATALOG'
+
+src\services\m365_catalog_service.py:293: KeyError
+
+The above exception was the direct cause of the following exception:
+
+registration = (&lt;function registration.&lt;locals&gt;.build at 0x0000026FBCC0DBC0&gt;, {'contract_version': '0.3.0-proposed.1', 'script_id': '...d_single0/metadata'), WindowsPath('C:/Dev/T-Notes/.cache/category-focused-01/test_search_filters_and_single0/library'))
+
+    def test_search_filters_and_single_authoritative_definition(registration):
+        build, manifest, _, _ = registration
+        second = copy.deepcopy(manifest)
+        second.update(script_id="M365.TEST.ARCHIVED", title="Historic inspection")
+        service = build([manifest, second], lambda entries: (entries[0].update(category_ids=["general", "other"]),
+                                                             entries[1].update(lifecycle="archived")))
+&gt;       operation = service.operation(manifest["script_id"])
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_m365_catalog.py:87: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;src.services.m365_catalog_service.M365CatalogService object at 0x0000026FBD30EE50&gt;
+operation_id = 'M365.TEST.CATALOG'
+
+    def operation(self, operation_id):
+        try:
+            return self._operations[operation_id]
+        except KeyError as exc:
+&gt;           raise CatalogError("Unknown or invalid operation ID.") from exc
+E           src.services.m365_catalog_service.CatalogError: Unknown or invalid operation ID.
+
+src\services\m365_catalog_service.py:295: CatalogError</failure></testcase><testcase classname="tests.test_m365_catalog" name="test_duplicate_ids_reject_all_conflicting_entries" time="0.218" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories0]" time="0.219" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories1]" time="0.213" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories2]" time="0.220" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories3]" time="0.233" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories4]" time="0.220" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories5]" time="0.216" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories6]" time="0.220" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories7]" time="0.215" /><testcase classname="tests.test_m365_catalog" name="test_bad_category_references_never_fall_back_to_other[categories8]" time="0.218" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;0]" time="0.219" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;1]" time="0.226" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;2]" time="0.216" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;3]" time="0.228" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;4]" time="0.226" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;5]" time="0.216" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;6]" time="0.218" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;7]" time="0.224" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;8]" time="0.224" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;9]" time="0.225" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;10]" time="0.244" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;11]" time="0.277" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;12]" time="0.227" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;13]" time="0.325" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;14]" time="0.245" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;15]" time="0.217" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;16]" time="0.258" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;17]" time="0.220" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;18]" time="0.225" /><testcase classname="tests.test_m365_catalog" name="test_invalid_manifests_quarantined_before_presentation[&lt;lambda&gt;19]" time="0.219" /><testcase classname="tests.test_m365_catalog" name="test_registration_path_rejection[../outside.json]" time="0.254" /><testcase classname="tests.test_m365_catalog" name="test_registration_path_rejection[C:/outside.json]" time="0.271" /><testcase classname="tests.test_m365_catalog" name="test_registration_path_rejection[general\\bad.json]" time="0.228" /><testcase classname="tests.test_m365_catalog" name="test_registration_path_rejection[%2e%2e/file.json]" time="0.229" /><testcase classname="tests.test_m365_catalog" name="test_registration_path_rejection[missing.json]" time="0.262" /><testcase classname="tests.test_m365_catalog" name="test_manifest_hash_mismatch_and_duplicate_json_keys" time="0.233" /><testcase classname="tests.test_m365_catalog" name="test_schema_pins_reject_drift_without_remote_resolution" time="0.021" /><testcase classname="tests.test_m365_catalog" name="test_all_navigation_ids_keyboard_and_empty_states" time="0.151" /><testcase classname="tests.test_m365_catalog" name="test_unapproved_metadata_details_search_and_no_dispatch" time="0.240"><failure message="assert 0 == 1&#10; +  where 0 = &lt;built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40&gt;()&#10; +    where &lt;built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40&gt; = &lt;PySide6.QtWidgets.QListWidget(0x26fbb2cd220) at 0x0000026FBD17AF40&gt;.count&#10;[+1 more line; full report in element text]">registration = (&lt;function registration.&lt;locals&gt;.build at 0x0000026FBCF1AB90&gt;, {'contract_version': '0.3.0-proposed.1', 'script_id': '...ta_detai0/metadata'), WindowsPath('C:/Dev/T-Notes/.cache/category-focused-01/test_unapproved_metadata_detai0/library'))
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000026FBCEF1810&gt;
+
+    def test_unapproved_metadata_details_search_and_no_dispatch(registration, qapp, monkeypatch):
+        build, _, _, _ = registration
+        service = build()
+        def forbidden(*args, **kwargs):
+            pytest.fail("Catalog controls attempted process or network dispatch")
+        monkeypatch.setattr(subprocess, "Popen", forbidden)
+        monkeypatch.setattr(subprocess, "run", forbidden)
+        monkeypatch.setattr(socket, "create_connection", forbidden)
+        widget = M365LauncherWidget(catalog_service=service)
+        try:
+            widget.show()
+            widget.navigation.setCurrentRow(EXPECTED.index("general"))
+            qapp.processEvents()
+&gt;           assert widget.operation_list.count() == 1
+E           assert 0 == 1
+E            +  where 0 = &lt;built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40&gt;()
+E            +    where &lt;built-in method count of PySide6.QtWidgets.QListWidget object at 0x0000026FBD17AF40&gt; = &lt;PySide6.QtWidgets.QListWidget(0x26fbb2cd220) at 0x0000026FBD17AF40&gt;.count
+E            +      where &lt;PySide6.QtWidgets.QListWidget(0x26fbb2cd220) at 0x0000026FBD17AF40&gt; = &lt;src.ui.m365.launcher_widget.M365LauncherWidget(0x26fbb2d3760, name="m365LauncherWorkspace") at 0x0000026FBD0FB080&gt;.operation_list
+
+tests\test_m365_catalog.py:220: AssertionError</failure></testcase><testcase classname="tests.test_m365_catalog" name="test_no_production_import_of_provisional_engine_or_process_apis" time="0.012" /><testcase classname="tests.test_m365_catalog" name="test_alt_f8_from_new_catalog_controls_preserves_notes" time="0.177" /><testcase classname="tests.test_m365_workspace" name="test_default_page_and_accessible_navigation" time="0.090"><failure message="assert (False)&#10; +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb8211990) at 0x0000026FBCFB3C40&gt;.isVisible">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b113a0) at 0x0000026FBD292580&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+
+    def test_default_page_and_accessible_navigation(main_window, qapp):
+        show(main_window, qapp)
+        stack = main_window.workspace_stack
+        original = main_window.workspace_splitter
+        editor = main_window._get_active_editor()
+        assert stack.count() == 2
+        assert stack.widget(0) is original
+        assert stack.currentWidget() is original
+        button = main_window.toolbar.btn_m365
+&gt;       assert button.isVisible() and button.isEnabled()
+E       assert (False)
+E        +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40&gt;()
+E        +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCFB3C40&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb8211990) at 0x0000026FBCFB3C40&gt;.isVisible
+
+tests\test_m365_workspace.py:32: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_toolbar_controls_fit_without_overflow[700]" time="0.080"><failure message="AssertionError: &#10;assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0&gt; is not None and False)&#10; +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0&gt;.isVisible">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD26C340&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+width = 700
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+&gt;               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0&gt; is not None and False)
+E                +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0&gt;()
+E                +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBD3C11C0&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBD3C11C0&gt;.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_toolbar_controls_fit_without_overflow[800]" time="0.081"><failure message="AssertionError: &#10;assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040&gt; is not None and False)&#10; +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040&gt;.isVisible">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b12630) at 0x0000026FBCD03FC0&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+width = 800
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+&gt;               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040&gt; is not None and False)
+E                +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040&gt;()
+E                +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCC0B040&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb8210ce0) at 0x0000026FBCC0B040&gt;.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_toolbar_controls_fit_without_overflow[1100]" time="0.081"><failure message="AssertionError: &#10;assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140&gt; is not None and False)&#10; +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140&gt;.isVisible">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b0fdb0) at 0x0000026FBCE8BB00&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+width = 1100
+
+    @pytest.mark.parametrize("width", [700, 800, 1100])
+    def test_toolbar_controls_fit_without_overflow(main_window, qapp, width):
+        main_window.resize(width, 750)
+        show(main_window, qapp)
+        for toolbar in (main_window.toolbar, main_window.toolbar.secondary_toolbar):
+            for action in toolbar.actions():
+                if not action.isVisible() or action.isSeparator():
+                    continue
+                widget = toolbar.widgetForAction(action)
+&gt;               assert widget is not None and widget.isVisible(), action.text()
+E               AssertionError: 
+E               assert (&lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140&gt; is not None and False)
+E                +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140&gt;()
+E                +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCE5B140&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82115f0) at 0x0000026FBCE5B140&gt;.isVisible
+
+tests\test_m365_workspace.py:55: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_catalog_shell_preserves_notes_boundary_and_placeholders" time="0.093" /><testcase classname="tests.test_m365_workspace" name="test_repeated_switch_preserves_document_cursor_undo_and_instances" time="0.170" /><testcase classname="tests.test_m365_workspace" name="test_pending_image_and_content_save_before_navigation" time="0.255" /><testcase classname="tests.test_m365_workspace" name="test_failed_save_refuses_navigation_and_explicit_retry_retries_stopped_timer" time="0.091" /><testcase classname="tests.test_m365_workspace" name="test_workspace_switch_never_reloads_or_changes_stopwatch[False]" time="0.101" /><testcase classname="tests.test_m365_workspace" name="test_workspace_switch_never_reloads_or_changes_stopwatch[True]" time="0.101" /><testcase classname="tests.test_m365_workspace" name="test_active_secondary_ticket_split_and_history_state_survive" time="0.120"><failure message="assert False&#10; +  where False = &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80&gt;()&#10; +    where &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80&gt; = &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80&gt;.isVisible&#10; +      where &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80&gt; = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10980) at 0x0000026FBCC29340&gt;.history_drawer">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10980) at 0x0000026FBCC29340&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+
+    def test_active_secondary_ticket_split_and_history_state_survive(main_window, qapp):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        qapp.processEvents()
+        editor = main_window.secondary_tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+        original = (main_window.tab_widget.currentIndex(), main_window.secondary_tab_widget.currentIndex())
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        sizes = main_window.workspace_splitter.sizes()
+        main_window.show_m365_workspace()
+        assert main_window.history_drawer.isHidden()
+        assert not main_window.btn_toggle_split.isEnabled()
+        assert not main_window.btn_toggle_drawer.isEnabled()
+        main_window.show_notes_workspace()
+        qapp.processEvents()
+        assert main_window._get_active_editor() is editor
+        assert (main_window.tab_widget.currentIndex(), main_window.secondary_tab_widget.currentIndex()) == original
+        assert main_window.secondary_tab_widget.isVisible()
+&gt;       assert main_window.history_drawer.isVisible()
+E       assert False
+E        +  where False = &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80&gt;()
+E        +    where &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBCDCFE80&gt; = &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80&gt;.isVisible
+E        +      where &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8d4d620) at 0x0000026FBCDCFE80&gt; = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10980) at 0x0000026FBCC29340&gt;.history_drawer
+
+tests\test_m365_workspace.py:186: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[87-KeyboardModifier.ControlModifier]" time="0.093" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[16777267-KeyboardModifier.ControlModifier]" time="0.093" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[84-KeyboardModifier.ControlModifier]" time="0.094" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[16777217-KeyboardModifier.ControlModifier]" time="0.093" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[16777239-KeyboardModifier.ShiftModifier|ControlModifier]" time="0.091" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[49-KeyboardModifier.ControlModifier]" time="0.088" /><testcase classname="tests.test_m365_workspace" name="test_m365_focus_cannot_trigger_hidden_ticket_shortcuts[90-KeyboardModifier.AltModifier]" time="0.092" /><testcase classname="tests.test_m365_workspace" name="test_hidden_format_actions_disabled_then_restored" time="0.096" /><testcase classname="tests.test_m365_workspace" name="test_hud_from_m365_returns_notes_and_restores_split_history" time="0.121"><failure message="assert False&#10; +  where False = &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80&gt;()&#10; +    where &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80&gt; = &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80&gt;.isVisible&#10; +      where &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80&gt; = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10620) at 0x0000026FBD34A680&gt;.history_drawer">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10620) at 0x0000026FBD34A680&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+
+    def test_hud_from_m365_returns_notes_and_restores_split_history(main_window, qapp):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        main_window.show_m365_workspace()
+        main_window.toggle_mini_hud_mode()
+        assert not main_window.is_m365_workspace
+        assert main_window.is_mini_hud
+        assert main_window.toolbar.isHidden()
+        main_window.toggle_mini_hud_mode()
+        qapp.processEvents()
+        assert main_window.toolbar.isVisible()
+        assert main_window.secondary_tab_widget.isVisible()
+&gt;       assert main_window.history_drawer.isVisible()
+E       assert False
+E        +  where False = &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80&gt;()
+E        +    where &lt;built-in method isVisible of HistoryDrawer object at 0x0000026FBD34BD80&gt; = &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80&gt;.isVisible
+E        +      where &lt;src.ui.components.history_drawer.HistoryDrawer(0x26fb8890160) at 0x0000026FBD34BD80&gt; = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b10620) at 0x0000026FBD34A680&gt;.history_drawer
+
+tests\test_m365_workspace.py:249: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_f8_and_tray_reopen_keep_current_workspace" time="0.098"><failure message="assert None is &lt;PySide6.QtWidgets.QPushButton(0x26fb8210770, name=&quot;btnBackToNotes&quot;) at 0x0000026FBCD2DC40&gt;&#10; +  where None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()&#10; +    where &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt; = QApplication.focusWidget&#10;[+2 more lines; full report in element text]">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD339B80&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x0000026FBCEA8490&gt;
+
+    def test_f8_and_tray_reopen_keep_current_workspace(main_window, qapp, monkeypatch):
+        show(main_window, qapp)
+        main_window.history_drawer.show()
+        main_window.show_m365_workspace()
+        main_window.close()
+        assert main_window.isHidden() and main_window.tray_icon.isVisible()
+        session = main_window.session_service.session_repo.get_session()
+        assert session["history_drawer_open"] == 1
+        main_window.global_hotkey.activated.emit()
+        qapp.processEvents()
+        assert main_window.isVisible() and main_window.is_m365_workspace
+&gt;       assert QApplication.focusWidget() is main_window.m365_workspace.back_button
+E       assert None is &lt;PySide6.QtWidgets.QPushButton(0x26fb8210770, name="btnBackToNotes") at 0x0000026FBCD2DC40&gt;
+E        +  where None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()
+E        +    where &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt; = QApplication.focusWidget
+E        +  and   &lt;PySide6.QtWidgets.QPushButton(0x26fb8210770, name="btnBackToNotes") at 0x0000026FBCD2DC40&gt; = &lt;src.ui.m365.launcher_widget.M365LauncherWidget(0x26fb8b10470, name="m365LauncherWorkspace") at 0x0000026FBCD2E100&gt;.back_button
+E        +    where &lt;src.ui.m365.launcher_widget.M365LauncherWidget(0x26fb8b10470, name="m365LauncherWorkspace") at 0x0000026FBCD2E100&gt; = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8b107d0) at 0x0000026FBD339B80&gt;.m365_workspace
+
+tests\test_m365_workspace.py:267: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_reopen_restores_existing_notes_and_defaults_to_notes" time="0.155" /><testcase classname="tests.test_m365_workspace" name="test_schema_unchanged_and_no_network_or_process_dispatch" time="0.095" /><testcase classname="tests.test_m365_workspace" name="test_previous_failed_autosave_with_idle_timer_is_retried_before_navigation" time="0.089" /><testcase classname="tests.test_m365_workspace" name="test_failed_image_save_keeps_original_cache_and_editor" time="0.086" /><testcase classname="tests.test_m365_workspace" name="test_themed_navigation_row_fits_minimum_width" time="0.112"><failure message="assert (False)&#10; +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82105a0) at 0x0000026FBCEB9340&gt;.isVisible">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb888f080) at 0x0000026FBCC1ABC0&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+
+    def test_themed_navigation_row_fits_minimum_width(main_window, qapp):
+        previous = qapp.styleSheet()
+        qapp.setStyleSheet((Path(__file__).parents[1] / "assets/styles/dark_theme.qss").read_text())
+        try:
+            main_window.resize(800, 750)
+            show(main_window, qapp)
+            toolbar = main_window.toolbar
+            for action in toolbar.actions():
+                if action.isVisible() and not action.isSeparator():
+                    widget = toolbar.widgetForAction(action)
+&gt;                   assert widget.isVisible() and toolbar.rect().contains(widget.geometry())
+E                   assert (False)
+E                    +  where False = &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340&gt;()
+E                    +    where &lt;built-in method isVisible of PySide6.QtWidgets.QToolButton object at 0x0000026FBCEB9340&gt; = &lt;PySide6.QtWidgets.QToolButton(0x26fb82105a0) at 0x0000026FBCEB9340&gt;.isVisible
+
+tests\test_m365_workspace.py:355: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_alt_f8_preserves_split_ticket_pending_notes_and_timer[False]" time="0.127" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_preserves_split_ticket_pending_notes_and_timer[True]" time="0.130" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_dispatches_once_per_press_and_reuses_widgets" time="0.148" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_works_from_m365_form_focus_without_editing_hidden_notes" time="0.101" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_and_shared_navigation_are_suppressed_by_modal[False]" time="0.082" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_and_shared_navigation_are_suppressed_by_modal[True]" time="0.097" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_safely_leaves_hud_and_preserves_normal_state[False]" time="0.114"><failure message="assert (True and None is &lt;src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80&gt;)&#10; +  where True = &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80&gt;()&#10; +    where &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80&gt; = &lt;src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80&gt;.isVisible&#10; +  and   None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()&#10;[+1 more line; full report in element text]">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fb8d5b590) at 0x0000026FBD359F00&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+running = False
+
+    @pytest.mark.parametrize("running", [False, True])
+    def test_alt_f8_safely_leaves_hud_and_preserves_normal_state(main_window, qapp, running):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        normal_geometry = main_window.geometry()
+        main_window.toggle_mini_hud_mode()
+        # HUD hides the secondary pane and recreates the native window flags. Send
+        # input to its visible focused editor, not a cached pre-HUD hidden widget.
+        main_window.activateWindow()
+        assert QTest.qWaitForWindowActive(main_window, 1000)
+        editor = main_window.tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+&gt;       assert editor.isVisible() and QApplication.focusWidget() is editor
+E       assert (True and None is &lt;src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80&gt;)
+E        +  where True = &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80&gt;()
+E        +    where &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBCBFDB80&gt; = &lt;src.ui.components.editor.TechPadEditor(0x26fbb3dec80) at 0x0000026FBCBFDB80&gt;.isVisible
+E        +  and   None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()
+E        +    where &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt; = QApplication.focusWidget
+
+tests\test_m365_workspace.py:467: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_alt_f8_safely_leaves_hud_and_preserves_normal_state[True]" time="0.114"><failure message="assert (True and None is &lt;src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980&gt;)&#10; +  where True = &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980&gt;()&#10; +    where &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980&gt; = &lt;src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980&gt;.isVisible&#10; +  and   None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()&#10;[+1 more line; full report in element text]">main_window = &lt;src.ui.main_window.TechPadMainWindow(0x26fbb4d3590) at 0x0000026FBCC4F300&gt;
+qapp = &lt;PySide6.QtWidgets.QApplication(0x26fb8a2dfe0) at 0x0000026FBD304B40&gt;
+running = True
+
+    @pytest.mark.parametrize("running", [False, True])
+    def test_alt_f8_safely_leaves_hud_and_preserves_normal_state(main_window, qapp, running):
+        show(main_window, qapp)
+        main_window.create_new_tab()
+        main_window.open_split_view()
+        main_window.history_drawer.show()
+        qapp.processEvents()
+        normal_geometry = main_window.geometry()
+        main_window.toggle_mini_hud_mode()
+        # HUD hides the secondary pane and recreates the native window flags. Send
+        # input to its visible focused editor, not a cached pre-HUD hidden widget.
+        main_window.activateWindow()
+        assert QTest.qWaitForWindowActive(main_window, 1000)
+        editor = main_window.tab_widget.get_current_editor()
+        editor.setFocus()
+        qapp.processEvents()
+&gt;       assert editor.isVisible() and QApplication.focusWidget() is editor
+E       assert (True and None is &lt;src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980&gt;)
+E        +  where True = &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980&gt;()
+E        +    where &lt;built-in method isVisible of TechPadEditor object at 0x0000026FBD7D2980&gt; = &lt;src.ui.components.editor.TechPadEditor(0x26fb8de7ca0) at 0x0000026FBD7D2980&gt;.isVisible
+E        +  and   None = &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt;()
+E        +    where &lt;built-in method focusWidget of Shiboken.ObjectType object at 0x0000026FB88C2E10&gt; = QApplication.focusWidget
+
+tests\test_m365_workspace.py:467: AssertionError</failure></testcase><testcase classname="tests.test_m365_workspace" name="test_alt_f8_and_button_use_the_same_save_failure_guard[shortcut]" time="0.097" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_and_button_use_the_same_save_failure_guard[button]" time="0.095" /><testcase classname="tests.test_m365_workspace" name="test_workspace_navigation_blocks_reentrancy_and_shutdown" time="0.095" /><testcase classname="tests.test_m365_workspace" name="test_alt_f8_is_one_nonrepeating_application_shortcut_only" time="0.099" /><testcase classname="tests.test_m365_workspace" name="test_existing_alt_t_alt_z_and_f8_after_alt_f8" time="0.147" /><testcase classname="tests.test_m365_workspace" name="test_both_visible_navigation_buttons_use_shared_guard" time="0.090" /><testcase classname="tests.test_m365_workspace" name="test_m365_responsive_at_compact_and_high_dpi_viewports" time="0.118" /><testcase classname="tests.test_m365_workspace" name="test_m365_collapsible_navigation_and_ticket_sidebar" time="0.134" /><testcase classname="tests.test_m365_workspace" name="test_m365_responsive_column_arrangement_retains_widgets" time="0.105" /><testcase classname="tests.test_m365_workspace" name="test_workspace_specific_minimum_sizes" time="0.107" /><testcase classname="tests.test_m365_workspace" name="test_no_qfont_setpointsize_warnings" time="0.101" /><testcase classname="tests.test_m365_workspace" name="test_regression_more_menu_mouse_commands_remain_visible" time="0.088" /><testcase classname="tests.test_m365_workspace" name="test_regression_compact_f5_works_from_editor" time="0.093" /><testcase classname="tests.test_m365_workspace" name="test_regression_failed_navigation_then_explicit_save_retries_text_and_image" time="0.081" /><testcase classname="tests.test_m365_workspace" name="test_regression_failed_navigation_then_quit_persists_draft" time="0.097" /><testcase classname="tests.test_m365_workspace" name="test_regression_hidden_pane_real_debounce_saves_correct_ticket_images" time="1.825" /><testcase classname="tests.test_m365_workspace" name="test_regression_m365_resize_keeps_notes_history_hidden" time="0.104" /><testcase classname="tests.test_m365_workspace" name="test_regression_compact_secondary_to_hud_keeps_an_editor_visible" time="0.110" /><testcase classname="tests.test_m365_workspace" name="test_regression_close_from_m365_preserves_secondary_active_ticket" time="0.108" /></testsuite></testsuites>

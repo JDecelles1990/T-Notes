@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "T-Notes M365 Execution Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "request_id",
+    "script_id",
+    "context",
+    "parameters"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "1.0.0-draft.1"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "script_id": {
+      "type": "string",
+      "pattern": "^M365\\.[A-Z][A-Z0-9_]*\\.[A-Z][A-Z0-9_]*$"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "company_id",
+        "tenant_id",
+        "admin_upn"
+      ],
+      "properties": {
+        "company_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "admin_upn": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "target_user_upn": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254,
+          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+        },
+        "ticket_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "propertyNames": {
+        "allOf": [
+          {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          },
+          {
+            "not": {
+              "pattern": "([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee][Kk][Ee][Yy])"
+            }
+          }
+        ]
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "boolean",
+          "integer",
+          "number",
+          "array",
+          "null"
+        ]
+      },
+      "maxProperties": 30
+    }
+  }
+}
