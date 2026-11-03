@@ -844,26 +844,29 @@ def test_ui_copy_formatted_note_toolbar_and_context_menu(main_window, monkeypatc
 
 
 def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
-    """Verifies that toggle_mini_hud_mode shrinks geometry, sets WindowStaysOnTopHint, and restores cleanly."""
+    """Verifies that toggle_mini_hud_mode sets right-sidebar geometry, WindowStaysOnTopHint, and restores cleanly."""
     main_window.show()
     assert main_window.is_mini_hud is False
     assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
     assert main_window.toolbar.isVisible() is True
 
-    # 1. Toggle to Mini-HUD mode
+    # 1. Toggle to Mini-HUD mode (docked right sidebar with longer height)
     main_window.toggle_mini_hud_mode()
 
     assert main_window.is_mini_hud is True
     assert bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint) is True
     assert main_window.toolbar.isVisible() is False
     assert main_window.width() <= 480
-    assert main_window.height() <= 320
+    assert main_window.height() >= 400
     assert "[HUD]" in main_window.windowTitle()
     assert main_window.toolbar.btn_pin.isChecked() is True
     assert "Normal" in main_window.btn_status_hud.text()
+    # HUD button is located in the down-left corner of the status bar for 1-click restore
+    assert main_window.btn_status_hud.isVisible() is True
+    assert main_window.btn_status_hud.x() < 100
 
-    # 2. Toggle back to Normal mode
-    main_window.toggle_mini_hud_mode()
+    # 2. Toggle back to Normal mode via the down-left HUD button (1-click restore)
+    main_window.btn_status_hud.click()
 
     assert main_window.is_mini_hud is False
     assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)

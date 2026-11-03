@@ -2,13 +2,13 @@
 
 Final disposition: **OFFICIAL CONTRACT v0.3.0 — RELEASE CANDIDATE READY FOR INDEPENDENT REVIEW**
 
-Date: 2026-11-02  
-Repository: `C:\Dev\T-Notes`  
-Branch: `main` (HEAD: `30eef02` - Merge branch 'feature/m365-workspace-foundation-s001')  
-Authoritative contract path: `docs/contracts/m365/`  
-Authoritative contract entrypoint: [`CONTRACT.md`](CONTRACT.md)  
-Official contract version: `tnotes.m365 / 0.3.0`  
-Predecessor baseline: `tnotes.m365 / 0.3.0-proposed.1` (preserved in `docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/`)
+- Date: 2026-11-02
+- Repository: `C:\Dev\T-Notes`
+- Branch: `main` (HEAD: `30eef02` - Merge branch 'feature/m365-workspace-foundation-s001')
+- Authoritative contract path: `docs/contracts/m365/`
+- Authoritative contract entrypoint: [`CONTRACT.md`](CONTRACT.md)
+- Official contract version: `tnotes.m365 / 0.3.0`
+- Predecessor baseline: `tnotes.m365 / 0.3.0-proposed.1` (preserved in `docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/`)
 
 ---
 
@@ -31,8 +31,8 @@ Operational security and governance mandate four explicitly separated approval g
    - Authorizes offline script development and synthetic test execution.
    - *Does NOT authorize live tenant execution, credential storage, or executable registration.*
 2. **Engine Approved (`APPROVED — EXECUTION ENGINE`):**
-   - Host execution engine, process supervisor, isolation boundaries, cancellation mechanics, and output parsers are independently tested and approved.
-   - Verifies sandbox isolation and non-destructive execution.
+   - Host execution engine, process supervisor, verification mechanisms, cancellation mechanics, and output parsers are independently tested and approved.
+   - Verifies pinned executable and dependency verification, controlled process invocation, Windows Job Object process supervision, cancellation, timeout, and owned-process cleanup for trusted allowlisted operations (these mechanisms do not provide containment or isolation for hostile arbitrary PowerShell code).
 3. **Operation Approved (`APPROVED — OPERATION SCRIPT`):**
    - A specific PowerShell operation script, manifest, SHA-256 hash, and Pester tests are reviewed and cryptographically pinned in host catalog.
    - Authorizes the host engine to register and invoke the script in offline/mock modes.
@@ -48,12 +48,19 @@ Operational security and governance mandate four explicitly separated approval g
 To ensure reusable M365 PowerShell operations can be adopted by F7Hub and other administrative hosts:
 
 - **Strict Application Independence:** Reusable scripts must NOT import T-Notes Python modules, depend on PySide6/Qt widgets, access T-Notes SQLite databases (`notes.db`, `app_session`), read ticket editor state directly, or own Graph/Exchange authentication sessions.
-- **Pure PowerShell 7 ABI:** Operations rely strictly on host-supplied parameters passed across the invocation boundary: `$Context` (hashtable), `$Parameters` (hashtable), and `$CancellationToken`.
-- **Host Output Ownership:** Operations return typed PowerShell objects; the host adapter serializes the wire JSON envelope.
+- **Pure PowerShell 7 ABI (Normative):** Operations implement standard parameters passed across the invocation boundary:
+  - `[Parameter(Mandatory)] [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Context`
+  - `[Parameter(Mandatory)] [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Parameters`
+  - `[Parameter(Mandatory)] [System.Threading.CancellationToken] $CancellationToken`
+- **Invocation Context Fields:** `$Context` contains exactly the fields of `common#/$defs/invocation_context`: frozen request identity and release binding, actual `verified_account_upn`, target, nullable `ticket_context` (when an object, containing a required non-null `ticket_id` string matching `^[1-9][0-9]{0,18}$`), and credential-free service `connections`. (Note: `ticket_id` is nested inside `ticket_context`, and `execution_mode` is not an invocation_context field).
+- **Parameters Immutability:** `$Parameters` is a deeply read-only dictionary of effective approved manifest parameters with defaults already bound; scripts cannot mutate host state through an exposed mutable nested object.
+- **Real Token Semantics:** `$CancellationToken` is an active `System.Threading.CancellationToken` instance monitored before provider calls and between batches; throwing `OperationCanceledException` maps to CANCELLED (not a sentinel value or flag).
+- **Operation Return & Separate Payload Validation:** Scripts emit exactly one `PSCustomObject` conforming to `common#/$defs/operation_return` on the success stream (`status`, `operation_outcome`, `data`, `warnings`, `errors`). The `data` property contains a typed `PSCustomObject` conforming to the manifest-selected `schemas/operation-data.schema.json#/$defs/<operation_id>` payload definition (or null on error). The host adapter validates `operation_return` and separately validates `data` against the selected schema before serialization.
+- **Host Output Ownership:** Operations return typed PowerShell objects; the hosting adapter captures all PowerShell streams and serializes the single LF-terminated wire JSON envelope (`execution-result`) to stdout. Scripts never perform wire JSON serialization on stdout.
 
 ---
 
-## 4. Resolution of Three P1 Tooling Findings
+## 4. Resolution of Three P1 Tooling Findings and Engine Inventory Drift
 
 1. **P1 — Python Interpreter Discovery:**
    - Automated tooling (`run_tests.py` and `validate_contract.py`) uses `sys.executable` by default.
@@ -72,6 +79,11 @@ To ensure reusable M365 PowerShell operations can be adopted by F7Hub and other 
    - Contract checks evaluate contract artifacts (7 schemas, metaschema validation, offline refs, ABI, format, parameter binding, result binding, exit codes, limits, mock compatibility).
    - Baseline preservation checks evaluate repository drift (17 S001 files + 6 AGENTS.md/GEMINI.md files) as a separate diagnostic without failing contract semantics.
 
+4. **Engine Tooling Drift Reconciliation:**
+   - Three tooling files (`README.md`, `run_tests.py`, `tests/test_engine.py`) differ from the historical `evidence/implementation-inventory.json` due to the above authorized P1 tooling updates.
+   - Original historical inventory is preserved unchanged (56/59 files match).
+   - A supplementary tooling inventory (`docs/planning/m365/offline-execution-engine-prototype/evidence/tooling-inventory-supplement.json`) documents the current hashes and provenance.
+
 ---
 
 ## 5. Actual Test and Validation Results
@@ -79,8 +91,8 @@ To ensure reusable M365 PowerShell operations can be adopted by F7Hub and other 
 ### Contract Validation Suite (`docs/contracts/m365/validation/validate_contract.py`)
 - **Command:** `python -B docs/contracts/m365/validation/validate_contract.py`
 - **Contract Result:** `PASS`
-- **Contract Checks Passed:** 446 / 446 (0 failures)
-- **Baseline Preservation Diagnostic:** `FAIL` (23 historical drift items isolated from contract semantics)
+- **Contract Checks Passed:** 450 / 450 (0 failures)
+- **Baseline Preservation Diagnostic:** `FAIL` (historical repository drift isolated from contract semantics)
 - **Execution Mode:** Isolated temporary directory, automatic cleanup on `PASS`.
 
 ### Offline Engine Native Suite (`docs/planning/m365/offline-execution-engine-prototype/run_tests.py`)
@@ -93,11 +105,13 @@ To ensure reusable M365 PowerShell operations can be adopted by F7Hub and other 
 
 ## 6. Consumer Compatibility & Migration Requirements
 
+The official release candidate `tnotes.m365 / 0.3.0` establishes canonical schemas (`https://tnotes.invalid/m365/0.3.0/schemas/...`) distinct from predecessor proposal `0.3.0-proposed.1`. Migration responsibilities across consumers are strictly distinct:
+
 | Consumer Component | Current State | Required Migration Action | Assigned Responsibility |
 |---|---|---|---|
 | **`M365CatalogService`** (`src/services/m365_catalog_service.py`) | Pinned to `03_codex_reviews/...` and `VERSION = "0.3.0-proposed.1"` | Update default path to `docs/contracts/m365/` and expected version to `0.3.0`. | Codex / Application Service Owner |
-| **Contract Review Pins** (`assets/m365/contract-review-pins.json`) | Contains 21 hashes for `0.3.0-proposed.1` | Update review pins to match the 26 official `0.3.0` candidate hashes upon independent approval. | Codex / Security Integration |
-| **Offline Execution Engine** (`docs/planning/m365/offline-execution-engine-prototype/`) | `trust-anchor.json` pins `0.3.0-proposed.1` schemas | Update trust anchor and test descriptors to reference official `0.3.0` schemas in follow-on engine task. | Engine Maintainer |
+| **Catalog Schema Review Pins** (`assets/m365/contract-review-pins.json`) | Contains **7 schema hashes** for predecessor `0.3.0-proposed.1` | Update the 7 schema pins to match the 7 official `0.3.0` schema hashes upon independent approval. (Note: pins catalog schemas only, distinct from the 26-file contract release candidate inventory). | Codex / Security Integration |
+| **Offline Execution Engine** (`docs/planning/m365/offline-execution-engine-prototype/`) | `trust-anchor.json` pins **21 predecessor contract artifacts** from `03_codex_reviews/...` | Update engine `trust-anchor.json` and test descriptors to reference the official `0.3.0` contract artifacts in a follow-on engine task. (Independent from catalog schema pins). | Engine Maintainer |
 
 ---
 
@@ -107,7 +121,7 @@ Authoritative candidate files in `docs/contracts/m365/`:
 
 | Path | Status | SHA-256 |
 |---|---|---|
-| `CONTRACT.md` | Authoritative Entrypoint (0.3.0, F7Hub portability, 4 approval gates) | `d983ed65280b908d173310de6c69170d4708e53a79e2c6a7bf1f8127049faa56` |
+| `CONTRACT.md` | Authoritative Entrypoint (0.3.0, F7Hub portability, 4 approval gates) | `2308c1d1ea5381952ccd23f48698a5fa4559e2100b11ed1bbaa480147620250d` |
 | `README.md` | Architecture Index & Discovery | `38a98881bd610507e65423bf021fce23b7a347f4892de8d6318ef8d2f2b1b1ec` |
 | `RELEASE_APPROVAL.md` | Formal release approval record and candidate inventory | (Generated in release preparation) |
 | `CHECKPOINT.md` | Promotion checkpoint and verification summary | (This document) |

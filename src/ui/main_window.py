@@ -66,6 +66,8 @@ class TechPadMainWindow(QMainWindow):
         # Pending saves tracking: {scratchpad_id: DebounceTimer}
         self._debounce_timers: dict[int, DebounceTimer] = {}
         self._force_quit: bool = False
+        self._shutdown_accepted = False
+        self._note_revisions: dict[int, int] = {}
         self._first_minimize_to_tray: bool = True
         self._notes_visibility = {}
         self._notes_enabled = {}
@@ -252,6 +254,16 @@ class TechPadMainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.toolbar.stopwatch.status_message_requested.connect(self.status_bar.showMessage)
 
+        # Toggle Always-on-Top Mini-HUD button in status bar (down-left corner for 1-click restore in HUD mode)
+        self.btn_status_hud = QPushButton("📌 HUD (Alt+T)")
+        self.btn_status_hud.setObjectName("btnSecondary")
+        self.btn_status_hud.setFlat(True)
+        self.btn_status_hud.setToolTip("Toggle Always-on-Top Mini-HUD Mode (Alt+T)")
+        self.btn_status_hud.clicked.connect(self.toggle_mini_hud_mode)
+        self.status_bar.addWidget(self.btn_status_hud)
+        # Ensure HUD toggle button remains visible even when temporary status messages appear
+        self.status_bar.messageChanged.connect(lambda msg: self.btn_status_hud.setVisible(True))
+
         self.lbl_save_status = QLabel("● Saved")
         self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
         self.status_bar.addWidget(self.lbl_save_status)
@@ -281,14 +293,6 @@ class TechPadMainWindow(QMainWindow):
         self.btn_toggle_drawer.setFlat(True)
         self.btn_toggle_drawer.clicked.connect(self._toggle_history_drawer)
         self.status_bar.addPermanentWidget(self.btn_toggle_drawer)
-
-        # Toggle Always-on-Top Mini-HUD button in status bar
-        self.btn_status_hud = QPushButton("📌 HUD (Alt+T)")
-        self.btn_status_hud.setObjectName("btnSecondary")
-        self.btn_status_hud.setFlat(True)
-        self.btn_status_hud.setToolTip("Toggle Always-on-Top Mini-HUD Mode (Alt+T)")
-        self.btn_status_hud.clicked.connect(self.toggle_mini_hud_mode)
-        self.status_bar.addPermanentWidget(self.btn_status_hud)
 
     def _setup_shortcuts(self) -> None:
         """Configures application-wide shortcuts for saving, drawer toggle, and settings.
@@ -474,13 +478,11 @@ class TechPadMainWindow(QMainWindow):
     def quit_application(self) -> None:
         """Performs full synchronous flush, unregisters hotkeys, and cleanly exits the application."""
         self._force_quit = True
-        if hasattr(self, "global_hotkey") and self.global_hotkey:
-            self.global_hotkey.unregister()
-        if hasattr(self, "tray_icon") and self.tray_icon:
-            self.tray_icon.hide()
-        self.close()
-        if app := QApplication.instance():
-            app.quit()
+        self._shutdown_accepted = False
+        self.close()  # closeEvent owns persistence and all teardown.
+        if self._shutdown_accepted:
+            if app := QApplication.instance():
+                app.quit()
 
     def _restore_workspace(self) -> None:
         """Restores tabs and focused tab from SQLite session."""
@@ -588,6 +590,7 @@ class TechPadMainWindow(QMainWindow):
     def _on_editor_modified(self, scratchpad_id: int) -> None:
         """Triggered whenever typing occurs in an editor."""
         self._dirty_scratchpad_ids.add(scratchpad_id)
+        self._note_revisions[scratchpad_id] = self._note_revisions.get(scratchpad_id, 0) + 1
         self.set_save_status("Saving...", is_saved=False)
         debouncer = self._debounce_timers.get(scratchpad_id)
         if debouncer:
@@ -596,16 +599,31 @@ class TechPadMainWindow(QMainWindow):
     def _execute_save(self, scratchpad_id: int) -> None:
         """Saves editor content and synchronizes images with SQLite across primary and secondary panes."""
         editor, tw, idx = self._find_editor_by_id(scratchpad_id)
-        if editor:
-            html = editor.toHtml()
-            self.scratchpad_service.save_content(
+        try:
+            if editor is None:
+                if scratchpad_id in self._dirty_scratchpad_ids:
+                    raise RuntimeError("Dirty ticket editor unavailable; recover editor and Retry (Ctrl+S)")
+                return
+            if timer := self._debounce_timers.get(scratchpad_id):
+                timer.cancel()
+            revision = self._note_revisions.get(scratchpad_id, 0)
+            receipt = self.scratchpad_service.save_content(
                 scratchpad_id=scratchpad_id,
-                content_html=html,
-                in_memory_images=editor.in_memory_images,
+                content_html=editor.toHtml(),
+                in_memory_images=dict(editor.in_memory_images),
+                expected_revision=revision,
             )
-            # Clear memory image cache after successful DB persistence
-            editor.in_memory_images.clear()
-            self._dirty_scratchpad_ids.discard(scratchpad_id)
+            if (receipt.status != "saved" or receipt.ticket_id != scratchpad_id
+                    or receipt.attempted_revision != revision or receipt.persisted_revision != revision
+                    or self._note_revisions.get(scratchpad_id, 0) != revision):
+                raise RuntimeError("Save did not acknowledge current editor revision")
+        except Exception:
+            self._dirty_scratchpad_ids.add(scratchpad_id)
+            self.set_save_status("Save Failed", is_saved=False)
+            self.status_bar.showMessage("Save Failed — unsaved changes retained. Retry with Ctrl+S.", 10000)
+            raise
+        editor.in_memory_images.clear()
+        self._dirty_scratchpad_ids.discard(scratchpad_id)
 
         # Check if any other saves are pending or dirty
         any_dirty = bool(self._dirty_scratchpad_ids)
@@ -635,6 +653,9 @@ class TechPadMainWindow(QMainWindow):
 
     def set_save_status(self, text: str, is_saved: bool = True) -> None:
         """Updates the status bar indicator."""
+        if is_saved and self._dirty_scratchpad_ids:
+            is_saved = False
+            text = "Saving..." if any(t.is_active() for t in self._debounce_timers.values()) else "Save Failed"
         if is_saved:
             self.lbl_save_status.setText("● Saved")
             self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
@@ -777,11 +798,6 @@ class TechPadMainWindow(QMainWindow):
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
         t_label = f"#{ticket.get('ticket_number', '')} {ticket.get('client_name', '')}"
 
-        # Flush any pending save on this tab first
-        debouncer = self._debounce_timers.get(editor.scratchpad_id)
-        if debouncer:
-            debouncer.flush()
-
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Close Ticket Scratchpad")
         msg_box.setText(f"How would you like to handle ticket {t_label}?")
@@ -794,9 +810,7 @@ class TechPadMainWindow(QMainWindow):
         clicked = msg_box.clickedButton()
 
         if clicked == btn_archive:
-            self.scratchpad_service.archive_ticket(editor.scratchpad_id)
-            self._remove_tab(index, editor.scratchpad_id)
-            self.history_drawer.refresh_list()
+            self._archive_tab(index)
         elif clicked == btn_delete:
             self.scratchpad_service.delete_ticket_permanently(editor.scratchpad_id)
             self._remove_tab(index, editor.scratchpad_id)
@@ -1138,10 +1152,6 @@ class TechPadMainWindow(QMainWindow):
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
         t_label = f"#{ticket.get('ticket_number', '')} {ticket.get('client_name', '')}"
 
-        debouncer = self._debounce_timers.get(editor.scratchpad_id)
-        if debouncer:
-            debouncer.flush()
-
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Close Ticket Scratchpad")
         msg_box.setText(f"How would you like to handle ticket {t_label}?")
@@ -1154,9 +1164,7 @@ class TechPadMainWindow(QMainWindow):
         clicked = msg_box.clickedButton()
 
         if clicked == btn_archive:
-            self.scratchpad_service.archive_ticket(editor.scratchpad_id)
-            self._remove_secondary_tab(index, editor.scratchpad_id)
-            self.history_drawer.refresh_list()
+            self._archive_secondary_tab(index)
         elif clicked == btn_delete:
             self.scratchpad_service.delete_ticket_permanently(editor.scratchpad_id)
             self._remove_secondary_tab(index, editor.scratchpad_id)
@@ -1167,10 +1175,8 @@ class TechPadMainWindow(QMainWindow):
         editor = self.secondary_tab_widget.get_editor_at(index)
         if not editor:
             return
-        debouncer = self._debounce_timers.get(editor.scratchpad_id)
-        if debouncer:
-            debouncer.flush()
-        self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+        if not self._save_before_archive(editor.scratchpad_id):
+            return
         self._remove_secondary_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
@@ -1426,12 +1432,29 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget.show()
         hud_editor = self.tab_widget.get_current_editor()
 
-        # 4. Enable Always-on-Top and relax minimum size constraints
+        # 4. Hide right-side status bar controls to keep sidebar status bar clean
+        if hasattr(self, "btn_toggle_split"):
+            self.btn_toggle_split.setVisible(False)
+        if hasattr(self, "btn_switch_split_pane"):
+            self.btn_switch_split_pane.setVisible(False)
+        if hasattr(self, "btn_toggle_drawer"):
+            self.btn_toggle_drawer.setVisible(False)
+
+        # 5. Enable Always-on-Top and position as right sidebar with longer height
         self.setMinimumSize(340, 200)
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-        self.resize(440, 280)
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen:
+            avail = screen.availableGeometry()
+            sidebar_width = min(380, avail.width())
+            sidebar_height = avail.height()
+            sidebar_x = avail.x() + avail.width() - sidebar_width
+            sidebar_y = avail.y()
+            self.setGeometry(sidebar_x, sidebar_y, sidebar_width, sidebar_height)
+        else:
+            self.resize(380, 700)
 
-        # 5. Update HUD window title with active ticket info
+        # 6. Update HUD window title with active ticket info
         t_label = ""
         if hud_editor:
             ticket = self.scratchpad_service.get_ticket(hud_editor.scratchpad_id)
@@ -1441,10 +1464,11 @@ class TechPadMainWindow(QMainWindow):
                 t_label = f" — #{t_num}" + (f" ({client})" if client else "")
         self.setWindowTitle(f"📌 [HUD] {APP_NAME}{t_label}")
 
-        # 6. Update UI controls & status bar feedback
+        # 7. Update UI controls & status bar feedback
         self.toolbar.set_mini_hud_state(True)
         if hasattr(self, "btn_status_hud"):
             self.btn_status_hud.setText("📌 Normal (Alt+T)")
+            self.btn_status_hud.show()
         self.status_bar.showMessage("📌 Mini-HUD Mode Active (Always-on-Top) — Press Alt+T to restore", 3500)
 
         self.show()
@@ -1476,6 +1500,12 @@ class TechPadMainWindow(QMainWindow):
         if getattr(self, "_saved_drawer_visible", False):
             if not self.history_auto_collapsed:
                 self.history_drawer.show()
+
+        # Restore right-side status bar buttons
+        if hasattr(self, "btn_toggle_split"):
+            self.btn_toggle_split.setVisible(True)
+        if hasattr(self, "btn_toggle_drawer"):
+            self.btn_toggle_drawer.setVisible(True)
 
         # Restore Split View
         if getattr(self, "_saved_split_active", False) or getattr(self, "_saved_split_visible", False):
@@ -1513,6 +1543,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.set_mini_hud_state(False)
         if hasattr(self, "btn_status_hud"):
             self.btn_status_hud.setText("📌 HUD (Alt+T)")
+            self.btn_status_hud.show()
         self.status_bar.showMessage("✓ Restored Normal Workspace", 3000)
 
         self.show()
@@ -1543,15 +1574,26 @@ class TechPadMainWindow(QMainWindow):
         self.tab_widget.setCurrentIndex(idx)
         self.status_bar.showMessage(f"✓ Duplicated ticket as #{new_ticket['ticket_number']}", 3000)
 
+    def _save_before_archive(self, scratchpad_id: int) -> bool:
+        """Archive only after the live snapshot commits, including idle dirty tickets."""
+        try:
+            self._execute_save(scratchpad_id)
+            if scratchpad_id in self._dirty_scratchpad_ids:
+                raise RuntimeError("Ticket remains dirty")
+            self.scratchpad_service.archive_ticket(scratchpad_id)
+        except Exception:
+            self.set_save_status("Save Failed", is_saved=False)
+            self.status_bar.showMessage("Save Failed — archive cancelled; note retained. Retry with Ctrl+S, then Archive.", 10000)
+            return False
+        return True
+
     def _archive_tab(self, index: int) -> None:
         """Archives a tab directly without extra prompt."""
         editor = self.tab_widget.get_editor_at(index)
         if not editor:
             return
-        debouncer = self._debounce_timers.get(editor.scratchpad_id)
-        if debouncer:
-            debouncer.flush()
-        self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+        if not self._save_before_archive(editor.scratchpad_id):
+            return
         self._remove_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
@@ -1589,10 +1631,9 @@ class TechPadMainWindow(QMainWindow):
         for i in range(self.tab_widget.count() - 1, -1, -1):
             editor = self.tab_widget.get_editor_at(i)
             if editor and editor.scratchpad_id != keep_id:
-                debouncer = self._debounce_timers.get(editor.scratchpad_id)
-                if debouncer:
-                    debouncer.flush()
-                self.scratchpad_service.archive_ticket(editor.scratchpad_id)
+                if not self._save_before_archive(editor.scratchpad_id):
+                    self.history_drawer.refresh_list()
+                    return
                 self._remove_tab(i, editor.scratchpad_id)
 
         self.history_drawer.refresh_list()
@@ -1612,40 +1653,61 @@ class TechPadMainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Minimizes to system tray if tray icon is active, preserving saves and session state."""
-        self.toolbar.stopwatch.save_current_state()
-        save_ok = self.flush_all_saves()
+        self._shutdown_accepted = False
+        try:
+            self.toolbar.stopwatch.save_current_state()
+            save_ok = self.flush_all_saves()
+        except Exception:
+            save_ok = False
         if not save_ok or self._dirty_scratchpad_ids:
             self.status_bar.showMessage("Error: Notes could not be saved. Application remains open to prevent data loss.", 6000)
             self.set_save_status("Save Failed", is_saved=False)
             self._force_quit = False
             event.ignore()
+            self.show_notes_workspace()
+            self.showNormal()
+            self._activate_and_focus(self._get_active_editor())
+            self.status_bar.showMessage("Save Failed — application remains open. Retry with Ctrl+S, then Quit.", 10000)
             return
 
-        # Update tab orders across all panes
-        self._on_tabs_reordered()
+        try:
+            if self._force_quit or not (getattr(self, "tray_icon", None) and self.tray_icon.isVisible()):
+                self.toolbar.stopwatch.pause_timer()
+            # Update tab orders across all panes
+            self._on_tabs_reordered()
 
-        # Determine currently active scratchpad ID
-        if self.is_m365_workspace and getattr(self, "_workspace_restore_ticket", None):
-            active_id = self._workspace_restore_ticket
-        elif getattr(self, "_logical_active_scratchpad_id", None):
-            active_id = self._logical_active_scratchpad_id
-        else:
-            active_editor = self._get_active_editor()
-            active_id = active_editor.scratchpad_id if active_editor else None
+            # Determine currently active scratchpad ID
+            if self.is_m365_workspace and getattr(self, "_workspace_restore_ticket", None):
+                active_id = self._workspace_restore_ticket
+            elif getattr(self, "_logical_active_scratchpad_id", None):
+                active_id = self._logical_active_scratchpad_id
+            else:
+                active_editor = self._get_active_editor()
+                active_id = active_editor.scratchpad_id if active_editor else None
 
-        # Save session with window geometry and opacity
-        geometry_hex = self.saveGeometry().toHex().data().decode("utf-8")
-        opacity_val = int(round(self.windowOpacity() * 100))
-        if self.is_m365_workspace:
-            drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self._notes_visibility.get(self.history_drawer, False)
-        else:
-            drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self.history_drawer.isVisible()
-        self.session_service.persist_workspace(
-            active_scratchpad_id=active_id,
-            window_geometry=geometry_hex,
-            window_opacity=opacity_val,
-            history_drawer_open=drawer_open,
-        )
+            # Save session with window geometry and opacity
+            geometry_hex = self.saveGeometry().toHex().data().decode("utf-8")
+            opacity_val = int(round(self.windowOpacity() * 100))
+            if self.is_m365_workspace:
+                drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self._notes_visibility.get(self.history_drawer, False)
+            else:
+                drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self.history_drawer.isVisible()
+            self.session_service.persist_workspace(
+                active_scratchpad_id=active_id,
+                window_geometry=geometry_hex,
+                window_opacity=opacity_val,
+                history_drawer_open=drawer_open,
+            )
+
+        except Exception:
+            self._force_quit = False
+            self.set_save_status("Save Failed", is_saved=False)
+            event.ignore()
+            self.show_notes_workspace()
+            self.showNormal()
+            self._activate_and_focus(self._get_active_editor())
+            self.status_bar.showMessage("Save Failed — session could not be saved. Retry Ctrl+S, then Quit.", 10000)
+            return
 
         # If system tray is active and not forcing quit, minimize to tray
         if getattr(self, "tray_icon", None) and self.tray_icon.isVisible() and not getattr(self, "_force_quit", False):
@@ -1660,9 +1722,11 @@ class TechPadMainWindow(QMainWindow):
                     2500,
                 )
         else:
-            self.toolbar.stopwatch.pause_timer()
             if hasattr(self, "global_hotkey") and self.global_hotkey:
                 self.global_hotkey.unregister()
+            if getattr(self, "tray_icon", None):
+                self.tray_icon.hide()
+            self._shutdown_accepted = True
             event.accept()
 
     def showEvent(self, event: QShowEvent) -> None:

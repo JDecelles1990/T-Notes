@@ -144,3 +144,16 @@ If new tables or columns are introduced:
 3. Wrap all migration steps inside the atomic transaction block (`with conn:`).
 4. Validate with automated migration tests in `tests/test_database.py`.
 
+
+## Atomic note persistence (data-integrity candidate)
+
+No schema migration is required. `ScratchpadRepository.save_content_with_images`
+owns one `BEGIN IMMEDIATE` transaction for the ticket HTML/timestamp, referenced
+JPEG upserts and removal of unreferenced images for that ticket. It rejects an
+ambient transaction and missing ticket/image references. The connection context
+commits once or rolls everything back, including FTS trigger effects. Existing
+WAL, foreign keys and busy timeout remain enabled. Independent repository CRUD
+methods must not be called inside this unit of work because they commit separately.
+Synthetic fault tests cover HTML, image insert, cleanup and commit denial. SQLite
+online backup/restore tests check integrity, foreign keys and HTML/BLOB consistency;
+no production database is opened, migrated or copied by this task.

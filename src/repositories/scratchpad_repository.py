@@ -93,6 +93,44 @@ class ScratchpadRepository:
                 (content_html, now, scratchpad_id),
             )
 
+    def save_content_with_images(self, scratchpad_id, content_html, images, active_names):
+        """One owned transaction; never call independently committing repositories.
+
+        Reject an ambient transaction rather than accidentally commit someone else's
+        work. Missing referenced images are an error, including on an existing note.
+        """
+        conn = self.db.get_connection()
+        if conn.in_transaction:
+            raise RuntimeError("Note save requires its own transaction")
+        with conn:
+            conn.execute("BEGIN IMMEDIATE")
+            cursor = conn.execute(
+                "UPDATE scratchpads SET content_html=?, updated_at=? WHERE id=?",
+                (content_html, _get_utc_now_str(), scratchpad_id),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("Ticket no longer exists")
+            for name in sorted(active_names):
+                if name in images:
+                    conn.execute(
+                        "INSERT INTO scratchpad_images (scratchpad_id,image_name,image_data,mime_type) "
+                        "VALUES (?,?,?,'image/jpeg') ON CONFLICT(scratchpad_id,image_name) "
+                        "DO UPDATE SET image_data=excluded.image_data, mime_type=excluded.mime_type",
+                        (scratchpad_id, name, images[name]),
+                    )
+                elif conn.execute(
+                    "SELECT 1 FROM scratchpad_images WHERE scratchpad_id=? AND image_name=?",
+                    (scratchpad_id, name),
+                ).fetchone() is None:
+                    raise ValueError("Referenced image is unavailable; unsaved note retained")
+            stored = conn.execute(
+                "SELECT image_name FROM scratchpad_images WHERE scratchpad_id=?", (scratchpad_id,)
+            ).fetchall()
+            conn.executemany(
+                "DELETE FROM scratchpad_images WHERE scratchpad_id=? AND image_name=?",
+                [(scratchpad_id, row["image_name"]) for row in stored if row["image_name"] not in active_names],
+            )
+
     def update_metadata(self, scratchpad_id: int, ticket_number: str, client_name: str, title: str) -> None:
         """Updates the ticket number, client, and summary title."""
         conn = self.db.get_connection()

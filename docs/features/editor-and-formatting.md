@@ -267,3 +267,22 @@ To support portrait monitors (e.g. 1050x1680 at 150% scaling yielding a 700-logi
 - **Data & Identity Integrity:** Both `TechPadTabWidget` instances, `TechPadEditor` widgets, `QTextDocument` structures, undo stacks, in-memory images, and scratchpad IDs remain alive and unmodified. Auto-save continues flushing modifications in either pane without data loss.
 - **Side-by-Side Restoration:** When window width expands to 780px or greater, two-pane side-by-side editing is restored with previously saved splitter proportions.
 
+### 10.4 Right-Sidebar Mini-HUD Mode & Down-Left Status Control
+- **Right-Sidebar Docking & Elongated Height:** Mini-HUD mode (`Alt+T`) docks TechPad as an always-on-top right sidebar (`Qt.WindowStaysOnTopHint`) positioned along the right edge of the monitor's available screen geometry (`sidebar_x = avail.x() + avail.width() - sidebar_width`, `sidebar_width = min(380, avail.width())`, `sidebar_height = avail.height()`). The elongated vertical height maximizes visible ticket notes while keeping primary applications visible across the remainder of the desktop.
+- **Down-Left Status Bar Control (`📌 HUD (Alt+T)` / `📌 Normal (Alt+T)`):** The HUD toggle button is located in the bottom-left corner of the status bar (`status_bar.addWidget()`). In HUD mode, this positions the restore button right in the down-left corner of the sidebar, enabling immediate 1-click restoration to full workspace size without requiring manual window resizing.
+- **Persistent Visibility During Status Messages:** Connected to `status_bar.messageChanged` to ensure the down-left restore button remains visible even when temporary notification messages are posted to the status bar.
+- **Clean Sidebar Layout:** Bulky UI components (formatting toolbar, secondary toolbar, history drawer, and right-side permanent status buttons) are automatically hidden in HUD mode to eliminate crowding and keep focus on the active ticket note.
+
+
+## Revision-bound save acknowledgement
+
+Each live ticket has a monotonic in-session revision incremented by content/image
+changes. Saving snapshots HTML, pending JPEG bytes and that revision synchronously.
+`SaveReceipt(ticket_id, attempted_revision, persisted_revision, status, error_code)`
+acknowledges `saved` only after the repository transaction commits. Exceptions
+produce no saved receipt and retain dirty IDs, undo state, document and images.
+The coordinator rejects stale/mismatched acknowledgements and keeps newer edits
+dirty. Ctrl+S retries the latest snapshot, including when no debounce timer remains
+active. Creating a new ticket cannot display Saved while another ticket is dirty.
+This is an application persistence receipt, not a PowerShell wire schema, approved
+M365 adapter or contract release.

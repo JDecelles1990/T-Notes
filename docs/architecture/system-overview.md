@@ -1,5 +1,24 @@
 # System Overview & Architecture
 
+## Offline M365 return validation boundary
+
+The isolated S1 engine checks native PowerShell return types before JSON conversion,
+then independently validates the return and selected payload schemas. The P2
+correction rejects unsupported native objects, cycles and executable properties
+without changing GUI dispatch or authentication. See the
+[S1 engine topic](../features/m365-s1-engine.md#native-return-validation-correction).
+This candidate requires independent rereview; S2/S3 and production dispatch remain gated.
+
+## M365 company and identity preview
+
+The launcher delegates session-only company/admin metadata and synthetic identity/
+target context to Qt-independent services. CompanyContextPanel owns presentation
+only; it has no Notes database or PowerShell capability. Graph and Exchange remain
+separate fixture states and eligibility is always false. Production profile storage,
+runtime authentication and engine integration remain gated. See the
+[company directory](../features/m365-company-directory.md) and
+[ADR 0010](../decisions/0010-m365-company-context-boundary.md).
+
 ## M365 workspace foundation and category catalog
 
 S001 is merged into main. The category/catalog extension is an implementation
@@ -255,7 +274,7 @@ When the user selects **✕ Quit TechPad** from the system tray context menu or 
 ### Workspace Minimum Sizing Boundaries
 - **Notes Workspace:** `660x400` logical pixels. Tailored for portrait monitors (e.g. physical resolution 1050x1680 at 150% Windows scaling, providing ~700px viewport) without clipping toolbars or editors.
 - **M365 Launcher:** `640x380` logical pixels. Reflows between 1-column (<500px) and 2-column (>=500px) configurations with collapsible sidebars.
-- **Mini-HUD Mode:** `340x200` logical pixels, compact pinned overlay.
+- **Mini-HUD Mode:** `340x200` minimum logical pixels. Dynamically docks as an elongated right sidebar (`380px` width x `screen.availableGeometry().height()`) pinned always-on-top. Features a down-left status bar toggle button (`status_bar.addWidget`) ensuring immediate 1-click restoration to standard workspace size without manual resizing.
 
 ### Desktop Work-Area Clamping (`_clamp_geometry_to_screen`)
 - Window geometry is bounded using `screen.availableGeometry()` on startup, HUD exit, and resize events.

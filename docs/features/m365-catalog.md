@@ -1,9 +1,18 @@
 # M365 categories and operation registration
 
+The [company directory and identity preview](m365-company-directory.md) adds
+session-only company and multiple administrator metadata, company confirmation,
+separate synthetic Graph/Exchange states and client target input. It does not alter
+the fourteen categories, provisional catalog pins, empty production registry or
+execution prohibition. S1 now binds catalog validation to official v0.3.0;
+the engine candidate remains disconnected and awaits independent review.
+
 Status: category architecture candidate for independent review. The production
 operation registry is empty. Contract compatibility targets
-`tnotes.m365 / 0.3.0-proposed.1`; that proposal and the offline engine are **not
-independently approved**. This implementation approves neither.
+`tnotes.m365 / 0.3.0`, explicitly accepted by the user for S1 development on
+2026-11-03 with the final contract independent-signoff limitation retained.
+The S1 implementation is **not independently approved**. See
+[S1 engine migration](m365-s1-engine.md) for authority and test boundaries.
 
 ## Taxonomy
 
@@ -89,7 +98,7 @@ Future registration procedure:
 
 1. Obtain explicit task, approved architecture/contract and exact release review
    inputs. Follow root GEMINI.md for any operation implementation. The current
-   proposal does not authorize creating or running scripts.
+   catalog does not authorize creating or running scripts.
 2. Assign a unique stable script ID and primary category. Add one implementation,
    co-located `operation.manifest.json`, README, Pester tests and synthetic fixtures.
 3. Declare all contract-required script/version/SHA identity, PS7 and module
@@ -120,10 +129,10 @@ contained and free of symlink/reparse ancestors. Discovery reads only explicit
 index references and never scans/imports scripts.
 
 For nonempty indexes, `ManifestValidator` loads all seven **existing** Draft 2020-12
-schemas from the corrected proposal. `contract-review-pins.json` binds their raw
+schemas from `docs/contracts/m365/`. `contract-review-pins.json` binds their raw
 hashes for compatibility review; it is explicitly not approval. A nonempty index
 fails closed if schemas/pins are unavailable or changed. The empty production
-index does not require planning schemas to start the application.
+index does not require schema loading to start the application.
 
 JSON Schema validation uses `jsonschema` with a local `referencing.Registry` and
 no retrieval callback, following the library's
@@ -159,7 +168,8 @@ the Qt main loop and separately establish external trust, runtime, immutable rel
 binding, verified target/context/connections, scopes, effective RBAC and explicit
 authorization. Presentation metadata, favorites or a workflow cannot bypass gates.
 
-- [Corrected proposed contract](../planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT.md)
+- [Official implementation contract](../contracts/m365/CONTRACT.md)
+- [Preserved predecessor proposal](../planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT.md)
 - [Correction handoff](../planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT_CORRECTION_HANDOFF.md)
 - [Offline engine](../planning/m365/offline-execution-engine-prototype/README.md)
 - [Engine checkpoint](../planning/m365/offline-execution-engine-prototype/ENGINE_CHECKPOINT.md)

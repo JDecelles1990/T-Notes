@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://company-directory.invalid/exchange/1.0.0-draft.1/company-directory.schema.json",
+  "title": "Portable Company Directory Exchange - DRAFT, approval pending",
+  "$comment": "No implementation or persistence authority. Separate from M365 PowerShell and in-memory version 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "companies"
+  ],
+  "properties": {
+    "format": {
+      "const": "company-directory.exchange"
+    },
+    "schema_version": {
+      "const": "1.0.0-draft.1"
+    },
+    "companies": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/company"
+      }
+    }
+  },
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$"
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 253,
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z$"
+    },
+    "administrator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "administrator_id",
+        "upn",
+        "display_label"
+      ],
+      "properties": {
+        "administrator_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "upn": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 254,
+          "pattern": "^[^\\s@\\u0000-\\u001f\\u007f*?]+@[^\\s@\\u0000-\\u001f\\u007f*?]+\\.[^\\s@\\u0000-\\u001f\\u007f*?]+$"
+        },
+        "display_label": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+        }
+      }
+    },
+    "company": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "company_id",
+        "display_name",
+        "tenant_id",
+        "primary_domain",
+        "additional_verified_domains",
+        "administrators",
+        "preferred_administrator_id",
+        "preferred_cloud",
+        "notes",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "company_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+        },
+        "tenant_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "primary_domain": {
+          "$ref": "#/$defs/domain"
+        },
+        "additional_verified_domains": {
+          "type": "array",
+          "maxItems": 30,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/domain"
+          }
+        },
+        "administrators": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "$ref": "#/$defs/administrator"
+          }
+        },
+        "preferred_administrator_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "preferred_cloud": {
+          "enum": [
+            "Global",
+            "USGov",
+            "USGovDoD",
+            "China"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+        },
+        "created_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/timestamp"
+        }
+      }
+    }
+  }
+}

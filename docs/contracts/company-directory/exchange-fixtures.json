@@ -1,0 +1,1522 @@
+{
+  "status": "DRAFT - APPROVAL PENDING",
+  "cases": [
+    {
+      "name": "multiple-admins-and-empty-admins",
+      "accept": true,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "empty-directory",
+      "accept": true,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": []
+      }
+    },
+    {
+      "name": "same-upn-separate-tenants",
+      "accept": true,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              }
+            ],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unsupported-version",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-number",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": 7,
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-empty",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-no-time",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-impossible-date",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-02-30T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-reversed",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2025-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid-tenant",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "bad",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dangling-default",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-999999999999",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "primary-additional-duplicate",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [
+              "ALPINE.EXAMPLE"
+            ],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "domain-cross-tenant",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "ALPINE.EXAMPLE",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-name",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "SYNTHETIC ALPINE",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-tenant",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-company-id",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-company-field",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z",
+            "unexpected": true
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "root-secret",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ],
+        "access_token": "SYNTHETIC-NOT-A-TOKEN"
+      }
+    },
+    {
+      "name": "company-secret",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z",
+            "password": "SYNTHETIC-NOT-A-PASSWORD"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "admin-secret",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint",
+                "credential": "SYNTHETIC"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "duplicate-upn-casefold",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000003",
+                "upn": "ADMIN@ALPINE.EXAMPLE",
+                "display_label": "Primary hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "malformed-json",
+      "accept": false,
+      "raw_json": "{"
+    },
+    {
+      "name": "duplicate-json-key",
+      "accept": false,
+      "raw_json": "{\"format\":\"a\",\"format\":\"b\"}"
+    },
+    {
+      "name": "nonfinite-json",
+      "accept": false,
+      "raw_json": "{\"x\":NaN}"
+    },
+    {
+      "name": "top-array",
+      "accept": false,
+      "raw_json": "[]"
+    },
+    {
+      "name": "bom-json",
+      "accept": false,
+      "raw_json": "\ufeff{}"
+    },
+    {
+      "name": "overdeep-json",
+      "accept": false,
+      "raw_json": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+    },
+    {
+      "name": "missing-required-field",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid-domain",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "-bad..example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-missing-offset",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-non-utc-offset",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00+05:00",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "timestamp-false",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": false,
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "api-key",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ],
+        "api_key": "SYNTHETIC"
+      }
+    },
+    {
+      "name": "refresh-token",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z",
+            "refresh_token": "SYNTHETIC"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "connection-state",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z",
+            "connections": {}
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "target-context",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z",
+            "target": {}
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "authentication-session",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000002",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ],
+        "session": {}
+      }
+    },
+    {
+      "name": "conflicting-id-tenants",
+      "accept": false,
+      "document": {
+        "format": "company-directory.exchange",
+        "schema_version": "1.0.0-draft.1",
+        "companies": [
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Alpine",
+            "tenant_id": "20000000-0000-4000-8000-000000000001",
+            "primary_domain": "alpine.example",
+            "additional_verified_domains": [],
+            "administrators": [
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000001",
+                "upn": "admin@alpine.example",
+                "display_label": "Primary hint"
+              },
+              {
+                "administrator_id": "30000000-0000-4000-8000-000000000002",
+                "upn": "backup@alpine.example",
+                "display_label": "Backup hint"
+              }
+            ],
+            "preferred_administrator_id": "30000000-0000-4000-8000-000000000001",
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          },
+          {
+            "company_id": "10000000-0000-4000-8000-000000000001",
+            "display_name": "Synthetic Birch",
+            "tenant_id": "20000000-0000-4000-8000-000000000002",
+            "primary_domain": "birch.example",
+            "additional_verified_domains": [],
+            "administrators": [],
+            "preferred_administrator_id": null,
+            "preferred_cloud": "Global",
+            "notes": "",
+            "created_at": "2026-11-02T00:00:00Z",
+            "updated_at": "2026-11-02T00:00:00Z"
+          }
+        ]
+      }
+    }
+  ]
+}

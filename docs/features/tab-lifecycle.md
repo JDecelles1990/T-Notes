@@ -208,3 +208,14 @@ Technicians can seamlessly migrate tickets between split view panes using natura
 5. **State Preservation:** Transferring tabs preserves all embedded image BLOBs, checklist progress badges, ticket color identity, and active billing stopwatch seconds.
 
 
+
+## Failed close and Quit recovery
+
+All window-close and explicit/tray Quit requests pass through `closeEvent` before
+teardown. Dirty snapshots save even with inactive timers; an unavailable dirty
+editor blocks completion. Save or session-persistence failure cancels shutdown,
+restores Notes visibly, requests focus and retains the F8/tray controls. Ctrl+S
+retries without another edit. F8 unregistration, tray hiding and QApplication quit
+follow accepted shutdown only. Ordinary successful close-to-tray retains the
+existing background behavior. Synthetic tests cover visible/hidden failures and
+retry; physical desktop acceptance is separate.

@@ -1,0 +1,83 @@
+Windows fatal exception: code 0x8001010d
+
+Current thread 0x00004ac8 (most recent call first):
+  File "C:\Dev\T-Notes\tests\test_m365_company_ui.py", line 22 in launcher
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 1067 in call_fixture_func
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 1407 in pytest_fixture_setup
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_execution.py", line 147 in _multicall
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_manager.py", line 183 in _hookexec
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_caller.py", line 197 in __call__
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 1301 in execute
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 797 in _get_active_fixturedef
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 701 in getfixturevalue
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\fixtures.py", line 877 in _fillfixtures
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\python.py", line 1801 in setup
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 536 in setup
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 170 in pytest_runtest_setup
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_execution.py", line 147 in _multicall
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_manager.py", line 183 in _hookexec
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_caller.py", line 197 in __call__
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 250 in <lambda>
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 361 in from_call
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 249 in call_and_report
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 132 in runtestprotocol
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_execution.py", line 147 in _multicall
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_manager.py", line 183 in _hookexec
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_caller.py", line 197 in __call__
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\main.py", line 411 in pytest_runtestloop
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_execution.py", line 147 in _multicall
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_manager.py", line 183 in _hookexec
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_caller.py", line 197 in __call__
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\main.py", line 387 in _main
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\main.py", line 333 in wrap_session
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\main.py", line 380 in pytest_cmdline_main
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_execution.py", line 147 in _multicall
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_manager.py", line 183 in _hookexec
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pluggy\_caller.py", line 197 in __call__
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\config\__init__.py", line 262 in _main
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\_pytest\config\__init__.py", line 286 in _console_main
+  File "C:\Users\Jo\AppData\Local\Programs\Python\Python314\Lib\site-packages\pytest\__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 203 in _run_module_as_main
+
+Current thread's C stack trace (most recent call first):
+  <cannot get C stack on this system>
+........................................................................ [ 44%]
+........................................................................ [ 88%]
+...............F..                                                       [100%]
+================================== FAILURES ===================================
+___________ test_unapproved_metadata_details_search_and_no_dispatch ___________
+
+registration = (<function registration.<locals>.build at 0x000002394F630B40>, {'contract_version': '0.3.0-proposed.1', 'script_id': '...adata'), WindowsPath('C:/Users/Jo/AppData/Local/Temp/pytest-of-Jo/pytest-170/test_unapproved_metadata_detai0/library'))
+qapp = <PySide6.QtWidgets.QApplication(0x239467bf410) at 0x00000239494211C0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002394F637ED0>
+
+    def test_unapproved_metadata_details_search_and_no_dispatch(registration, qapp, monkeypatch):
+        build, _, _, _ = registration
+        service = build()
+        def forbidden(*args, **kwargs):
+            pytest.fail("Catalog controls attempted process or network dispatch")
+        monkeypatch.setattr(subprocess, "Popen", forbidden)
+        monkeypatch.setattr(subprocess, "run", forbidden)
+        monkeypatch.setattr(socket, "create_connection", forbidden)
+        widget = M365LauncherWidget(catalog_service=service)
+        try:
+            widget.show()
+            widget.navigation.setCurrentRow(EXPECTED.index("general"))
+            qapp.processEvents()
+            assert widget.operation_list.count() == 1
+            assert "Unavailable" in widget.operation_list.item(0).text()
+            assert "trust and approval" in widget.operation_details.toPlainText()
+            assert widget.operation_details.isReadOnly()
+            assert all(edit.isReadOnly() for edit in widget.findChildren(QPlainTextEdit))
+>           assert [button.text() for button in widget.findChildren(QPushButton)] == ["Back to T-Notes"]
+E           AssertionError: assert ['Back to T-N..., 'Edit', ...] == ['Back to T-Notes']
+E             
+E             Left contains 11 more items, first extra item: '+ Company'
+E             Use -v to get more diff
+
+tests\test_m365_catalog.py:265: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_m365_catalog.py::test_unapproved_metadata_details_search_and_no_dispatch
+1 failed, 161 passed in 27.29s

@@ -1,0 +1,25 @@
+{
+  "provenance": "Supplementary tooling inventory documenting post-implementation P1 tooling corrections (Python interpreter discovery and non-destructive test execution); historical evidence/implementation-inventory.json is preserved unchanged",
+  "baseline_inventory": "evidence/implementation-inventory.json",
+  "tooling_files_updated": [
+    {
+      "path": "README.md",
+      "historical_sha256": "0b840d157bc8932814e1462a6b42df1d4bd2ff8f42fe641ec38cda212ea962ef",
+      "current_sha256": "bba48b5d0ae423d0e9e2d4545e7456ed0211b25aa98285a8aabe27a6c75ddcac",
+      "rationale": "P1 tooling update: documented operator runtime Python discovery via Get-Command, isolated temporary directory default execution, and explicit --record-evidence flag"
+    },
+    {
+      "path": "run_tests.py",
+      "historical_sha256": "24e6d4b39fd0d4cf89f27d0af1c4c97248a5bdd1647a0b3263d1afa4a4d18ae2",
+      "current_sha256": "a496b4554806a87c731f2f22e93594212c5a6bc8f488c020b7775f040e6dcfc7",
+      "rationale": "P1 tooling update: dynamic sys.executable resolution, --python CLI parameter with existence check, isolated temporary directory default, --record-evidence flag, and pre/post example fixture hash assertion"
+    },
+    {
+      "path": "tests/test_engine.py",
+      "historical_sha256": "2a80d2052573e20a1fb752c77e2b49d45e3d30e7fab7f5d54fa6e4af81cbcada",
+      "current_sha256": "8f438ad3b3132a99ebbc5029b29e547017653cde4214b687ba0be5c35077f9b2",
+      "rationale": "P1 tooling update: test output response routing to isolated temporary directory (tempfile.TemporaryDirectory / TNOTES_TEST_OUTPUT_DIR) to ensure non-destructive execution against examples/"
+    }
+  ]
+}
+

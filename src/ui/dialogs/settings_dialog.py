@@ -78,6 +78,19 @@ class SettingsDialog(QDialog):
 
         layout.addLayout(form)
 
+        # Storage and contract approval are deliberately not inferred from a draft.
+        self.btn_merge = QPushButton("Merge", self)
+        self.btn_merge.setAccessibleName("Merge company directory")
+        self.btn_merge.setEnabled(False)
+        self.btn_merge.setToolTip("Company Directory Merge is unavailable pending contract and storage approval.")
+        layout.addWidget(self.btn_merge)
+        self.merge_status = QLabel(
+            "Company Directory Merge is unavailable. Profiles are session-only; "
+            "contract, storage and backup approval are required.", self
+        )
+        self.merge_status.setWordWrap(True)
+        layout.addWidget(self.merge_status)
+
         # Buttons
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()

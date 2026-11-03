@@ -1,0 +1,20 @@
+{
+  "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
+  "assets": {
+    "protocol.ps1": "5b89ff1df0ad066906990779b11d6b0a0fabca54f4aea490a0c9c5316c2d57a5",
+    "schema-check.ps1": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda",
+    "worker.ps1": "ab92147168f758785740051db2361670e7be9242907bb8b5d4de9a0315f1d3c7",
+    "synthetic-context.json": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a",
+    "manifest.json": "c59b16ff1fd7189eac447cc0eb9b8577a2ba99765c107a37aa78a48bd36b1a4f",
+    "scripts/Fixture-Operation.ps1": "0b5ccc113a88ef7077cc9130180a01d46483d95449ffb5de0039174eb4cafc80",
+    "tests/fixtures/Fault-Worker.ps1": "b492446ee0f4de01ccec6052fa1f818edd08818229b9a157e65318ed7b5c7f07",
+    "tests/fixtures/Child-Sleeper.ps1": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9"
+  },
+  "operations": [
+    {
+      "script_id": "M365.TEST.ABI",
+      "manifest": "manifest.json",
+      "worker": "worker.ps1"
+    }
+  ]
+}

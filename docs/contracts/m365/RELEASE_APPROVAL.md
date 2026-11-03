@@ -1,12 +1,12 @@
 # M365 Official PowerShell Contract v0.3.0 — Release Approval Record
 
-Candidate release identifier: `tnotes.m365 / 0.3.0`  
-Current release status: **RELEASE CANDIDATE — INDEPENDENT REVIEW REQUIRED**  
-Required status upon independent approval: **APPROVED — IMPLEMENTATION CONTRACT**  
-Date: 2026-11-02  
-Authoritative repository path: `docs/contracts/m365/`  
-Authoritative entrypoint: [`CONTRACT.md`](CONTRACT.md)  
-Predecessor baseline: `tnotes.m365 / 0.3.0-proposed.1` (historical proposal preserved at `docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/`)
+- Candidate release identifier: `tnotes.m365 / 0.3.0`
+- Current release status: **RELEASE CANDIDATE — INDEPENDENT REVIEW REQUIRED**
+- Required status upon independent approval: **APPROVED — IMPLEMENTATION CONTRACT**
+- Date: 2026-11-02
+- Authoritative repository path: `docs/contracts/m365/`
+- Authoritative entrypoint: [`CONTRACT.md`](CONTRACT.md)
+- Predecessor baseline: `tnotes.m365 / 0.3.0-proposed.1` (historical proposal preserved at `docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/`)
 
 ---
 
@@ -28,7 +28,7 @@ To maintain strict operational security and eliminate ambiguity between developm
 | Approval Boundary | Designated Status | Authorized Capabilities | Prohibited Capabilities |
 |---|---|---|---|
 | **1. Contract Specification** | `APPROVED — IMPLEMENTATION CONTRACT` | Offline schema validation, contract authoring, unit/Pester test authoring against synthetic fixtures. | Live tenant execution, credential storage, engine registration. |
-| **2. Host Execution Engine** | `APPROVED — EXECUTION ENGINE` | Offline engine dispatch, worker sandbox isolation, process supervision, output validation. | Live Graph/Exchange authentication, unverified script execution. |
+| **2. Host Execution Engine** | `APPROVED — EXECUTION ENGINE` | Offline engine dispatch, Job Object process supervision, pinned executable/dependency verification, controlled invocation, cancellation, and owned-process cleanup (no hostile arbitrary-code containment). | Live Graph/Exchange authentication, unverified script execution. |
 | **3. Operation Script** | `APPROVED — OPERATION SCRIPT` | Registration of a specific `.ps1` operation in catalog with pinned SHA-256 and verified permissions. | Replay outside declared tenant/scope bounds, unapproved script execution. |
 | **4. Live Tenant Execution** | `AUTHORIZED — LIVE TENANT EXECUTION` | Live tenant PowerShell invocation with human administrator or policy authorization. | Execution without tenant verification, automated retry of non-idempotent operations. |
 
@@ -51,17 +51,18 @@ Reusable M365 PowerShell operations defined under this contract are designed for
 
 ### Reusable Script Interface Requirements:
 - Must rely exclusively on parameters passed by the hosting adapter across the standard invocation boundary:
-  - `$Context`: Typed hashtable containing `company_id`, `tenant_id`, `ticket_id`, `correlation_id`, `execution_mode`, etc.
-  - `$Parameters`: Validated typed hashtable conforming to the operation's manifest schema.
-  - `$CancellationToken`: Cancellation sentinel monitored during long-running operations.
-- Must return a typed PowerShell object conforming to the official contract schema (`https://tnotes.invalid/m365/0.3.0/schemas/operation-data.schema.json`).
-- Must allow the host adapter to serialize the wire envelope to stdout (scripts never perform wire JSON serialization on stdout).
+  - `[Parameter(Mandatory)] [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Context`: Deeply read-only dictionary containing exactly the fields of `common#/$defs/invocation_context` (`company_id`, `tenant_id`, `admin_identity_ref`, `session_generation`, `script_id`, `contract_version`, `correlation_id`, `target`, `ticket_context`, `release_binding`, `verified_account_upn`, `connections`). Note: `ticket_id` is nested in `ticket_context`, and `execution_mode` is not an invocation_context field.
+  - `[Parameter(Mandatory)] [System.Collections.Generic.IReadOnlyDictionary[string,object]] $Parameters`: Deeply read-only dictionary containing validated effective manifest parameters with defaults already bound; scripts cannot mutate host state through an exposed mutable nested object.
+  - `[Parameter(Mandatory)] [System.Threading.CancellationToken] $CancellationToken`: Active token instance monitored before provider calls and between batches; throws `OperationCanceledException` on cancellation (not a sentinel value or flag).
+- Must emit exactly one `System.Management.Automation.PSCustomObject` conforming to `common#/$defs/operation_return` on the success stream (`status`, `operation_outcome`, `data`, `warnings`, `errors`).
+- Must populate `data` with a typed `PSCustomObject` matching the manifest-selected output payload schema (`schemas/operation-data.schema.json#/$defs/<operation_id>`), or `null` on error.
+- Must allow the host adapter to validate `operation_return`, separately validate `data` against the selected operation-data schema, capture all streams, and serialize the single LF-terminated wire envelope (`execution-result`) to stdout (scripts never perform wire JSON serialization on stdout).
 
 ---
 
-## 4. Resolution of P1 Tooling Findings
+## 4. Resolution of P1 Tooling Findings and Engine Inventory Drift
 
-Three critical P1 tooling findings identified during independent review have been corrected and verified:
+Three critical P1 tooling findings identified during independent review have been corrected and verified, and engine tooling inventory drift is reconciled:
 
 ### P1 — Python Interpreter Discovery
 - **Finding:** Hardcoded obsolete interpreter paths (`pythoncore-3.14-64`) caused execution failures on standard Windows installations.
@@ -86,17 +87,22 @@ Three critical P1 tooling findings identified during independent review have bee
   - Contract checks evaluate contract artifacts (7 schemas, ABI, metadata, exit codes, limits, mock compatibility).
   - Repository baseline preservation evaluates historical snapshot drift as an explicitly separate diagnostic without failing contract semantics.
 
+### Engine Tooling Drift Reconciliation
+- Three tooling files (`README.md`, `run_tests.py`, `tests/test_engine.py`) differ from the historical `evidence/implementation-inventory.json` due to the authorized P1 tooling updates.
+- Historical `implementation-inventory.json` is preserved unchanged (56/59 files match).
+- A supplementary inventory (`docs/planning/m365/offline-execution-engine-prototype/evidence/tooling-inventory-supplement.json`) documents current hashes and update provenance.
+
 ---
 
 ## 5. Consumer Compatibility & Migration Requirements
 
-The official release candidate `tnotes.m365 / 0.3.0` introduces updated schema identifiers (`https://tnotes.invalid/m365/0.3.0/schemas/...`) and strict version validation. Existing consumers require coordinated migration:
+The official release candidate `tnotes.m365 / 0.3.0` introduces updated schema identifiers (`https://tnotes.invalid/m365/0.3.0/schemas/...`) and strict version validation. Existing consumers require coordinated but distinct independent migrations:
 
 | Consumer Component | Current State | Required Migration Action | Assigned Responsibility |
 |---|---|---|---|
 | **`M365CatalogService`** (`src/services/m365_catalog_service.py`) | Pinned to `03_codex_reviews/...` and `VERSION = "0.3.0-proposed.1"` | Update default path to `docs/contracts/m365/` and expected version to `0.3.0`. | Codex / Application Service Owner |
-| **Contract Review Pins** (`assets/m365/contract-review-pins.json`) | Contains 21 hashes for `0.3.0-proposed.1` | Update review pins to match the 26 official `0.3.0` candidate hashes upon independent approval. | Codex / Security Integration |
-| **Offline Execution Engine** (`docs/planning/m365/offline-execution-engine-prototype/`) | `trust-anchor.json` pins `0.3.0-proposed.1` schemas | Update trust anchor and test descriptors to reference official `0.3.0` schemas in follow-on engine task. | Engine Maintainer |
+| **Catalog Schema Review Pins** (`assets/m365/contract-review-pins.json`) | Contains **7 schema hashes** for predecessor `0.3.0-proposed.1` | Update the 7 schema pins to match the 7 official `0.3.0` schema hashes upon independent approval. (Pins catalog schemas only, distinct from the 26-file contract release candidate inventory). | Codex / Security Integration |
+| **Offline Execution Engine** (`docs/planning/m365/offline-execution-engine-prototype/`) | `trust-anchor.json` pins **21 predecessor contract artifacts** from `03_codex_reviews/...` | Update engine `trust-anchor.json` and test descriptors to reference official `0.3.0` contract artifacts in a dedicated engine integration task. | Engine Maintainer |
 
 ---
 
@@ -106,10 +112,10 @@ Every file in `docs/contracts/m365/` has been verified with cryptographic SHA-25
 
 | File Path | Description | SHA-256 |
 |---|---|---|
-| `CONTRACT.md` | Authoritative contract specification (Entrypoint) | `d983ed65280b908d173310de6c69170d4708e53a79e2c6a7bf1f8127049faa56` |
+| `CONTRACT.md` | Authoritative contract specification (Entrypoint) | `2308c1d1ea5381952ccd23f48698a5fa4559e2100b11ed1bbaa480147620250d` |
 | `README.md` | Architecture index, boundaries, and discovery | `38a98881bd610507e65423bf021fce23b7a347f4892de8d6318ef8d2f2b1b1ec` |
 | `AGENT_HANDOFF.md` | Agent governance and review handoff instructions | `3f2798f1431764911da07c824dd132802202fb60d62d21244399ad87c202c86b` |
-| `CHECKPOINT.md` | Promotion checkpoint and verification summary | `744c281f21b9fceb01b31e4bb6226e261aff5b3de805502c7db34c9dd67f5609` |
+| `CHECKPOINT.md` | Promotion checkpoint and verification summary | `295424cde9e8515bd8416149427f7dc0b4b21dfc774f8754c4b03c0b053c273f` |
 | `CONTRACT_CORRECTION_HANDOFF.md` | Historical record of independent review corrections | `3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9` |
 | `GEMINI.md` | Reference copy of script development rules | `3d4f901235904ba86f2147342d71c56c641ed05c8fd1878197af34fdce7b6e26` |
 | `security-and-execution.md` | Security model, catalog, and worker lifecycle | `28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe` |
@@ -133,14 +139,18 @@ Every file in `docs/contracts/m365/` has been verified with cryptographic SHA-25
 | `validation/correction-results-20261103T010141-0a261cf4.json` | Historical correction evidence | `5f8a74acd096dc962b1a3664901c20ba15b2e31f4455f7282e94a0b994665901` |
 | `validation/correction-results-20261103T012008-67c2c2fe.json` | Official v0.3.0 validation evidence | `87ba06d99dc2542ddcae1d3572627c13a935110559df645a02fcf90630ffa7bc` |
 
+> [!NOTE]
+> **Provenance of Prior CHECKPOINT.md Digest Discrepancy (Finding R1):**
+> An earlier draft of `CHECKPOINT.md` had SHA-256 `744c281f21b9fceb01b31e4bb6226e261aff5b3de805502c7db34c9dd67f5609` (backed up at `C:\Dev\TNotes-ReviewBackups\M365-ContractPromotion-20261102-2108`). When `CHECKPOINT.md` was finalized for official release candidate v0.3.0, its bytes changed to `d82b32ca...`, but the inventory record in `RELEASE_APPROVAL.md` retained the earlier digest. Following the corrections in this cycle, `CHECKPOINT.md` is frozen at digest `295424cde9e8515bd8416149427f7dc0b4b21dfc774f8754c4b03c0b053c273f` and recorded above. `RELEASE_APPROVAL.md` omits self-hashing to prevent circular references.
+
 ---
 
 ## 7. Validation Execution Summary
 
 ### Contract Validation Suite
 - **Command:** `python -B docs/contracts/m365/validation/validate_contract.py`
-- **Contract Result:** `PASS` (446 / 446 checks passed, 0 failures)
-- **Baseline Preservation Diagnostic:** `FAIL` (23 historical drift items: 17 S001 merge changes + 6 AGENTS.md/GEMINI.md changes; isolated from contract semantics)
+- **Contract Result:** `PASS` (450 / 450 checks passed, 0 failures)
+- **Baseline Preservation Diagnostic:** `FAIL` (historical repository baseline drift isolated from contract semantics)
 - **Execution Mode:** Isolated temporary directory, automatic cleanup on `PASS`.
 
 ### Offline Execution Engine Native Suite
@@ -155,7 +165,6 @@ Every file in `docs/contracts/m365/` has been verified with cryptographic SHA-25
 The package is prepared and fully validated. The following gates remain before production release:
 
 1. **Independent Review:** An independent reviewer (or human operator) must inspect this package, verify hashes, and confirm the transition from `RELEASE CANDIDATE — INDEPENDENT REVIEW REQUIRED` to `APPROVED — IMPLEMENTATION CONTRACT`.
-2. **Consumer Pin Update:** Update `assets/m365/contract-review-pins.json` and `src/services/m365_catalog_service.py` to point to `docs/contracts/m365/` with version `0.3.0`.
+2. **Consumer Pin Update:** Update the 7 schema review pins in `assets/m365/contract-review-pins.json` and update `src/services/m365_catalog_service.py` to point to `docs/contracts/m365/` with version `0.3.0`.
 3. **Engine Trust Anchor Update:** Update `docs/planning/m365/offline-execution-engine-prototype/trust-anchor.json` to pin official `0.3.0` schemas in a dedicated engine integration task.
 4. **Live Execution Authorization:** Live Microsoft Graph and Exchange Online execution remains blocked until an authorized administrative gate explicitly authorizes live tenant operations.
-

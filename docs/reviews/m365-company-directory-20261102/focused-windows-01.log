@@ -1,0 +1,32 @@
+................F
+================================== FAILURES ===================================
+_________ test_profile_roundtrip_through_authorized_test_only_storage _________
+
+directory = <src.services.m365_company_service.CompanyDirectory object at 0x0000024CF65F3050>
+tmp_path = WindowsPath('C:/Users/Jo/AppData/Local/Temp/pytest-of-Jo/pytest-169/test_profile_roundtrip_through0')
+
+    def test_profile_roundtrip_through_authorized_test_only_storage(directory, tmp_path):
+        # Simulates the Phase B seam AFTER a fixture-only authorization. The application
+        # has no persistence adapter or production path; this creates no production schema.
+        path = tmp_path / "company-fixture.sqlite"
+        payload = directory.export_metadata()
+        with sqlite3.connect(path) as db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA foreign_keys=ON")
+            db.execute("CREATE TABLE fixture_profile (payload TEXT NOT NULL)")
+            db.execute("INSERT INTO fixture_profile VALUES (?)", (json.dumps(payload),))
+        with sqlite3.connect(path) as db:
+            loaded = CompanyDirectory.from_metadata(json.loads(db.execute("SELECT payload FROM fixture_profile").fetchone()[0]))
+>       assert loaded.export_metadata() == json.loads(json.dumps(payload))
+E       AssertionError: assert {'format': 'm...ample', ...}]} == {'format': 'm...ample', ...}]}
+E         
+E         Omitting 2 identical items, use -vv to show
+E         Differing items:
+E         {'companies': [{'company_id': '10000000-0000-4000-8000-000000000001', 'display_name': 'Example Alpine (synthetic)', 't...mple Birch (synthetic)', 'tenant_id': '20000000-0000-4000-8000-000000000002', 'primary_domain': 'birch.example', ...}]} != {'companies': [{'company_id': '10000000-0000-4000-8000-000000000001', 'display_name': 'Example Alpine (synthetic)', 't...mple Birch (synthetic)', 'tenant_id': '20000000-0000-4000-8000-000000000002', 'primary_domain': 'birch.example', ...}]}
+E         Use -v to get more diff
+
+tests\test_m365_company_context.py:93: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_m365_company_context.py::test_profile_roundtrip_through_authorized_test_only_storage
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 16 passed in 0.97s

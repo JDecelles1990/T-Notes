@@ -406,7 +406,7 @@ To guarantee application independence, reusable operations MUST NOT:
 
 Reusable scripts MUST:
 - Rely strictly on host-supplied parameters passed across the invocation boundary: `$Context`, `$Parameters`, and `$CancellationToken`.
-- Return a typed operation result conforming to the official contract schema (`https://tnotes.invalid/m365/0.3.0/schemas/operation-data.schema.json`).
+- Return exactly one typed `PSCustomObject` conforming to `common#/$defs/operation_return`, with the five fields `status`, `operation_outcome`, `data`, `warnings`, and `errors`. The `data` property is separately validated against the manifest-selected `schemas/operation-data.schema.json#/$defs/<payload_definition>` schema; the host adapter owns validation and wire-envelope serialization.
 - Remain pure PowerShell 7 operations that can execute seamlessly under any hosting harness adhering to this contract (including F7Hub).
 
 ## Four distinct approval boundaries
@@ -418,8 +418,8 @@ Operational security and governance mandate four explicitly separated approval g
    - Authorizes offline script development and testing against synthetic fixtures.
    - *Does NOT authorize live tenant execution, credential handling, or executable registration.*
 2. **Engine Approved (`APPROVED — EXECUTION ENGINE`):**
-   - The host execution engine, process supervisor, isolation boundaries, cancellation mechanics, and output parsers are independently tested and approved.
-   - Verifies sandbox isolation and non-destructive execution.
+   - The host execution engine, process supervisor, verification mechanisms, cancellation mechanics, and output parsers are independently tested and approved.
+   - Verifies pinned executable and dependency verification, controlled process invocation, Windows Job Object process supervision, cancellation, timeout, and owned-process cleanup for trusted allowlisted operations (these mechanisms do not provide containment or isolation for hostile arbitrary PowerShell code).
 3. **Operation Approved (`APPROVED — OPERATION SCRIPT`):**
    - A specific PowerShell operation script, its manifest, SHA-256 hash, required Graph scopes, and Pester tests are reviewed and cryptographically pinned in the host catalog.
    - Authorizes the host engine to register and invoke the script in offline/mock modes.

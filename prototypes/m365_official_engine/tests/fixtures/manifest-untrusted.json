@@ -1,0 +1,140 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.TEST.ABI",
+  "title": "Offline ABI Fixture",
+  "description": "TEST ONLY: deterministic protocol fixture; no M365 operation.",
+  "category": "Entra ID / Users",
+  "tags": [
+    "synthetic"
+  ],
+  "script_path": "scripts/Not-Allowlisted.ps1",
+  "script_version": "0.0.1-provisional",
+  "script_sha256": "0b5ccc113a88ef7077cc9130180a01d46483d95449ffb5de0039174eb4cafc80",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "Scenario",
+      "type": "string",
+      "required": false,
+      "description": "Synthetic test case only",
+      "allowed_values": [
+        "success",
+        "error",
+        "partial",
+        "throw",
+        "extra_output",
+        "console_noise",
+        "immutable",
+        "delay",
+        "process_nonzero",
+        "malformed",
+        "duplicate_keys",
+        "invalid_utf8",
+        "two_envelopes",
+        "bad_correlation",
+        "bad_version",
+        "bad_date",
+        "mixed_version",
+        "stderr_secret",
+        "leak_data",
+        "unknown_payload",
+        "wrong_logical_exit",
+        "oversize",
+        "child_hang",
+        "native_hashtable",
+        "native_datetime",
+        "native_datetimeoffset",
+        "native_enum",
+        "native_nested_valid",
+        "native_nested_object",
+        "native_nested_array",
+        "native_nested_dictionary",
+        "native_nested_null",
+        "native_null_data",
+        "native_null_field",
+        "native_cycle",
+        "native_array_cycle",
+        "native_depth",
+        "native_container",
+        "native_nonfinite",
+        "native_getter",
+        "native_outer_dictionary",
+        "native_type_method"
+      ],
+      "default": "success",
+      "max_length": 32
+    },
+    {
+      "name": "Count",
+      "type": "integer",
+      "required": false,
+      "description": "Int64 ABI",
+      "default": 7
+    },
+    {
+      "name": "Ratio",
+      "type": "number",
+      "required": false,
+      "description": "Double ABI",
+      "default": 1.5
+    },
+    {
+      "name": "Flag",
+      "type": "boolean",
+      "required": false,
+      "description": "Boolean ABI",
+      "default": false
+    },
+    {
+      "name": "Names",
+      "type": "string_array",
+      "required": false,
+      "description": "Readonly string list ABI",
+      "default": [
+        "one",
+        "two"
+      ]
+    },
+    {
+      "name": "DelayMs",
+      "type": "integer",
+      "required": false,
+      "description": "Synthetic cancellable wait",
+      "minimum": 0,
+      "maximum": 15000,
+      "default": 0
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 20,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}

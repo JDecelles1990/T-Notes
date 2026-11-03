@@ -1,6 +1,7 @@
 """Business logic service for scratchpad operations and note formatting."""
 
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
@@ -8,6 +9,21 @@ from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.services.image_service import ImageService
 from src.services.stopwatch_service import StopwatchService
+
+
+@dataclass(frozen=True)
+class SaveReceipt:
+    """Application acknowledgement; never an M365 wire envelope or approval.
+
+    Errors raise before any saved receipt exists. Synchronous callers own the
+    attempted editor revision and must reject an acknowledgement for older edits.
+    """
+
+    ticket_id: int
+    attempted_revision: int
+    persisted_revision: int | None
+    status: str
+    error_code: str | None = None
 
 
 class ScratchpadService:
@@ -71,10 +87,12 @@ class ScratchpadService:
         scratchpad_id: int,
         content_html: str,
         in_memory_images: Dict[str, bytes],
-    ) -> None:
-        """Persists HTML content and syncs referenced images."""
-        self.repo.update_content(scratchpad_id, content_html)
-        self.image_service.sync_scratchpad_images(scratchpad_id, content_html, in_memory_images)
+        expected_revision: int = 0,
+    ) -> SaveReceipt:
+        """Acknowledge the snapshot only after HTML and images commit together."""
+        active = self.image_service.extract_referenced_image_names(content_html)
+        self.repo.save_content_with_images(scratchpad_id, content_html, dict(in_memory_images), active)
+        return SaveReceipt(scratchpad_id, expected_revision, expected_revision, "saved")
 
     def update_metadata(
         self,

@@ -1,0 +1,60 @@
+{
+  "status": "DESIGN ACCEPTANCE MATRIX ONLY",
+  "scenarios": [
+    {
+      "name": "valid-change-and-restore",
+      "required_outcome": "verified backup equals original snapshot; merge commit atomic",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "invalid-json",
+      "required_outcome": "no backup; no destination changes",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "conflicts-only",
+      "required_outcome": "local values retained; backup not needed",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "identical-reimport",
+      "required_outcome": "Already up to date; backup not needed",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "backup-write-failure",
+      "required_outcome": "no destination changes",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "backup-verification-failure",
+      "required_outcome": "no destination changes",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "interrupted-merge",
+      "required_outcome": "rollback or reload committed state; no partial directory",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "sqlite-rollback",
+      "required_outcome": "original records retained; verified backup retained",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "sha256-mismatch",
+      "required_outcome": "no destination changes",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "timestamp-filename-collision",
+      "required_outcome": "unique names; no overwritten backups",
+      "adapter_execution": "NOT RUN"
+    },
+    {
+      "name": "stale-plan",
+      "required_outcome": "reject or recompute with new snapshot and backup",
+      "adapter_execution": "NOT RUN"
+    }
+  ]
+}

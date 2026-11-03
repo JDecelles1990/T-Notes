@@ -1,0 +1,115 @@
+{
+  "contract_version": "0.3.0",
+  "authority": "Explicit user S1 implementation acceptance; final independent-signoff limitation retained",
+  "authorization_sha256": "b8765d50b3053d7b4cb491f605ac574287c9b8276a064e4d7b603e3f4ce5bf63",
+  "artifacts": [
+    {
+      "path": "CONTRACT.md",
+      "sha256": "2308c1d1ea5381952ccd23f48698a5fa4559e2100b11ed1bbaa480147620250d"
+    },
+    {
+      "path": "README.md",
+      "sha256": "38a98881bd610507e65423bf021fce23b7a347f4892de8d6318ef8d2f2b1b1ec"
+    },
+    {
+      "path": "AGENT_HANDOFF.md",
+      "sha256": "3f2798f1431764911da07c824dd132802202fb60d62d21244399ad87c202c86b"
+    },
+    {
+      "path": "CHECKPOINT.md",
+      "sha256": "295424cde9e8515bd8416149427f7dc0b4b21dfc774f8754c4b03c0b053c273f"
+    },
+    {
+      "path": "CONTRACT_CORRECTION_HANDOFF.md",
+      "sha256": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9"
+    },
+    {
+      "path": "GEMINI.md",
+      "sha256": "3d4f901235904ba86f2147342d71c56c641ed05c8fd1878197af34fdce7b6e26"
+    },
+    {
+      "path": "security-and-execution.md",
+      "sha256": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe"
+    },
+    {
+      "path": "user-snapshot.md",
+      "sha256": "598f2b64afcad6c41dad6879b2a94a548131be9e2ec215d0b9a513101bfc7c80"
+    },
+    {
+      "path": "validation-and-roadmap.md",
+      "sha256": "dcf5b712141f5512192a05ef2733124a71d60dafd13a43e94d0ec74e467a0b30"
+    },
+    {
+      "path": "workspace-architecture.md",
+      "sha256": "7075b0d697556deca3dd030bc1c6fda0d660662cb7fde9220705da493cf29ee3"
+    },
+    {
+      "path": "schemas/common.schema.json",
+      "sha256": "e718b3bc83e3562deb9e743e99823a785a7839a2a1a4ae895afc38def8200ae6"
+    },
+    {
+      "path": "schemas/company-profile.schema.json",
+      "sha256": "b2e2628634fec9289e75fbcaa8b942acd39e60588dc0d307a291c4fc3753247d"
+    },
+    {
+      "path": "schemas/error.schema.json",
+      "sha256": "0d9a5d81efca5486e7dd5ff6f9735f5f51a75d43c60ea97d3882fd0386a94a20"
+    },
+    {
+      "path": "schemas/execution-request.schema.json",
+      "sha256": "c86e2c508afec1d358d12f3f83602c5e456c3807513a7db1e4b88ac8d8eda963"
+    },
+    {
+      "path": "schemas/execution-result.schema.json",
+      "sha256": "a3ab4200c5a303559fb301688d48ce1d45d493185c44281e35b1d6873b5234d6"
+    },
+    {
+      "path": "schemas/operation-data.schema.json",
+      "sha256": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe"
+    },
+    {
+      "path": "schemas/script-manifest.schema.json",
+      "sha256": "2f13a3c3f98dba6b5cfbfa2a7b9c9032acdf2665b522c7cc3a446d2654ad9e7c"
+    },
+    {
+      "path": "examples/fixtures.json",
+      "sha256": "11c77c1793db38631c2c461d007fe1277bce688c1adefefd61dcd6c2f44971fb"
+    },
+    {
+      "path": "examples/mock-compatibility.json",
+      "sha256": "dd2fb96848a327e5fcb9e6e550a506a759f3a1c41e2a4427d4161cbf1eefffeb"
+    },
+    {
+      "path": "validation/validate_contract.py",
+      "sha256": "7ef6eaf6dcfaa3f064d5264cd6458c5d800f30729e6841bb28b25196fc2d237f"
+    },
+    {
+      "path": "validation/correction_checks.py",
+      "sha256": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b"
+    },
+    {
+      "path": "validation/correction-baseline.json",
+      "sha256": "7687bae19cdb97ebd93623ec21d257173f4c59f97fa5edaedd86deaff10094a1"
+    },
+    {
+      "path": "validation/source-snapshot.json",
+      "sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6"
+    },
+    {
+      "path": "validation/correction-results.json",
+      "sha256": "87ba06d99dc2542ddcae1d3572627c13a935110559df645a02fcf90630ffa7bc"
+    },
+    {
+      "path": "validation/correction-results-20261103T010141-0a261cf4.json",
+      "sha256": "5f8a74acd096dc962b1a3664901c20ba15b2e31f4455f7282e94a0b994665901"
+    },
+    {
+      "path": "validation/correction-results-20261103T012008-67c2c2fe.json",
+      "sha256": "87ba06d99dc2542ddcae1d3572627c13a935110559df645a02fcf90630ffa7bc"
+    },
+    {
+      "path": "RELEASE_APPROVAL.md",
+      "sha256": "e8c627abf0ee38d16120244622460c326175d5900a11bd078d8d8896c7469f56"
+    }
+  ]
+}

@@ -95,3 +95,16 @@ When a tab is closed via `✕`, `Ctrl+W`, or right-click **Archive to History**:
 2. Selecting **◫ Open in Side-by-Side Split** allows technicians to compare or extract information from an archived ticket alongside their active ticket without navigating away or losing context.
 
 
+
+## Save-before-archive barrier
+
+Direct primary/secondary Archive, both prompted Archive choices, and Close Other
+Tabs use `_save_before_archive`. It snapshots and saves the live editor directly,
+including dirty tickets whose 1500ms debounce timer stopped after an earlier
+failure. It archives and removes an editor only after a current-revision committed
+save acknowledgement. Missing dirty editors and persistence errors refuse archive,
+retain HTML/undo/images and show Save Failed with Ctrl+S Retry guidance. Retrying
+Archive itself also retries persistence without another edit. Close Other Tabs
+stops at the first failure; earlier individually successful archives remain.
+Archive audit metadata remains a subsequent operation; a failure there retains
+the editor for recovery. There is no batch-wide archive transaction.

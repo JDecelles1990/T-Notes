@@ -1,0 +1,62 @@
+{
+  "head": "ef847af18572ce5b82b0dd263b75658efe1caacd",
+  "contract_status": "RELEASE CANDIDATE - INDEPENDENT REVIEW REQUIRED",
+  "engine_status": "PROVISIONAL OFFLINE - 0.3.0-proposed.1",
+  "schemas": [
+    {
+      "path": "docs/contracts/m365/schemas/common.schema.json",
+      "sha256": "e718b3bc83e3562deb9e743e99823a785a7839a2a1a4ae895afc38def8200ae6",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/common.schema.json",
+      "inventory_match": true,
+      "definitions": 29
+    },
+    {
+      "path": "docs/contracts/m365/schemas/company-profile.schema.json",
+      "sha256": "b2e2628634fec9289e75fbcaa8b942acd39e60588dc0d307a291c4fc3753247d",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/company-profile.schema.json",
+      "inventory_match": true,
+      "definitions": 0
+    },
+    {
+      "path": "docs/contracts/m365/schemas/error.schema.json",
+      "sha256": "0d9a5d81efca5486e7dd5ff6f9735f5f51a75d43c60ea97d3882fd0386a94a20",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/error.schema.json",
+      "inventory_match": true,
+      "definitions": 0
+    },
+    {
+      "path": "docs/contracts/m365/schemas/execution-request.schema.json",
+      "sha256": "c86e2c508afec1d358d12f3f83602c5e456c3807513a7db1e4b88ac8d8eda963",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/execution-request.schema.json",
+      "inventory_match": true,
+      "definitions": 0
+    },
+    {
+      "path": "docs/contracts/m365/schemas/execution-result.schema.json",
+      "sha256": "a3ab4200c5a303559fb301688d48ce1d45d493185c44281e35b1d6873b5234d6",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/execution-result.schema.json",
+      "inventory_match": true,
+      "definitions": 0
+    },
+    {
+      "path": "docs/contracts/m365/schemas/operation-data.schema.json",
+      "sha256": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/operation-data.schema.json",
+      "inventory_match": true,
+      "definitions": 4
+    },
+    {
+      "path": "docs/contracts/m365/schemas/script-manifest.schema.json",
+      "sha256": "2f13a3c3f98dba6b5cfbfa2a7b9c9032acdf2665b522c7cc3a446d2654ad9e7c",
+      "schema_id": "https://tnotes.invalid/m365/0.3.0/schemas/script-manifest.schema.json",
+      "inventory_match": true,
+      "definitions": 0
+    }
+  ],
+  "source_hashes": {
+    "docs\\contracts\\m365\\CONTRACT.md": "d983ed65280b908d173310de6c69170d4708e53a79e2c6a7bf1f8127049faa56",
+    "docs\\contracts\\m365\\RELEASE_APPROVAL.md": "a3c11851873a7302d5f339c2f7f6a38fe5b32266cb63cd3ae39911cd1bd64052",
+    "AGENTS.md": "e37b71cd84d6d5f7c7ed52c6262f3831c6586a3ce61e0460f9f53bfe6c79c39d",
+    "GEMINI.md": "217f7025a2e7d7e79a76680a0a5f7ca774e88e21a7c1347acb23692ec6eb2d9c"
+  }
+}

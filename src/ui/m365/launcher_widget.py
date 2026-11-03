@@ -8,6 +8,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.services.m365_catalog_service import CatalogError, M365CatalogService
+from src.services.m365_company_service import synthetic_directory
+from src.services.m365_context_service import CompanyContextService
+from src.ui.m365.company_context_panel import CompanyContextPanel
 
 
 class M365LauncherWidget(QWidget):
@@ -15,7 +18,7 @@ class M365LauncherWidget(QWidget):
 
     back_requested = Signal()
 
-    def __init__(self, parent=None, *, catalog_service=None):
+    def __init__(self, parent=None, *, catalog_service=None, company_directory=None):
         super().__init__(parent)
         self.setObjectName("m365LauncherWorkspace")
         self.setAttribute(Qt.WA_StyledBackground, True)
@@ -201,6 +204,14 @@ class M365LauncherWidget(QWidget):
         self.operation_details.setMinimumHeight(130)
         self.operation_details.setMaximumHeight(230)
         catalog_layout.addWidget(self.operation_details)
+        # Synthetic metadata/context only. No Notes DB, auth adapter or engine ownership.
+        for group in self._content_groups[:2]:
+            old = group.layout().takeAt(0).widget()
+            old.hide()
+            old.deleteLater()
+        self.company_directory = company_directory if company_directory is not None else synthetic_directory()
+        self.context_service = CompanyContextService(self.company_directory)
+        self.company_panel = CompanyContextPanel(self.context_service, *self._content_groups[:2])
         self.navigation.currentItemChanged.connect(self._category_changed)
         self.search_input.textChanged.connect(self._refresh_operations)
         self.risk_filter.currentIndexChanged.connect(self._refresh_operations)
@@ -261,7 +272,7 @@ class M365LauncherWidget(QWidget):
         if category.id == "dashboard":
             message = "No service connections or recent activity. Select a category to browse its catalog."
         elif category.id == "companies":
-            message = "No company selected. Company and verified tenant connections are not configured."
+            message = "Manage session-only company and administrator metadata above. Authentication and execution remain unavailable."
         elif category.kind == "workflow":
             message = "No approved workflows registered. Each future step requires its own operation validation."
         elif operations:

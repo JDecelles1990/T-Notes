@@ -111,3 +111,13 @@ When users copy highlighted content containing both text, formatting, colors, an
 
 
 
+
+## Atomic note save and cache ownership
+
+The Notes save path extracts the `image://local/<name>` reference set and snapshots
+the pending JPEG cache. HTML, referenced JPEGs and orphan cleanup commit in one
+repository transaction. A reference must resolve to this ticket's existing BLOB
+or its pending cache; another ticket's image never satisfies it. The independent
+`sync_scratchpad_images` helper is retained for existing callers but is not used
+by `ScratchpadService.save_content`. Failure preserves the original cache and
+document. Only a committed receipt for the current editor revision clears them.

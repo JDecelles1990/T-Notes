@@ -1,13 +1,13 @@
 {
-  "contract_version": "0.3.0-proposed.1",
-  "status": "PROVISIONAL_REVIEW_IDENTITY_NOT_APPROVAL",
+  "contract_version": "0.3.0",
+  "status": "USER ACCEPTED FOR S1; engine candidate requires independent review",
   "schemas": {
-    "common": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef",
-    "company-profile": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f",
-    "error": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508",
-    "execution-request": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886",
-    "execution-result": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022",
-    "operation-data": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e",
-    "script-manifest": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2"
+    "common": "e718b3bc83e3562deb9e743e99823a785a7839a2a1a4ae895afc38def8200ae6",
+    "company-profile": "b2e2628634fec9289e75fbcaa8b942acd39e60588dc0d307a291c4fc3753247d",
+    "error": "0d9a5d81efca5486e7dd5ff6f9735f5f51a75d43c60ea97d3882fd0386a94a20",
+    "execution-request": "c86e2c508afec1d358d12f3f83602c5e456c3807513a7db1e4b88ac8d8eda963",
+    "execution-result": "a3ab4200c5a303559fb301688d48ce1d45d493185c44281e35b1d6873b5234d6",
+    "operation-data": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe",
+    "script-manifest": "2f13a3c3f98dba6b5cfbfa2a7b9c9032acdf2665b522c7cc3a446d2654ad9e7c"
   }
 }

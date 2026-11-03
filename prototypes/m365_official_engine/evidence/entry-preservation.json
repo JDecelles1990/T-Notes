@@ -1,0 +1,1249 @@
+{
+  "provenance": "S1 entry protection, not approval",
+  "files": [
+    {
+      "path": "src/config.py",
+      "sha256": "db8527747171e214ac668a40835951d02f7ad6fb159a51922f479ae761ffa446"
+    },
+    {
+      "path": "src/main.py",
+      "sha256": "27fad1ff3833c178895a136e793288f4df8f7b71420dfb30a0ad0c44844b3cf5"
+    },
+    {
+      "path": "src/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/core/constants.py",
+      "sha256": "9cddd610cb86fc13f8fa31e90e95b63113e638054510cf028216a1ac6e111081"
+    },
+    {
+      "path": "src/core/debouncer.py",
+      "sha256": "1d69a0b9f32fd7d9a10f27d572bd8c45ea59095d24f9d1249d1aed47f8e83aa0"
+    },
+    {
+      "path": "src/core/global_hotkey.py",
+      "sha256": "e169722150800bebdd750e06abc874377471c0826c270b2c7d09d3592d7d852b"
+    },
+    {
+      "path": "src/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/database/connection.py",
+      "sha256": "fcc203b280981d2542665fa26d72cb8e437b8ece67a95f979d20d2d7f618ca9c"
+    },
+    {
+      "path": "src/database/migrations.py",
+      "sha256": "1c7790364bd5a467ac838c814c5551e05e97a94c6ae6da217fe8ca2feea968ee"
+    },
+    {
+      "path": "src/database/schema.sql",
+      "sha256": "bde3632e88ea01757e13aabc6b7c3beda03414c03ed3d51f1ac4ac16dffd16f4"
+    },
+    {
+      "path": "src/database/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/repositories/image_repository.py",
+      "sha256": "b1b8437a1de9b059fc3239eb9276e1d549acdb8f73c84e40104c989561710b6e"
+    },
+    {
+      "path": "src/repositories/scratchpad_repository.py",
+      "sha256": "04eef65b19908a31d5e539a9e183823ff41c6ff4af06912c01d786bc68abb3a9"
+    },
+    {
+      "path": "src/repositories/session_repository.py",
+      "sha256": "2544fe8b9aa55b4cf4137198771fb422ec89a3f2a22f8e7ab3afab846a65f8fe"
+    },
+    {
+      "path": "src/repositories/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/services/image_service.py",
+      "sha256": "29f06d075cf6ae046ccf67eeb3924701e74c8230198329c27fd8dfe2034cbff1"
+    },
+    {
+      "path": "src/services/m365_company_service.py",
+      "sha256": "079685dadf46ac94f39a6283f1a870fa85bbc6aa49971d541b3adb11d705cd94"
+    },
+    {
+      "path": "src/services/m365_context_service.py",
+      "sha256": "da492e44208546c5c08d88e1318866435964d484eb4c7db59fbcd585a7019979"
+    },
+    {
+      "path": "src/services/scratchpad_service.py",
+      "sha256": "0dbeed81d3ea6969db3caeb8ff18fa8f9e7f9dece7a93f41cee8b29dbfc23af9"
+    },
+    {
+      "path": "src/services/session_service.py",
+      "sha256": "c9ba4507988b2025cfcc336f6e0f20ceecf0eb86d0b90f0de57e828854b198ca"
+    },
+    {
+      "path": "src/services/stopwatch_service.py",
+      "sha256": "daa17cd8c67bc5eca71dc03cd6012c5e6f2456f09d9c973b443bfbf6142a8905"
+    },
+    {
+      "path": "src/services/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/main_window.py",
+      "sha256": "bca716adc360cde4a8fce00afb918b3658320acc502e432ee6c9c96d93d61d98"
+    },
+    {
+      "path": "src/ui/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/components/editor.py",
+      "sha256": "22e5eba14279c40c6d50bd69c89dfb05c05567366d09ce2cb2f77f4aed59c8b0"
+    },
+    {
+      "path": "src/ui/components/history_drawer.py",
+      "sha256": "e6863d3b6ed96b18126a3786184bd7ee3b251cc4ff08cb0c6769532806171aea"
+    },
+    {
+      "path": "src/ui/components/stopwatch_widget.py",
+      "sha256": "e8c65a5809e6fd26072b04a165392ac191cbda7fc1a5c78fe63574e7a383067f"
+    },
+    {
+      "path": "src/ui/components/system_tray.py",
+      "sha256": "e50fa71806bc14eef666a887e10ba54043d8a2755cf5d249f6ddf2fab2247c8f"
+    },
+    {
+      "path": "src/ui/components/tab_widget.py",
+      "sha256": "36d576d4362f85c1bdf65a274bf9c906c008b06dbcaed4a18fc41442fdc32cf2"
+    },
+    {
+      "path": "src/ui/components/toolbar.py",
+      "sha256": "310ecd9a3a0f5fb26123e6e9d661aba8857c8987e0a7fb343d7df99a703f48b4"
+    },
+    {
+      "path": "src/ui/components/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/dialogs/edit_ticket_dialog.py",
+      "sha256": "6a953e734b4c27c3b03c0148aff158a08374d40aa50f0289a2a2cc6fa38bc0d2"
+    },
+    {
+      "path": "src/ui/dialogs/settings_dialog.py",
+      "sha256": "8969bfe8e4ef89cb9fcc0f82882bd8afdaf0857a9d967e96145354f1706dbd74"
+    },
+    {
+      "path": "src/ui/dialogs/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/ui/m365/company_context_panel.py",
+      "sha256": "7a9a46c7645d6c96270f830647e2b4e5e0a8b6730bee93956bb6536e23093533"
+    },
+    {
+      "path": "src/ui/m365/launcher_widget.py",
+      "sha256": "852084f4dc6d1caac6704b84cbc97d23ffcace6efa04e4b6bba33c846c5b3dff"
+    },
+    {
+      "path": "src/ui/m365/__init__.py",
+      "sha256": "0d03230d9eb88c2c8818873aed54c9bedf65de76c026ee5b965b12769cf8d5a9"
+    },
+    {
+      "path": "tests/conftest.py",
+      "sha256": "27dc54d93654c0cd5107d532a7ac5eaaeebe9f334408266ca7e2be08597c29c9"
+    },
+    {
+      "path": "tests/test_company_directory_merge_prototype.py",
+      "sha256": "8f8253493221e6b70202029bc48b7cf65dc6e7774668beb13bc916eaf2359e2f"
+    },
+    {
+      "path": "tests/test_database.py",
+      "sha256": "12b3a3546b365e6d15ec948d85b0ae234a454bbaab9db7e06a10c07f2272364e"
+    },
+    {
+      "path": "tests/test_image_service.py",
+      "sha256": "db17e1447c06ee3cd7909b88fd97dfb3dece59fce11f893c53e6b18c6de84377"
+    },
+    {
+      "path": "tests/test_m365_catalog.py",
+      "sha256": "c9c215e7a677930d455af359326997d646d4c3b6f4745e7f587b331afd89e023"
+    },
+    {
+      "path": "tests/test_m365_company_context.py",
+      "sha256": "f90fe52b0c76419d0147f982ff7403ba42f99a69827980a815d8b4751653ccca"
+    },
+    {
+      "path": "tests/test_m365_company_ui.py",
+      "sha256": "75c6ea2dd6afd677850603fac205a26be55f7ea976ef524632d146dddcff70a9"
+    },
+    {
+      "path": "tests/test_m365_workspace.py",
+      "sha256": "391e0848e4976c1ebef81bcd498d1e7beed8ef1fba7e71d388c55f1c8fade24b"
+    },
+    {
+      "path": "tests/test_notes_integrity.py",
+      "sha256": "2374a38960277e3877a2f1a9a769b9a039debcf76b6f23c55480082a324c0618"
+    },
+    {
+      "path": "tests/test_scratchpad_service.py",
+      "sha256": "51fb8b6144e1422652d55dbb629c3990bbd2c72fbf20b89d649cba92f5e27594"
+    },
+    {
+      "path": "tests/test_stopwatch_service.py",
+      "sha256": "15b2476682c65755022c8aa38fbd15e620a1ab49850783fbc7779ea937b40d5f"
+    },
+    {
+      "path": "tests/test_ui_integration.py",
+      "sha256": "a2356e08584a48917cd4b6f647abc7f0733ee6ce42761ec32248c51b2af7111d"
+    },
+    {
+      "path": "tests/fixtures/m365/README.md",
+      "sha256": "475654cb716ed626ef4d558c553c13cb47f56e32dceabcbd854807de3b039141"
+    },
+    {
+      "path": "docs/CHANGELOG.md",
+      "sha256": "d01cf227864efc83558f7f018261a48bfda00d31c85e21f59d85f029f6692f8b"
+    },
+    {
+      "path": "docs/index.md",
+      "sha256": "02faef647e8020db08466b66ef6f80e5cb5aa1705629747d8b1d91e54f002751"
+    },
+    {
+      "path": "docs/architecture/image-pipeline.md",
+      "sha256": "00c0d6532a44400c50956103e98b76d8a014be634f52c3e7ab92283f20d06754"
+    },
+    {
+      "path": "docs/architecture/system-overview.md",
+      "sha256": "9942e99ab22bccf06b3bfc3ea8f42db1c75ad2c9cf73aec99f3b9e6f6be62ce4"
+    },
+    {
+      "path": "docs/database/fts-and-search.md",
+      "sha256": "e5cee01c3a17e864616cbfd61e8512aea99538ddc950e04064bb164be496fbde"
+    },
+    {
+      "path": "docs/database/schema.md",
+      "sha256": "1a96abb3b79fcece7ddb04523f572a1522a5b933bc571a915e81916897544a4b"
+    },
+    {
+      "path": "docs/decisions/0001-sqlite-wal-and-jpeg-blobs.md",
+      "sha256": "c304f06a379899d141c97fd534729ef2410d63b2a30528e496b568d48c094ef9"
+    },
+    {
+      "path": "docs/decisions/0002-win32-idle-and-lock-detection.md",
+      "sha256": "f663d3c3cb36d3d1564b351187e8f07e59dcb251623468e515f3f6c6e19edfcf"
+    },
+    {
+      "path": "docs/decisions/0003-global-event-filtering-for-shortcuts.md",
+      "sha256": "7636ba55379337ed20577a3dda774cc8ae329864bc02b1f248cfca370e32fafb"
+    },
+    {
+      "path": "docs/decisions/0004-system-tray-and-f8-global-hotkey.md",
+      "sha256": "aa393a8485e9c03f6d7dfb096494231de95c275f78631ccf956bc0453ef36b5e"
+    },
+    {
+      "path": "docs/decisions/0005-interactive-checklists-and-tab-progress.md",
+      "sha256": "0538f679c2389f9ebb3461af288dd34d76745d3476fff0bcb593155714e6bad2"
+    },
+    {
+      "path": "docs/decisions/0006-side-by-side-split-view.md",
+      "sha256": "09c40b3eb83de9947db0196c3a1cd8ed45dc3d08bd61033c823f90373fc22c17"
+    },
+    {
+      "path": "docs/decisions/0007-always-on-top-mini-hud.md",
+      "sha256": "04531505ff92043eea275e95347447433c7d9dc6588b2b31c66c170de976441b"
+    },
+    {
+      "path": "docs/decisions/0008-m365-workspace-foundation.md",
+      "sha256": "527ba3bee6c407f7e95c5cd03ecbe31b21fe231e2c67881ae79d0a1c3a0208da"
+    },
+    {
+      "path": "docs/decisions/0009-m365-metadata-catalog.md",
+      "sha256": "596bda796a6c6941e45e657c667208df420e5416bbb5950eb135eb95a66e1b22"
+    },
+    {
+      "path": "docs/decisions/0010-m365-company-context-boundary.md",
+      "sha256": "36bc6984729f6b872f4609c6ba5c174d28b7f9aa49a5dfc5f685a3f5668fcd78"
+    },
+    {
+      "path": "docs/decisions/0011-note-save-unit-of-work.md",
+      "sha256": "fb82e86e824176cff0f30152a930fdbeff752f4c6a23a0aa418e6d98f70b3425"
+    },
+    {
+      "path": "docs/decisions/0012-isolated-directory-merge-prototype.md",
+      "sha256": "d221afcea3c8544ef6efbf277e60b2c4d2083d85461b26ac2892c84eb479e00e"
+    },
+    {
+      "path": "docs/decisions/template.md",
+      "sha256": "0a829f02ae1bb55b21ce8d95d0fbc9e64c29c765b9f346f6509c1df1502ae156"
+    },
+    {
+      "path": "docs/features/company-directory-merge.md",
+      "sha256": "46d8274a03454b0d992474d1d03487ea0a441898a324132f35691be0048a74fa"
+    },
+    {
+      "path": "docs/features/editor-and-formatting.md",
+      "sha256": "cb59df0d2b25bb2624287d1cba98f05bda61664dce4a32183aae2c3f426d5e3b"
+    },
+    {
+      "path": "docs/features/history-and-archive.md",
+      "sha256": "f2e7a353886bdf22a5ce7e63b9b9a4633212ede308d0897a6b93cf950193866e"
+    },
+    {
+      "path": "docs/features/m365-company-directory.md",
+      "sha256": "c8c84f9fe2c57fc57a1e1cff356e6f7c320ef0394ae7a0a6a9a6c596eb3cc345"
+    },
+    {
+      "path": "docs/features/tab-lifecycle.md",
+      "sha256": "c6be52dd0fca9a089059369aca78113d75bd7976b6abb766cbada281596be40f"
+    },
+    {
+      "path": "docs/reviews/company-directory-merge-prototype/candidate-inventory.json",
+      "sha256": "cc01fa0e621c91449dfda89f6ec3feb3b3e7e342e75d80edfe8aef2abdd17ab8"
+    },
+    {
+      "path": "docs/reviews/company-directory-merge-prototype/CHECKPOINT.md",
+      "sha256": "d7030ba65a8232192522f5ed10f6881743991c6ae8724410cf6ccc14ac7cd1ff"
+    },
+    {
+      "path": "docs/reviews/company-directory-merge-prototype/INDEPENDENT_REVIEW_SUMMARY.md",
+      "sha256": "280ccc2e53c2e720f639a1d6efa40c1a8954532683f585e39e9e973ca5a059f7"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/candidate-inventory.json",
+      "sha256": "cbb585cada428c0aff48f09da38ab8696067567c9b7b0ccc8115fee88ca15885"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/catalog-portrait-final.png",
+      "sha256": "8f5b65b13af718851470ace8ce36bde5e1fb61bde8f38141fce06be531ececa2"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/catalog-portrait.png",
+      "sha256": "806f028e968665365f25aa83bedd82cee66d5354ca30228a1838d3fdfdba7535"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/CHECKPOINT.md",
+      "sha256": "e0a161dc93eb7e80caf3cdb41fd01cbbd41060ef1d4fa01bc8b807796ce3f637"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/entry-state.json",
+      "sha256": "68f25583d20b5945b59aa2261f60dc7a9079907c1a87ab76c105eda3d50f6d69"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/focused-01.log",
+      "sha256": "d3cf641fbfbbf5c3878b9242e4d3c4e47f612aab603fbfc1841049842f2ddb8c"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/focused-01.xml",
+      "sha256": "c3ec197e45f5cfed37561ca61384ef41d4a726634195227215281a8954930c80"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/focused-windows-02.log",
+      "sha256": "af3a33ff71a402cc774c2f3b5754a55ed759e914483b9edd49cba33823616533"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/focused-windows-02.xml",
+      "sha256": "21123868eee5ce659371c14b7819c623ba744a5cf885475c0b4e54619eb29f67"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/full-windows-03.log",
+      "sha256": "a35783fced3c2d2add095f4102e039f783a0a3bab64b178b7da31f616d99e345"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/full-windows-03.xml",
+      "sha256": "8aad838cbdb088ec0a31782371f4d080655fd3d00e3aa93c0e853e9e7fe5242e"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/full-windows-06.log",
+      "sha256": "50d16f61880ec666767dc60de8308a2c5594695e82137aa3bd6be3ec73de3c7f"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/full-windows-06.xml",
+      "sha256": "81e519cb949832728b97f8bcac316dcdc9a9dab6a29205b5465295cc514cfada"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/git-checks.json",
+      "sha256": "ed220a76aa7ad8b7ede665826abaa1ca6ca48d7a56847a2820fa3ead66813b45"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale125-04.log",
+      "sha256": "ab22d898031688f41ca99b5768e6f62b8f375ea97ce85bdcf0242d8d653f6556"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale125-04.xml",
+      "sha256": "0aae1a1d97e1998b9537c9165c43d6d924a66baaebdba88cc9c15a85676f2039"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale125-07.log",
+      "sha256": "8e40c54c593e545f64cba5eddd4ab803dc9f3e315ff134724be0386e2b9b95bf"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale125-07.xml",
+      "sha256": "2b1cc68431120d63069cc8fad9d4f66f31b3fb3ec86718e3cb5578603a723954"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale150-05.log",
+      "sha256": "99b4a81fef4f2f8400929df30e9a272c5f3fb82c001c980952ffea2ba1287eca"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale150-05.xml",
+      "sha256": "f4aae65a2489a71eb27c3ed07a254f0d7b2821c1eb50cc5a8412b343949e37a2"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale150-08.log",
+      "sha256": "4c14bc94ebfac6128be1d85a6a8c26e56949b84760dd6ec7a37468a64e941cb0"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/scale150-08.xml",
+      "sha256": "b7b352cc38cfba16651dafb3a89c78ab575f6c45784ec22bff9a0b2f766c046a"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/validation-summary.json",
+      "sha256": "c49df90076e12569de710cf379ccb87652783a268674ff02fb22b8569afed3bd"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/verification.json",
+      "sha256": "5af09ffd8743803667d5261873f02f8870855ddd8fa2bf5ab7eb4d1f2b7143e1"
+    },
+    {
+      "path": "docs/reviews/m365-category-architecture-20261102/verify_checkpoint.py",
+      "sha256": "1f94a56969cd3d7ffe0670efad29bea95bf2d5d2ac97e8dfc8b7abec3aa22658"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/attempts.md",
+      "sha256": "e9ed2b87cd2acb270d1fb914564236e07590ecae1dd9973682255cd1e47a4882"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/authority.json",
+      "sha256": "89159f50b51ffbe4cfb54213b4657b5739a363daa7bf7c715bfa69b4f6b8dcfc"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/candidate-inventory.json",
+      "sha256": "601791783e4b4a81205485dd56da94c2ed25d8d00834faed6ae169bdc2890fca"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/CHECKPOINT.md",
+      "sha256": "bf65ca14bda879a6bf3d922709907cb0535c1e28730bcfa5fd10d5aed0ba4f87"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-1100.png",
+      "sha256": "a89f8deace33033aa2b1306ecf5bed187881618a8a0ae0646c824ef580c4798b"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-700.png",
+      "sha256": "7665b52122a42bca3d208b2b5a90c1da8c4f74b70523617b6c38ed848d54ea10"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-accepted-1100.png",
+      "sha256": "e177e4af595096cb57057a20c1f2b45d7559eb8e77f15f38b6682f6968c5f316"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-accepted-700.png",
+      "sha256": "fe8b7b3c2bc95ca389c5b546de3f349c5422dfde3b0266b68a961f85e79c965b"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-accepted-target.png",
+      "sha256": "67c2f22dcf6b49d18057b04f9a2c15af000e0f49dad526acf274f8f6fd5996e6"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-final-1100.png",
+      "sha256": "4b6c35433f7b4b333ac5eaf6a82447cebdcc57c578996e7ed970b2ba6b778373"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/company-preview-final-700.png",
+      "sha256": "f7c64c44405c52b6279dec454ea743d17b1da922c389ac737881195a0daffed2"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-drag-current-06.log",
+      "sha256": "f1cfc61a6d22dc25174f8a2ac4a76be07a64805e124aeede23f7cc32f76cef17"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-drag-current-06.xml",
+      "sha256": "b3bd67dfdc3861a4c1aa680ebd9f0d163c0af640aa10c45a4334837d48dc1939"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-entry-baseline-07.log",
+      "sha256": "e9614c743965dcf68460f4533df0428222274f7c1983065f7f77e55651ed1150"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-entry-baseline-07.xml",
+      "sha256": "b652b9a0129c75d96f29fe1c81ca542e18c81ea637c70eb6ab1e81b6461c3415"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-isolated-04.log",
+      "sha256": "8bcca62b351095ad5b3acf2c83bf15063598c7691952f68972ca5ebb3e030a6e"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/diagnostic-isolated-04.xml",
+      "sha256": "2ab7339d5ac8bf3665c020e78e55c57740650344b788426c9f2b9de68997c0db"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/entry.json",
+      "sha256": "701371238cc1e5aa6a11d57e3e91eca6945027e8404de382a4f0ff73d01bb8f8"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/focused-windows-01.log",
+      "sha256": "923a111b73527b07fa546fc1203a88925fd9f18e9c5cea5ab126936f2f66aa77"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/focused-windows-01.xml",
+      "sha256": "e690da933867451bd76cc8b006824a4d0b9af308aa08df45d42742afd7fa5e04"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/focused-windows-02.log",
+      "sha256": "9fa55f3ce83e563b8e185b0440d1be387f854d802e41ea910e25ef9b968709f4"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/focused-windows-02.xml",
+      "sha256": "58fe222a2abf06a095c7e34a7f17c241cb62f6eef5c9ecd62bbd5603ef820d58"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-03.log",
+      "sha256": "cc7cb70c6e9472f2c0d7254f20aed0755119093c4aca4c31b5b9416bcef98f5d"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-03.xml",
+      "sha256": "b541bf6a93bd190db8fdc623dacb9a69ff351a324483d25106078bfc7b767a5c"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-05.log",
+      "sha256": "a3c74e1ae07611df6f7fc3549e4518b6d6a37538b5d1ec28f4da363c31c7b4a2"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-05.xml",
+      "sha256": "47877bff55ab91453c1b3bcf53d2d45ba56699754102e4ce0612b9fdf77b2352"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-08.log",
+      "sha256": "eb75c09b51d0c163460110578db335b69ed1022235a542fde46757f2fde13c96"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-08.xml",
+      "sha256": "72ded5655ae273f1496327df9318d27b0f883d85fc9923cf5648511896f5bd2e"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-09.log",
+      "sha256": "1a8469d2989c46b8122550803780e3b58d88d0e8bbc06ae2ffe0dd5aa066e06c"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/full-windows-09.xml",
+      "sha256": "0a4842c6266fc084de17bce628cb313443505d49c131365920cbe0afe276a549"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-125.log",
+      "sha256": "49d0f8ef6d514c39800f12efeefdf310dedbae164fe4d639be8856db38a68ca9"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-125.xml",
+      "sha256": "b7f44b2d1bd7a0d1dff89aaf1bebb793a1ca44da00c3f557f55f8dc25c57caa6"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-15.log",
+      "sha256": "fddab3ad7372870b98cfe8588a9b82fa33c2be3a064cbb0545f16b85b57c09d0"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-15.xml",
+      "sha256": "f46e14876170d9793ff00ce285715dc16c28909ed276401749bb8920cc2db1b0"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-final-125.log",
+      "sha256": "f9632b5d3f7ac2fb04f0b7f08eb7e6004b7253d07cb87ba96c3d2c8b9cdf5ea8"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-final-125.xml",
+      "sha256": "262d31a41ceadf3e3b5edb255c350cd024627b2fadfbc57e32626a3f491eaf8a"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-final-15.log",
+      "sha256": "3452bc1757433b4144d9db187f979a451ad11d14aba4ec897c73c6261adbd433"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/scale-final-15.xml",
+      "sha256": "c16a3542bae733d2ef04e1d94e92d07465c8dfdb7dc06f63b6985dac07e671bc"
+    },
+    {
+      "path": "docs/reviews/m365-company-directory-20261102/verify_candidate.py",
+      "sha256": "9f021b8397d6411740b2bb8a57d20e8785278d372e84ce9ee8f09503b49c5088"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/attempts.md",
+      "sha256": "26bf35b715097df80fbf3cbb1a53a459284270e981e5283cdc89e725a2800bee"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/Backup-Entry.ps1",
+      "sha256": "520167182fbab1c73c0c743ac321a1575c315442d9cbbe8edc9de5be1723590b"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/backup-verification.json",
+      "sha256": "c5e6f8689fbd91a3458ce40d83536af5299919f7e60f9208ca7b2bdff4f3341a"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/entry-state.json",
+      "sha256": "e1a87148cff6e41a4ce9d2c2817d2420c4a9836408c8c8d13a562d06543f24b1"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/instruction-verification.json",
+      "sha256": "3c6d622e1c99cde3bcc69913756115db751a0c616c63c6360a080cc2155d07e8"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/preflight.py",
+      "sha256": "f329da77fbd3bcd9ac876b826406be18600935aa025f8435145f03c1f0527c68"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/verify_instructions.py",
+      "sha256": "14903e2593c8eedfa07e73badf07173248260d35e3cee582db6061f0018a75ca"
+    },
+    {
+      "path": "docs/reviews/notes-data-integrity-20261102/CHECKPOINT.md",
+      "sha256": "fd5fbbc4aedac5e37885e907a42eeeef520dc9338e70bdea6f6fb37fd451c872"
+    },
+    {
+      "path": "docs/reviews/notes-data-integrity-20261102/INDEPENDENT_REVIEW.md",
+      "sha256": "d88be5779a0c5b1c848da0edd6286151c0e5a4429788a6f67382ae6803961aa2"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/proposed-engine-validation/tests-20261103T010924Z-f2f59596.json",
+      "sha256": "71e1c724241d040e2e653dd0a56755cd33acc264a5dccf2e332cef1906ababdf"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/proposed-engine-validation/artifacts/response-error.json",
+      "sha256": "62bec9bebb7029c6dcbf0d666a2f6f37bff0a0362bc352f716dd7be1c223d03f"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/proposed-engine-validation/artifacts/response-partial.json",
+      "sha256": "cbf752f4cf79b3b1d05c00ef75e8e2dafd0c31f15920418f8452d8c716cafc77"
+    },
+    {
+      "path": "docs/reviews/m365-contract-promotion-20261102/proposed-engine-validation/artifacts/response-success.json",
+      "sha256": "306a45e0f9d0d828df3904b1b500c53ec66c74daa692a96ef3a484922dfde8e3"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/01_shared_contract_draft/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/catalog.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/contracts.py",
+      "sha256": "a10f9d4d25f1163cadacf98df363bd97a8f34841c242c3ebb715f6d9be15f60a"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/ENGINE_CHECKPOINT.md",
+      "sha256": "99aa61004f3b55167e9c2cb8d93862a232d1f34e31365413a5e3ffa7de3f4163"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/host.py",
+      "sha256": "8d9613f8d865d7c4d4bd0bd1f6d302fa856eb290f5708d190a34ba3c9f1f8564"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/manifest.json",
+      "sha256": "563dd51e1196bab6350c2ef8021718027a600de82644c19ca9e3d5c054d3242e"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/prepare_fixtures.py",
+      "sha256": "bd48cfe71951e6766e857dba63677f76b46f254900f92f9d367761268881fd22"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/protocol.ps1",
+      "sha256": "cda6173718d4afcd43467bc163af233a74c4eee74bb5933b83f338da9148f0f2"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/README.md",
+      "sha256": "bba48b5d0ae423d0e9e2d4545e7456ed0211b25aa98285a8aabe27a6c75ddcac"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/run_tests.py",
+      "sha256": "a496b4554806a87c731f2f22e93594212c5a6bc8f488c020b7775f040e6dcfc7"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/schema-check.ps1",
+      "sha256": "ef4c9e018ca3bb8396883684306db4f4a5153896cf734603345b21e36d100bda"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/synthetic-context.json",
+      "sha256": "84a665f70c35c94564bbd9128d77d7f5a9e8c58ac798fe355ed5b5a66bf4ec2a"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/trust-anchor.json",
+      "sha256": "7d92a9ec34493c68cb963c2320d901b13eaa7508fd04101a2dbb99c8d3e618ff"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/win_process.py",
+      "sha256": "9b2228452f64451a3c01ae71069d45a91ff93706b230158fde164b3028d275a7"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/worker.ps1",
+      "sha256": "1ef4b8de48e7a63cb9ab03f5ea0f0ce7cb57b38d069da014a8acb4b5131095f6"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/DIAGNOSES.md",
+      "sha256": "404e6ee63d51f879e2c5b5e5e03caebfb4fbd49bb836ec63f9a97854a4d1988d"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/entry-preservation.json",
+      "sha256": "6a33dcfe530230fd655cd932644c73acf7523078896b94b22b635fc8f6e47b65"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/final-verification.json",
+      "sha256": "43414e6181a2f1268cdf70949af66872e142f770b2e1e8ad57cb6ece5f3fdf36"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/gate1.json",
+      "sha256": "a4bc0d2f5d8aed102a6dbf4b0987cc1e25b2b7cbc7f5123a990621cee81f83d7"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/implementation-inventory.json",
+      "sha256": "e0f662a9b708dde7b282aa28f82ecd2a7a2afc0e517b80af6159841d6a9dbdc7"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233428Z-14fb1d3d.json",
+      "sha256": "314d99f8493952592fae7001402918925dda44050aaeb3a72ead0dd629c7e869"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233603Z-b772e9df.json",
+      "sha256": "d9f4da1e53ee238c985b05cff3afffb5809a856b4b87439a475871877fa75fd8"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T233710Z-aae96c3a.json",
+      "sha256": "64d7e5d7a60580b53560920ee6853435df53a5dd350214e3fb9078a8636612ed"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234037Z-fb968547.json",
+      "sha256": "20ff5a45c70e24eddfa2c9bb0304686611cd17a54679efdd951b64d663a13178"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234518Z-73311df2.json",
+      "sha256": "045a5a0fcbeba0da30087ba773c0aa1bcf8ce259492d6d8f3b670079728fca1b"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tests-20261102T234813Z-52f6c56b.json",
+      "sha256": "31e645e661e8b323b6052ebdf5aec8309fe4800451f2b483779dac8430b59df2"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/evidence/tooling-inventory-supplement.json",
+      "sha256": "0e6b095aca75260ecd8ca8e33a4f6a81e04cdb0b7a7859fc15f1176eab575201"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/examples/request.json",
+      "sha256": "38626a3c87cd22b3cb6941ae905acdb4dd76e501ff334cfb8d0b82468e4532bf"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/examples/response-error.json",
+      "sha256": "4b0eda798468f6d08edda298f657070680d5d23bc9d79e8bd3e2dc23e50be7f3"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/examples/response-partial.json",
+      "sha256": "bb657b4dbe37b7e915f40618298252e935b6a7d1aeb82459fab876966684f1ef"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/examples/response-success.json",
+      "sha256": "a66dea628dad89012e5fdbf04313f1202afe8a1a13ae14325db1a246cf586ee6"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/scripts/Fixture-Operation.ps1",
+      "sha256": "1d7a8ac81dc941f42f9f79e82c2fdd2da9f84455ac1eeba18e12830cb7ca7aa2"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixture-pins.json",
+      "sha256": "eb043aae47567f80e3ee4896daecf299b74395e9eda5d3867645d35aa152601b"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/test_engine.py",
+      "sha256": "8f438ad3b3132a99ebbc5029b29e547017653cde4214b687ba0be5c35077f9b2"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/bad_descriptor.json",
+      "sha256": "c301459aea78a9f29707960fb0c3b44e14732ebaab5206b17068bc1a7d4b3119"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/dependency_mismatch.json",
+      "sha256": "01f294737dc84d1ded0f7f175fc744e4e65fbec0633a60ea492e8336d617ac13"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/fault.json",
+      "sha256": "585566e2f6662640831199db5cfc11228f0a304cfd323b7cb08abdd1a32f2461"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/fault_timeout.json",
+      "sha256": "34dd3aa55e048beaad6f6daf0bc64974e31ac2eddf976eb6282af41963ec306c"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/hash_mismatch.json",
+      "sha256": "70a11cde3d58d421f373e1b93a3ee7e6560e9945a2ae7167a64d7a8ec9025f36"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/missing_executable.json",
+      "sha256": "6d40273b7cd6b5ef70de454c5c4d47cb793dc2b5642fe9a7a48bf03d2d7a27a9"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/timeout.json",
+      "sha256": "17a5d48b7a60614eea84e028ece732acb098e41556399ce763e6c83813319d60"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/traversal.json",
+      "sha256": "2e662e5d66aa340b56c6d88a70bc9891e666ea9dfce86dbe24e7403812794c3c"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/untrusted.json",
+      "sha256": "69f16ba950fffe4ac41de34a0ca8208e94d149aa933e987009ae6864f81a12ec"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/anchors/write_risk.json",
+      "sha256": "a8f92bd02cc018b72caf0550d9bbb4b42d6242e3b55079e57e640270efd234e7"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/bad_descriptor.json",
+      "sha256": "e295470c08e7d2ac4498109b02f465c96dd2857b8accd1b0afd21852625b7542"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/dependency_mismatch.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/fault.json",
+      "sha256": "80e117c06d40efbeab43daed30b6ea6b9afc4e14fa34a69b5ede7287b4aa11e2"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/fault_timeout.json",
+      "sha256": "08889f12e28e312b73c8d804929f4f1f32ff2ee16a7f1916169a4fb0b47b1520"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/hash_mismatch.json",
+      "sha256": "e8f8ae38202cd62febf081681e4c0c4e6307b27d84d2102ac6aab77f1bb2a75d"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/missing_executable.json",
+      "sha256": "ab836c3d19f3d3fa9976dcf87e1bb1996e390b2b2bf3b3e5b1a3df8a734156ac"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/timeout.json",
+      "sha256": "a8c868d83d94a810c12b8176a3e51faf3a65d2820104465e3e5df6f4c2951ba4"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/traversal.json",
+      "sha256": "9adb2b2582f80fb6754c205a74bc5121e200579c440dd013630665691fb79f02"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/untrusted.json",
+      "sha256": "3161b064ae214d6e9e443e224985963dc9f0654741e548ef6b58ef597acd9ce6"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/catalogs/write_risk.json",
+      "sha256": "f7ae3b01c7c5d30971ef3f4af9d5c488158534aa685901e030457a95e5f7935d"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/Child-Sleeper.ps1",
+      "sha256": "f729a0f132743958e27b8149e3e4da78598c2aafe9f8e1db556d05c02e6abbc9"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/Fault-Worker.ps1",
+      "sha256": "f56e4ad1670286d885bab7f1289ce6e6086bd2d88f9adbe6385503868a20ccee"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-bad_descriptor.json",
+      "sha256": "9f7f6731192f702395e726337edc076dd5c44775482f02bc4de5ccc2629f3822"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-hash_mismatch.json",
+      "sha256": "076dd487276e3079fe1ae5240724af45493e15b0043c7c5b1519d8ef54647a01"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-timeout.json",
+      "sha256": "31d5722122ddfb12d6aa2e216f39971eacd6207e6296813ec12fe9ad580c2c5b"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-traversal.json",
+      "sha256": "e873602a66f676d2f13c76070739b8859025b69f57b306edd531c81c2239de0a"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-untrusted.json",
+      "sha256": "841d4a3cb10154f37ca1ee4e8e213ed2cac07a1ea68798354ece6f0c7c2e1074"
+    },
+    {
+      "path": "docs/planning/m365/offline-execution-engine-prototype/tests/fixtures/manifest-write_risk.json",
+      "sha256": "94c80cac26e3421be7e605298e21ae5316c3a426b114832473d489df178c510e"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/AGENT_HANDOFF.md",
+      "sha256": "08da329a91168c14ee92af1f99b31d0b67b087853c49a46044ea3bd15c5b9f74"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT.md",
+      "sha256": "80bd4adb5dfcf29aeba897759b91bb5e280c84c8975d9b9e9614de2ecc6253a1"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/CONTRACT_CORRECTION_HANDOFF.md",
+      "sha256": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/GEMINI.md",
+      "sha256": "0313e1677c8fbffc406f6d39b849b0841e6e4e898949672069ba6d1323021f3b"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/README.md",
+      "sha256": "e1d6f059a991386c005e4708f77f30aceaa93c28cec7ef57b3e554919507fa76"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/security-and-execution.md",
+      "sha256": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/user-snapshot.md",
+      "sha256": "3eab4be639e13bb689fb9ac9c0306b8bda53733a8ff126ddb8af64443f293604"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation-and-roadmap.md",
+      "sha256": "da09be92c26f29a59e909729c25570a3c23ce9968f243bfd0d97b32f42f521a8"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/workspace-architecture.md",
+      "sha256": "6c9686ca25324dc67fdc68db78d01f1fc4c40ea073cb7f709bf773ab8281ffa6"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/examples/fixtures.json",
+      "sha256": "c5c00937df8c2b4052f1fa2dc196f10e8dce0e961b507452f8adfe3ec1ff1b58"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/examples/mock-compatibility.json",
+      "sha256": "b3d04a1929375e6893d631f02552fa17474e0f583b996ed327ae4bc8c23ca087"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/common.schema.json",
+      "sha256": "56383bd40bf228c217d51e23dd0d508e2d8bf2fcc8ddb8edf8b6331645f721ef"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/company-profile.schema.json",
+      "sha256": "df1eee288b4b1648447b2a74667cfe712bfd293007fe360389d0beaeabaf3c4f"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/error.schema.json",
+      "sha256": "d1090d211f89cd9d01d68a857ef5f1d8f3c00512afe806e1874d3b0bca342508"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/execution-request.schema.json",
+      "sha256": "3372ea4bff5c77ccfa7acb89b1e22d6b4e6cfdd1b7baf984413a5622abf8c886"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/execution-result.schema.json",
+      "sha256": "0e5938238844174dd797f2b2d277a61ca8016345c61c6199fdd301997a42e022"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/operation-data.schema.json",
+      "sha256": "5938425efbd99d372856e9b749df9db0962b6f3ed5b4a966382a5db2d883cd9e"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/schemas/script-manifest.schema.json",
+      "sha256": "4626f68e0fae9a261e88260dfc57af8bf40c428c5f7eaeb1cd900c78bc13ace2"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-baseline.json",
+      "sha256": "7687bae19cdb97ebd93623ec21d257173f4c59f97fa5edaedd86deaff10094a1"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results-20261102T231348-70847299.json",
+      "sha256": "cfb3f96cd5cd59526506f72437547eca5b8422ca3b11a4268c63e1dd5e54d841"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results-20261102T231941-41d04d19.json",
+      "sha256": "180705af359e1db2d500411538e32259ea40ed474570357dfdf213e5614ae309"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction-results.json",
+      "sha256": "180705af359e1db2d500411538e32259ea40ed474570357dfdf213e5614ae309"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/correction_checks.py",
+      "sha256": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181323-01b9bf6a.json",
+      "sha256": "14a200b23f3ffe1e966683918094d09059a3c98ee2f30ffbb05807394e319b82"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181359-56add14f.json",
+      "sha256": "6312573c9d83e63f8fecfca5e91313ab464578375696843013b98cbee3b3685a"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181435-77cb8fac.json",
+      "sha256": "d448b7881befa20abbe95e061912b2072afa0697774fbca450b6b299fcad6a28"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181603-e7af2932.json",
+      "sha256": "307b56fa09ab05c511f5ccf971cc7ea9e357dced116cd33670ec749514145020"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results-20261102T181810-9b7d32df.json",
+      "sha256": "e5706637e2be4a01cfc11588a4e3d789b29484ee0bd2550605ab4b7a8de24a76"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/results.json",
+      "sha256": "e5706637e2be4a01cfc11588a4e3d789b29484ee0bd2550605ab4b7a8de24a76"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/source-snapshot.json",
+      "sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6"
+    },
+    {
+      "path": "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102/validation/validate_contract.py",
+      "sha256": "74f39afe21fb132cb2b832632a9f8cae4ed3bbabc5291c7cb77f7daeef10ab3f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/GEMINI_FIRST_SCRIPT_PROMPT.md",
+      "sha256": "10e4ec9c7eb807bc328a4dc70b16d50fb3dcbd03f057721057f43fbfb6fc5c65"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/T-Notes-M365-User-Snapshot-Spec-v0.1-DRAFT/USER_SNAPSHOT_SPEC.md",
+      "sha256": "7281b835b7079c7b727133185a7518adbb235f56bed79394d0da3af364210c92"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/GEMINI.md",
+      "sha256": "73128f1c3efd318ba5399c936a28babd1ba39e0353779ed40821017ab986a750"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/README-FIRST.md",
+      "sha256": "58b28ba90e4e0cca195bf35ac86e0e0df9f2ea061e5d79181d82d66cdb643d0f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/CONTRACT.md",
+      "sha256": "fd8bef503218919a495fc6fea9eb8209f5078dc4d21ca130a659881c6030fe03"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.failure.json",
+      "sha256": "324d60c5f628b128460a4e61a94beca5dcc43e9954b8f34eb0e8d6d0526a52d2"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.manifest.json",
+      "sha256": "87b1b9c43c9b1533856c0871cd7fb5b9247d725e100dcca5a90af9ff3f18b677"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.request.json",
+      "sha256": "aa91f9700e8dcd13f93633f53a93ab20dbbc6d52d8bd588f3585eb2da6a0556c"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/examples/entra-user-snapshot.success.json",
+      "sha256": "e8def96d63d9a2abb16ed5dc7da2999c2cda91836ecbf632f75095a265b8a3b8"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_CODEX.md",
+      "sha256": "b0b810970e1ccc1c88fc4ec58b54a88b1d10e9cb673f9755eef6130b2560ad5e"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/prompts/FOR_GEMINI.md",
+      "sha256": "1f86a36cbabaea31d8bf9fd2355db10dd796af09782a1817f2bed01b9a10bd1d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-request.schema.json",
+      "sha256": "1f498afa9c4b68098e6e67aa00d36788ae6afe7b1a7d0e9e31bb0c7e37d74b2f"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/execution-result.schema.json",
+      "sha256": "ddf4f9f7f1caef058190278cce4a49dac1439fe1a60cf10774b903cd1c45570d"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/schemas/script-manifest.schema.json",
+      "sha256": "e5a0bcc140e42a8fdc0b47ed1cadca4689f2756d90e84a3230fb1a43ea215165"
+    },
+    {
+      "path": "docs/planning/m365/00_packages/TNotes-M365-Shared-Contract-DRAFT/docs/contracts/m365/tests/validate_examples.py",
+      "sha256": "742dbd72d609426bcb89c1de05aac170cb0e0c0eaa108c4b1574e61cd830b725"
+    },
+    {
+      "path": "docs/contracts/company-directory/backup-scenarios.json",
+      "sha256": "b1c41d755c07611b3f65ae798ba8a9f4b5b20ef91477957c4ccee72b008c9af7"
+    },
+    {
+      "path": "docs/contracts/company-directory/BACKUP_SPEC.md",
+      "sha256": "36d93520a08bbe51296eb368dbea970469337917af54e57fc92c0dd867eb0965"
+    },
+    {
+      "path": "docs/contracts/company-directory/candidate-inventory.json",
+      "sha256": "5838850408671e5010961f9bd7660d887cf3569c6752e0813534d77660aaf3c6"
+    },
+    {
+      "path": "docs/contracts/company-directory/CHECKPOINT.md",
+      "sha256": "b719a3f4000f8c2b4e6a0d8a4590e6d827012ea9d8c9142d08b9d0d509d0c84a"
+    },
+    {
+      "path": "docs/contracts/company-directory/company-directory.schema.json",
+      "sha256": "f82835998fa6d7d7d84aba6c10cd1254638b1f53c710b9456e95d5e83a6ee37a"
+    },
+    {
+      "path": "docs/contracts/company-directory/COMPATIBILITY.md",
+      "sha256": "ec58d0919f32793864382e15d88d2153d9acb716935b5349213c68f519ff14eb"
+    },
+    {
+      "path": "docs/contracts/company-directory/exchange-fixtures.json",
+      "sha256": "9b5a0f257b9a3f34ba681eacd3f38531243b262efbc5bcb34b98345fa7bcc463"
+    },
+    {
+      "path": "docs/contracts/company-directory/merge-golden-fixtures.json",
+      "sha256": "c76f8c4633d37dcd2fd2c602c4d6b97b989c7fd97376833a0bafc8f5319ec7f9"
+    },
+    {
+      "path": "docs/contracts/company-directory/MERGE_SPEC.md",
+      "sha256": "d01397ac3a964f6d2fb03afeeca82a57119665bbc76be0e4031165ed405e58a4"
+    },
+    {
+      "path": "docs/contracts/company-directory/README.md",
+      "sha256": "e612fcbe61bcb83539eda58d6e4e72d18176e5e7b1782c54d7e1c9932ae11597"
+    },
+    {
+      "path": "docs/contracts/company-directory/test_contract.py",
+      "sha256": "0cfc7e65a32f8a0a3d17b246f2e0e5600f78b86258b3f0cb086a58cb0a8550d2"
+    },
+    {
+      "path": "docs/contracts/company-directory/validate_design.py",
+      "sha256": "ef923e3dae69f3fb7f7590205ec3a01df390a4c467452e1980905a20f146757b"
+    },
+    {
+      "path": "docs/contracts/m365/AGENT_HANDOFF.md",
+      "sha256": "3f2798f1431764911da07c824dd132802202fb60d62d21244399ad87c202c86b"
+    },
+    {
+      "path": "docs/contracts/m365/CHECKPOINT.md",
+      "sha256": "295424cde9e8515bd8416149427f7dc0b4b21dfc774f8754c4b03c0b053c273f"
+    },
+    {
+      "path": "docs/contracts/m365/CONTRACT.md",
+      "sha256": "2308c1d1ea5381952ccd23f48698a5fa4559e2100b11ed1bbaa480147620250d"
+    },
+    {
+      "path": "docs/contracts/m365/CONTRACT_CORRECTION_HANDOFF.md",
+      "sha256": "3569c2ce3460ed2708ce97d55ea0fa01bcc7719264f8e429e10aed1cc62d27f9"
+    },
+    {
+      "path": "docs/contracts/m365/GEMINI.md",
+      "sha256": "3d4f901235904ba86f2147342d71c56c641ed05c8fd1878197af34fdce7b6e26"
+    },
+    {
+      "path": "docs/contracts/m365/README.md",
+      "sha256": "38a98881bd610507e65423bf021fce23b7a347f4892de8d6318ef8d2f2b1b1ec"
+    },
+    {
+      "path": "docs/contracts/m365/RELEASE_APPROVAL.md",
+      "sha256": "e8c627abf0ee38d16120244622460c326175d5900a11bd078d8d8896c7469f56"
+    },
+    {
+      "path": "docs/contracts/m365/security-and-execution.md",
+      "sha256": "28a68b4590193400f80b526e12b283fe2ef2fd696932bcf61296276b60131ebe"
+    },
+    {
+      "path": "docs/contracts/m365/user-snapshot.md",
+      "sha256": "598f2b64afcad6c41dad6879b2a94a548131be9e2ec215d0b9a513101bfc7c80"
+    },
+    {
+      "path": "docs/contracts/m365/validation-and-roadmap.md",
+      "sha256": "dcf5b712141f5512192a05ef2733124a71d60dafd13a43e94d0ec74e467a0b30"
+    },
+    {
+      "path": "docs/contracts/m365/workspace-architecture.md",
+      "sha256": "7075b0d697556deca3dd030bc1c6fda0d660662cb7fde9220705da493cf29ee3"
+    },
+    {
+      "path": "docs/contracts/m365/examples/fixtures.json",
+      "sha256": "11c77c1793db38631c2c461d007fe1277bce688c1adefefd61dcd6c2f44971fb"
+    },
+    {
+      "path": "docs/contracts/m365/examples/mock-compatibility.json",
+      "sha256": "dd2fb96848a327e5fcb9e6e550a506a759f3a1c41e2a4427d4161cbf1eefffeb"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/common.schema.json",
+      "sha256": "e718b3bc83e3562deb9e743e99823a785a7839a2a1a4ae895afc38def8200ae6"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/company-profile.schema.json",
+      "sha256": "b2e2628634fec9289e75fbcaa8b942acd39e60588dc0d307a291c4fc3753247d"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/error.schema.json",
+      "sha256": "0d9a5d81efca5486e7dd5ff6f9735f5f51a75d43c60ea97d3882fd0386a94a20"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/execution-request.schema.json",
+      "sha256": "c86e2c508afec1d358d12f3f83602c5e456c3807513a7db1e4b88ac8d8eda963"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/execution-result.schema.json",
+      "sha256": "a3ab4200c5a303559fb301688d48ce1d45d493185c44281e35b1d6873b5234d6"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/operation-data.schema.json",
+      "sha256": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe"
+    },
+    {
+      "path": "docs/contracts/m365/schemas/script-manifest.schema.json",
+      "sha256": "2f13a3c3f98dba6b5cfbfa2a7b9c9032acdf2665b522c7cc3a446d2654ad9e7c"
+    },
+    {
+      "path": "docs/contracts/m365/validation/correction-baseline.json",
+      "sha256": "7687bae19cdb97ebd93623ec21d257173f4c59f97fa5edaedd86deaff10094a1"
+    },
+    {
+      "path": "docs/contracts/m365/validation/correction-results-20261103T010141-0a261cf4.json",
+      "sha256": "5f8a74acd096dc962b1a3664901c20ba15b2e31f4455f7282e94a0b994665901"
+    },
+    {
+      "path": "docs/contracts/m365/validation/correction-results-20261103T012008-67c2c2fe.json",
+      "sha256": "87ba06d99dc2542ddcae1d3572627c13a935110559df645a02fcf90630ffa7bc"
+    },
+    {
+      "path": "docs/contracts/m365/validation/correction-results.json",
+      "sha256": "87ba06d99dc2542ddcae1d3572627c13a935110559df645a02fcf90630ffa7bc"
+    },
+    {
+      "path": "docs/contracts/m365/validation/correction_checks.py",
+      "sha256": "7ae4eb81694dcccc5c9ab54433c70f8194da7fc6043684b64e8601ca02163b7b"
+    },
+    {
+      "path": "docs/contracts/m365/validation/source-snapshot.json",
+      "sha256": "e1cd2831e0f824c435fd4217f21b5eee4f953cd3bafaed431a631ac4e6b6e5b6"
+    },
+    {
+      "path": "docs/contracts/m365/validation/validate_contract.py",
+      "sha256": "7ef6eaf6dcfaa3f064d5264cd6458c5d800f30729e6841bb28b25196fc2d237f"
+    },
+    {
+      "path": "assets/icons/.gitkeep",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "path": "assets/icons/app_icon.png",
+      "sha256": "e3ef6ad6e5fe857e63e7f73991dea4509a9e2fbf45a2c48780c5717e2cc0e61a"
+    },
+    {
+      "path": "assets/m365/catalog.json",
+      "sha256": "5d46f595680650e80411a63f7600abeadcb8096d71ebb8dfd1858fa99fd25f35"
+    },
+    {
+      "path": "assets/m365/categories.json",
+      "sha256": "2a4d1af7e044229eeab5fa50e4e05f79e3ec34b22e7588798dc206c060ed9bce"
+    },
+    {
+      "path": "assets/styles/dark_theme.qss",
+      "sha256": "dfadddf12efcad7234f67d4021d7e94d4af802cefbf722131edd127bed688291"
+    },
+    {
+      "path": "prototypes/company_directory_merge/company_directory_merge.py",
+      "sha256": "09620b54328c26fe323c64ab0f2e60f521a24a2d9ba575b8b10ee5a908031f79"
+    },
+    {
+      "path": "prototypes/company_directory_merge/README.md",
+      "sha256": "f5e679ce24eaaed0d92af0773e278791672e4e7c91a821f4e72aeeb1d9e2937e"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "e37b71cd84d6d5f7c7ed52c6262f3831c6586a3ce61e0460f9f53bfe6c79c39d"
+    },
+    {
+      "path": "GEMINI.md",
+      "sha256": "217f7025a2e7d7e79a76680a0a5f7ca774e88e21a7c1347acb23692ec6eb2d9c"
+    }
+  ]
+}

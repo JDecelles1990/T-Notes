@@ -1,5 +1,5 @@
 {
-  "contract_version": "0.3.0-proposed.1",
+  "contract_version": "0.3.0",
   "script_id": "M365.TEST.CATALOG",
   "title": "Synthetic catalog inspection",
   "description": "TEST ONLY: cross-service metadata for search and unavailable-state tests.",

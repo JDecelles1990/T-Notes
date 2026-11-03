@@ -13,8 +13,8 @@ import stat
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTRACT_ROOT = ROOT / "docs/planning/m365/03_codex_reviews/architecture-contract-proposal-20261102"
-VERSION = "0.3.0-proposed.1"
+CONTRACT_ROOT = ROOT / "docs/contracts/m365"
+VERSION = "0.3.0"
 SCHEMAS = ("common", "script-manifest", "execution-request", "execution-result",
            "error", "company-profile", "operation-data")
 RESERVED = set("context parameters cancellationtoken verbose debug erroraction warningaction "

@@ -262,7 +262,12 @@ def test_unapproved_metadata_details_search_and_no_dispatch(registration, qapp, 
         assert "trust and approval" in widget.operation_details.toPlainText()
         assert widget.operation_details.isReadOnly()
         assert all(edit.isReadOnly() for edit in widget.findChildren(QPlainTextEdit))
-        assert [button.text() for button in widget.findChildren(QPushButton)] == ["Back to T-Notes"]
+        assert not widget._content_groups[2].findChildren(QPushButton)
+        assert {button.text() for button in widget.findChildren(QPushButton)} == {
+            "Back to T-Notes", "+ Company", "Edit Company", "Confirm Company Selection",
+            "+ Admin", "Edit", "Remove", "Set Default", "Connect Microsoft Graph (synthetic)",
+            "Connect Exchange Online (synthetic)", "Disconnect", "Resolve Target (synthetic)",
+        }
         QTest.keyClick(widget.operation_list, Qt.Key_Return)
         widget.operation_list.itemDoubleClicked.emit(widget.operation_list.item(0))
         widget.search_input.setText("missing")
