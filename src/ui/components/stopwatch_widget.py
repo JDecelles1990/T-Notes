@@ -3,12 +3,9 @@
 from typing import Optional
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
-    QApplication,
     QHBoxLayout,
     QLabel,
-    QMenu,
     QPushButton,
-    QToolTip,
     QWidget,
 )
 from src.services.stopwatch_service import StopwatchService
@@ -94,36 +91,9 @@ class TicketStopwatchWidget(QWidget):
         """)
         self.btn_reset.clicked.connect(self.reset_timer)
 
-        # PSA Copy Menu Button
-        self.btn_copy = QPushButton("📋 Time")
-        self.btn_copy.setFixedHeight(24)
-        self.btn_copy.setToolTip("Copy billable time format to clipboard")
-        self.btn_copy.setStyleSheet("""
-            QPushButton {
-                background-color: #21262d;
-                border: 1px solid #30363d;
-                border-radius: 4px;
-                padding: 2px 8px;
-                color: #e6edf3;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #30363d;
-                border-color: #58a6ff;
-            }
-        """)
-        self._menu_copy = QMenu(self)
-        self._menu_copy.addAction("📋 Copy Exact (HH:MM:SS)", lambda: self._copy_to_clipboard("display"))
-        self._menu_copy.addAction("⏱️ Copy Decimal (e.g. 0.25h)", lambda: self._copy_to_clipboard("decimal"))
-        self._menu_copy.addAction("⏲️ Copy 15m Rounded Block", lambda: self._copy_to_clipboard("rounded"))
-        self._menu_copy.addSeparator()
-        self._menu_copy.addAction("📤 Copy Note for Ticket Tool", self.psa_export_requested.emit)
-        self.btn_copy.setMenu(self._menu_copy)
-
         layout.addWidget(self.lbl_time)
         layout.addWidget(self.btn_toggle)
         layout.addWidget(self.btn_reset)
-        layout.addWidget(self.btn_copy)
 
     @property
     def current_scratchpad_id(self) -> Optional[int]:
@@ -207,17 +177,4 @@ class TicketStopwatchWidget(QWidget):
         """Emits final elapsed seconds so services/repositories persist immediately."""
         if self._current_id is not None:
             self.time_updated.emit(self._current_id, self._seconds)
-
-    def _copy_to_clipboard(self, mode: str) -> None:
-        formatted = StopwatchService.format_time(self._seconds)
-        text = {
-            "display": formatted.display,
-            "decimal": formatted.decimal_hours,
-            "rounded": formatted.rounded_15m,
-        }.get(mode, formatted.display)
-
-        QApplication.clipboard().setText(text)
-        global_pos = self.btn_copy.mapToGlobal(self.btn_copy.rect().center())
-        QToolTip.showText(global_pos, f"Copied: {text}", self.btn_copy, self.btn_copy.rect(), 2500)
-        self.status_message_requested.emit(f"✓ Copied time ({text}) to clipboard", 2500)
 

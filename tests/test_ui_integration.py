@@ -334,26 +334,15 @@ def test_ui_stopwatch_integration_and_dynamic_tab_minutes(main_window):
     assert "00:14:00" in stopwatch.lbl_time.text()
 
 
-def test_ui_stopwatch_copy_and_reset(main_window, monkeypatch):
-    """Tests stopwatch copy menu actions and reset button."""
+def test_ui_stopwatch_copy_and_reset(main_window):
+    """Tests stopwatch reset button and verifies 'Time' dropdown removal from top bar."""
     stopwatch = main_window.toolbar.stopwatch
     stopwatch._seconds = 930  # 15m 30s -> 0.26h decimal, 0.50h rounded
     stopwatch._update_display()
 
-    copied = []
-    monkeypatch.setattr(QApplication.clipboard(), "setText", lambda t: copied.append(t))
-
-    # Test copy exact
-    stopwatch._copy_to_clipboard("display")
-    assert copied[-1] == "00:15:30"
-
-    # Test copy decimal
-    stopwatch._copy_to_clipboard("decimal")
-    assert copied[-1] == "0.26h"
-
-    # Test copy 15m rounded
-    stopwatch._copy_to_clipboard("rounded")
-    assert copied[-1] == "0.50h"
+    # Verify btn_copy and menu elements have been removed from the stopwatch toolbar widget
+    assert hasattr(stopwatch, "btn_copy") is False
+    assert hasattr(stopwatch, "_menu_copy") is False
 
     # Test reset timer
     stopwatch.reset_timer()
@@ -1753,3 +1742,50 @@ def test_ui_tab_drag_animation_and_scroll_speed(main_window, qapp):
     QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, drag_pos)
     qapp.processEvents()
     assert bar._drag_preview is None
+
+def test_ui_cross_pane_drag_destination_edge_auto_scroll(main_window, qapp):
+    """Verifies that dragging a tab from split pane near the left arrow of destination auto-scrolls destination."""
+    main_window.show()
+    for _ in range(6):
+        main_window.create_new_tab()
+    main_window.toggle_mini_hud_mode()
+    main_window.resize(1000, 700)
+    main_window.open_split_view()
+    qapp.processEvents()
+
+    main_tw = main_window.tab_widget
+    main_bar = main_tw.tabBar()
+    sec_tw = main_window.secondary_tab_widget
+    sec_bar = sec_tw.tabBar()
+
+    # Move to last tab in main tab widget so tabs are scrolled right
+    main_tw.setCurrentIndex(main_tw.count() - 1)
+    qapp.processEvents()
+
+    # Verify left navigation button or scroll button is enabled
+    assert main_tw.btn_prev.isVisible() is True
+    assert main_tw.btn_prev.isEnabled() is True
+
+    # Simulate cross-pane drag move hovering over left arrow (btn_prev)
+    gpos_left_arrow = main_tw.btn_prev.mapToGlobal(QPoint(10, 10))
+    main_window._handle_tab_cross_drag_move(sec_tw, 0, gpos_left_arrow)
+
+    # Destination tab bar should have started cross-drag auto-scrolling
+    assert main_bar._auto_scroll_timer.isActive() is True
+    assert main_bar._is_cross_scrolling is True
+    assert main_bar._scroll_direction == -1
+
+    # Simulate timer tick: calls scroll_left_step
+    main_bar._on_auto_scroll()
+    qapp.processEvents()
+
+    # Simulating move away from edge stops auto scroll
+    gpos_middle = main_tw.mapToGlobal(QPoint(main_tw.width() // 2, 10))
+    main_window._handle_tab_cross_drag_move(sec_tw, 0, gpos_middle)
+    assert main_bar._auto_scroll_timer.isActive() is False
+    assert main_bar._is_cross_scrolling is False
+
+    # Dropping finishes cleanly
+    main_window._handle_tab_cross_drop(sec_tw, 0, gpos_left_arrow)
+    qapp.processEvents()
+    assert main_bar._auto_scroll_timer.isActive() is False

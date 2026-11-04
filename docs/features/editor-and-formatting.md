@@ -83,7 +83,7 @@ Dedicated strictly to rich-text authoring, colors, and content markup:
 
 ### 4.2 Row 2: Ticket Workflow, Skeletons & Utilities Ribbon
 Dedicated to ticket-level actions, troubleshooting duration, translucency, and preferences:
-- **Ticket Stopwatch & MSP Billing (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), crisp Unicode Play/Pause (`▶`/`⏸`), Reset (`↺`), and `📋 Time` dropdown (Exact, Decimal, 15m rounded blocks, Copy Note with billable time).
+- **Ticket Stopwatch (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), crisp Unicode Play/Pause (`▶`/`⏸`), and Reset (`↺`).
 - **Ticket Templates (`📋 Template`):** Structured Skeleton templates (Incident Triage, Quick Fix, Maintenance).
 - **PSA Ticket Export (`📤 Copy Note`):** Copies clean Markdown/plain-text note with converted `- [ ] ` checkboxes.
 - **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% positioned naturally alongside workflow tools without artificial expanding voids.

@@ -1628,14 +1628,14 @@ class TechPadMainWindow(QMainWindow):
         to_tw = self.tab_widget if from_tw == self.secondary_tab_widget else self.secondary_tab_widget
         to_bar = to_tw.tabBar()
 
-        pos_in_to = to_bar.mapFromGlobal(global_pos)
-        # Check if cursor is roughly within the destination tab bar height
-        if -25 <= pos_in_to.y() <= to_bar.height() + 30:
-            scroll_margin = 35
-            if -15 <= pos_in_to.x() <= scroll_margin:
-                to_bar._start_auto_scroll(-1)
-            elif to_bar.width() - scroll_margin <= pos_in_to.x() <= to_bar.width() + 15:
-                to_bar._start_auto_scroll(1)
+        pos_in_tw = to_tw.mapFromGlobal(global_pos)
+        # Check if cursor is roughly within the destination tab bar / header row height
+        if -25 <= pos_in_tw.y() <= 45:
+            scroll_margin = 85
+            if -25 <= pos_in_tw.x() <= scroll_margin:
+                to_bar._start_auto_scroll(-1, is_cross_drag=True)
+            elif to_tw.width() - scroll_margin <= pos_in_tw.x() <= to_tw.width() + 25:
+                to_bar._start_auto_scroll(1, is_cross_drag=True)
             else:
                 to_bar._stop_auto_scroll()
         else:
@@ -1643,6 +1643,8 @@ class TechPadMainWindow(QMainWindow):
 
     def _handle_tab_cross_drop(self, from_tw: TechPadTabWidget, source_idx: int, global_pos: QPoint) -> None:
         """Handles dropping a dragged tab into the other split view pane or triggering split view."""
+        self.tab_widget.tabBar()._stop_auto_scroll()
+        self.secondary_tab_widget.tabBar()._stop_auto_scroll()
         if source_idx < 0 or source_idx >= from_tw.count():
             return
 
@@ -1699,20 +1701,27 @@ class TechPadMainWindow(QMainWindow):
         """Determines the target insert index in the destination tab widget based on drop coordinates."""
         bar = target_tw.tabBar()
         pos_in_bar = bar.mapFromGlobal(global_pos)
+        pos_in_tw = target_tw.mapFromGlobal(global_pos)
 
         # Check if cursor is roughly within tab bar vertical bounds (+/- 35px)
-        if -25 <= pos_in_bar.y() <= bar.height() + 35:
+        if -25 <= pos_in_bar.y() <= bar.height() + 35 or -25 <= pos_in_tw.y() <= 45:
             idx = bar.tabAt(pos_in_bar)
             if idx >= 0:
                 rect = bar.tabRect(idx)
                 if pos_in_bar.x() > rect.center().x():
                     return idx + 1
                 return idx
-            # If to the left of all tabs in the bar
-            if pos_in_bar.x() <= 0:
+            for i in range(target_tw.count()):
+                r = bar.tabRect(i)
+                if r.left() <= pos_in_bar.x() <= r.right():
+                    if pos_in_bar.x() > r.center().x():
+                        return i + 1
+                    return i
+            # If to the left of all tabs in the bar or over left arrow
+            if pos_in_bar.x() <= 0 or pos_in_tw.x() <= 40:
                 return 0
             # If to the right of all tabs in the bar
-            if pos_in_bar.x() > 0:
+            if pos_in_bar.x() > 0 or pos_in_tw.x() >= target_tw.width() - 40:
                 return target_tw.count()
 
         # Dropped into the editor area: insert as active tab at the end

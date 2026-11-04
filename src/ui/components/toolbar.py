@@ -357,7 +357,7 @@ class TechPadToolBar(QToolBar):
             self.lbl_opacity.setText(f"{self.slider_opacity.value()}%")
             for btn in (self.btn_split, self.btn_pin, self.btn_history, self.btn_settings):
                 btn.setStyleSheet("font-size: 12px; padding: 2px 3px;")
-            self.stopwatch.btn_copy.setText("📋")
+
         else:
             self.btn_copy_note.setText("📋 Copy Note")
             self.btn_skeleton.setText("📋 Template")
@@ -367,7 +367,7 @@ class TechPadToolBar(QToolBar):
             self.btn_pin.setStyleSheet("font-size: 13px; padding: 2px 6px;")
             self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px;")
             self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px;")
-            self.stopwatch.btn_copy.setText("📋 Time")
+
 
     def check_responsive_mode(self, available_width: int) -> None:
         """Applies responsive compact mode using actual measured width with hysteresis."""

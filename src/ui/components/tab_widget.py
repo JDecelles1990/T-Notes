@@ -85,6 +85,7 @@ class TechPadTabBar(QTabBar):
         self._auto_scroll_timer.setInterval(220)
         self._auto_scroll_timer.timeout.connect(self._on_auto_scroll)
         self._scroll_direction: int = 0
+        self._is_cross_scrolling: bool = False
 
     def _scroll_left_btn(self) -> Optional[QToolButton]:
         return self.findChild(QToolButton, "ScrollLeftButton")
@@ -92,35 +93,48 @@ class TechPadTabBar(QTabBar):
     def _scroll_right_btn(self) -> Optional[QToolButton]:
         return self.findChild(QToolButton, "ScrollRightButton")
 
-    def _start_auto_scroll(self, direction: int) -> None:
+    def _start_auto_scroll(self, direction: int, is_cross_drag: bool = False) -> None:
         self._scroll_direction = direction
+        self._is_cross_scrolling = is_cross_drag
         if not self._auto_scroll_timer.isActive():
             self._auto_scroll_timer.start()
 
     def _stop_auto_scroll(self) -> None:
         self._scroll_direction = 0
+        self._is_cross_scrolling = False
         if self._auto_scroll_timer.isActive():
             self._auto_scroll_timer.stop()
 
     def _on_auto_scroll(self) -> None:
-        if not self._is_dragging or self._drag_tab_idx is None:
-            self._stop_auto_scroll()
-            return
+        if not self._is_cross_scrolling:
+            if not self._is_dragging or self._drag_tab_idx is None:
+                self._stop_auto_scroll()
+                return
 
-        if self._scroll_direction < 0:
-            btn = self._scroll_left_btn()
-            if btn and btn.isEnabled():
-                btn.click()
+        scrolled = False
+        parent_tw = self.parent()
+        if hasattr(parent_tw, "scroll_left_step") and hasattr(parent_tw, "scroll_right_step"):
+            if self._scroll_direction < 0:
+                scrolled = parent_tw.scroll_left_step()
+            elif self._scroll_direction > 0:
+                scrolled = parent_tw.scroll_right_step()
+        else:
+            if self._scroll_direction < 0:
+                btn = self._scroll_left_btn()
+                if btn and btn.isEnabled():
+                    btn.click()
+                    scrolled = True
+            elif self._scroll_direction > 0:
+                btn = self._scroll_right_btn()
+                if btn and btn.isEnabled():
+                    btn.click()
+                    scrolled = True
+
+        if scrolled:
+            if not self._is_cross_scrolling and self._last_mouse_pos:
                 self._check_reorder_at(self._last_mouse_pos)
-            else:
-                self._stop_auto_scroll()
-        elif self._scroll_direction > 0:
-            btn = self._scroll_right_btn()
-            if btn and btn.isEnabled():
-                btn.click()
-                self._check_reorder_at(self._last_mouse_pos)
-            else:
-                self._stop_auto_scroll()
+        else:
+            self._stop_auto_scroll()
 
     def _check_reorder_at(self, pos: Optional[QPoint]) -> None:
         """Dynamically reorders the dragged tab to the left or right of the hovered tab or edge."""
@@ -245,18 +259,26 @@ class TechPadTabBar(QTabBar):
                         gpos.y() - self._drag_preview.height() // 2,
                     )
 
-                # Vertical drag-out condition: pulling tab down into editor (or above bar) detaches for cross-pane transfer
-                is_vertical_drag_out = pos.y() < -20 or pos.y() > self.height() + 25
+                # Detach for cross-pane transfer:
+                # 1. Pulling tab vertically into editor or above bar
+                # 2. When split view is open, moving laterally into the adjacent pane
+                win = self.window()
+                has_split = bool(win and hasattr(win, "secondary_tab_widget") and win.secondary_tab_widget.isVisible())
+                is_outside_bar = (
+                    pos.y() < -20
+                    or pos.y() > self.height() + 25
+                    or (has_split and (pos.x() < -15 or pos.x() > self.width() + 15))
+                )
 
                 if self._is_dragging_out:
                     # Once detached, stay in cross-pane drag-out mode unless dragged back into source tab bar bounds
-                    if not is_vertical_drag_out and self.rect().contains(pos):
+                    if not is_outside_bar and self.rect().contains(pos):
                         self._is_dragging_out = False
                         QApplication.restoreOverrideCursor()
                     else:
                         self.tab_cross_drag_moved.emit(self._drag_tab_idx, gpos)
                         return
-                elif is_vertical_drag_out:
+                elif is_outside_bar:
                     # Detach for cross-pane tab exchange
                     self._stop_auto_scroll()
                     self._is_dragging_out = True
@@ -499,6 +521,32 @@ class TechPadTabWidget(QTabWidget):
             self.btn_prev.setEnabled(can_navigate)
         if hasattr(self, "btn_next"):
             self.btn_next.setEnabled(can_navigate)
+
+    def scroll_left_step(self) -> bool:
+        """Scrolls the tab bar one step left, revealing hidden tabs to the left."""
+        btn = self._tab_bar.findChild(QToolButton, "ScrollLeftButton")
+        if btn and btn.isEnabled():
+            btn.click()
+            return True
+        if hasattr(self, "btn_prev") and self.btn_prev.isVisible() and self.btn_prev.isEnabled():
+            curr = self.currentIndex()
+            if curr > 0:
+                self.setCurrentIndex(curr - 1)
+                return True
+        return False
+
+    def scroll_right_step(self) -> bool:
+        """Scrolls the tab bar one step right, revealing hidden tabs to the right."""
+        btn = self._tab_bar.findChild(QToolButton, "ScrollRightButton")
+        if btn and btn.isEnabled():
+            btn.click()
+            return True
+        if hasattr(self, "btn_next") and self.btn_next.isVisible() and self.btn_next.isEnabled():
+            curr = self.currentIndex()
+            if curr < self.count() - 1:
+                self.setCurrentIndex(curr + 1)
+                return True
+        return False
 
     def _navigate_previous_tab(self) -> None:
         """Navigates to the previous ticket tab."""
