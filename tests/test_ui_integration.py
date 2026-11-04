@@ -853,6 +853,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.is_mini_hud is False
     assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
     assert main_window.toolbar.isVisible() is True
+    assert main_window.toolbar.secondary_toolbar.isVisible() is True
 
     # 1. Toggle to Mini-HUD mode (docked right sidebar with longer height)
     main_window.toggle_mini_hud_mode()
@@ -860,6 +861,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.is_mini_hud is True
     assert bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint) is True
     assert main_window.toolbar.isVisible() is False
+    assert main_window.toolbar.secondary_toolbar.isVisible() is False
     assert main_window.width() <= 480
     assert main_window.height() >= 400
     assert "[HUD]" in main_window.windowTitle()
@@ -871,6 +873,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.btn_toggle_split.isVisible() is True
     assert main_window.btn_toggle_drawer.isVisible() is True
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
 
     # Verify HUD mode fits above the Windows taskbar
     avail = main_window.screen().availableGeometry()
@@ -889,6 +892,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.is_mini_hud is False
     assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
     assert main_window.toolbar.isVisible() is True
+    assert main_window.toolbar.secondary_toolbar.isVisible() is True
     assert "[HUD]" not in main_window.windowTitle()
     assert main_window.toolbar.btn_pin.isChecked() is False
     assert "HUD" in main_window.btn_status_hud.text()
@@ -899,7 +903,22 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.btn_toggle_drawer.isVisible() is True
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
 
-def test_ui_mini_hud_tabs_bar_navigation_arrows(main_window):
+
+def test_ui_mini_hud_from_maximized_restores_maximized(main_window, qapp):
+    """Verifies that entering Mini-HUD from maximized state normalizes window and restores maximized state upon exit."""
+    main_window.showMaximized()
+    assert main_window.isMaximized() is True
+
+    main_window.toggle_mini_hud_mode()
+    assert main_window.is_mini_hud is True
+    assert main_window.isMaximized() is False
+
+    main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+    assert main_window.is_mini_hud is False
+    assert main_window.isMaximized() is True
+
+def test_ui_mini_hud_tabs_bar_navigation_arrows(main_window, qapp):
     """Verifies that left and right arrow buttons appear on the tabs bar in HUD mode and navigate ticket tabs."""
     main_window.show()
 
@@ -933,6 +952,7 @@ def test_ui_mini_hud_tabs_bar_navigation_arrows(main_window):
 
     # Toggle back to Normal mode: arrows become hidden again
     main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
     assert main_window.is_mini_hud is False
     assert main_window.tab_widget.btn_prev.isVisible() is False
     assert main_window.tab_widget.btn_next.isVisible() is False
@@ -977,6 +997,7 @@ def test_ui_m365_launcher_and_tnotes_button_transformation(main_window, qapp):
     assert main_window.btn_m365_active_ticket.isVisible() is False
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
 
+
     # 2. Toggle to M365 Launcher in normal mode: Split and History hidden; Categories and Active Ticket visible
     main_window.btn_m365.click()
     qapp.processEvents()
@@ -1014,6 +1035,7 @@ def test_ui_m365_launcher_and_tnotes_button_transformation(main_window, qapp):
     assert main_window.btn_m365_categories.isVisible() is False
     assert main_window.btn_m365_active_ticket.isVisible() is False
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
 
     # 5. Toggle to M365 Launcher in HUD mode (stays in HUD mode, replaces Split/History with Categories/Active Ticket)
     main_window.btn_m365.click()

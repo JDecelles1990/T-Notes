@@ -1909,14 +1909,20 @@ class TechPadMainWindow(QMainWindow):
 
         # 1. Preserve normal workspace state
         self._saved_normal_geometry = self.saveGeometry()
+        self._saved_was_maximized = self.isMaximized()
         self._saved_row1_visible = self.toolbar.isVisible()
+        self._saved_row2_visible = self.toolbar.secondary_toolbar.isVisible()
         self._saved_drawer_visible = self.history_drawer.isVisible()
         self._saved_split_visible = self.secondary_tab_widget.isVisible()
+
+        if self._saved_was_maximized:
+            self.showNormal()
 
         self._is_mini_hud = True
 
         # 2. Hide bulky UI elements to maximize note space
         self.toolbar.hide()
+        self.toolbar.secondary_toolbar.hide()
         if self._saved_drawer_visible:
             self.history_drawer.hide()
 
@@ -1958,7 +1964,7 @@ class TechPadMainWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.show()
 
-        screen = self.screen() or QGuiApplication.primaryScreen()
+        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen() or QGuiApplication.primaryScreen()
         if screen:
             avail = screen.availableGeometry()
             frame = self.frameGeometry()
@@ -2018,7 +2024,9 @@ class TechPadMainWindow(QMainWindow):
             self.setMinimumSize(660, 400)
 
         # 2. Restore previous window geometry within available screen bounds
-        if getattr(self, "_saved_normal_geometry", None):
+        if getattr(self, "_saved_was_maximized", False):
+            self.showMaximized()
+        elif getattr(self, "_saved_normal_geometry", None):
             self.restoreGeometry(self._saved_normal_geometry)
             self._clamp_geometry_to_screen()
 
@@ -2277,7 +2285,7 @@ class TechPadMainWindow(QMainWindow):
         """Clamps HUD window geometry so the title bar is on-screen and the bottom bar never overlaps the taskbar."""
         if not self.is_mini_hud:
             return
-        screen = self.screen() or QGuiApplication.primaryScreen()
+        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen() or QGuiApplication.primaryScreen()
         if not screen:
             return
         avail = screen.availableGeometry()
@@ -2305,7 +2313,7 @@ class TechPadMainWindow(QMainWindow):
         else:
             new_h = geo.height()
 
-        if (geo.x(), new_y, geo.width(), new_h) != (geo.x(), geo.y(), geo.width(), geo.height()):
+        if (new_y, new_h) != (geo.y(), geo.height()):
             self.setGeometry(geo.x(), new_y, geo.width(), new_h)
     def switch_compact_split_pane(self) -> None:
         """Toggles displayed pane in compact single-pane Split View mode."""
@@ -2331,7 +2339,7 @@ class TechPadMainWindow(QMainWindow):
 
     def _clamp_geometry_to_screen(self) -> None:
         """Clamps the window geometry to fit within the active screen's available geometry."""
-        screen = self.screen() or QGuiApplication.primaryScreen()
+        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen() or QGuiApplication.primaryScreen()
         if not screen:
             return
         avail = screen.availableGeometry()
@@ -2347,7 +2355,7 @@ class TechPadMainWindow(QMainWindow):
 
     def _check_responsive_layout(self, current_width: int) -> None:
         """Coordinates responsive toolbar, history drawer, and split view layout."""
-        if self.is_m365_workspace:
+        if self.is_m365_workspace or self.is_mini_hud:
             return
         if hasattr(self, "toolbar"):
             self.toolbar.check_responsive_mode(current_width)
