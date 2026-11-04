@@ -108,7 +108,7 @@ def test_export_ticket_to_file(tmp_path, services):
     )
 
     assert file_path1.exists()
-    assert file_path1.parent.name == "2026-11-04_10h"
+    assert file_path1.parent.name == "2026-11-04"
     assert file_path1.parent.parent == tmp_path
     assert fn1 == "INC-2020_Wayne_Enterprises_2026-11-04_10h.txt"
     content = file_path1.read_text(encoding="utf-8")
@@ -128,7 +128,7 @@ def test_export_ticket_to_file(tmp_path, services):
 
     # Must overwrite the exact same file
     assert file_path1 == file_path2
-    assert len(list((tmp_path / "2026-11-04_10h").glob("*.txt"))) == 1
+    assert len(list((tmp_path / "2026-11-04").glob("*.txt"))) == 1
     content2 = file_path2.read_text(encoding="utf-8")
     assert "Resolved by rebooting router." in content2
 
@@ -184,7 +184,7 @@ def test_main_window_export_active_ticket(qapp, services, tmp_path, monkeypatch)
         # Verify file was written to tmp_path
         exported_files = list(tmp_path.rglob("*.txt"))
         assert len(exported_files) == 1
-        assert exported_files[0].parent.name == datetime.now().strftime("%Y-%m-%d_%Hh")
+        assert exported_files[0].parent.name == datetime.now().strftime("%Y-%m-%d")
         assert exported_files[0].parent.parent == tmp_path
         exported_content = exported_files[0].read_text(encoding="utf-8")
     

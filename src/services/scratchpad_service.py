@@ -359,7 +359,7 @@ class ScratchpadService:
     ) -> Tuple[Path, str]:
         r"""
         Exports the raw unformatted text (no formatting, no images) of the active ticket to a file.
-        Saves into an hourly subfolder inside export_dir (default: C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD_HHh>\).
+        Saves into a daily subfolder inside export_dir (default: C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD>\).
         Returns (full_file_path, filename).
         """
         if isinstance(scratchpad_id, dict):
@@ -370,8 +370,8 @@ class ScratchpadService:
         filename = self.generate_export_filename(ticket, now=now)
         now = now or datetime.now()
         base_dir = export_dir or DEFAULT_EXPORT_DIR
-        hourly_folder_name = now.strftime("%Y-%m-%d_%Hh")
-        target_dir = base_dir / hourly_folder_name
+        day_folder_name = now.strftime("%Y-%m-%d")
+        target_dir = base_dir / day_folder_name
         target_dir.mkdir(parents=True, exist_ok=True)
         file_path = target_dir / filename
 

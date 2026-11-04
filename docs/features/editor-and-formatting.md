@@ -46,7 +46,7 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Insert Image File** | `Ctrl+Alt+I` | Prompts file picker to insert screenshot or image. |
 | **Ticket Skeletons** | `Ctrl+Alt+S` | Opens template skeleton menu. |
 | **Copy for PSA Note** | `Ctrl+Alt+N` | Exports clean Markdown/plain-text stripped of HTML to clipboard. |
-| **Export Note to File** | `Ctrl+Alt+E` | Exports clean plain-text active ticket note to hourly folder in `T-Notes\`. |
+| **Export Note to File** | `Ctrl+Alt+E` | Exports clean plain-text active ticket note to daily folder in `T-Notes\`. |
 | **Text Color** | `Ctrl+Alt+X` | Opens color picker for selected text. |
 | **Highlight Background** | `Ctrl+Alt+H` | Opens highlight color picker for text background. |
 | **Badge: 🟢 PASS** | `Alt+1` | Injects inline green PASS tag. |
@@ -156,13 +156,13 @@ The ribbon toolbar provides a dual-action popup button (`QToolButton.MenuButtonP
 The `Copy Note` dropdown menu features `💾 Export Note (T-Notes Folder)` (shortcut `Ctrl+Alt+E`), which exports the active ticket unformatted plain-text note directly into the project repository folder:
 - **Active Ticket Scope:** Automatically targets whichever ticket editor currently has focus / cursor placement, across the primary tab editor, secondary Split View pane, or M365 Launcher right sidebar.
 - **Pure Plain Text:** Strips all HTML markup, formatting tags, image binaries, and embedded image placeholders (`\uFFFC`).
-- **Save Location:** Saved into an hourly subfolder inside `C:\Dev\T-Notes\T-Notes\`:
-  `C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD_HHh>\` (e.g. `C:\Dev\T-Notes\T-Notes\2026-11-04_14h\`). The subfolder is automatically created if it does not exist.
+- **Save Location:** Saved into a daily subfolder inside `C:\Dev\T-Notes\T-Notes\`:
+  `C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD>\` (e.g. `C:\Dev\T-Notes\T-Notes\2026-11-04\`). The subfolder is automatically created if it does not exist.
 - **Filename Assembly:** Built by sanitizing components and joining them with underscores:
   - If client name is present: `{ticket_name}_{client_name}_{YYYY-MM-DD_HHh}.txt` (e.g. `INC-2020_Wayne_Enterprises_2026-11-04_14h.txt`).
   - If client name is absent: `{ticket_name}_{YYYY-MM-DD_HHh}.txt`.
-- **Same-Hour Overwrite:** If triggered multiple times within the same hour, the file cleanly overwrites itself within the same hourly subfolder, allowing technicians to save frequently without folder clutter.
-- **Status Bar Feedback:** Confirms successful export with relative path notification (e.g. `✓ Exported note (#INC-2020) to T-Notes/2026-11-04_14h/INC-2020_Wayne_Enterprises_2026-11-04_14h.txt`).
+- **Same-Hour Overwrite:** If triggered multiple times within the same hour, the file cleanly overwrites itself within the day's folder, allowing technicians to save frequently without folder clutter.
+- **Status Bar Feedback:** Confirms successful export with relative path notification (e.g. `✓ Exported note (#INC-2020) to T-Notes/2026-11-04/INC-2020_Wayne_Enterprises_2026-11-04_14h.txt`).
 
 ---
 
@@ -266,7 +266,7 @@ To support compact displays and Windows high-DPI scaling (125% and 150% scaling 
 - **Ticket Header Card:** Displays ticket identification pill (`#INC-xxx`), client name, and subject/title alongside synchronized troubleshooting stopwatch controls (`⏱️ HH:MM:SS`, `▶`/`⏸` play/pause, `↺` reset) directly wired to the ticket's active stopwatch state.
 - **Top-Right Corner Micro-Controls (`id_client_row`):** To maximize editor height, dedicated toolbar rows are eliminated in favor of three compact corner controls (26x22px) anchored at the top right of the header card:
   - `btn_template` (`"🗒️"`): Structured ticket template dropdown (`InstantPopup` mode) inserting pre-configured diagnostic skeletons or custom user templates via `🔳 Add a new template`.
-  - `btn_copy_note` (`"📋"`): Formatted note copy (`Ctrl+Shift+C`) on click, packaging rich HTML with Base64 embedded images to the Windows Clipboard; dropdown actions for clean Markdown export (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`) and direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`) to hourly timestamped subfolders in `T-Notes\`.
+  - `btn_copy_note` (`"📋"`): Formatted note copy (`Ctrl+Shift+C`) on click, packaging rich HTML with Base64 embedded images to the Windows Clipboard; dropdown actions for clean Markdown export (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`) and direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`) to daily timestamped subfolders in `T-Notes\`.
   - `btn_more` (`"..."`, `HoverToolButton`): Opens the comprehensive text formatting and insert menu on hover or click.
 - **Hover & Click Text Features Menu (`menu_text_features`):** Features instantaneous popup access to all text styling tools:
   - Checkable formatting toggles: `B Bold (Ctrl+B)`, `I Italic (Ctrl+I)`, `U Underline (Ctrl+U)` with real-time format state reflection.
