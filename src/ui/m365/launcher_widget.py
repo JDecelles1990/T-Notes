@@ -3,8 +3,8 @@
 from datetime import datetime
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, QEvent
-from PySide6.QtGui import QColor, QFont, QTextCharFormat
+from PySide6.QtCore import Qt, Signal, QEvent, QPoint
+from PySide6.QtGui import QAction, QColor, QFont, QTextCharFormat
 from PySide6.QtWidgets import (
     QApplication, QColorDialog, QComboBox, QFileDialog, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
@@ -18,6 +18,16 @@ from src.services.m365_company_service import synthetic_directory
 from src.services.m365_context_service import CompanyContextService
 from src.ui.components.editor import TechPadEditor
 from src.ui.m365.company_context_panel import CompanyContextPanel
+
+
+class HoverToolButton(QToolButton):
+    """QToolButton that displays its popup menu on hover or click."""
+
+    def enterEvent(self, event) -> None:
+        super().enterEvent(event)
+        menu = self.menu()
+        if menu and not menu.isVisible() and self.isEnabled():
+            menu.popup(self.mapToGlobal(QPoint(0, self.height())))
 
 
 class M365LauncherWidget(QWidget):
@@ -266,10 +276,10 @@ class M365LauncherWidget(QWidget):
         header_card_layout.setContentsMargins(6, 6, 6, 6)
         header_card_layout.setSpacing(4)
 
-        # Top row: Ticket ID Badge + Client Name
+        # Top row: Ticket ID Badge + Client Name + Corner Action Buttons
         id_client_row = QHBoxLayout()
         id_client_row.setContentsMargins(0, 0, 0, 0)
-        id_client_row.setSpacing(6)
+        id_client_row.setSpacing(4)
 
         self.lbl_ticket_id = QLabel("#INC-000", self.ticket_header_card)
         self.lbl_ticket_id.setStyleSheet(
@@ -281,7 +291,122 @@ class M365LauncherWidget(QWidget):
 
         self.lbl_ticket_client = QLabel("Client: N/A", self.ticket_header_card)
         self.lbl_ticket_client.setStyleSheet("color: #8b949e; font-size: 11px;")
-        id_client_row.addWidget(self.lbl_ticket_client, 1)
+        id_client_row.addWidget(self.lbl_ticket_client)
+
+        id_client_row.addStretch(1)
+
+        corner_btn_style = """
+            QToolButton {
+                background-color: #161b22; border: 1px solid #30363d; border-radius: 3px;
+                color: #c9d1d9; font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', Consolas, sans-serif;
+                font-size: 11px; font-weight: bold; padding: 1px 2px;
+            }
+            QToolButton:hover { background-color: #30363d; border-color: #58a6ff; color: #ffffff; }
+            QToolButton:pressed { background-color: #1f6feb; color: #ffffff; }
+            QToolButton::menu-indicator { image: none; width: 0px; }
+        """
+
+        self.btn_template = QToolButton(self.ticket_header_card)
+        self.btn_template.setText("🗒️")
+        self.btn_template.setFixedSize(26, 22)
+        self.btn_template.setPopupMode(QToolButton.InstantPopup)
+        self.btn_template.setToolTip("Insert Structured Ticket Template (Ctrl+Alt+S)")
+        self.btn_template.setStyleSheet(corner_btn_style)
+        template_menu = QMenu(self.btn_template)
+        for name in TICKET_SKELETONS.keys():
+            act = template_menu.addAction(name)
+            act.triggered.connect(lambda checked=False, n=name: self._insert_template(n))
+        self.btn_template.setMenu(template_menu)
+        id_client_row.addWidget(self.btn_template)
+
+        self.btn_copy_note = QToolButton(self.ticket_header_card)
+        self.btn_copy_note.setText("📋")
+        self.btn_copy_note.setFixedSize(26, 22)
+        self.btn_copy_note.setPopupMode(QToolButton.MenuButtonPopup)
+        self.btn_copy_note.setToolTip("Copy Note: Click to copy rich note (Ctrl+Shift+C), or open menu for clean PSA export (Ctrl+Alt+N)")
+        self.btn_copy_note.setStyleSheet(corner_btn_style)
+        copy_menu = QMenu(self.btn_copy_note)
+        act_copy_rich = copy_menu.addAction("📋 Copy Formatted Note (Rich Text & Images)")
+        act_copy_rich.triggered.connect(self._copy_formatted_note)
+        act_copy_clean = copy_menu.addAction("📤 Copy Clean Note for Ticket Tool")
+        act_copy_clean.triggered.connect(self._copy_clean_note)
+        self.btn_copy_note.setMenu(copy_menu)
+        self.btn_copy_note.clicked.connect(self._copy_formatted_note)
+        id_client_row.addWidget(self.btn_copy_note)
+
+        self.btn_more = HoverToolButton(self.ticket_header_card)
+        self.btn_more.setText("...")
+        self.btn_more.setFixedSize(26, 22)
+        self.btn_more.setPopupMode(QToolButton.InstantPopup)
+        self.btn_more.setToolTip("Text Features & Formatting (Click or Hover)")
+        self.btn_more.setStyleSheet(corner_btn_style)
+
+        self.menu_text_features = QMenu(self.btn_more)
+        self.btn_more.setMenu(self.menu_text_features)
+        id_client_row.addWidget(self.btn_more)
+
+        # Actions inside self.menu_text_features
+        self.act_bold = self.menu_text_features.addAction("B  Bold (Ctrl+B)")
+        self.act_bold.setCheckable(True)
+        self.act_bold.triggered.connect(self._toggle_bold)
+
+        self.act_italic = self.menu_text_features.addAction("I   Italic (Ctrl+I)")
+        self.act_italic.setCheckable(True)
+        self.act_italic.triggered.connect(self._toggle_italic)
+
+        self.act_underline = self.menu_text_features.addAction("U  Underline (Ctrl+U)")
+        self.act_underline.setCheckable(True)
+        self.act_underline.triggered.connect(self._toggle_underline)
+
+        self.menu_text_features.addSeparator()
+
+        self.act_color = self.menu_text_features.addAction("🎨 Text Color... (Ctrl+Alt+X)")
+        self.act_color.triggered.connect(self._pick_text_color)
+
+        self.act_highlight = self.menu_text_features.addAction("🖍️ Highlight Color... (Ctrl+Alt+H)")
+        self.act_highlight.triggered.connect(self._pick_highlight_color)
+
+        self.act_code = self.menu_text_features.addAction("</> Monospace Code Block (Ctrl+Alt+C)")
+        self.act_code.triggered.connect(self._insert_code_block)
+
+        self.menu_text_features.addSeparator()
+
+        self.menu_badge = QMenu("🏷️ Log Badges", self.menu_text_features)
+        for tag_key, info in LOG_BADGES.items():
+            b_act = self.menu_badge.addAction(info["label"])
+            b_act.triggered.connect(lambda checked=False, k=tag_key: self._insert_badge(k))
+        self.menu_text_features.addMenu(self.menu_badge)
+
+        self.menu_text_features.addSeparator()
+
+        self.act_checklist = self.menu_text_features.addAction("☑ Checkbox (Ctrl+Alt+L)")
+        self.act_checklist.triggered.connect(self._insert_checklist)
+
+        self.act_timestamp = self.menu_text_features.addAction("🕒 Current Timestamp (F5)")
+        self.act_timestamp.triggered.connect(self._insert_timestamp)
+
+        self.act_image = self.menu_text_features.addAction("🖼️ Insert Image File... (Ctrl+Alt+I)")
+        self.act_image.triggered.connect(self._insert_image)
+
+        # Backward compatibility aliases for existing tests/references
+        for act in (
+            self.act_bold, self.act_italic, self.act_underline,
+            self.act_color, self.act_highlight, self.act_code,
+            self.act_checklist, self.act_timestamp, self.act_image,
+        ):
+            act.click = act.trigger
+
+        self.btn_bold = self.act_bold
+        self.btn_italic = self.act_italic
+        self.btn_underline = self.act_underline
+        self.btn_color = self.act_color
+        self.btn_highlight = self.act_highlight
+        self.btn_code = self.act_code
+        self.btn_checklist = self.act_checklist
+        self.btn_timestamp = self.act_timestamp
+        self.btn_image = self.act_image
+        self.btn_badge = self.menu_badge
+        self.btn_badge.menu = lambda: self.menu_badge
 
         header_card_layout.addLayout(id_client_row)
 
@@ -338,141 +463,7 @@ class M365LauncherWidget(QWidget):
         header_card_layout.addLayout(stopwatch_row)
         sidebar_layout.addWidget(self.ticket_header_card)
 
-        # 2. Formatting Micro-Toolbar
-        self.ticket_toolbar_widget = QWidget(self.ticket_sidebar)
-        tb_layout = QVBoxLayout(self.ticket_toolbar_widget)
-        tb_layout.setContentsMargins(0, 0, 0, 0)
-        tb_layout.setSpacing(3)
-
-        btn_style = """
-            QToolButton {
-                background-color: #21262d; border: 1px solid #30363d; border-radius: 3px;
-                color: #c9d1d9; padding: 2px 4px; font-size: 11px;
-            }
-            QToolButton:hover { background-color: #30363d; border-color: #58a6ff; color: #ffffff; }
-            QToolButton:checked { background-color: #1f6feb; border-color: #58a6ff; color: #ffffff; font-weight: bold; }
-        """
-
-        # Row 1: Formatting buttons
-        tb_row1 = QHBoxLayout()
-        tb_row1.setContentsMargins(0, 0, 0, 0)
-        tb_row1.setSpacing(2)
-
-        self.btn_bold = QToolButton(self.ticket_toolbar_widget)
-        self.btn_bold.setText("B")
-        self.btn_bold.setCheckable(True)
-        self.btn_bold.setToolTip("Bold (Ctrl+B)")
-        self.btn_bold.setStyleSheet(btn_style)
-        self.btn_bold.clicked.connect(self._toggle_bold)
-        tb_row1.addWidget(self.btn_bold)
-
-        self.btn_italic = QToolButton(self.ticket_toolbar_widget)
-        self.btn_italic.setText("I")
-        self.btn_italic.setCheckable(True)
-        self.btn_italic.setToolTip("Italic (Ctrl+I)")
-        self.btn_italic.setStyleSheet(btn_style)
-        self.btn_italic.clicked.connect(self._toggle_italic)
-        tb_row1.addWidget(self.btn_italic)
-
-        self.btn_underline = QToolButton(self.ticket_toolbar_widget)
-        self.btn_underline.setText("U")
-        self.btn_underline.setCheckable(True)
-        self.btn_underline.setToolTip("Underline (Ctrl+U)")
-        self.btn_underline.setStyleSheet(btn_style)
-        self.btn_underline.clicked.connect(self._toggle_underline)
-        tb_row1.addWidget(self.btn_underline)
-
-        self.btn_color = QToolButton(self.ticket_toolbar_widget)
-        self.btn_color.setText("🎨")
-        self.btn_color.setToolTip("Text Color (Ctrl+Alt+X)")
-        self.btn_color.setStyleSheet(btn_style)
-        self.btn_color.clicked.connect(self._pick_text_color)
-        tb_row1.addWidget(self.btn_color)
-
-        self.btn_highlight = QToolButton(self.ticket_toolbar_widget)
-        self.btn_highlight.setText("🖍️")
-        self.btn_highlight.setToolTip("Highlight Background Color (Ctrl+Alt+H)")
-        self.btn_highlight.setStyleSheet(btn_style)
-        self.btn_highlight.clicked.connect(self._pick_highlight_color)
-        tb_row1.addWidget(self.btn_highlight)
-
-        self.btn_code = QToolButton(self.ticket_toolbar_widget)
-        self.btn_code.setText("</>")
-        self.btn_code.setToolTip("Monospace Code Block (Ctrl+Alt+C)")
-        self.btn_code.setStyleSheet(btn_style)
-        self.btn_code.clicked.connect(self._insert_code_block)
-        tb_row1.addWidget(self.btn_code)
-
-        self.btn_badge = QToolButton(self.ticket_toolbar_widget)
-        self.btn_badge.setText("🏷️ Tag")
-        self.btn_badge.setPopupMode(QToolButton.InstantPopup)
-        self.btn_badge.setToolTip("Insert Log Triage Badge")
-        self.btn_badge.setStyleSheet(btn_style)
-        badge_menu = QMenu(self.btn_badge)
-        for tag_key, info in LOG_BADGES.items():
-            act = badge_menu.addAction(info["label"])
-            act.triggered.connect(lambda checked=False, k=tag_key: self._insert_badge(k))
-        self.btn_badge.setMenu(badge_menu)
-        tb_row1.addWidget(self.btn_badge)
-
-        self.btn_checklist = QToolButton(self.ticket_toolbar_widget)
-        self.btn_checklist.setText("☑")
-        self.btn_checklist.setToolTip("Insert Interactive Checkbox Item (Ctrl+Alt+L)")
-        self.btn_checklist.setStyleSheet(btn_style)
-        self.btn_checklist.clicked.connect(self._insert_checklist)
-        tb_row1.addWidget(self.btn_checklist)
-
-        self.btn_timestamp = QToolButton(self.ticket_toolbar_widget)
-        self.btn_timestamp.setText("🕒")
-        self.btn_timestamp.setToolTip("Insert Current Timestamp (F5 / Ctrl+Alt+T)")
-        self.btn_timestamp.setStyleSheet(btn_style)
-        self.btn_timestamp.clicked.connect(self._insert_timestamp)
-        tb_row1.addWidget(self.btn_timestamp)
-
-        self.btn_image = QToolButton(self.ticket_toolbar_widget)
-        self.btn_image.setText("🖼️")
-        self.btn_image.setToolTip("Insert Image File... (Ctrl+Alt+I)")
-        self.btn_image.setStyleSheet(btn_style)
-        self.btn_image.clicked.connect(self._insert_image)
-        tb_row1.addWidget(self.btn_image)
-
-        tb_layout.addLayout(tb_row1)
-
-        # Row 2: Template & Copy Note
-        tb_row2 = QHBoxLayout()
-        tb_row2.setContentsMargins(0, 0, 0, 0)
-        tb_row2.setSpacing(4)
-
-        self.btn_template = QToolButton(self.ticket_toolbar_widget)
-        self.btn_template.setText("📋 Template")
-        self.btn_template.setPopupMode(QToolButton.InstantPopup)
-        self.btn_template.setToolTip("Insert Structured Ticket Skeleton (Ctrl+Alt+S)")
-        self.btn_template.setStyleSheet(btn_style)
-        template_menu = QMenu(self.btn_template)
-        for name in TICKET_SKELETONS.keys():
-            act = template_menu.addAction(name)
-            act.triggered.connect(lambda checked=False, n=name: self._insert_template(n))
-        self.btn_template.setMenu(template_menu)
-        tb_row2.addWidget(self.btn_template)
-
-        self.btn_copy_note = QToolButton(self.ticket_toolbar_widget)
-        self.btn_copy_note.setText("📋 Copy Note")
-        self.btn_copy_note.setPopupMode(QToolButton.MenuButtonPopup)
-        self.btn_copy_note.setToolTip("Copy rich formatted note with images & colors (Ctrl+Shift+C)")
-        self.btn_copy_note.setStyleSheet(btn_style)
-        copy_menu = QMenu(self.btn_copy_note)
-        act_copy_rich = copy_menu.addAction("📋 Copy Formatted Note (Rich Text & Images)")
-        act_copy_rich.triggered.connect(self._copy_formatted_note)
-        act_copy_clean = copy_menu.addAction("📤 Copy Clean Note for Ticket Tool")
-        act_copy_clean.triggered.connect(self._copy_clean_note)
-        self.btn_copy_note.setMenu(copy_menu)
-        self.btn_copy_note.clicked.connect(self._copy_formatted_note)
-        tb_row2.addWidget(self.btn_copy_note, 1)
-
-        tb_layout.addLayout(tb_row2)
-        sidebar_layout.addWidget(self.ticket_toolbar_widget)
-
-        # 3. Note Editor
+        # 2. Note Editor (Reclaimed vertical space from toolbar rows)
         self.ticket_editor = TechPadEditor(scratchpad_id=0, image_service=self.image_service, parent=self.ticket_sidebar)
         self.ticket_editor.setPlaceholderText("Ticket notes...")
         self.ticket_editor.currentCharFormatChanged.connect(self._update_format_states)
@@ -589,12 +580,16 @@ class M365LauncherWidget(QWidget):
             self.lbl_ticket_id.setText("No Ticket")
             self.lbl_ticket_client.setText("Client: N/A")
             self.lbl_ticket_subject.setText("Open a ticket in T-Notes to view and edit notes.")
-            self.ticket_toolbar_widget.setEnabled(False)
+            self.btn_template.setEnabled(False)
+            self.btn_copy_note.setEnabled(False)
+            self.btn_more.setEnabled(False)
             self.ticket_editor.setEnabled(False)
             self.ticket_editor.setPlainText("")
             return
 
-        self.ticket_toolbar_widget.setEnabled(True)
+        self.btn_template.setEnabled(True)
+        self.btn_copy_note.setEnabled(True)
+        self.btn_more.setEnabled(True)
         self.ticket_editor.setEnabled(True)
         self.ticket_editor.scratchpad_id = editor.scratchpad_id
         self.ticket_editor.in_memory_images = editor.in_memory_images
@@ -632,25 +627,25 @@ class M365LauncherWidget(QWidget):
         self.note_modified.emit(scratchpad_id)
 
     def _update_format_states(self, format: QTextCharFormat) -> None:
-        self.btn_bold.setChecked(format.fontWeight() == QFont.Bold)
-        self.btn_italic.setChecked(format.fontItalic())
-        self.btn_underline.setChecked(format.fontUnderline())
+        self.act_bold.setChecked(format.fontWeight() == QFont.Bold)
+        self.act_italic.setChecked(format.fontItalic())
+        self.act_underline.setChecked(format.fontUnderline())
 
     def _toggle_bold(self) -> None:
         fmt = QTextCharFormat()
-        fmt.setFontWeight(QFont.Bold if self.btn_bold.isChecked() else QFont.Normal)
+        fmt.setFontWeight(QFont.Bold if self.act_bold.isChecked() else QFont.Normal)
         self.ticket_editor.mergeCurrentCharFormat(fmt)
         self.ticket_editor.setFocus()
 
     def _toggle_italic(self) -> None:
         fmt = QTextCharFormat()
-        fmt.setFontItalic(self.btn_italic.isChecked())
+        fmt.setFontItalic(self.act_italic.isChecked())
         self.ticket_editor.mergeCurrentCharFormat(fmt)
         self.ticket_editor.setFocus()
 
     def _toggle_underline(self) -> None:
         fmt = QTextCharFormat()
-        fmt.setFontUnderline(self.btn_underline.isChecked())
+        fmt.setFontUnderline(self.act_underline.isChecked())
         self.ticket_editor.mergeCurrentCharFormat(fmt)
         self.ticket_editor.setFocus()
 

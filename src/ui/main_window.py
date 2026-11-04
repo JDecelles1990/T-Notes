@@ -928,10 +928,11 @@ class TechPadMainWindow(QMainWindow):
         """Returns the currently active editor where the cursor is placed across primary and secondary panes."""
         # 1. First check if a TechPadEditor (or its viewport) has keyboard focus right now
         focus_w = QApplication.focusWidget()
-        if isinstance(focus_w, TechPadEditor):
+        m365_ed = getattr(self.m365_workspace, "ticket_editor", None) if hasattr(self, "m365_workspace") else None
+        if isinstance(focus_w, TechPadEditor) and focus_w is not m365_ed:
             self._logical_active_scratchpad_id = focus_w.scratchpad_id
             return focus_w
-        if focus_w and isinstance(focus_w.parent(), TechPadEditor):
+        if focus_w and isinstance(focus_w.parent(), TechPadEditor) and focus_w.parent() is not m365_ed:
             self._logical_active_scratchpad_id = focus_w.parent().scratchpad_id
             return focus_w.parent()
 

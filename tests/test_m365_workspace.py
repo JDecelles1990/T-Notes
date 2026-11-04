@@ -5,14 +5,14 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QCoreApplication, QEvent, Qt
-from PySide6.QtGui import QFont, QImage, QKeyEvent, QShortcut, QTextCursor
+from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt
+from PySide6.QtGui import QEnterEvent, QFont, QImage, QKeyEvent, QShortcut, QTextCursor
 from PySide6.QtTest import QSignalSpy, QTest
 from PySide6.QtWidgets import QApplication, QDialog, QGroupBox, QLineEdit, QMainWindow, QTextEdit
 
 from test_ui_integration import main_window
 from src.ui.main_window import TechPadMainWindow
-from src.ui.m365.launcher_widget import M365LauncherWidget
+from src.ui.m365.launcher_widget import HoverToolButton, M365LauncherWidget
 from src.ui.components.editor import TechPadEditor
 
 
@@ -919,6 +919,37 @@ def test_m365_sidebar_formatting_toolbar_and_copy_note(main_window, qapp, monkey
     assert main_window.show_m365_workspace()
     qapp.processEvents()
     launcher = main_window.m365_workspace
+
+    # Verify corner buttons and HoverToolButton
+    assert launcher.btn_template.text() == "🗒️"
+    assert launcher.btn_copy_note.text() == "📋"
+    assert launcher.btn_more.text() == "..."
+    assert isinstance(launcher.btn_more, HoverToolButton)
+
+    # Verify HoverToolButton menu trigger via enterEvent
+    hover_event = QEnterEvent(QPoint(5, 5), QPoint(5, 5), QPoint(5, 5))
+    launcher.btn_more.enterEvent(hover_event)
+    qapp.processEvents()
+    assert launcher.menu_text_features.isVisible()
+    launcher.menu_text_features.close()
+    qapp.processEvents()
+
+    # Verify menu actions exist in menu_text_features
+    action_texts = [a.text() for a in launcher.menu_text_features.actions()]
+    assert any("Bold" in t for t in action_texts)
+    assert any("Italic" in t for t in action_texts)
+    assert any("Underline" in t for t in action_texts)
+    assert any("Text Color" in t for t in action_texts)
+    assert any("Highlight Color" in t for t in action_texts)
+    assert any("Monospace Code Block" in t for t in action_texts)
+    assert any("Checkbox" in t for t in action_texts)
+    assert any("Current Timestamp" in t for t in action_texts)
+    assert any("Insert Image" in t for t in action_texts)
+
+    # Verify that the two old toolbar rows were removed and ticket_editor immediately follows header card
+    sidebar_layout = launcher.ticket_sidebar.layout()
+    assert sidebar_layout.indexOf(launcher.ticket_header_card) == 0
+    assert sidebar_layout.indexOf(launcher.ticket_editor) == 1
 
     # Test bold toggle
     cursor = launcher.ticket_editor.textCursor()
