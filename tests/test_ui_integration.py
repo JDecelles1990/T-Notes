@@ -875,6 +875,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
 
 
+
     # Verify HUD mode fits above the Windows taskbar
     avail = main_window.screen().availableGeometry()
     assert main_window.frameGeometry().bottom() <= avail.bottom()
@@ -904,6 +905,7 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
 
 
+
 def test_ui_mini_hud_from_maximized_restores_maximized(main_window, qapp):
     """Verifies that entering Mini-HUD from maximized state normalizes window and restores maximized state upon exit."""
     main_window.showMaximized()
@@ -917,6 +919,26 @@ def test_ui_mini_hud_from_maximized_restores_maximized(main_window, qapp):
     qapp.processEvents()
     assert main_window.is_mini_hud is False
     assert main_window.isMaximized() is True
+
+def test_ui_mini_hud_multimonitor_movement_and_no_flashing(main_window, qapp):
+    """Verifies that the HUD window can be freely dragged across negative coordinates (upper monitor) and near taskbar without flashing or snapping."""
+    main_window.show()
+    main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+    assert main_window.is_mini_hud is True
+
+    # 1. Simulate moving upwards to an upper monitor with negative Y
+    for target_y in [50, 0, -50, -500]:
+        main_window.move(main_window.x(), target_y)
+        qapp.processEvents()
+        # Window must respect move to negative coordinates without being snapped back
+        assert main_window.geometry().y() <= target_y + 35
+
+    # 2. Simulate moving downwards near taskbar without freezing or clamping Y
+    for target_y in [400, 600, 750]:
+        main_window.move(main_window.x(), target_y)
+        qapp.processEvents()
+        assert main_window.geometry().y() >= target_y - 35
 
 def test_ui_mini_hud_tabs_bar_navigation_arrows(main_window, qapp):
     """Verifies that left and right arrow buttons appear on the tabs bar in HUD mode and navigate ticket tabs."""
@@ -998,6 +1020,7 @@ def test_ui_m365_launcher_and_tnotes_button_transformation(main_window, qapp):
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
 
 
+
     # 2. Toggle to M365 Launcher in normal mode: Split and History hidden; Categories and Active Ticket visible
     main_window.btn_m365.click()
     qapp.processEvents()
@@ -1035,6 +1058,7 @@ def test_ui_m365_launcher_and_tnotes_button_transformation(main_window, qapp):
     assert main_window.btn_m365_categories.isVisible() is False
     assert main_window.btn_m365_active_ticket.isVisible() is False
     assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
 
 
     # 5. Toggle to M365 Launcher in HUD mode (stays in HUD mode, replaces Split/History with Categories/Active Ticket)

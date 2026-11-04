@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 from typing import Optional
 from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QShortcut, QShowEvent
+from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -1964,7 +1964,7 @@ class TechPadMainWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.show()
 
-        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen() or QGuiApplication.primaryScreen()
+        screen = self._get_hud_screen()
         if screen:
             avail = screen.availableGeometry()
             frame = self.frameGeometry()
@@ -2270,51 +2270,67 @@ class TechPadMainWindow(QMainWindow):
         self._clamp_geometry_to_screen()
         self._check_responsive_layout(self.width())
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        super().resizeEvent(event)
-        if self.is_mini_hud:
-            self._clamp_hud_geometry()
-        self._check_responsive_layout(self.width())
+    def _get_hud_screen(self) -> Optional[QScreen]:
+        """Resolves the screen where the HUD window (or its title bar) is currently located."""
+        geo = self.geometry()
+        top_center = QPoint(geo.x() + geo.width() // 2, geo.y() + 15)
+        return (
+            QGuiApplication.screenAt(top_center)
+            or QGuiApplication.screenAt(geo.center())
+            or self.screen()
+            or QGuiApplication.primaryScreen()
+        )
 
-    def moveEvent(self, event: QMoveEvent) -> None:
-        super().moveEvent(event)
-        if self.is_mini_hud:
-            self._clamp_hud_geometry()
-
-    def _clamp_hud_geometry(self) -> None:
-        """Clamps HUD window geometry so the title bar is on-screen and the bottom bar never overlaps the taskbar."""
+    def _update_hud_max_height(self) -> None:
+        """Updates maximum window height based on the active screen's available height without modifying position."""
         if not self.is_mini_hud:
             return
-        screen = QGuiApplication.screenAt(self.geometry().center()) or self.screen() or QGuiApplication.primaryScreen()
+        screen = self._get_hud_screen()
         if not screen:
             return
         avail = screen.availableGeometry()
         frame = self.frameGeometry()
         geo = self.geometry()
-
-        title_h = max(0, geo.y() - frame.y())
         extra_h = max(0, frame.height() - geo.height())
-        bottom_border = max(0, frame.bottom() - geo.bottom())
-
         max_client_h = max(self.minimumHeight(), avail.height() - extra_h)
         if self.maximumHeight() != max_client_h:
             self.setMaximumHeight(max_client_h)
 
-        # Ensure title bar is on-screen within available work area
-        new_y = max(avail.y() + title_h, geo.y())
+    def _clamp_hud_height_to_taskbar(self) -> None:
+        """When resizing in HUD mode, ensures the bottom bar does not submerge behind the taskbar."""
+        if not self.is_mini_hud:
+            return
+        screen = self._get_hud_screen()
+        if not screen:
+            return
+        avail = screen.availableGeometry()
+        frame = self.frameGeometry()
+        geo = self.geometry()
+        extra_h = max(0, frame.height() - geo.height())
 
-        # If window frame bottom extends into or behind the taskbar (avail.bottom()):
-        frame_bottom = new_y - title_h + geo.height() + extra_h - 1
-        if frame_bottom > avail.bottom():
-            allowed_h = max(self.minimumHeight(), avail.bottom() - new_y - bottom_border + 1)
-            if new_y + allowed_h + bottom_border - 1 > avail.bottom():
-                new_y = max(avail.y() + title_h, avail.bottom() - allowed_h - bottom_border + 1)
-            new_h = allowed_h
-        else:
-            new_h = geo.height()
+        # If window frame extends into the taskbar area on this screen while the window is on-screen
+        if frame.bottom() > avail.bottom() and frame.y() <= avail.bottom():
+            max_frame_h = avail.bottom() - frame.y() + 1
+            allowed_h = max(self.minimumHeight(), max_frame_h - extra_h)
+            if geo.height() > allowed_h:
+                self.resize(geo.width(), allowed_h)
 
-        if (new_y, new_h) != (geo.y(), geo.height()):
-            self.setGeometry(geo.x(), new_y, geo.width(), new_h)
+    def _clamp_hud_geometry(self) -> None:
+        """Compatibility wrapper: updates maximum height and clamps height to taskbar if needed."""
+        self._update_hud_max_height()
+        self._clamp_hud_height_to_taskbar()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self.is_mini_hud:
+            self._update_hud_max_height()
+            self._clamp_hud_height_to_taskbar()
+        self._check_responsive_layout(self.width())
+
+    def moveEvent(self, event: QMoveEvent) -> None:
+        super().moveEvent(event)
+        if self.is_mini_hud:
+            self._update_hud_max_height()
     def switch_compact_split_pane(self) -> None:
         """Toggles displayed pane in compact single-pane Split View mode."""
         if not self.is_split_view_active or not self.split_auto_single_pane:
