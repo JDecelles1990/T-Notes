@@ -610,3 +610,4 @@ class AddTemplateDialog(QDialog):
         title = self.txt_title.text().strip()
         content_html = self.editor.get_self_contained_html()
         return title, content_html
+

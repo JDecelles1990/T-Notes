@@ -330,6 +330,8 @@ class M365LauncherWidget(QWidget):
         act_copy_rich.triggered.connect(self._copy_formatted_note)
         act_copy_clean = copy_menu.addAction("📤 Copy Clean Note for Ticket Tool")
         act_copy_clean.triggered.connect(self._copy_clean_note)
+        act_export_file = copy_menu.addAction("💾 Export Note (T-Notes Folder)")
+        act_export_file.triggered.connect(self._export_active_ticket_file)
         self.btn_copy_note.setMenu(copy_menu)
         self.btn_copy_note.clicked.connect(self._copy_formatted_note)
         id_client_row.addWidget(self.btn_copy_note)
@@ -754,6 +756,24 @@ class M365LauncherWidget(QWidget):
             t_label = f"#{self._current_ticket_number}".strip() if self._current_ticket_number else ""
             msg = f"✓ Copied clean note ({t_label}) for ticketing system to clipboard!" if t_label else "✓ Copied clean note for ticketing system to clipboard!"
             self.status_message_requested.emit(msg, 3500)
+
+    def _export_active_ticket_file(self) -> None:
+        if self._active_editor:
+            self.save_requested.emit(self.ticket_editor.scratchpad_id)
+            clean_text = self.ticket_editor.toPlainText().replace('\uFFFC', '')
+            clean_text = re.sub(r'\n{3,}', '\n\n', clean_text).strip()
+            if self.scratchpad_service:
+                try:
+                    file_path, filename = self.scratchpad_service.export_ticket_to_file(
+                        scratchpad_id=self.ticket_editor.scratchpad_id,
+                        text_content=clean_text,
+                    )
+                    t_label = f"#{self._current_ticket_number}".strip() if self._current_ticket_number else ""
+                    rel_path = f"{file_path.parent.name}/{filename}"
+                    msg = f"✓ Exported note ({t_label}) to T-Notes/{rel_path}" if t_label else f"✓ Exported note to T-Notes/{rel_path}"
+                    self.status_message_requested.emit(msg, 4000)
+                except Exception as e:
+                    self.status_message_requested.emit(f"Export Failed: {e}", 4000)
 
     def _arrange_content_columns(self, num_columns: int) -> None:
         """Arranges existing groupboxes into 1 or 2 columns without recreation."""

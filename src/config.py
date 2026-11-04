@@ -22,3 +22,7 @@ DEFAULT_DB_PATH = APP_DATA_DIR / "techpad.db"
 STYLES_DIR = BASE_DIR / "assets" / "styles"
 DEFAULT_QSS_PATH = STYLES_DIR / "dark_theme.qss"
 
+# Default ticket plain-text export directory
+DEFAULT_EXPORT_DIR = BASE_DIR / "T-Notes"
+DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+

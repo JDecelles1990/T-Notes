@@ -3,6 +3,7 @@
 import ctypes
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Optional
 from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
@@ -252,6 +253,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.checklist_requested.connect(self._on_insert_checklist)
         self.toolbar.copy_formatted_requested.connect(self._on_copy_formatted_note)
         self.toolbar.export_note_requested.connect(self._on_export_note)
+        self.toolbar.export_file_requested.connect(self._on_export_active_ticket_file)
         self.toolbar.split_view_requested.connect(self._toggle_split_view)
         self.toolbar.mini_hud_requested.connect(self.toggle_mini_hud_mode)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
@@ -1463,6 +1465,31 @@ class TechPadMainWindow(QMainWindow):
         t_label = f"#{ticket.get('ticket_number', '')}".strip()
         msg = f"✓ Copied clean note ({t_label}) for ticketing system to clipboard!" if t_label != "#" else "✓ Copied clean note for ticketing system to clipboard!"
         self.status_bar.showMessage(msg, 3500)
+
+    def _on_export_active_ticket_file(self) -> None:
+        r"""Exports the Active Ticket unformatted plain-text note to C:\Dev\T-Notes\T-Notes folder."""
+        editor = self._get_active_editor()
+        if not editor:
+            return
+
+        # Ensure active changes are saved first
+        self._execute_save(editor.scratchpad_id)
+
+        clean_text = editor.toPlainText().replace('\uFFFC', '')
+        clean_text = re.sub(r'\n{3,}', '\n\n', clean_text).strip()
+
+        try:
+            file_path, filename = self.scratchpad_service.export_ticket_to_file(
+                scratchpad_id=editor.scratchpad_id,
+                text_content=clean_text,
+            )
+            ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+            t_label = f"#{ticket.get('ticket_number', '')}".strip()
+            rel_path = f"{file_path.parent.name}/{filename}"
+            msg = f"✓ Exported note ({t_label}) to T-Notes/{rel_path}" if t_label != "#" else f"✓ Exported note to T-Notes/{rel_path}"
+            self.status_bar.showMessage(msg, 4000)
+        except Exception as e:
+            QMessageBox.warning(self, "Export Failed", f"Could not export note to file: {e}")
 
     def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
         """Displays rich context menu on right-clicking a tab or the primary tab bar."""

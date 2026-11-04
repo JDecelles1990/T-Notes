@@ -29,6 +29,7 @@ class TechPadToolBar(QToolBar):
     add_template_requested = Signal()   # Emits when '🔳 Add a new template' is clicked
     copy_formatted_requested = Signal() # Emits when rich formatted copy requested
     export_note_requested = Signal()
+    export_file_requested = Signal()     # Emits when 'Export Note' to file is clicked
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
     split_view_requested = Signal()     # Emits when split view toggle clicked
@@ -262,6 +263,12 @@ class TechPadToolBar(QToolBar):
         self.act_export.setToolTip("Stripped clean markdown/plain-text for PSA ticket systems (ServiceNow, Jira)")
         self.act_export.triggered.connect(self.export_note_requested.emit)
         copy_menu.addAction(self.act_export)
+
+        self.act_export_file = QAction("💾 Export Note (T-Notes Folder)", self.secondary_toolbar)
+        self.act_export_file.setShortcut(QKeySequence("Ctrl+Alt+E"))
+        self.act_export_file.setToolTip("Export plain text note to T-Notes folder without formatting or images (overwrites within same hour)")
+        self.act_export_file.triggered.connect(self.export_file_requested.emit)
+        copy_menu.addAction(self.act_export_file)
 
         self.btn_copy_note.setMenu(copy_menu)
         self.btn_copy_note.clicked.connect(self.copy_formatted_requested.emit)

@@ -289,54 +289,59 @@ def test_main_window_add_template_and_insert_at_cursor(qapp, services, monkeypat
         image_service=img_service,
         session_service=session_service,
     )
-
-    # Ensure an active editor exists
-    editor = main_window._get_active_editor()
-    assert editor is not None
-    editor.setPlainText("Prefix text: ")
-    cursor = editor.textCursor()
-    cursor.movePosition(QTextCursor.MoveOperation.End)
-    editor.setTextCursor(cursor)
-
-    # Mock AddTemplateDialog to simulate user entering title and template
-    def mock_dialog_exec(dialog_self):
-        dialog_self.txt_title.setText("Server Onboarding")
-        dialog_self.editor.setHtml("<p><strong>Server:</strong> Host-01</p>")
-        return QDialog.Accepted
-
-    monkeypatch.setattr(AddTemplateDialog, "exec", mock_dialog_exec)
-
-    # User clicks "🔳 Add a new template"
-    main_window._on_add_new_template()
-
-    # 1. Verify template was saved to database
-    saved_templates = scratch_service.get_custom_templates()
-    assert len(saved_templates) == 1
-    assert saved_templates[0]["title"] == "Server Onboarding"
-
-    # 2. Verify toolbar menu has the new template
-    menu = main_window.toolbar.btn_skeleton.menu()
-    action_texts = [a.text() for a in menu.actions()]
-    assert "Server Onboarding" in action_texts
-    assert "🔳 Add a new template" in action_texts
-
-    # 3. User clicks the template from the menu -> inserts at cursor
-    main_window._on_skeleton_selected("Server Onboarding")
-
-    # 4. Verify text was inserted at cursor
-    full_text = editor.toPlainText()
-    assert "Prefix text: " in full_text
-    assert "Server: Host-01" in full_text
-
-    # 5. Test inserting in middle of text
-    editor.setPlainText("Start Middle End")
-    # Move cursor between 'Start ' and 'Middle'
-    cursor = editor.textCursor()
-    cursor.setPosition(6)
-    editor.setTextCursor(cursor)
-
-    main_window._on_skeleton_selected("Server Onboarding")
-    text_after = editor.toPlainText()
-    assert text_after.startswith("Start ")
-    assert "Server: Host-01" in text_after
-    assert text_after.endswith("Middle End")
+    try:
+            # Ensure an active editor exists
+        editor = main_window._get_active_editor()
+        assert editor is not None
+        editor.setPlainText("Prefix text: ")
+        cursor = editor.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        editor.setTextCursor(cursor)
+    
+        # Mock AddTemplateDialog to simulate user entering title and template
+        def mock_dialog_exec(dialog_self):
+            dialog_self.txt_title.setText("Server Onboarding")
+            dialog_self.editor.setHtml("<p><strong>Server:</strong> Host-01</p>")
+            return QDialog.Accepted
+    
+        monkeypatch.setattr(AddTemplateDialog, "exec", mock_dialog_exec)
+    
+        # User clicks "🔳 Add a new template"
+        main_window._on_add_new_template()
+    
+        # 1. Verify template was saved to database
+        saved_templates = scratch_service.get_custom_templates()
+        assert len(saved_templates) == 1
+        assert saved_templates[0]["title"] == "Server Onboarding"
+    
+        # 2. Verify toolbar menu has the new template
+        menu = main_window.toolbar.btn_skeleton.menu()
+        action_texts = [a.text() for a in menu.actions()]
+        assert "Server Onboarding" in action_texts
+        assert "🔳 Add a new template" in action_texts
+    
+        # 3. User clicks the template from the menu -> inserts at cursor
+        main_window._on_skeleton_selected("Server Onboarding")
+    
+        # 4. Verify text was inserted at cursor
+        full_text = editor.toPlainText()
+        assert "Prefix text: " in full_text
+        assert "Server: Host-01" in full_text
+    
+        # 5. Test inserting in middle of text
+        editor.setPlainText("Start Middle End")
+        # Move cursor between 'Start ' and 'Middle'
+        cursor = editor.textCursor()
+        cursor.setPosition(6)
+        editor.setTextCursor(cursor)
+    
+        main_window._on_skeleton_selected("Server Onboarding")
+        text_after = editor.toPlainText()
+        assert text_after.startswith("Start ")
+        assert "Server: Host-01" in text_after
+        assert text_after.endswith("Middle End")
+    finally:
+        try:
+            main_window.quit_application()
+        except Exception:
+            pass

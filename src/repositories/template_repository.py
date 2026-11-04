@@ -100,3 +100,4 @@ class TemplateRepository:
                 (title.strip(),),
             )
             return cursor.rowcount > 0
+

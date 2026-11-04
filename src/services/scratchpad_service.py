@@ -3,6 +3,8 @@
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
+from src.config import DEFAULT_EXPORT_DIR
 from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
 from src.repositories.image_repository import ImageRepository
@@ -314,4 +316,77 @@ class ScratchpadService:
         # Normalize redundant empty lines
         text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
+
+    @staticmethod
+    def sanitize_filename_part(text: str) -> str:
+        """Sanitizes text component for safe cross-platform filesystem filenames."""
+        if not text:
+            return ""
+        # Remove characters forbidden on Windows/POSIX: \ / : * ? " < > | #
+        cleaned = re.sub(r'[\\/*?:"<>|#]', '', text)
+        # Replace whitespace runs with underscores
+        cleaned = re.sub(r'[\s_]+', '_', cleaned.strip())
+        return cleaned.strip('_-')
+
+    @classmethod
+    def generate_export_filename(cls, ticket: Dict[str, Any], now: Optional[datetime] = None) -> str:
+        """
+        Generates filename consisting of ticket name, client name (if exists), and a day/hour timestamp,
+        assembled with underscores. If triggered multiple times in the same hour, yields identical filename
+        so the file overwrites itself without cluttering the folder.
+        """
+        now = now or datetime.now()
+        t_num = cls.sanitize_filename_part(ticket.get("ticket_number", ""))
+        title = cls.sanitize_filename_part(ticket.get("title", ""))[:30]
+        client = cls.sanitize_filename_part(ticket.get("client_name", ""))
+
+        ticket_part = t_num or title or "Ticket"
+        timestamp_part = now.strftime("%Y-%m-%d_%Hh")
+
+        parts = [ticket_part]
+        if client:
+            parts.append(client)
+        parts.append(timestamp_part)
+
+        return f"{'_'.join(parts)}.txt"
+
+    def export_ticket_to_file(
+        self,
+        scratchpad_id: Any,
+        text_content: Optional[str] = None,
+        export_dir: Optional[Path] = None,
+        now: Optional[datetime] = None,
+    ) -> Tuple[Path, str]:
+        r"""
+        Exports the raw unformatted text (no formatting, no images) of the active ticket to a file.
+        Saves into an hourly subfolder inside export_dir (default: C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD_HHh>\).
+        Returns (full_file_path, filename).
+        """
+        if isinstance(scratchpad_id, dict):
+            ticket = scratchpad_id
+            scratchpad_id = ticket.get("id")
+        else:
+            ticket = self.repo.get_by_id(scratchpad_id) or {}
+        filename = self.generate_export_filename(ticket, now=now)
+        now = now or datetime.now()
+        base_dir = export_dir or DEFAULT_EXPORT_DIR
+        hourly_folder_name = now.strftime("%Y-%m-%d_%Hh")
+        target_dir = base_dir / hourly_folder_name
+        target_dir.mkdir(parents=True, exist_ok=True)
+        file_path = target_dir / filename
+
+        if text_content is None:
+            html = ticket.get("content_html", "") or ""
+            raw = re.sub(r'<img[^>]*>', '', html, flags=re.IGNORECASE)
+            raw = re.sub(r'<br\s*/?>', '\n', raw, flags=re.IGNORECASE)
+            raw = re.sub(r'</p>', '\n', raw, flags=re.IGNORECASE)
+            raw = re.sub(r'<[^>]+>', '', raw)
+            raw = raw.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#39;', "'")
+            text_content = re.sub(r'\n{3,}', '\n\n', raw).strip()
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(text_content)
+
+        return file_path, filename
+
 
