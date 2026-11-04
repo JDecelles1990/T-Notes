@@ -15,10 +15,20 @@ def init_database(db_manager: DatabaseManager) -> None:
     with conn:
         conn.executescript(schema_sql)
 
-        # 1. Migration: Ensure window_opacity column exists on older databases BEFORE inserting
+        # 1. Migration: Ensure window_opacity and split view session columns exist on older databases BEFORE inserting
         pragma_cols = [r[1] for r in conn.execute("PRAGMA table_info(app_session);").fetchall()]
         if "window_opacity" not in pragma_cols:
             conn.execute("ALTER TABLE app_session ADD COLUMN window_opacity INTEGER DEFAULT 100;")
+        if "split_view_active" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN split_view_active INTEGER DEFAULT 0;")
+        if "split_active_scratchpad_id" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN split_active_scratchpad_id INTEGER;")
+        if "primary_scratchpad_ids" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN primary_scratchpad_ids TEXT DEFAULT '';")
+        if "secondary_scratchpad_ids" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN secondary_scratchpad_ids TEXT DEFAULT '';")
+        if "split_sizes" not in pragma_cols:
+            conn.execute("ALTER TABLE app_session ADD COLUMN split_sizes TEXT DEFAULT '';")
 
         # 2. Migration: Ensure elapsed_seconds and archived_at columns exist on scratchpads
         scratchpad_cols = [r[1] for r in conn.execute("PRAGMA table_info(scratchpads);").fetchall()]

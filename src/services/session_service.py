@@ -53,14 +53,35 @@ class SessionService:
         window_geometry: str = "",
         window_opacity: int = 100,
         history_drawer_open: bool = False,
+        split_view_active: bool = False,
+        split_active_scratchpad_id: Optional[int] = None,
+        primary_scratchpad_ids: str = "",
+        secondary_scratchpad_ids: str = "",
+        split_sizes: str = "",
     ) -> None:
-        """Saves current focused scratchpad ID, window geometry, opacity, and drawer visibility."""
+        """Saves current focused scratchpad ID, window geometry, opacity, drawer visibility, and split view state."""
         self.session_repo.save_session(
             active_scratchpad_id=active_scratchpad_id,
             window_geometry=window_geometry,
             window_opacity=window_opacity,
             history_drawer_open=history_drawer_open,
+            split_view_active=split_view_active,
+            split_active_scratchpad_id=split_active_scratchpad_id,
+            primary_scratchpad_ids=primary_scratchpad_ids,
+            secondary_scratchpad_ids=secondary_scratchpad_ids,
+            split_sizes=split_sizes,
         )
+
+    def get_split_view_session(self) -> Dict[str, Any]:
+        """Returns saved split view state, pane allocations, and splitter sizes."""
+        session = self.session_repo.get_session() or {}
+        return {
+            "split_view_active": bool(session.get("split_view_active", 0)),
+            "split_active_scratchpad_id": session.get("split_active_scratchpad_id"),
+            "primary_scratchpad_ids": session.get("primary_scratchpad_ids", "") or "",
+            "secondary_scratchpad_ids": session.get("secondary_scratchpad_ids", "") or "",
+            "split_sizes": session.get("split_sizes", "") or "",
+        }
 
     def get_settings(self) -> Dict[str, str]:
         """Returns all configuration settings."""

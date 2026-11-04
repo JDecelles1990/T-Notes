@@ -83,15 +83,26 @@ To prevent disorientation across concurrent support sessions, each tab automatic
   - **Ambient Background Tint:** A subtle 12%–14% ambient tint (32% when selected) overlays the dark tab background.
 - **Persistent Ownership by Ticket ID:** Colors map deterministically to each ticket's `scratchpad_id`. Dragging/reordering tabs, switching between tickets, or restoring archived tickets guarantees that each ticket retains its exact color identity without requiring manual user configuration.
 
-### Slide-Reorganizing & Movable Tabs
-- Tabs can be clicked and slid horizontally to reorganize their order in real time.
-- `setMovable(True)` and `setDocumentMode(True)` enable fluid visual drag animations.
-- Reorganizing tabs emits `tabMoved`, which immediately persists the new `tab_order` sequence into SQLite.
-- `setUsesScrollButtons(True)` automatically renders dark-themed scroll navigation arrows when numerous tabs overflow the window width.
-
+### Slide-Reorganizing, Movable Tabs & Animated Drag-and-Drop
+- **Fluid Horizontal Reordering:** Tabs can be clicked and slid horizontally to reorganize their order in real time (`setMovable(True)` and `setDocumentMode(True)`).
+- **Midpoint Insertion Mechanics:** Dragging a tab over another tab dynamically evaluates mouse position relative to the hovered tab's center midpoint (`_check_reorder_at`). If hovering before the midpoint, the tab inserts to the left; if hovering past the midpoint, it inserts to the right. This guarantees responsive positioning and prevents snap-back to the original position on click release.
+- **Floating Drag Preview Animation (`TabDragPreview`):** When dragging a tab, a semi-transparent floating ghost preview (85% opacity, rounded corners, glowing cyan border `#007acc`, top color accent) tracks the mouse cursor continuously across panes. In the tab bar, the source tab slot renders as a subtle dimmed placeholder slot with a cyan outline.
+- **Controllable Auto-Scrolling:** When a dragged tab rests near either edge of the tab strip (`0 <= pos.x() <= 28` on the left or `width - 28 <= pos.x() <= width` on the right), a 220ms timer (`_auto_scroll_timer`) scrolls tabs at a calm, human-controllable speed (down from 60ms). Moving outside the tab bar immediately pauses auto-scrolling.
+- **Vertical Drag-Out Detachment:** Intra-bar dragging along the tab strip is dedicated to smooth tab reordering and edge auto-scrolling across the entire tab strip. Pulling a tab vertically out of the tab bar (`pos.y() < -20px` or `pos.y() > height + 25px` into the editor area) triggers cross-pane detachment (`_is_dragging_out = True`), enabling cross-pane transfer while keeping horizontal intra-bar scrolling fluid and uninhibited.
+- **Persistence:** Reorganizing tabs emits `tabMoved` and `tab_reordered`, which immediately updates the session state and persists the new `tab_order` sequence into SQLite.
+- **Overflow Navigation:** `setUsesScrollButtons(True)` automatically renders dark-themed scroll navigation arrows when numerous tabs overflow the window width.
 ### Closable Tabs & Corner Widget
 - `setTabsClosable(True)` renders a close button (`✕`) on every tab.
 - A persistent `+` button in the top-right corner allows instantaneous tab creation without reaching for the keyboard, backed by the global shortcut `Ctrl+T`.
+
+### HUD Mode Tabs Bar Navigation Arrows (`◀` and `▶`)
+- **HUD Mode Visibility:** When Always-on-Top Mini-HUD mode (`Alt+T`) is active, dedicated navigation arrow buttons appear directly on the tabs bar to provide effortless tab cycling within the compact 380px sidebar without requiring manual window resizing.
+- **Left Arrow (`◀`):** Positioned at `Qt.TopLeftCorner` (`btn_prev`), cycling focus to the previous ticket tab (`Ctrl+PgUp`).
+- **Right Arrow (`▶`):** Positioned at `Qt.TopRightCorner` (`btn_next`) alongside the persistent `+` tab creation button, cycling focus to the next ticket tab (`Ctrl+PgDown`).
+- **Dynamic State Management:**
+  - Navigation arrows are automatically hidden in standard workspace mode.
+  - In HUD mode, the arrows dynamically enable when `count > 1` and disable when only a single ticket tab is open.
+  - Clicking either arrow cycles tabs with wrap-around, focuses the active editor immediately, and updates the HUD window title (`📌 [HUD] TechPad — #INC-...`).
 
 ### Browser-Style Keyboard Shortcuts
 
@@ -160,12 +171,23 @@ When a tab is closed:
    - **Cancel:** Aborts closure and leaves the tab open.
 3. If the user closes the final active tab, the application automatically generates a fresh scratchpad (`INC-1001`) so the technician is never left with an empty workspace.
 
-### 4.4 Session Persistence on Reboot
-Upon closing the application:
-1. All pending saves are flushed.
-2. The current tab order is saved across primary and secondary panes.
-3. The focused tab ID and window geometry are saved to `app_session`.
-4. On reboot, all tabs are recreated in identical order, and the previously focused tab is selected.
+### 4.4 Session Persistence on Reboot & Tab Layout Memorization
+Tab layout and arrangement are continuously synchronized and reliably persisted:
+1. **Immediate Tab Reordering Persistence:**
+   - Moving tabs via drag-and-drop or browser shortcuts (`Ctrl+Shift+PageUp` / `Ctrl+Shift+PageDown`) immediately updates `tab_order` in `scratchpads` and commits the session layout.
+   - Creating new tabs (`Ctrl+T`), duplicating tabs, or restoring archived tickets immediately synchronizes the new tab sequence.
+2. **Normal Single-Pane Mode:**
+   - The exact order of tickets on the tab bar is stored in `primary_scratchpad_ids` (and ordered by `tab_order` in `scratchpads`).
+   - On reboot, tabs are reconstructed in the exact visual sequence, and the active tab selection is restored.
+3. **Split View Mode:**
+   - When Split View is active, the application persists:
+     - `split_view_active = 1`: Indicates Split View was open.
+     - `primary_scratchpad_ids`: Ordered array of ticket IDs residing in the primary (main/left) pane.
+     - `secondary_scratchpad_ids`: Ordered array of ticket IDs residing in the secondary (split/right) pane.
+     - `active_scratchpad_id`: Currently selected ticket in the primary pane (or overall active ticket).
+     - `split_active_scratchpad_id`: Currently selected ticket in the secondary pane.
+     - `split_sizes`: Exact horizontal splitter dimensions (e.g. `[420, 580]`).
+   - On reboot, Split View automatically opens with the exact tickets in their respective panes, the exact tab orders within both panes, both tab selections, and the saved splitter proportions.
 
 ---
 
@@ -173,17 +195,18 @@ Upon closing the application:
 
 ### 5.1 Architecture & Pane Division
 T-Notes supports dual concurrent ticket editing via a horizontal `QSplitter` containing two independent `TechPadTabWidget` instances:
-- **Primary Pane (Left):** Houses primary tickets and remains permanently visible.
-- **Secondary Pane (Right):** Collapsible split view pane that toggles on demand.
-- **Draggable Handle (6px):** 6-pixel wide splitter divider (`#2d2d2d`, highlighting to `#007acc` on hover) allowing fluid 50/50, 60/40, or custom spatial partitioning. `setChildrenCollapsible(False)` prevents either pane from accidentally vanishing when dragged.
+- **Split Sidebar Pane (Left):** Collapsible split view sidebar (`secondary_tab_widget`) that toggles on demand.
+- **Main Window Pane (Right):** Houses main ticket tabs (`tab_widget`) and expands to full 100% width when the Split sidebar is closed.
+- **Draggable Handle (6px):** 6-pixel wide splitter divider (`#2d2d2d`, highlighting to `#007acc` on hover) allowing fluid 30/70, 50/50, or custom spatial partitioning. `setChildrenCollapsible(False)` prevents either pane from accidentally vanishing when dragged.
 
 ### 5.2 Opening & Tab Migration
 - **Triggered via `Alt+Z`, Ribbon `◫`, Status Bar `◫ Split`, or Tab/History Context Menus.**
 - When opened:
-  - If 2+ tabs are open in the primary pane, the adjacent tab moves seamlessly to the secondary pane.
-  - If only 1 tab is open, a new ticket scratchpad is created in the secondary pane.
-  - If opened from the History Drawer (*"◫ Open in Side-by-Side Split"*), the archived ticket is restored directly into the secondary pane without displacing active tabs.
-- Technicians can freely migrate tickets between panes using the right-click context menu (*"◫ Move to Right Pane"* / *"◫ Move to Left Pane"*).
+  - If the Split sidebar already contains tickets, it simply opens and displays those exact tickets in their preserved tab order.
+  - If the Split sidebar is empty and 2+ tabs are open in the main window, an adjacent tab moves into the Split sidebar.
+  - If only 1 tab is open, a new ticket scratchpad is created in the Split sidebar.
+  - If opened from the History Drawer (*"◫ Open in Side-by-Side Split"*), the archived ticket is restored directly into the Split sidebar without displacing active tabs.
+- Technicians can freely migrate tickets between panes using the right-click context menu (*"◫ Move to Split Sidebar (Left Pane)"* / *"◫ Move to Main Window (Right Pane)"*) or natural drag-and-drop.
 
 ### 5.3 Focus-Aware Routing
 - Clicking inside either editor immediately routes:
@@ -191,21 +214,22 @@ T-Notes supports dual concurrent ticket editing via a horizontal `QSplitter` con
   2. **Billing Stopwatch:** Automatically synchronizes to track troubleshooting time for the focused ticket.
   3. **Status Bar Metadata:** Displays active ticket number, client, and subject for the focused editor.
 
-### 5.4 Closing & Re-merging
-- Closing Split View via `Alt+Z`, Ribbon `◫`, or closing the last secondary tab:
+### 5.4 Closing & Tab Preservation
+- Closing the Split sidebar via `Alt+Z`, Ribbon `◫`, or status bar `◫ Split`:
   1. Flushes all debounced auto-saves synchronously.
-  2. Re-merges all open secondary tabs back into the primary tab bar without state loss.
-  3. Hides the secondary pane and restores full 100% width to the primary pane.
+  2. Hides the secondary Split sidebar (`secondary_tab_widget.hide()`) and expands the main window to 100% width.
+  3. **Preserves Tab Placement:** Secondary tabs are NOT merged or evicted into the main window tab bar. They remain securely in the Split sidebar so that when the Split sidebar is reopened, all ticket tabs are restored in their exact placement and order.
 
 ### 5.5 Cross-Pane Tab Drag-and-Drop
 Technicians can seamlessly migrate tickets between split view panes using natural drag-and-drop:
-1. **Click and Drag:** Left-clicking and holding any tab header in either pane initiates tab movement.
-2. **Visual Feedback:** Dragging the mouse outside the source tab bar transforms the cursor to `Qt.DragMoveCursor`.
-3. **Drop and Insert:** Releasing the tab over the opposite pane transfers the ticket instantly:
-   - **Target Tab Bar:** Dropping on the opposite tab bar computes the exact insertion index (`target_index`) based on cursor coordinates, placing the ticket exactly between existing tabs or at the end.
+1. **Click and Drag:** Left-clicking and holding any tab header in either pane initiates tab movement with the floating `TabDragPreview` animation following the cursor.
+2. **Vertical Drag-Out Detachment:** Pulling the tab down out of the tab bar into the editor area triggers cross-pane detachment (`_is_dragging_out = True`), transforming the cursor to `Qt.DragMoveCursor` while the floating drag ghost tracks the cursor across panes.
+3. **Cross-Pane Target Auto-Scrolling:** While hovering a detached tab over the destination pane's tab bar, the destination tab bar dynamically auto-scrolls when nearing its left or right edges (`_handle_tab_cross_drag_move`). This allows technicians to move tickets to any position across overflowing tab strips in both panes.
+4. **Drop and Insert:** Releasing the tab over the opposite pane transfers the ticket instantly using deterministic global coordinate bounds:
+   - **Target Tab Bar:** Dropping on the opposite tab bar computes the exact insertion index (`target_index`) based on drop coordinates, placing the ticket between existing tabs, at index 0, or at the end.
    - **Editor Area:** Dropping anywhere over the opposite note editor body appends the ticket as the active tab.
-4. **Opening Split View via Drag:** Dragging a tab from the primary pane into the right half of the window when Split View is closed automatically triggers Split View mode and places the dragged ticket in the secondary pane.
-5. **State Preservation:** Transferring tabs preserves all embedded image BLOBs, checklist progress badges, ticket color identity, and active billing stopwatch seconds.
+5. **Opening Split View via Drag:** Dragging a tab from the primary pane into the workspace splitter area when Split View is closed automatically triggers Split View mode and places the dragged ticket in the secondary pane.
+6. **State Preservation:** Transferring tabs preserves all embedded image BLOBs, checklist progress badges, ticket color identity, and active billing stopwatch seconds.
 
 
 

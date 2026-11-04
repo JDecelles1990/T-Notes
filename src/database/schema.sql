@@ -41,8 +41,14 @@ CREATE TABLE IF NOT EXISTS app_session (
     window_geometry TEXT DEFAULT '',
     window_opacity INTEGER DEFAULT 100,
     history_drawer_open INTEGER DEFAULT 0,
+    split_view_active INTEGER DEFAULT 0,
+    split_active_scratchpad_id INTEGER,
+    primary_scratchpad_ids TEXT DEFAULT '',
+    secondary_scratchpad_ids TEXT DEFAULT '',
+    split_sizes TEXT DEFAULT '',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(active_scratchpad_id) REFERENCES scratchpads(id) ON DELETE SET NULL
+    FOREIGN KEY(active_scratchpad_id) REFERENCES scratchpads(id) ON DELETE SET NULL,
+    FOREIGN KEY(split_active_scratchpad_id) REFERENCES scratchpads(id) ON DELETE SET NULL
 );
 
 -- Application user preferences & settings

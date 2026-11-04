@@ -31,7 +31,7 @@ one M365LauncherWidget as page 1 before installing the stack as central widget.
 No existing central widget is deleted after installation. Editors, documents,
 image caches, timers, services and database are not recreated or duplicated.
 
-The accessible M365 Launcher button is appended to formatting row 1. Navigation
+The accessible M365 Launcher button is positioned on the left side of the bottom status bar, placed 2nd between the HUD button and the Split button in both normal workspace mode and HUD mode. While viewing the M365 Launcher module, this button transforms into a 'T-Notes' button (`btn_m365`), remaining enabled to provide seamless bidirectional workspace toggling in normal mode as well as in HUD mode. Navigation
 saves pending/dirty tickets by calling the existing `_execute_save` service path
 directly: Qt signal callback exceptions cannot be relied upon to propagate through
 the existing debounce flush. Dirty IDs clear only after successful content/image
@@ -40,8 +40,8 @@ retry, even when the failed autosave's timer is already inactive.
 
 Notes toolbars/history are hidden and note actions/shortcuts suspended during M365
 display; Back restores their exact prior states. Page-only focus changes do not
-pause/reload/restart the ticket stopwatch. F8 remains window-wide; Alt+T returns to
-Notes before entering existing HUD behavior. See tab-lifecycle.md and ADR 0008.
+pause/reload/restart the ticket stopwatch. F8 remains window-wide; Alt+T toggles Always-on-Top Mini-HUD mode across both Notes and M365 workspaces, and workspace switching preserves the active mode (normal or HUD). See tab-lifecycle.md and ADR 0008.
+
 
 M365LauncherWidget exposes `back_requested`, `back_button`, `navigation`,
 `content_layout`, `workspace_splitter`, `ticket_sidebar` and `ticket_panel_toggle`
@@ -239,11 +239,12 @@ When `src/main.py` is executed:
 2. Clean technician dark theme (`assets/styles/dark_theme.qss`) and custom app icon (`assets/icons/app_icon.png`) are loaded.
 3. `DatabaseManager` opens `techpad.db`, activates WAL mode, and verifies table schemas via `init_database()`.
 4. `MainWindow` initializes the two-row toolbar, system tray icon, and registers the global `F8` hotkey.
-5. `SessionService.restore_workspace()` runs:
+5. `SessionService.restore_workspace()` and Split View restoration runs:
    - Queries `scratchpads` for all records with `status = 'active'` ordered by `tab_order ASC`.
    - If no active scratchpads exist, an initial scratchpad (`INC-1001`) is automatically generated.
    - Restores window geometry, window opacity, and History Drawer visibility from `app_session`.
-   - Opens each active ticket in its respective tab and restores the focused tab.
+   - In single-pane mode, populates the primary tab bar in exact saved tab order and selects the active tab.
+   - In Split View mode (`split_view_active = 1`), allocates tickets between the primary and secondary tab widgets according to `primary_scratchpad_ids` and `secondary_scratchpad_ids` in their exact respective orders, restores the active tab in both panes, sets focus to the logical active editor, and applies saved horizontal splitter dimensions (`split_sizes`).
 
 ### Close to Tray Workflow
 When the technician clicks the window close button (`✕`):
@@ -273,8 +274,7 @@ When the user selects **✕ Quit TechPad** from the system tray context menu or 
 
 ### Workspace Minimum Sizing Boundaries
 - **Notes Workspace:** `660x400` logical pixels. Tailored for portrait monitors (e.g. physical resolution 1050x1680 at 150% Windows scaling, providing ~700px viewport) without clipping toolbars or editors.
-- **M365 Launcher:** `640x380` logical pixels. Reflows between 1-column (<500px) and 2-column (>=500px) configurations with collapsible sidebars.
-- **Mini-HUD Mode:** `340x200` minimum logical pixels. Dynamically docks as an elongated right sidebar (`380px` width x `screen.availableGeometry().height()`) pinned always-on-top. Features a down-left status bar toggle button (`status_bar.addWidget`) ensuring immediate 1-click restoration to standard workspace size without manual resizing.
+- **Mini-HUD Mode:** `340x200` minimum logical pixels. Dynamically docks as an elongated right sidebar (`440px` width) pinned always-on-top. Compensates for native window frame decorations (`title_h` and `extra_h`) to bound height to `avail.height() - extra_h`, preventing the bottom status bar from submerging behind the Windows taskbar. Clamps position and size in `resizeEvent` and `moveEvent` (`_clamp_hud_geometry`) and enforces `setMaximumHeight(avail.height() - extra_h)`. Features a left-side bottom bar cluster at the same left emplacement as normal mode (in T-Notes: `HUD`, `M365 Launcher`, `Split`, `History`; in M365: `HUD`, `T-Notes`, `Categories`, `Active Ticket`), ensuring immediate 1-click workspace restoration and bidirectional panel toggling without manual resizing.
 
 ### Desktop Work-Area Clamping (`_clamp_geometry_to_screen`)
 - Window geometry is bounded using `screen.availableGeometry()` on startup, HUD exit, and resize events.

@@ -239,6 +239,13 @@ QPushButton#btnCancel:hover, QPushButton#btnSecondary:hover {
     color: #ffffff;
 }
 
+QPushButton#btnCancel:pressed, QPushButton#btnCancel:checked,
+QPushButton#btnSecondary:pressed, QPushButton#btnSecondary:checked {
+    background-color: #0e639c;
+    border-color: #1177bb;
+    color: #ffffff;
+}
+
 QPushButton#btnDanger {
     background-color: #a4262c;
     border-color: #c42b1c;

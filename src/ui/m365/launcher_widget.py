@@ -103,9 +103,9 @@ class M365LauncherWidget(QWidget):
         control_bar.addWidget(notice, 1)
 
         self.ticket_panel_toggle = QToolButton(self)
-        self.ticket_panel_toggle.setText("Active Ticket Notes (future)")
-        self.ticket_panel_toggle.setToolTip("Show or hide the future ticket sidebar placeholder")
-        self.ticket_panel_toggle.setAccessibleName("Show future active ticket notes panel")
+        self.ticket_panel_toggle.setText("Active Ticket")
+        self.ticket_panel_toggle.setToolTip("Show or hide the active ticket sidebar placeholder")
+        self.ticket_panel_toggle.setAccessibleName("Show active ticket notes panel")
         self.ticket_panel_toggle.setFocusPolicy(Qt.StrongFocus)
         self.ticket_panel_toggle.setCheckable(True)
         self.ticket_panel_toggle.setChecked(True)

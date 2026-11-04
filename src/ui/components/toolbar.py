@@ -196,13 +196,8 @@ class TechPadToolBar(QToolBar):
         self.act_more = self.addWidget(self.btn_more)
         self.act_more.setVisible(False)
 
-        self.btn_m365 = QToolButton(self)
-        self.btn_m365.setText("M365 Launcher")
-        self.btn_m365.setToolTip("Open the M365 Launcher workspace in this window (Alt+F8)")
-        self.btn_m365.setAccessibleName("M365 Launcher")
-        self.btn_m365.setFocusPolicy(Qt.StrongFocus)
-        self.btn_m365.clicked.connect(self.m365_requested.emit)
-        self.addWidget(self.btn_m365)
+        # M365 Launcher button moved to bottom bar (status bar) between HUD and Split buttons
+        self._btn_m365 = None
 
         # -------------------------------------------------------------
         # Row 2: Workflow, Templates, Stopwatch & Utilities
@@ -388,6 +383,19 @@ class TechPadToolBar(QToolBar):
         prefix = "" if self.is_compact else "👁️ "
         self.lbl_opacity.setText(f"{prefix}{val}%")
         self.slider_opacity.blockSignals(False)
+
+    @property
+    def btn_m365(self):
+        if self._btn_m365 is not None:
+            return self._btn_m365
+        parent = self.parent()
+        if parent and hasattr(parent, "btn_m365"):
+            return parent.btn_m365
+        return None
+
+    @btn_m365.setter
+    def btn_m365(self, value):
+        self._btn_m365 = value
 
     def set_mini_hud_state(self, active: bool) -> None:
         """Updates the pin button state to reflect Mini-HUD status."""

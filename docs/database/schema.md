@@ -64,6 +64,11 @@ Stores workspace state across application restarts as a singleton row (`id = 1`)
 | `window_geometry` | `TEXT` | `DEFAULT ''` | Hex-encoded Qt window geometry and position. |
 | `window_opacity` | `INTEGER` | `DEFAULT 100` | Window opacity level from 60% to 100%. |
 | `history_drawer_open` | `INTEGER` | `DEFAULT 0` | Boolean flag (0 or 1) indicating if the History Drawer was visible. |
+| `split_view_active` | `INTEGER` | `DEFAULT 0` | Boolean flag (0 or 1) indicating if Split View mode was active. |
+| `split_active_scratchpad_id` | `INTEGER` | `FOREIGN KEY REFERENCES scratchpads(id) ON DELETE SET NULL` | ID of the active/focused tab in the secondary split pane. |
+| `primary_scratchpad_ids` | `TEXT` | `DEFAULT ''` | JSON string array of scratchpad IDs in display order for the primary pane. |
+| `secondary_scratchpad_ids` | `TEXT` | `DEFAULT ''` | JSON string array of scratchpad IDs in display order for the secondary split pane. |
+| `split_sizes` | `TEXT` | `DEFAULT ''` | JSON string array of pixel dimensions for the workspace horizontal splitter (`[width_left, width_right]`). |
 | `updated_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of last session sync. |
 
 ---

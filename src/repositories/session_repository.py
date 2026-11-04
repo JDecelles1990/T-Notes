@@ -21,23 +21,48 @@ class SessionRepository:
         window_geometry: str = "",
         window_opacity: int = 100,
         history_drawer_open: bool = False,
+        split_view_active: bool = False,
+        split_active_scratchpad_id: Optional[int] = None,
+        primary_scratchpad_ids: str = "",
+        secondary_scratchpad_ids: str = "",
+        split_sizes: str = "",
     ) -> None:
-        """Saves current active tab, window geometry, opacity, and drawer state."""
+        """Saves current active tab, window geometry, opacity, drawer state, and split view layout."""
         conn = self.db.get_connection()
         now = _get_utc_now_str()
         with conn:
             conn.execute(
                 """
-                INSERT INTO app_session (id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open, updated_at)
-                VALUES (1, ?, ?, ?, ?, ?)
+                INSERT INTO app_session (
+                    id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open,
+                    split_view_active, split_active_scratchpad_id, primary_scratchpad_ids,
+                    secondary_scratchpad_ids, split_sizes, updated_at
+                )
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     active_scratchpad_id = excluded.active_scratchpad_id,
                     window_geometry = excluded.window_geometry,
                     window_opacity = excluded.window_opacity,
                     history_drawer_open = excluded.history_drawer_open,
+                    split_view_active = excluded.split_view_active,
+                    split_active_scratchpad_id = excluded.split_active_scratchpad_id,
+                    primary_scratchpad_ids = excluded.primary_scratchpad_ids,
+                    secondary_scratchpad_ids = excluded.secondary_scratchpad_ids,
+                    split_sizes = excluded.split_sizes,
                     updated_at = excluded.updated_at
                 """,
-                (active_scratchpad_id, window_geometry, window_opacity, 1 if history_drawer_open else 0, now),
+                (
+                    active_scratchpad_id,
+                    window_geometry,
+                    window_opacity,
+                    1 if history_drawer_open else 0,
+                    1 if split_view_active else 0,
+                    split_active_scratchpad_id,
+                    primary_scratchpad_ids,
+                    secondary_scratchpad_ids,
+                    split_sizes,
+                    now,
+                ),
             )
 
     def get_session(self) -> Optional[Dict[str, Any]]:
@@ -45,7 +70,9 @@ class SessionRepository:
         conn = self.db.get_connection()
         row = conn.execute(
             """
-            SELECT id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open, updated_at
+            SELECT id, active_scratchpad_id, window_geometry, window_opacity, history_drawer_open,
+                   split_view_active, split_active_scratchpad_id, primary_scratchpad_ids,
+                   secondary_scratchpad_ids, split_sizes, updated_at
             FROM app_session
             WHERE id = 1
             """

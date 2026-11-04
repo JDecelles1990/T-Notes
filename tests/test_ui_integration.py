@@ -4,6 +4,7 @@ import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt, QTimer
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication
+from PySide6.QtTest import QTest
 from src.database.connection import DatabaseManager
 from src.database.migrations import init_database
 from src.repositories.image_repository import ImageRepository
@@ -631,9 +632,8 @@ def test_ui_reorganized_ribbon_structure(main_window):
 
 
 def test_ui_split_view_toggle_and_layout(main_window):
-    """Verifies toggling split view creates side-by-side panes and partitions tabs."""
+    """Verifies toggling split view creates side-by-side panes and preserves tab placement."""
     main_window.show()
-    # Create a second tab so we have 2 tabs
     main_window.create_new_tab()
     assert main_window.tab_widget.count() == 2
     assert main_window.secondary_tab_widget.isHidden()
@@ -646,12 +646,19 @@ def test_ui_split_view_toggle_and_layout(main_window):
     assert main_window.toolbar.btn_split.isChecked()
     assert "Single" in main_window.btn_toggle_split.text()
 
-    # Toggle Split View OFF
+    # Toggle Split View OFF: hides split sidebar without destroying/evicting secondary tabs
     main_window.toolbar.btn_split.click()
     assert main_window.secondary_tab_widget.isHidden()
-    assert main_window.tab_widget.count() == 2
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 1
     assert not main_window.toolbar.btn_split.isChecked()
     assert "Split" in main_window.btn_toggle_split.text()
+
+    # Toggle Split View ON again: secondary tabs remain intact in the split sidebar
+    main_window.toolbar.btn_split.click()
+    assert main_window.secondary_tab_widget.isVisible()
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 1
 
 
 def test_ui_split_view_editor_focus_sync(main_window):
@@ -676,8 +683,9 @@ def test_ui_split_view_editor_focus_sync(main_window):
     assert "[ ]" not in prim_editor.toPlainText()
 
 
-def test_ui_split_view_close_and_remerge(main_window):
-    """Verifies that closing split view preserves content and safely consolidates all tickets."""
+def test_ui_split_view_close_preserves_tab_placement(main_window):
+    """Verifies that closing split view preserves secondary tabs and keeps track of where tickets were placed."""
+    main_window.show()
     main_window.create_new_tab()
     main_window.open_split_view()
 
@@ -686,15 +694,22 @@ def test_ui_split_view_close_and_remerge(main_window):
     sec_editor.setPlainText("Important dual-pane research notes.")
     main_window.flush_all_saves()
 
-    # Close Split View
+    # Close Split View: hides secondary pane without evicting its tabs
     main_window.close_split_view()
     assert main_window.secondary_tab_widget.isHidden()
-    assert main_window.tab_widget.count() == 2
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 1
 
-    # Check that sec_id is now in the primary tab widget with content preserved
+    # Check that sec_id remains safely in the secondary tab widget with content preserved
     ed, tw, idx = main_window._find_editor_by_id(sec_id)
-    assert tw == main_window.tab_widget
+    assert tw == main_window.secondary_tab_widget
     assert "Important dual-pane research notes." in ed.toPlainText()
+
+    # Reopening split view restores the secondary pane with its exact ticket
+    main_window.open_split_view()
+    assert main_window.secondary_tab_widget.isVisible()
+    assert main_window.secondary_tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.get_editor_at(0).scratchpad_id == sec_id
 
 
 def test_ui_history_drawer_split_restore(main_window):
@@ -861,9 +876,23 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert "[HUD]" in main_window.windowTitle()
     assert main_window.toolbar.btn_pin.isChecked() is True
     assert "Normal" in main_window.btn_status_hud.text()
-    # HUD button is located in the down-left corner of the status bar for 1-click restore
+    # HUD, M365 Launcher, Split, and History buttons are on the left side of the bottom bar in HUD mode
     assert main_window.btn_status_hud.isVisible() is True
-    assert main_window.btn_status_hud.x() < 100
+    assert main_window.btn_m365.isVisible() is True
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
+    # Verify HUD mode fits above the Windows taskbar
+    avail = main_window.screen().availableGeometry()
+    assert main_window.frameGeometry().bottom() <= avail.bottom()
+
+    # Verify resizing in HUD mode never pushes bottom bar behind the taskbar
+    main_window.resize(440, avail.height() + 500)
+    assert main_window.frameGeometry().bottom() <= avail.bottom()
+    assert main_window.status_bar.isVisible() is True
+    assert main_window.btn_status_hud.isVisible() is True
+    assert main_window.btn_m365.isVisible() is True
 
     # 2. Toggle back to Normal mode via the down-left HUD button (1-click restore)
     main_window.btn_status_hud.click()
@@ -874,6 +903,50 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
     assert "[HUD]" not in main_window.windowTitle()
     assert main_window.toolbar.btn_pin.isChecked() is False
     assert "HUD" in main_window.btn_status_hud.text()
+    # HUD, M365 Launcher, Split, and History buttons remain on the left side of the bottom bar in normal mode
+    assert main_window.btn_status_hud.isVisible() is True
+    assert main_window.btn_m365.isVisible() is True
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
+def test_ui_mini_hud_tabs_bar_navigation_arrows(main_window):
+    """Verifies that left and right arrow buttons appear on the tabs bar in HUD mode and navigate ticket tabs."""
+    main_window.show()
+
+    # In normal workspace mode, tab navigation arrows are hidden
+    assert main_window.tab_widget.btn_prev.isVisible() is False
+    assert main_window.tab_widget.btn_next.isVisible() is False
+
+    # Create a second tab so we have at least 2 tickets
+    main_window.create_new_tab()
+    assert main_window.tab_widget.count() == 2
+    assert main_window.tab_widget.currentIndex() == 1
+
+    # Toggle into HUD mode
+    main_window.toggle_mini_hud_mode()
+    assert main_window.is_mini_hud is True
+
+    # In HUD mode, left and right arrows become visible on the tabs bar
+    assert main_window.tab_widget.btn_prev.isVisible() is True
+    assert main_window.tab_widget.btn_next.isVisible() is True
+    assert main_window.tab_widget.btn_prev.isEnabled() is True
+    assert main_window.tab_widget.btn_next.isEnabled() is True
+
+    # Navigate tabs with right arrow (advances from tab 1 to tab 0 by wrapping)
+    main_window.tab_widget.btn_next.click()
+    assert main_window.tab_widget.currentIndex() == 0
+    assert "[HUD]" in main_window.windowTitle()
+
+    # Navigate tabs with left arrow (advances back to tab 1)
+    main_window.tab_widget.btn_prev.click()
+    assert main_window.tab_widget.currentIndex() == 1
+
+    # Toggle back to Normal mode: arrows become hidden again
+    main_window.toggle_mini_hud_mode()
+    assert main_window.is_mini_hud is False
+    assert main_window.tab_widget.btn_prev.isVisible() is False
+    assert main_window.tab_widget.btn_next.isVisible() is False
 
 
 def test_ui_mini_hud_shortcut_and_controls(main_window):
@@ -897,6 +970,145 @@ def test_ui_mini_hud_shortcut_and_controls(main_window):
 
     assert handled2 is True
     assert main_window.is_mini_hud is False
+
+
+def test_ui_m365_launcher_and_tnotes_button_transformation(main_window, qapp):
+    """Verifies that the bottom bar button transforms between M365 Launcher and T-Notes in normal and HUD modes."""
+    main_window.show()
+    qapp.processEvents()
+
+    # 1. Normal mode in T-Notes: Split and History visible; Categories and Active Ticket hidden
+    assert main_window.is_m365_workspace is False
+    assert main_window.is_mini_hud is False
+    assert main_window.btn_m365.text() == "M365 Launcher"
+    assert main_window.btn_m365.isEnabled() is True
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_m365_categories.isVisible() is False
+    assert main_window.btn_m365_active_ticket.isVisible() is False
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
+    # 2. Toggle to M365 Launcher in normal mode: Split and History hidden; Categories and Active Ticket visible
+    main_window.btn_m365.click()
+    qapp.processEvents()
+    assert main_window.is_m365_workspace is True
+    assert main_window.is_mini_hud is False
+    assert main_window.btn_m365.text() == "T-Notes"
+    assert main_window.btn_m365.isEnabled() is True
+    assert main_window.btn_toggle_split.isVisible() is False
+    assert main_window.btn_toggle_drawer.isVisible() is False
+    assert main_window.btn_m365_categories.isVisible() is True
+    assert main_window.btn_m365_active_ticket.isVisible() is True
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_m365_categories.x() < main_window.btn_m365_active_ticket.x()
+
+    # 3. Toggle back to T-Notes in normal mode via the transformed button: Split and History restored
+    main_window.btn_m365.click()
+    qapp.processEvents()
+    assert main_window.is_m365_workspace is False
+    assert main_window.is_mini_hud is False
+    assert main_window.btn_m365.text() == "M365 Launcher"
+    assert main_window.btn_m365.isEnabled() is True
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_m365_categories.isVisible() is False
+    assert main_window.btn_m365_active_ticket.isVisible() is False
+
+    # 4. Toggle into HUD mode
+    main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+    assert main_window.is_m365_workspace is False
+    assert main_window.is_mini_hud is True
+    assert main_window.btn_m365.text() == "M365 Launcher"
+    assert main_window.btn_m365.isEnabled() is True
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_m365_categories.isVisible() is False
+    assert main_window.btn_m365_active_ticket.isVisible() is False
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_toggle_split.x() < main_window.btn_toggle_drawer.x()
+
+    # 5. Toggle to M365 Launcher in HUD mode (stays in HUD mode, replaces Split/History with Categories/Active Ticket)
+    main_window.btn_m365.click()
+    qapp.processEvents()
+    assert main_window.is_m365_workspace is True
+    assert main_window.is_mini_hud is True
+    assert main_window.btn_m365.text() == "T-Notes"
+    assert main_window.btn_m365.isEnabled() is True
+    assert "[HUD]" in main_window.windowTitle()
+    assert main_window.btn_toggle_split.isVisible() is False
+    assert main_window.btn_toggle_drawer.isVisible() is False
+    assert main_window.btn_m365_categories.isVisible() is True
+    assert main_window.btn_m365_active_ticket.isVisible() is True
+    assert main_window.btn_status_hud.x() < main_window.btn_m365.x() < main_window.btn_m365_categories.x() < main_window.btn_m365_active_ticket.x()
+
+    # 6. Toggle back to T-Notes in HUD mode via transformed T-Notes button (stays in HUD mode, restores Split/History)
+    main_window.btn_m365.click()
+    qapp.processEvents()
+    assert main_window.is_m365_workspace is False
+    assert main_window.is_mini_hud is True
+    assert main_window.btn_m365.text() == "M365 Launcher"
+    assert main_window.btn_m365.isEnabled() is True
+    assert "[HUD]" in main_window.windowTitle()
+    assert main_window.btn_toggle_split.isVisible() is True
+    assert main_window.btn_toggle_drawer.isVisible() is True
+    assert main_window.btn_m365_categories.isVisible() is False
+    assert main_window.btn_m365_active_ticket.isVisible() is False
+
+    # 7. Exit HUD mode
+    main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+    assert main_window.is_mini_hud is False
+    assert main_window.is_m365_workspace is False
+    assert main_window.btn_m365.text() == "M365 Launcher"
+
+
+def test_ui_m365_bottom_bar_categories_and_active_ticket_toggles(main_window, qapp):
+    """Verifies that Categories and Active Ticket buttons on the bottom bar collapse/expand M365 sidebars."""
+    main_window.show()
+    main_window.show_m365_workspace()
+    qapp.processEvents()
+    launcher = main_window.m365_workspace
+
+    # Initial state: sidebars visible, bottom bar buttons checked
+    assert launcher.navigation.isVisible() is True
+    assert launcher.ticket_sidebar.isVisible() is True
+    assert main_window.btn_m365_categories.isChecked() is True
+    assert main_window.btn_m365_active_ticket.isChecked() is True
+
+    # Click Categories button on bottom bar: collapses left sidebar and syncs nav_toggle
+    main_window.btn_m365_categories.click()
+    qapp.processEvents()
+    assert launcher.navigation.isHidden() is True
+    assert launcher.nav_toggle.isChecked() is False
+    assert main_window.btn_m365_categories.isChecked() is False
+
+    # Click Categories button again: expands left sidebar
+    main_window.btn_m365_categories.click()
+    qapp.processEvents()
+    assert launcher.navigation.isVisible() is True
+    assert launcher.nav_toggle.isChecked() is True
+    assert main_window.btn_m365_categories.isChecked() is True
+
+    # Click Active Ticket button on bottom bar: collapses right sidebar and syncs ticket_panel_toggle
+    main_window.btn_m365_active_ticket.click()
+    qapp.processEvents()
+    assert launcher.ticket_sidebar.isHidden() is True
+    assert launcher.ticket_panel_toggle.isChecked() is False
+    assert main_window.btn_m365_active_ticket.isChecked() is False
+
+    # Click Active Ticket button again: expands right sidebar
+    main_window.btn_m365_active_ticket.click()
+    qapp.processEvents()
+    assert launcher.ticket_sidebar.isVisible() is True
+    assert launcher.ticket_panel_toggle.isChecked() is True
+    assert main_window.btn_m365_active_ticket.isChecked() is True
+
+    # Toggling launcher.nav_toggle directly also syncs bottom bar button
+    launcher.nav_toggle.setChecked(False)
+    qapp.processEvents()
+    assert main_window.btn_m365_categories.isChecked() is False
+    launcher.nav_toggle.setChecked(True)
+    qapp.processEvents()
+    assert main_window.btn_m365_categories.isChecked() is True
 
 
 def test_ui_toolbar_compact_and_normal_responsive_mode(main_window, qapp):
@@ -1114,3 +1326,430 @@ def test_ui_portrait_monitor_700_viewport_constraints(main_window, qapp):
     main_window._clamp_geometry_to_screen()
     assert main_window.width() <= 700
 
+
+
+def test_ui_tab_order_memorization_single_pane(qapp, tmp_path):
+    """Verifies tab order is memorized and restored exactly across sessions in single-pane mode."""
+    db_file = tmp_path / "tab_order_test.db"
+    manager = DatabaseManager(db_file)
+    init_database(manager)
+
+    scratch_repo = ScratchpadRepository(manager)
+    img_repo = ImageRepository(manager)
+    session_repo = SessionRepository(manager)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service)
+    session_service = SessionService(session_repo, scratch_service)
+
+    w1 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w1.show()
+    qapp.processEvents()
+
+    w1.create_new_tab()
+    w1.create_new_tab()
+    qapp.processEvents()
+    assert w1.tab_widget.count() == 3
+
+    id0 = w1.tab_widget.get_editor_at(0).scratchpad_id
+    id1 = w1.tab_widget.get_editor_at(1).scratchpad_id
+    id2 = w1.tab_widget.get_editor_at(2).scratchpad_id
+
+    # Reorder tabs: move tab 0 to position 2
+    w1.tab_widget.tabBar().moveTab(0, 2)
+    w1.tab_widget.tab_reordered.emit()
+    qapp.processEvents()
+
+    assert [w1.tab_widget.get_editor_at(i).scratchpad_id for i in range(3)] == [id1, id2, id0]
+
+    # Select middle tab (id2)
+    w1.tab_widget.setCurrentIndex(1)
+    qapp.processEvents()
+
+    # Close first window
+    w1._force_quit = True
+    w1.close()
+    qapp.removeEventFilter(w1)
+    w1.deleteLater()
+    qapp.processEvents()
+
+    # Open second window on same database
+    w2 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w2.show()
+    qapp.processEvents()
+
+    assert w2.tab_widget.count() == 3
+    assert [w2.tab_widget.get_editor_at(i).scratchpad_id for i in range(3)] == [id1, id2, id0]
+    assert w2.tab_widget.currentIndex() == 1
+    assert w2.tab_widget.get_current_editor().scratchpad_id == id2
+
+    w2._force_quit = True
+    w2.close()
+    qapp.removeEventFilter(w2)
+    w2.deleteLater()
+    qapp.processEvents()
+    manager.close()
+
+
+def test_ui_split_view_order_and_layout_memorization(qapp, tmp_path):
+    """Verifies that Split View tabs in both panes, order, active tabs, and splitter sizes are restored."""
+    db_file = tmp_path / "split_view_test.db"
+    manager = DatabaseManager(db_file)
+    init_database(manager)
+
+    scratch_repo = ScratchpadRepository(manager)
+    img_repo = ImageRepository(manager)
+    session_repo = SessionRepository(manager)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service)
+    session_service = SessionService(session_repo, scratch_service)
+
+    w1 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w1.resize(1000, 700)
+    w1.show()
+    qapp.processEvents()
+
+    w1.create_new_tab()
+    w1.create_new_tab()
+    w1.create_new_tab()
+    qapp.processEvents()
+    assert w1.tab_widget.count() == 4
+
+    p_id0 = w1.tab_widget.get_editor_at(0).scratchpad_id
+    p_id1 = w1.tab_widget.get_editor_at(1).scratchpad_id
+    s_id0 = w1.tab_widget.get_editor_at(2).scratchpad_id
+    s_id1 = w1.tab_widget.get_editor_at(3).scratchpad_id
+
+    # Open Split View with s_id0 in secondary pane
+    w1.open_split_view(target_scratchpad_id=s_id0)
+    # Move s_id1 to secondary pane as well
+    for i in range(w1.tab_widget.count()):
+        ed = w1.tab_widget.get_editor_at(i)
+        if ed and ed.scratchpad_id == s_id1:
+            w1._move_tab_between_panes(w1.tab_widget, w1.secondary_tab_widget, i)
+            break
+    qapp.processEvents()
+
+    assert w1.is_split_view_active is True
+    assert w1.tab_widget.count() == 2
+    assert w1.secondary_tab_widget.count() == 2
+
+    # Reorder secondary pane: move tab 0 to 1
+    w1.secondary_tab_widget.tabBar().moveTab(0, 1)
+    w1.secondary_tab_widget.tab_reordered.emit()
+    qapp.processEvents()
+
+    # Set custom splitter sizes
+    w1.workspace_splitter.setSizes([420, 580])
+    w1._save_session_state()
+    qapp.processEvents()
+
+    # Select tab 1 in secondary pane and tab 0 in primary pane
+    w1.secondary_tab_widget.setCurrentIndex(1)
+    w1.tab_widget.setCurrentIndex(0)
+    sec_editor = w1.secondary_tab_widget.get_current_editor()
+    sec_editor.setFocus()
+    w1._on_editor_focused(sec_editor.scratchpad_id)
+    w1._save_session_state()
+    qapp.processEvents()
+
+    # Close first window
+    w1._force_quit = True
+    w1.close()
+    qapp.removeEventFilter(w1)
+    w1.deleteLater()
+    qapp.processEvents()
+
+    # Open second window on same database
+    w2 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w2.resize(1000, 700)
+    w2.show()
+    qapp.processEvents()
+
+    assert w2.is_split_view_active is True
+    assert w2.secondary_tab_widget.isVisible() is True
+    assert w2.tab_widget.isVisible() is True
+
+    # Primary pane tickets and order
+    assert w2.tab_widget.count() == 2
+    assert [w2.tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [p_id0, p_id1]
+
+    # Secondary pane tickets and order
+    assert w2.secondary_tab_widget.count() == 2
+    assert [w2.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [s_id1, s_id0]
+
+    # Active ticket in secondary pane
+    assert w2.secondary_tab_widget.currentIndex() == 1
+    assert w2.secondary_tab_widget.get_current_editor().scratchpad_id == s_id0
+
+    # Overall focused editor should be in secondary pane
+    assert w2._logical_active_scratchpad_id == s_id0
+
+    w2._force_quit = True
+    w2.close()
+    qapp.removeEventFilter(w2)
+    w2.deleteLater()
+    qapp.processEvents()
+    manager.close()
+
+
+def test_ui_split_sidebar_close_and_reopen_preserves_moved_second_tab(qapp, tmp_path):
+    """Verifies user request: moving a second ticket into the Split sidebar, closing Split,
+
+    and reopening Split keeps the second ticket in the Split sidebar, NOT back in the main window.
+    """
+    db_file = tmp_path / "user_scenario.db"
+    manager = DatabaseManager(db_file)
+    init_database(manager)
+
+    scratch_repo = ScratchpadRepository(manager)
+    img_repo = ImageRepository(manager)
+    session_repo = SessionRepository(manager)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service)
+    session_service = SessionService(session_repo, scratch_service)
+
+    w1 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w1.show()
+    qapp.processEvents()
+
+    # Create 3 tickets: T1 (initial), T2, T3
+    w1.create_new_tab()
+    w1.create_new_tab()
+    qapp.processEvents()
+    assert w1.tab_widget.count() == 3
+
+    t1_id = w1.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = w1.tab_widget.get_editor_at(1).scratchpad_id
+    t3_id = w1.tab_widget.get_editor_at(2).scratchpad_id
+
+    # 1. Open Split sidebar with T2
+    w1.open_split_view(target_scratchpad_id=t2_id)
+    qapp.processEvents()
+    assert w1.secondary_tab_widget.count() == 1
+    assert w1.tab_widget.count() == 2
+
+    # 2. Move a second Ticket tab (T3) from the main window to the Split sidebar
+    ed, tw, idx = w1._find_editor_by_id(t3_id)
+    assert tw == w1.tab_widget
+    w1._move_tab_between_panes(w1.tab_widget, w1.secondary_tab_widget, idx)
+    qapp.processEvents()
+
+    assert w1.tab_widget.count() == 1
+    assert w1.secondary_tab_widget.count() == 2
+    assert [w1.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]
+    assert [w1.tab_widget.get_editor_at(i).scratchpad_id for i in range(1)] == [t1_id]
+
+    # 3. Close the 'Split' sidebar
+    w1.close_split_view()
+    qapp.processEvents()
+
+    assert w1.secondary_tab_widget.isHidden() is True
+    # Verify the moved ticket (T3) did NOT get evicted back into the main window!
+    assert w1.tab_widget.count() == 1
+    assert w1.tab_widget.get_editor_at(0).scratchpad_id == t1_id
+    assert w1.secondary_tab_widget.count() == 2
+
+    # 4. Reopen the 'Split' sidebar
+    w1.open_split_view()
+    qapp.processEvents()
+
+    assert w1.secondary_tab_widget.isVisible() is True
+    # The ticket moved to the Split sidebar (T3) is STILL in the Split sidebar!
+    assert w1.secondary_tab_widget.count() == 2
+    assert [w1.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]
+    # And the main window still has T1
+    assert w1.tab_widget.count() == 1
+    assert [w1.tab_widget.get_editor_at(i).scratchpad_id for i in range(1)] == [t1_id]
+
+    # 5. Close window and reopen on same database to verify cross-restart persistence
+    w1._force_quit = True
+    w1.close()
+    qapp.removeEventFilter(w1)
+    w1.deleteLater()
+    qapp.processEvents()
+
+    w2 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w2.show()
+    qapp.processEvents()
+
+    assert w2.is_split_view_active is True
+    assert w2.secondary_tab_widget.count() == 2
+    assert [w2.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]
+    assert w2.tab_widget.count() == 1
+    assert [w2.tab_widget.get_editor_at(i).scratchpad_id for i in range(1)] == [t1_id]
+
+    w2._force_quit = True
+    w2.close()
+    qapp.removeEventFilter(w2)
+    w2.deleteLater()
+    qapp.processEvents()
+    manager.close()
+
+
+
+def test_ui_tab_drag_reordering_left_and_right(main_window, qapp):
+    main_window.show()
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    qapp.processEvents()
+
+    bar = main_window.tab_widget.tabBar()
+    assert bar.count() == 4
+    id0 = main_window.tab_widget.get_editor_at(0).scratchpad_id
+    id1 = main_window.tab_widget.get_editor_at(1).scratchpad_id
+    id2 = main_window.tab_widget.get_editor_at(2).scratchpad_id
+    id3 = main_window.tab_widget.get_editor_at(3).scratchpad_id
+
+    # Drag tab 0 to the right of tab 2
+    p0 = bar.tabRect(0).center()
+    p2_right = QPoint(bar.tabRect(2).center().x() + 15, bar.tabRect(2).center().y())
+    QTest.mousePress(bar, Qt.LeftButton, Qt.NoModifier, p0)
+    QTest.mouseMove(bar, p2_right)
+    QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, p2_right)
+    qapp.processEvents()
+
+    # Tab 0 should now be placed at index 2 (right of tab 2, which was shifted to index 1)
+    current_ids = [main_window.tab_widget.get_editor_at(i).scratchpad_id for i in range(4)]
+    assert current_ids == [id1, id2, id0, id3]
+    assert bar.currentIndex() == 2
+
+    # Drag tab 0 (now at index 2) to the left side of tab at index 0 (id1)
+    p_cur = bar.tabRect(2).center()
+    p0_left = QPoint(bar.tabRect(0).center().x() - 15, bar.tabRect(0).center().y())
+    QTest.mousePress(bar, Qt.LeftButton, Qt.NoModifier, p_cur)
+    QTest.mouseMove(bar, p0_left)
+    QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, p0_left)
+    qapp.processEvents()
+
+    # Tab 0 should now be placed back at index 0
+    current_ids = [main_window.tab_widget.get_editor_at(i).scratchpad_id for i in range(4)]
+    assert current_ids == [id0, id1, id2, id3]
+    assert bar.currentIndex() == 0
+
+
+def test_ui_tab_drag_auto_scroll_left_and_right(main_window, qapp):
+    main_window.show()
+    for _ in range(7):
+        main_window.create_new_tab()
+    main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+
+    bar = main_window.tab_widget.tabBar()
+    assert bar.count() == 8
+    assert bar.usesScrollButtons() is True
+
+    # Drag tab 0 to the right edge (x >= width - 35) to trigger auto-scroll
+    p0 = bar.tabRect(0).center()
+    right_edge = QPoint(bar.width() - 10, p0.y())
+    QTest.mousePress(bar, Qt.LeftButton, Qt.NoModifier, p0)
+    QTest.mouseMove(bar, right_edge)
+    assert bar._auto_scroll_timer.isActive() is True
+    assert bar._scroll_direction == 1
+
+    # Trigger a few scroll ticks
+    for _ in range(5):
+        bar._on_auto_scroll()
+        qapp.processEvents()
+
+    QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, right_edge)
+    qapp.processEvents()
+
+    assert bar._auto_scroll_timer.isActive() is False
+    # Tab 0 should have advanced to a higher index towards the right
+    assert bar.currentIndex() > 0
+
+
+def test_ui_cross_pane_mouse_drag_between_main_and_split_view(main_window, qapp):
+    """Verifies vertical drag-out detachment, cross-pane transfer, and target tab bar auto-scrolling."""
+    main_window.show()
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    main_window.open_split_view()
+    qapp.processEvents()
+
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.count() == 1
+
+    bar = main_window.tab_widget.tabBar()
+    sec_bar = main_window.secondary_tab_widget.tabBar()
+
+    dragged_ed = main_window.tab_widget.get_editor_at(1)
+    dragged_id = dragged_ed.scratchpad_id
+
+    # 1. Mouse drag from main window tab bar to secondary split tab bar using vertical drag-out
+    r1 = bar.tabRect(1)
+    QTest.mousePress(bar, Qt.LeftButton, Qt.NoModifier, r1.center())
+
+    # First pull down to vertically detach for cross-pane transfer
+    pull_down_pos = QPoint(r1.center().x(), bar.height() + 35)
+    QTest.mouseMove(bar, pull_down_pos)
+    assert bar._is_dragging_out is True
+
+    # Move over secondary tab bar near its left edge (triggers destination auto-scrolling)
+    sec_edge_global = sec_bar.mapToGlobal(QPoint(15, 10))
+    pos_in_main = bar.mapFromGlobal(sec_edge_global)
+    QTest.mouseMove(bar, pos_in_main)
+    assert sec_bar._auto_scroll_timer.isActive() is True
+    assert sec_bar._scroll_direction == -1
+
+    QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, pos_in_main)
+    qapp.processEvents()
+
+    assert sec_bar._auto_scroll_timer.isActive() is False
+    # Tab should now reside in secondary_tab_widget
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 2
+    ed_found, tw_found, idx_found = main_window._find_editor_by_id(dragged_id)
+    assert tw_found == main_window.secondary_tab_widget
+
+    # 2. Mouse drag from secondary split tab bar back to main window tab bar using vertical drag-out
+    sec_r = sec_bar.tabRect(idx_found)
+    QTest.mousePress(sec_bar, Qt.LeftButton, Qt.NoModifier, sec_r.center())
+
+    pull_down_sec = QPoint(sec_r.center().x(), sec_bar.height() + 35)
+    QTest.mouseMove(sec_bar, pull_down_sec)
+    assert sec_bar._is_dragging_out is True
+
+    main_edge_global = bar.mapToGlobal(QPoint(bar.width() - 15, 10))
+    pos_in_sec = sec_bar.mapFromGlobal(main_edge_global)
+    QTest.mouseMove(sec_bar, pos_in_sec)
+    assert bar._auto_scroll_timer.isActive() is True
+    assert bar._scroll_direction == 1
+
+    QTest.mouseRelease(sec_bar, Qt.LeftButton, Qt.NoModifier, pos_in_sec)
+    qapp.processEvents()
+
+    assert bar._auto_scroll_timer.isActive() is False
+    # Tab should now be back in tab_widget
+    assert main_window.tab_widget.count() == 2
+    assert main_window.secondary_tab_widget.count() == 1
+    ed_back, tw_back, _ = main_window._find_editor_by_id(dragged_id)
+    assert tw_back == main_window.tab_widget
+
+
+def test_ui_tab_drag_animation_and_scroll_speed(main_window, qapp):
+    """Verifies tab drag floating preview animation and smooth auto-scroll interval."""
+    main_window.show()
+    main_window.create_new_tab()
+    qapp.processEvents()
+
+    bar = main_window.tab_widget.tabBar()
+    assert bar._auto_scroll_timer.interval() == 220
+
+    # Start dragging tab 0
+    p0 = bar.tabRect(0).center()
+    QTest.mousePress(bar, Qt.LeftButton, Qt.NoModifier, p0)
+    assert bar._drag_preview is None
+
+    # Move past start drag distance to activate drag animation preview
+    drag_pos = QPoint(p0.x() + 20, p0.y() + 10)
+    QTest.mouseMove(bar, drag_pos)
+    assert bar._is_dragging is True
+    assert bar._drag_preview is not None
+    assert bar._drag_preview.isVisible() is True
+
+    # Release cleans up preview
+    QTest.mouseRelease(bar, Qt.LeftButton, Qt.NoModifier, drag_pos)
+    qapp.processEvents()
+    assert bar._drag_preview is None

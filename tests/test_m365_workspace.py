@@ -37,9 +37,12 @@ def test_default_page_and_accessible_navigation(main_window, qapp):
     qapp.processEvents()
     assert stack.currentWidget() is main_window.m365_workspace
     assert isinstance(stack.currentWidget(), M365LauncherWidget)
+    assert button.text() == "T-Notes"
+    assert button.isEnabled() is True
     QTest.mouseClick(main_window.m365_workspace.back_button, Qt.LeftButton)
     qapp.processEvents()
     assert stack.currentWidget() is original
+    assert button.text() == "M365 Launcher"
     assert main_window._get_active_editor() is editor
 
 
@@ -239,18 +242,23 @@ def test_hud_from_m365_returns_notes_and_restores_split_history(main_window, qap
     qapp.processEvents()
     main_window.show_m365_workspace()
     main_window.toggle_mini_hud_mode()
-    assert not main_window.is_m365_workspace
+    assert main_window.is_m365_workspace
     assert main_window.is_mini_hud
     assert main_window.toolbar.isHidden()
+    assert main_window.btn_m365.text() == "T-Notes"
     main_window.toggle_mini_hud_mode()
     qapp.processEvents()
+    assert not main_window.is_mini_hud
+    assert main_window.btn_m365.text() == "T-Notes"
+    main_window.show_notes_workspace()
     assert main_window.toolbar.isVisible()
     assert main_window.secondary_tab_widget.isVisible()
     assert main_window.history_drawer.isVisible()
     main_window.toggle_mini_hud_mode()
     assert main_window.show_m365_workspace()
-    assert not main_window.is_mini_hud
+    assert main_window.is_mini_hud
     assert main_window.is_m365_workspace
+    assert main_window.btn_m365.text() == "T-Notes"
 
 
 def test_f8_and_tray_reopen_keep_current_workspace(main_window, qapp, monkeypatch):
@@ -470,18 +478,24 @@ def test_alt_f8_safely_leaves_hud_and_preserves_normal_state(main_window, qapp, 
     stopwatch.start_timer() if running else stopwatch.pause_timer()
     state = (stopwatch.current_scratchpad_id, stopwatch.elapsed_seconds, stopwatch.is_running)
     press_alt_f8(editor, qapp)
-    assert main_window.is_m365_workspace and not main_window.is_mini_hud
-    assert not bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
-    assert main_window.geometry() == normal_geometry
+    assert main_window.is_m365_workspace and main_window.is_mini_hud
+    assert bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint)
+    assert main_window.btn_m365.text() == "T-Notes"
+    assert main_window.btn_m365.isEnabled() is True
     assert bytes(main_window._saved_normal_geometry) == saved_geometry
     assert QTest.qWaitForWindowActive(main_window, 1000)
     assert QApplication.focusWidget() is main_window.m365_workspace.back_button
     press_alt_f8(main_window.m365_workspace.back_button, qapp)
+    assert not main_window.is_m365_workspace and main_window.is_mini_hud
+    assert main_window.btn_m365.text() == "M365 Launcher"
+    assert (stopwatch.current_scratchpad_id, stopwatch.elapsed_seconds, stopwatch.is_running) == state
+    # Exiting HUD restores normal mode and all controls
+    main_window.toggle_mini_hud_mode()
+    assert not main_window.is_mini_hud
     assert main_window.toolbar.isVisible()
     assert main_window.secondary_tab_widget.isVisible()
     assert main_window.history_drawer.isVisible()
     assert main_window.geometry() == normal_geometry
-    assert (stopwatch.current_scratchpad_id, stopwatch.elapsed_seconds, stopwatch.is_running) == state
 
 
 @pytest.mark.parametrize("source", ["shortcut", "button"])
@@ -671,8 +685,13 @@ def test_workspace_specific_minimum_sizes(main_window, qapp):
     qapp.processEvents()
     assert main_window.minimumSize() == QSize(340, 200)
 
-    # Normal notes restored
+    # Normal M365 restored when exiting HUD while in M365
     main_window.toggle_mini_hud_mode()
+    qapp.processEvents()
+    assert main_window.minimumSize() == QSize(640, 380)
+
+    # Returning to Notes workspace restores Notes minimum size
+    main_window.show_notes_workspace()
     qapp.processEvents()
     assert main_window.minimumSize() == QSize(660, 400)
 
