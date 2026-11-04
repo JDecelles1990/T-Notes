@@ -68,3 +68,6 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Local exported ticket notes
+/T-Notes/
+
