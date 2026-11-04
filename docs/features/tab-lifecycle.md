@@ -6,7 +6,7 @@ Notes remains the default startup workspace on page 0 of MainWindow.workspace_st
 the original splitter and both tab panes remain intact. Page 1 is the separate
 M365LauncherWidget skeleton. M365 Launcher and Back switch pages in the same window
 without editor copies, editor transfer, document reconstruction, schema changes or
-a second application database. The future ticket sidebar is a placeholder only.
+a second application database. The right sidebar binds the active ticket determined by cursor focus in T-Notes (see [Active Ticket Sidebar in M365](editor-and-formatting.md#95-m365-active-ticket-right-sidebar--zero-lag-shared-document-architecture)).
 
 Before leaving Notes, cancel pending debounce timers and call the existing saver
 directly for pending/dirty IDs. Successful persistence clears dirty tracking and

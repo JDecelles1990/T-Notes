@@ -227,12 +227,18 @@ class TechPadMainWindow(QMainWindow):
 
         self.workspace_stack = QStackedWidget(self)
         self.workspace_stack.addWidget(self.workspace_splitter)
-        self.m365_workspace = M365LauncherWidget(self.workspace_stack)
+        self.m365_workspace = M365LauncherWidget(
+            self.workspace_stack,
+            scratchpad_service=self.scratchpad_service,
+            image_service=self.image_service,
+        )
         self.workspace_stack.addWidget(self.m365_workspace)
         self.setMinimumSize(660, 400)
         self.workspace_stack.setCurrentWidget(self.workspace_splitter)
         self._update_module_status_bar_buttons(is_m365=False)
         self.m365_workspace.back_requested.connect(self.switch_workspace)
+        self.m365_workspace.note_modified.connect(self._on_editor_modified)
+        self.m365_workspace.save_requested.connect(self._execute_save)
         self.setCentralWidget(self.workspace_stack)
 
         # Formatting & System Toolbars (Two-Row Header)
@@ -269,6 +275,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
         self.toolbar.stopwatch.status_message_requested.connect(self.status_bar.showMessage)
+        self.m365_workspace.status_message_requested.connect(self.status_bar.showMessage)
 
         # 1. Toggle Always-on-Top Mini-HUD button in status bar (down-left corner for 1-click restore in HUD mode)
         self.btn_status_hud = QPushButton("📌 HUD (Alt+T)")
@@ -507,6 +514,14 @@ class TechPadMainWindow(QMainWindow):
             return False
         editor = self._get_active_editor()
         self._workspace_restore_ticket = editor.scratchpad_id if editor else None
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) if editor else None
+        self.m365_workspace.set_active_ticket(
+            editor=editor,
+            ticket_data=ticket,
+            scratchpad_service=self.scratchpad_service,
+            image_service=self.image_service,
+            stopwatch=self.toolbar.stopwatch,
+        )
         self._notes_split_active = getattr(self, "_saved_split_active", False) if self.is_mini_hud else self.is_split_view_active
         for widget in (self.toolbar, self.toolbar.secondary_toolbar, self.history_drawer):
             self._notes_visibility[widget] = not widget.isHidden()
@@ -551,6 +566,8 @@ class TechPadMainWindow(QMainWindow):
         """Restore the same Notes page and its pre-navigation controls."""
         if not self.is_m365_workspace:
             return
+
+        self.flush_all_saves()
 
         # Transform T-Notes button back into M365 Launcher button on bottom bar
         self.btn_m365.setText("M365 Launcher")

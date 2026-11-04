@@ -6,13 +6,14 @@ from pathlib import Path
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, Qt
-from PySide6.QtGui import QImage, QKeyEvent, QShortcut, QTextCursor
+from PySide6.QtGui import QFont, QImage, QKeyEvent, QShortcut, QTextCursor
 from PySide6.QtTest import QSignalSpy, QTest
 from PySide6.QtWidgets import QApplication, QDialog, QGroupBox, QLineEdit, QMainWindow, QTextEdit
 
 from test_ui_integration import main_window
 from src.ui.main_window import TechPadMainWindow
 from src.ui.m365.launcher_widget import M365LauncherWidget
+from src.ui.components.editor import TechPadEditor
 
 
 def show(window, qapp):
@@ -69,7 +70,7 @@ def test_catalog_shell_preserves_notes_boundary_and_placeholders(main_window, qa
     names = {group.title() for group in widget.findChildren(QGroupBox)}
     assert {"Company Selection", "Authentication & Tenant Context", "Script Catalog",
             "Parameters", "Execution Workspace", "Parsed Results", "Active Ticket Notes"} <= names
-    assert not widget.findChildren(QTextEdit)
+    assert len(widget.findChildren(TechPadEditor)) == 1
     assert not widget.findChildren(QMainWindow)
     assert widget.ticket_sidebar.isVisible()
     QTest.mouseClick(widget.ticket_panel_toggle, Qt.LeftButton)
@@ -104,7 +105,7 @@ def test_repeated_switch_preserves_document_cursor_undo_and_instances(main_windo
     assert "S001 synthetic unsaved note plus undo" in editor.toPlainText()
     assert editor.document().isUndoAvailable()
     assert main_window._debounce_timers == timers
-    assert len(main_window.findChildren(QTextEdit)) == 1
+    assert len(main_window.findChildren(TechPadEditor)) == 2
 
 
 def test_pending_image_and_content_save_before_navigation(main_window, qapp):
@@ -414,7 +415,7 @@ def test_alt_f8_dispatches_once_per_press_and_reuses_widgets(main_window, qapp):
         assert main_window.is_m365_workspace is bool(press % 2)
         assert [main_window.workspace_stack.widget(i) for i in range(2)] == pages
         assert editor.document() is document
-        assert len(main_window.findChildren(QTextEdit)) == 1
+        assert len(main_window.findChildren(TechPadEditor)) == 2
 
 
 def test_alt_f8_works_from_m365_form_focus_without_editing_hidden_notes(main_window, qapp):
@@ -849,4 +850,143 @@ def test_regression_close_from_m365_preserves_secondary_active_ticket(main_windo
     main_window.close()
     session = main_window.session_service.session_repo.get_session()
     assert session["active_scratchpad_id"] == ed.scratchpad_id
+
+
+def test_m365_sidebar_shows_active_ticket_and_syncs_notes(main_window, qapp):
+    show(main_window, qapp)
+    editor = main_window._get_active_editor()
+    editor.setPlainText("Note content for ticket 101")
+    ticket = main_window.scratchpad_service.get_ticket(editor.scratchpad_id)
+    t_num = ticket.get("ticket_number", "")
+
+    # Switch to M365 workspace
+    assert main_window.show_m365_workspace()
+    qapp.processEvents()
+    launcher = main_window.m365_workspace
+
+    # Sidebar is visible with active ticket header
+    assert launcher.ticket_sidebar.isVisible()
+    assert f"#{t_num}" in launcher.lbl_ticket_id.text()
+    assert launcher.ticket_editor.isVisible()
+    assert "Note content for ticket 101" in launcher.ticket_editor.toPlainText()
+
+    # Edit note in M365 sidebar
+    launcher.ticket_editor.append("Edited from M365 sidebar")
+    qapp.processEvents()
+
+    # Verify real-time shared document sync
+    assert "Edited from M365 sidebar" in editor.toPlainText()
+
+    # Switch back to Notes
+    main_window.show_notes_workspace()
+    qapp.processEvents()
+    saved = main_window.scratchpad_service.get_ticket(editor.scratchpad_id)
+    assert "Edited from M365 sidebar" in saved["content_html"]
+
+
+def test_m365_sidebar_respects_cursor_active_ticket_in_split_view(main_window, qapp):
+    show(main_window, qapp)
+    main_window.create_new_tab()
+    main_window.open_split_view()
+    qapp.processEvents()
+
+    # Put cursor in secondary pane editor
+    sec_ed = main_window.secondary_tab_widget.get_current_editor()
+    sec_ed.setPlainText("Secondary pane active content")
+    sec_ed.setFocus()
+    main_window._on_editor_focused(sec_ed.scratchpad_id)
+    assert main_window._get_active_editor() is sec_ed
+
+    ticket2 = main_window.scratchpad_service.get_ticket(sec_ed.scratchpad_id)
+    t2_num = ticket2.get("ticket_number", "")
+
+    # Switch to M365
+    assert main_window.show_m365_workspace()
+    qapp.processEvents()
+    launcher = main_window.m365_workspace
+
+    assert f"#{t2_num}" in launcher.lbl_ticket_id.text()
+    assert "Secondary pane active content" in launcher.ticket_editor.toPlainText()
+
+    main_window.show_notes_workspace()
+    qapp.processEvents()
+
+
+def test_m365_sidebar_formatting_toolbar_and_copy_note(main_window, qapp, monkeypatch):
+    show(main_window, qapp)
+    editor = main_window._get_active_editor()
+    editor.setPlainText("Rich formatting test")
+    assert main_window.show_m365_workspace()
+    qapp.processEvents()
+    launcher = main_window.m365_workspace
+
+    # Test bold toggle
+    cursor = launcher.ticket_editor.textCursor()
+    cursor.select(QTextCursor.Document)
+    launcher.ticket_editor.setTextCursor(cursor)
+    launcher.btn_bold.click()
+    assert launcher.ticket_editor.currentCharFormat().fontWeight() == QFont.Bold
+
+    # Test code block insertion
+    cursor.clearSelection()
+    launcher.ticket_editor.setTextCursor(cursor)
+    launcher.btn_code.click()
+    assert "# CLI / PowerShell Output" in launcher.ticket_editor.toPlainText()
+
+    # Test badge insertion
+    launcher.btn_badge.menu().actions()[0].trigger()
+    assert "PASS" in launcher.ticket_editor.toPlainText()
+
+    # Test checklist insertion
+    launcher.btn_checklist.click()
+    assert "[ ]" in launcher.ticket_editor.toPlainText()
+
+    # Test timestamp insertion
+    launcher.btn_timestamp.click()
+    qapp.processEvents()
+
+    # Test template insertion
+    launcher.btn_template.menu().actions()[0].trigger()
+    qapp.processEvents()
+
+    # Test copy formatted note
+    copied_mime = []
+    original_set_mime = QApplication.clipboard().setMimeData
+    monkeypatch.setattr(QApplication.clipboard(), "setMimeData", lambda m: copied_mime.append(m))
+    launcher.btn_copy_note.click()
+    assert len(copied_mime) >= 1
+    assert copied_mime[0].hasHtml()
+    assert copied_mime[0].hasText()
+
+    # Test copy clean note
+    copied_text = []
+    monkeypatch.setattr(QApplication.clipboard(), "setText", lambda t: copied_text.append(t))
+    launcher.btn_copy_note.menu().actions()[1].trigger()
+    assert len(copied_text) >= 1
+
+    main_window.show_notes_workspace()
+    qapp.processEvents()
+
+
+def test_m365_sidebar_stopwatch_controls(main_window, qapp):
+    show(main_window, qapp)
+    assert main_window.show_m365_workspace()
+    qapp.processEvents()
+    launcher = main_window.m365_workspace
+
+    # Check stopwatch is initialized
+    assert "⏱️" in launcher.lbl_sidebar_stopwatch.text()
+
+    # Click toggle stopwatch (play/pause)
+    was_running = main_window.toolbar.stopwatch.is_running
+    launcher.btn_sidebar_stopwatch_toggle.click()
+    assert main_window.toolbar.stopwatch.is_running is not was_running
+
+    # Click reset stopwatch
+    launcher.btn_sidebar_stopwatch_reset.click()
+    assert main_window.toolbar.stopwatch.elapsed_seconds == 0
+    assert "00:00:00" in launcher.lbl_sidebar_stopwatch.text()
+
+    main_window.show_notes_workspace()
+    qapp.processEvents()
 

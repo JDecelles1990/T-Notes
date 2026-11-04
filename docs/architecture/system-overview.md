@@ -50,7 +50,9 @@ now come from an application-owned JSON registry through M365CatalogService.
 The service provides schema-checked, unavailable-operation metadata snapshots;
 the shipped production catalog is empty. Search, risk/lifecycle filters and
 read-only plain-text details stay inside the existing scrollable shell. The
-remaining execution/parameter/result and ticket placeholders remain unimplemented.
+remaining execution/parameter/result placeholders remain unimplemented, while the
+right ticket sidebar integrates the focused active ticket note from T-Notes using
+shared document architecture (see [Active Ticket Sidebar](../features/editor-and-formatting.md#95-m365-active-ticket-right-sidebar--zero-lag-shared-document-architecture)).
 No company persistence, credentials, worker/network dispatch, result parsing or
 note insertion exists. The corrected proposed contract schemas are compatibility
 inputs only, hash-bound for review and loaded only for nonempty catalogs. No

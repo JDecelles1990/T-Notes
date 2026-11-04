@@ -12,8 +12,9 @@ before existing Mini-HUD behavior. Back and ticket-placeholder collapse controls
 are keyboard-focusable; Space activates Back.
 
 The original editor retains document, cursor/selection, undo and image resources.
-The M365 page contains no QTextEdit and implements neither note synchronization
-nor result insertion. Independent review/integration of this candidate is pending.
+The M365 page binds its Active Ticket sidebar directly to the focused note's document
+using shared in-memory document architecture (`setDocument()`), providing full formatting,
+stopwatch time tracking, image insertion, and rich note copying without architectural drift.
 
 Alt+F8 is the application-level S001 workspace toggle. It remains enabled when
 Notes-only shortcuts are suspended and works from editor, toolbar, Back or future
@@ -228,7 +229,7 @@ To support compact displays and Windows high-DPI scaling (125% and 150% scaling 
 ### 9.2 Collapsible Navigation & Active Ticket Sidebars
 - **Collapsible Splitter:** `workspace_splitter.setChildrenCollapsible(True)` allows both sidebars to collapse down cleanly.
 - **Category Navigation Toggle:** A compact `☰ Categories` toggle button (`nav_toggle`) allows collapsing the left list to reclaim 130px+ of horizontal space on narrow screens.
-- **Active Ticket Notes Toggle:** The `Active Ticket Notes (future)` toggle button (`ticket_panel_toggle`) allows hiding the right sidebar placeholder to reclaim 140px+ for the main workspace.
+- **Active Ticket Notes Toggle:** The `Active Ticket` toggle button (`ticket_panel_toggle`, synchronized with status bar `btn_m365_active_ticket`) allows hiding or showing the right sidebar to prioritize administrative workspace or ticket notes.
 - **State Preservation:** Navigation selection, scroll position, and panel collapsed/expanded states survive across Alt+F8 workspace switches.
 
 ### 9.3 Workspace-Specific Minimum Dimensions & Bounds Clamping
@@ -240,6 +241,14 @@ To support compact displays and Windows high-DPI scaling (125% and 150% scaling 
 - **Atomic Save Barrier (`flush_all_saves() -> bool`):** Before switching to the M365 Launcher or closing the application, all active debounce timers and dirty scratchpad IDs are immediately flushed and saved to SQLite.
 - **Save Status Accuracy:** If any ticket fails to persist or dirty notes remain, the status bar displays `● Save Failed` in bold red (never falsely showing `● Saved`).
 - **Guarded Navigation & Refused Exit:** Failed saves immediately abort workspace switching (`show_m365_workspace()` returns `False`), and `closeEvent()` calls `event.ignore()` with a status bar alert to keep the window open and preserve all in-memory drafts and images. Subsequent user actions cleanly retry the stopped timers without data loss.
+
+### 9.5 M365 Active Ticket Right Sidebar & Zero-Lag Shared Document Architecture
+- **Active Ticket Resolution:** When entering the M365 Launcher module, `show_m365_workspace()` resolves the Active Ticket directly from `_get_active_editor()` (the ticket tab where the cursor/keyboard focus was placed in T-Notes, across either Split View side panel or Main Window).
+- **Shared In-Memory Document (`QTextDocument`):** The sidebar's embedded `TechPadEditor` calls `setDocument(active_editor.document())` and references `active_editor.in_memory_images`. This provides instantaneous, zero-lag bidirectional synchronization: edits, character formatting, pasted screenshots, and checklists typed in the M365 sidebar immediately reflect in the underlying document.
+- **Ticket Header Card:** Displays ticket identification pill (`#INC-xxx`), client name, and subject/title alongside synchronized troubleshooting stopwatch controls (`⏱️ HH:MM:SS`, `▶`/`⏸` play/pause, `↺` reset) directly wired to the ticket's active stopwatch state.
+- **Formatting Micro-Toolbar:** Features standard formatting buttons (`B`, `I`, `U`, `🎨` text color, `🖍️` highlight, `</>` monospace code block, `🏷️ Tag` triage badges, `☑` interactive tasks, `🕒` timestamps, `🖼️` image file picker), structured ticket templates (`📋 Template`), and full formatted note export (`📋 Copy Note`).
+- **Copy Note Parity:** Clicking `📋 Copy Note` (or pressing `Ctrl+Shift+C`) flushes pending saves, packages HTML with Base64-encoded embedded images (`data:image/jpeg;base64,...`), and writes to the Windows Clipboard. A dropdown action (`📤 Copy Clean Note for Ticket Tool`) exports stripped markdown for PSA ticketing tools.
+- **Autosave Persistence:** Modifying the sidebar editor emits `note_modified(scratchpad_id)`, restarting the 1500ms debounced autosave timer in SQLite. Switching workspaces or clicking Copy Note forces immediate synchronous persistence.
 
 ---
 
