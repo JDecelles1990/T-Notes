@@ -188,6 +188,9 @@ class TechPadMainWindow(QMainWindow):
 
         # Secondary Tab Widget (Left Pane — Split View Sidebar)
         self.secondary_tab_widget = TechPadTabWidget(self)
+        self.secondary_tab_widget.tabBar().tabBarClicked.connect(
+            lambda idx: self._on_tab_header_clicked(self.secondary_tab_widget, idx)
+        )
         self.secondary_tab_widget.new_tab_requested.connect(self._create_new_secondary_tab)
         self.secondary_tab_widget.tab_edit_requested.connect(self._on_secondary_tab_double_clicked)
         self.secondary_tab_widget.tab_context_menu_requested.connect(self._on_secondary_tab_context_menu)
@@ -205,6 +208,9 @@ class TechPadMainWindow(QMainWindow):
 
         # Primary Tab Widget (Right Pane — Main Window)
         self.tab_widget = TechPadTabWidget(self)
+        self.tab_widget.tabBar().tabBarClicked.connect(
+            lambda idx: self._on_tab_header_clicked(self.tab_widget, idx)
+        )
         self.tab_widget.new_tab_requested.connect(self.create_new_tab)
         self.tab_widget.tab_edit_requested.connect(self._on_tab_double_clicked)
         self.tab_widget.tab_context_menu_requested.connect(self._on_tab_context_menu)
@@ -893,21 +899,49 @@ class TechPadMainWindow(QMainWindow):
         self._debounce_timers[scratchpad_id] = debouncer
         return editor
 
+    def _on_tab_header_clicked(self, tw: TechPadTabWidget, idx: int) -> None:
+        """Focuses the clicked tab's editor and sets it as the Active Ticket note."""
+        if 0 <= idx < tw.count():
+            editor = tw.get_editor_at(idx)
+            if editor:
+                editor.setFocus()
+                self._on_editor_focused(editor.scratchpad_id)
+
     def _get_active_editor(self) -> Optional[TechPadEditor]:
-        """Returns the currently active editor across primary and secondary panes."""
+        """Returns the currently active editor where the cursor is placed across primary and secondary panes."""
+        # 1. First check if a TechPadEditor (or its viewport) has keyboard focus right now
+        focus_w = QApplication.focusWidget()
+        if isinstance(focus_w, TechPadEditor):
+            self._logical_active_scratchpad_id = focus_w.scratchpad_id
+            return focus_w
+        if focus_w and isinstance(focus_w.parent(), TechPadEditor):
+            self._logical_active_scratchpad_id = focus_w.parent().scratchpad_id
+            return focus_w.parent()
+
+        # 2. Check which visible pane's editor currently has focus or cursor focus
+        sec_ed = self.secondary_tab_widget.get_current_editor() if self.secondary_tab_widget.isVisible() else None
+        prim_ed = self.tab_widget.get_current_editor()
+
+        if sec_ed and (sec_ed.hasFocus() or (sec_ed.viewport() and sec_ed.viewport().hasFocus())):
+            self._logical_active_scratchpad_id = sec_ed.scratchpad_id
+            return sec_ed
+        if prim_ed and (prim_ed.hasFocus() or (prim_ed.viewport() and prim_ed.viewport().hasFocus())):
+            self._logical_active_scratchpad_id = prim_ed.scratchpad_id
+            return prim_ed
+
+        # 3. Check tracked logical active scratchpad ID
         if getattr(self, "_logical_active_scratchpad_id", None):
             ed, tw, idx = self._find_editor_by_id(self._logical_active_scratchpad_id)
-            if ed:
+            if ed and ed.isVisible():
                 return ed
+
+        # 4. Check toolbar's current editor reference
         if hasattr(self, "toolbar") and self.toolbar._current_editor:
-            for tw in (self.tab_widget, self.secondary_tab_widget):
-                for i in range(tw.count()):
-                    if tw.get_editor_at(i) == self.toolbar._current_editor:
-                        return self.toolbar._current_editor
-        if self.secondary_tab_widget.isVisible() and self.secondary_tab_widget.hasFocus():
-            if sec_ed := self.secondary_tab_widget.get_current_editor():
-                return sec_ed
-        return self.tab_widget.get_current_editor()
+            if self.toolbar._current_editor.isVisible():
+                return self.toolbar._current_editor
+
+        # 5. Default fallback
+        return prim_ed or sec_ed
 
     def _find_editor_by_id(self, scratchpad_id: int):
         """Finds editor, its parent tab widget, and index by scratchpad ID."""
@@ -1362,7 +1396,10 @@ class TechPadMainWindow(QMainWindow):
 
         self._execute_save(editor.scratchpad_id)
         editor.copy_formatted_note()
-        self.status_bar.showMessage("✓ Copied formatted note (rich text & images) to clipboard!", 3500)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        t_label = f"#{ticket.get('ticket_number', '')}".strip()
+        msg = f"✓ Copied formatted note ({t_label}) with rich text & images to clipboard!" if t_label != "#" else "✓ Copied formatted note with rich text & images to clipboard!"
+        self.status_bar.showMessage(msg, 3500)
 
     def _on_export_note(self) -> None:
         """Copies clean plain text / Markdown note from active editor to clipboard for ticketing tool."""
@@ -1375,7 +1412,10 @@ class TechPadMainWindow(QMainWindow):
 
         clean_text = self.scratchpad_service.export_as_plain_ticket_note(editor.scratchpad_id)
         QApplication.clipboard().setText(clean_text)
-        self.status_bar.showMessage("✓ Copied clean note for ticketing system to clipboard!", 3500)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        t_label = f"#{ticket.get('ticket_number', '')}".strip()
+        msg = f"✓ Copied clean note ({t_label}) for ticketing system to clipboard!" if t_label != "#" else "✓ Copied clean note for ticketing system to clipboard!"
+        self.status_bar.showMessage(msg, 3500)
 
     def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
         """Displays rich context menu on right-clicking a tab or the primary tab bar."""

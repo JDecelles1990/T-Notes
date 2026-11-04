@@ -1789,3 +1789,78 @@ def test_ui_cross_pane_drag_destination_edge_auto_scroll(main_window, qapp):
     main_window._handle_tab_cross_drop(sec_tw, 0, gpos_left_arrow)
     qapp.processEvents()
     assert main_bar._auto_scroll_timer.isActive() is False
+
+def test_ui_active_ticket_note_cursor_placement_and_copy_note(main_window, qapp, monkeypatch):
+    """Verifies that placing cursor in either pane (Split or Main) updates the Active Ticket and Copy Note copies that note."""
+    main_window.resize(1000, 700)
+    main_window.show()
+    main_window.create_new_tab()  # Total 2 tabs
+    main_window.open_split_view()
+    qapp.processEvents()
+
+    assert main_window.secondary_tab_widget.isVisible() is True
+    assert main_window.tab_widget.isVisible() is True
+
+    ed_prim = main_window.tab_widget.get_current_editor()
+    ed_sec = main_window.secondary_tab_widget.get_current_editor()
+    assert ed_prim is not None and ed_sec is not None
+
+    # Populate distinct content in both editors
+    ed_prim.setHtml("<p><b>Primary Note (Main Window)</b> with #INC-102</p>")
+    ed_sec.setHtml("<p><i>Secondary Note (Split View)</i> with #INC-1001</p>")
+    from PySide6.QtGui import QImage, QColor
+    img = QImage(16, 16, QImage.Format_RGB32)
+    img.fill(QColor("magenta"))
+    ed_sec.insert_embedded_image(img)
+
+    # Track what is set to the clipboard
+    captured_mime = []
+    clipboard = QApplication.clipboard()
+    monkeypatch.setattr(clipboard, "setMimeData", lambda md: captured_mime.append(md))
+
+    # 1. Place cursor in Secondary Editor (Split View side panel)
+    ed_sec.setFocus()
+    qapp.processEvents()
+
+    assert main_window._get_active_editor() == ed_sec
+    sec_ticket = main_window.scratchpad_service.get_ticket(ed_sec.scratchpad_id)
+    assert f"#{sec_ticket['ticket_number']}" in main_window.lbl_active_info.text()
+
+    # Click 'Copy Note' button on the top bar
+    main_window.toolbar.btn_copy_note.click()
+    qapp.processEvents()
+
+    assert len(captured_mime) == 1
+    md_sec = captured_mime[-1]
+    assert md_sec.hasHtml() is True
+    assert "Secondary Note (Split View)" in md_sec.html()
+    assert "data:image/jpeg;base64" in md_sec.html()
+    assert "Secondary Note (Split View)" in md_sec.text()
+    assert "[Screenshot]" in md_sec.text()
+    assert f"#{sec_ticket['ticket_number']}" in main_window.status_bar.currentMessage()
+
+    # 2. Place cursor in Primary Editor (Main Window)
+    ed_prim.setFocus()
+    qapp.processEvents()
+
+    assert main_window._get_active_editor() == ed_prim
+    prim_ticket = main_window.scratchpad_service.get_ticket(ed_prim.scratchpad_id)
+    assert f"#{prim_ticket['ticket_number']}" in main_window.lbl_active_info.text()
+
+    # Click 'Copy Note' button on the top bar
+    main_window.toolbar.btn_copy_note.click()
+    qapp.processEvents()
+
+    assert len(captured_mime) == 2
+    md_prim = captured_mime[-1]
+    assert md_prim.hasHtml() is True
+    assert "Primary Note (Main Window)" in md_prim.html()
+    assert f"#{prim_ticket['ticket_number']}" in main_window.status_bar.currentMessage()
+
+    # 3. Click tab header on secondary tab bar switches active ticket back to secondary
+    sec_bar = main_window.secondary_tab_widget.tabBar()
+    QTest.mouseClick(sec_bar, Qt.LeftButton, Qt.NoModifier, sec_bar.tabRect(0).center())
+    qapp.processEvents()
+
+    assert main_window._get_active_editor() == ed_sec
+    assert f"#{sec_ticket['ticket_number']}" in main_window.lbl_active_info.text()

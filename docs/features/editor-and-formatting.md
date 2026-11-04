@@ -85,7 +85,7 @@ Dedicated strictly to rich-text authoring, colors, and content markup:
 Dedicated to ticket-level actions, troubleshooting duration, translucency, and preferences:
 - **Ticket Stopwatch (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), crisp Unicode Play/Pause (`▶`/`⏸`), and Reset (`↺`).
 - **Ticket Templates (`📋 Template`):** Structured Skeleton templates (Incident Triage, Quick Fix, Maintenance).
-- **PSA Ticket Export (`📤 Copy Note`):** Copies clean Markdown/plain-text note with converted `- [ ] ` checkboxes.
+- **Formatted Note Copy (`📋 Copy Note` / `Ctrl+Shift+C`):** Copies all text formatting (colors, bold, monospace code containers, checklist states) and embedded images (converted to Base64 data URIs) of the **Active Ticket note** (the pane/tab where the text cursor is currently placed, in either Split View side panel or main window) into the Windows Clipboard. Also provides a dropdown action for clean plain Markdown exports (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`).
 - **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% positioned naturally alongside workflow tools without artificial expanding voids.
 - **Split View Toggle (`◫` / `Alt+Z`):** Instant side-by-side dual ticket editing with draggable 6px divider.
 - **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.

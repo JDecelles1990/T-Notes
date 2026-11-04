@@ -56,6 +56,10 @@ class TechPadEditor(QTextEdit):
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
         self.textChanged.connect(self._on_text_changed)
+        self.cursorPositionChanged.connect(self._on_cursor_or_focus)
+
+    def _on_cursor_or_focus(self) -> None:
+        self.editor_focused.emit(self.scratchpad_id)
 
     def _on_text_changed(self) -> None:
         self.content_modified.emit(self.scratchpad_id)
@@ -234,6 +238,14 @@ class TechPadEditor(QTextEdit):
             if not jpeg_bytes and self.image_service and getattr(self.image_service, "repo", None):
                 try:
                     jpeg_bytes = self.image_service.repo.get_image(self.scratchpad_id, raw_name)
+                    if not jpeg_bytes and hasattr(self.image_service.repo, "db"):
+                        conn = self.image_service.repo.db.get_connection()
+                        row = conn.execute(
+                            "SELECT image_data FROM scratchpad_images WHERE image_name = ?",
+                            (raw_name,),
+                        ).fetchone()
+                        if row:
+                            jpeg_bytes = row["image_data"]
                 except Exception:
                     pass
 
@@ -241,6 +253,8 @@ class TechPadEditor(QTextEdit):
             res = self.document().resource(QTextDocument.ImageResource, QUrl(src))
             if not isinstance(res, QImage) or res.isNull():
                 res = self.document().resource(QTextDocument.ImageResource, QUrl(f"{LOCAL_IMAGE_URL_PREFIX}{raw_name}"))
+            if not isinstance(res, QImage) or res.isNull():
+                res = self.document().resource(QTextDocument.ImageResource, QUrl(raw_name))
 
             if isinstance(res, QImage) and not res.isNull():
                 if first_qimage is None:
@@ -470,6 +484,7 @@ class TechPadEditor(QTextEdit):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.editor_focused.emit(self.scratchpad_id)
         if event.button() == Qt.LeftButton:
             self._pressed_anchor = self.anchorAt(event.pos())
         else:
@@ -503,6 +518,7 @@ class TechPadEditor(QTextEdit):
                         event.accept()
                         return
         super().mouseReleaseEvent(event)
+        self.editor_focused.emit(self.scratchpad_id)
 
     def focusInEvent(self, event) -> None:
         """Notifies main window when this editor receives focus for active tracking."""

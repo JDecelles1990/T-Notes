@@ -104,6 +104,15 @@ To prevent disorientation across concurrent support sessions, each tab automatic
   - In HUD mode, the arrows dynamically enable when `count > 1` and disable when only a single ticket tab is open.
   - Clicking either arrow cycles tabs with wrap-around, focuses the active editor immediately, and updates the HUD window title (`📌 [HUD] TechPad — #INC-...`).
 
+### Active Ticket & Cursor Placement Resolution Across Dual Panes
+In both single-window and side-by-side Split View modes, the **Active Ticket** (or Active Note) is deterministically governed by cursor placement:
+- **Instant Focus & Cursor Binding:** Placing the text cursor inside an editor via clicking (`mousePressEvent`), typing, arrow key navigation (`cursorPositionChanged`), or clicking a tab header (`tabBarClicked`) immediately designates that ticket as the active ticket.
+- **Unified State Synchronization:** When focus shifts between the Split View side panel and the main window:
+  - The bottom bar reflects the active ticket (`Active Ticket: #<num> | Client: ... | Subject: ...`).
+  - The top bar ribbon tools and format status indicators bind to the active note.
+  - The troubleshooting stopwatch syncs and logs time against that active ticket.
+  - The **`📋 Copy Note`** top-bar button extracts and copies the complete rich text, formatting, and Base64-embedded images of that exact active ticket note into the Windows Clipboard.
+
 ### Browser-Style Keyboard Shortcuts
 
 All tab shortcuts are intercepted centrally at the `QApplication` level via `TechPadMainWindow.eventFilter()`. This prevents focused widgets (such as `TechPadEditor` or `TechPadTabBar`) from swallowing navigation events and ensures reliable operation on physical Windows keyboards where hardware drivers attach `Qt.KeypadModifier` to extended navigation keys (`PageDown`/`PageUp`).
