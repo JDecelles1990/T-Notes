@@ -307,3 +307,37 @@ dirty. Ctrl+S retries the latest snapshot, including when no debounce timer rema
 active. Creating a new ticket cannot display Saved while another ticket is dirty.
 This is an application persistence receipt, not a PowerShell wire schema, approved
 M365 adapter or contract release.
+
+
+---
+
+## 11. Custom Ticket Templates & Add Template Dialog
+
+### 11.1 Overview & Menu Integration
+In addition to built-in structured triage skeletons (`Standard Incident Triage`, `Quick Triage / Quick Fix`, `Maintenance & Change Plan`), technicians can create and persist user-defined templates via the `📋 Template` dropdown menu:
+- **Menu Hierarchy:** Built-in skeletons -> separator -> user-defined custom templates -> separator -> `🔳 Add a new template`.
+- **Action Trigger:** Clicking `🔳 Add a new template` opens the `AddTemplateDialog` modal.
+
+### 11.2 Add Template Dialog (`AddTemplateDialog`)
+The template creation dialog provides a self-contained rich-text authoring environment:
+- **Top Labeled Textbox (`Title`):** A `QLineEdit` for naming the template (e.g., `Firewall Ticket Triage`, `VPN Onboarding Checklist`). Validates that the title is non-empty before saving.
+- **Formatting Ribbon:**
+  - **Font Styles:** Bold (`B`, `Ctrl+B`), Italic (`I`, `Ctrl+I`), Underline (`U`, `Ctrl+U`), and Strikethrough (`S`).
+  - **Color Pickers:** Foreground text color (`🎨`, `QColorDialog`) and highlighted text background color (`🖍️`, `QColorDialog`).
+  - **Headings & Structure:** Headings selector (`Heading 1`, `Heading 2`, `Heading 3`, `Normal Text`), Bullet List (`• List`), and Numbered List (`1. List`).
+  - **Code Blocks:** Monospace container formatting (`</>`) applying `Consolas` monospace font and dark container styling.
+  - **Image Button:** `🖼️ Image` button invoking `QFileDialog` to select image files (`PNG`, `JPG`, `JPEG`, `BMP`, `WEBP`, `GIF`).
+- **Down Labeled Textbox (`Template`):** Built upon `TemplateEditor` (`QTextEdit`), providing full clipboard fidelity:
+  - Copy and paste of formatted rich text, HTML, and images.
+  - Clipboard screenshot pasting (`Win+Shift+S` / `Ctrl+V`).
+  - Drag-and-drop of image files from Windows Explorer.
+  - Automatic JPEG compression at quality factor 85 per AGENTS.md media guidelines.
+  - Self-contained HTML export: Local `image://local/...` references are converted to embedded `data:image/jpeg;base64,...` URIs upon saving, ensuring templates remain fully portable.
+
+### 11.3 Active Ticket Cursor Insertion Workflow
+When a template is selected from the `📋 Template` dropdown menu:
+1. `_on_skeleton_selected(name)` retrieves the template's markup from `ScratchpadService.get_skeleton_html(name)`.
+2. The active focused ticket's `TechPadEditor` receives the markup via `insert_template_html(html)`.
+3. Any embedded Base64 image data URIs are automatically unpacked into unique JPEG resources (`image://local/<uuid>.jpg`), registered in the `QTextDocument` resource cache, and added to the editor's `in_memory_images`.
+4. The rich content is inserted directly at the active cursor position (`cursor.insertHtml(...)`), preserving existing ticket context.
+5. Auto-save is triggered via `content_modified(scratchpad_id)`, persisting all newly unpacked images to `scratchpad_images` in SQLite.

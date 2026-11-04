@@ -1,6 +1,7 @@
 """Customized QTextEdit for rich text, screenshots, drag-drop, and clickable links."""
 
 import base64
+import uuid
 from datetime import datetime
 from pathlib import Path
 import re
@@ -441,6 +442,45 @@ class TechPadEditor(QTextEdit):
         cursor.insertBlock()
         self.setTextCursor(cursor)
         self.image_inserted.emit(image_name)
+
+    def insert_template_html(self, html: str) -> None:
+        """
+        Inserts structured or custom template HTML at the current cursor position, unpacking
+        any embedded Base64 data URIs into local JPEG resources and updating in-memory caches.
+        """
+        data_uri_pattern = re.compile(
+            r'''src=["']data:image/([a-zA-Z0-9]+);base64,([A-Za-z0-9+/=\s]+)["']''',
+            re.IGNORECASE,
+        )
+
+        def repl(match: re.Match) -> str:
+            b64_str = match.group(2).replace("\n", "").replace("\r", "").strip()
+            try:
+                raw_bytes = base64.b64decode(b64_str)
+                if self.image_service:
+                    image_name, resource_url, jpeg_bytes, qimage = self.image_service.create_embedded_image(raw_bytes)
+                else:
+                    image_name = f"{uuid.uuid4().hex}.jpg"
+                    resource_url = f"{LOCAL_IMAGE_URL_PREFIX}{image_name}"
+                    qimage = QImage()
+                    qimage.loadFromData(raw_bytes)
+                    jpeg_bytes = raw_bytes
+
+                self.in_memory_images[image_name] = jpeg_bytes
+                if self.image_service:
+                    self.image_service.register_image_in_document(self.document(), image_name, qimage)
+                else:
+                    self.document().addResource(QTextDocument.ImageResource, QUrl(resource_url), qimage)
+                return f'src="{resource_url}"'
+            except Exception:
+                return match.group(0)
+
+        processed_html = data_uri_pattern.sub(repl, html)
+        cursor = self.textCursor()
+        cursor.insertHtml(processed_html)
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+        self._on_text_changed()
 
     def load_content(self, html_content: str) -> None:
         """Populates document and loads all stored images from SQLite into document resources."""

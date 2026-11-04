@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
 from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
+from src.repositories.template_repository import TemplateRepository
 from src.services.image_service import ImageService
 from src.services.stopwatch_service import StopwatchService
 
@@ -33,9 +34,11 @@ class ScratchpadService:
         self,
         scratchpad_repo: ScratchpadRepository,
         image_service: ImageService,
+        template_repo: Optional[TemplateRepository] = None,
     ):
         self.repo = scratchpad_repo
         self.image_service = image_service
+        self.template_repo = template_repo or TemplateRepository(scratchpad_repo.db)
 
     def create_ticket(
         self,
@@ -190,8 +193,41 @@ class ScratchpadService:
         return list(TICKET_SKELETONS.keys())
 
     def get_skeleton_html(self, name: str) -> str:
-        """Returns the HTML for the named template skeleton."""
-        return TICKET_SKELETONS.get(name, "")
+        """Returns the HTML for the named template skeleton or custom template."""
+        if name in TICKET_SKELETONS:
+            return TICKET_SKELETONS[name]
+        custom = self.template_repo.get_by_title(name)
+        if custom:
+            return custom.get("content_html", "")
+        return ""
+
+    def get_custom_templates(self) -> List[Dict[str, Any]]:
+        """Returns all custom user-defined templates."""
+        return self.template_repo.get_all()
+
+    def get_custom_template_titles(self) -> List[str]:
+        """Returns titles of all custom user-defined templates."""
+        return [t["title"] for t in self.template_repo.get_all()]
+
+    def add_custom_template(self, title: str, content_html: str) -> int:
+        """
+        Validates and adds or updates a custom user template.
+        Raises ValueError if title or content is empty.
+        """
+        clean_title = title.strip()
+        if not clean_title:
+            raise ValueError("Template title cannot be empty.")
+        if not content_html or not content_html.strip():
+            raise ValueError("Template content cannot be empty.")
+        return self.template_repo.create(clean_title, content_html)
+
+    def delete_custom_template(self, template_id: int) -> bool:
+        """Deletes a custom template by its ID."""
+        return self.template_repo.delete(template_id)
+
+    def delete_custom_template_by_title(self, title: str) -> bool:
+        """Deletes a custom template by its title."""
+        return self.template_repo.delete_by_title(title)
 
     def export_as_plain_ticket_note(self, scratchpad_id: int) -> str:
         """

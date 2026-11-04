@@ -712,8 +712,28 @@ class M365LauncherWidget(QWidget):
         else:
             html = TICKET_SKELETONS.get(skeleton_name, "")
         if html:
-            self.ticket_editor.textCursor().insertHtml(html)
+            if hasattr(self.ticket_editor, "insert_template_html"):
+                self.ticket_editor.insert_template_html(html)
+            else:
+                self.ticket_editor.textCursor().insertHtml(html)
         self.ticket_editor.setFocus()
+
+    def update_templates_menu(self, custom_templates: Optional[list] = None) -> None:
+        """Updates the sidebar template menu with built-in and custom templates."""
+        if not hasattr(self, "btn_template"):
+            return
+        template_menu = QMenu(self.btn_template)
+        for name in TICKET_SKELETONS.keys():
+            act = template_menu.addAction(name)
+            act.triggered.connect(lambda checked=False, n=name: self._insert_template(n))
+        if custom_templates:
+            template_menu.addSeparator()
+            for item in custom_templates:
+                title = item.get("title", "") if isinstance(item, dict) else str(item)
+                if title:
+                    act = template_menu.addAction(title)
+                    act.triggered.connect(lambda checked=False, t=title: self._insert_template(t))
+        self.btn_template.setMenu(template_menu)
 
     def _copy_formatted_note(self) -> None:
         if self._active_editor:

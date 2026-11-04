@@ -26,6 +26,7 @@ class TechPadToolBar(QToolBar):
     image_requested = Signal()
     timestamp_requested = Signal()
     skeleton_selected = Signal(str)
+    add_template_requested = Signal()   # Emits when '🔳 Add a new template' is clicked
     copy_formatted_requested = Signal() # Emits when rich formatted copy requested
     export_note_requested = Signal()
     code_block_requested = Signal()
@@ -55,6 +56,28 @@ class TechPadToolBar(QToolBar):
     def set_active_editor(self, editor) -> None:
         """Binds toolbar formatting actions to the currently active editor."""
         self._current_editor = editor
+
+    def update_templates_menu(self, custom_templates: Optional[list] = None) -> None:
+        """Populates the Template dropdown menu with skeletons, custom templates, and the add action."""
+        menu = QMenu(self.btn_skeleton)
+
+        for name in TICKET_SKELETONS.keys():
+            act = menu.addAction(name)
+            act.triggered.connect(lambda checked=False, n=name: self.skeleton_selected.emit(n))
+
+        if custom_templates:
+            menu.addSeparator()
+            for item in custom_templates:
+                title = item.get("title", "") if isinstance(item, dict) else str(item)
+                if title:
+                    act = menu.addAction(title)
+                    act.triggered.connect(lambda checked=False, t=title: self.skeleton_selected.emit(t))
+
+        menu.addSeparator()
+        act_add = menu.addAction("🔳 Add a new template")
+        act_add.triggered.connect(self.add_template_requested.emit)
+
+        self.btn_skeleton.setMenu(menu)
 
     def _suppress_extension_buttons(self) -> None:
         """Suppresses the 3-dots overflow extension button across both toolbars."""
@@ -213,13 +236,8 @@ class TechPadToolBar(QToolBar):
         self.btn_skeleton = QToolButton(self.secondary_toolbar)
         self.btn_skeleton.setText("📋 Template")
         self.btn_skeleton.setPopupMode(QToolButton.InstantPopup)
-        self.btn_skeleton.setToolTip("Insert Structured Ticket Skeleton (Ctrl+Alt+S)")
-        skeleton_menu = QMenu(self.btn_skeleton)
-
-        for name in TICKET_SKELETONS.keys():
-            act = skeleton_menu.addAction(name)
-            act.triggered.connect(lambda checked=False, n=name: self.skeleton_selected.emit(n))
-        self.btn_skeleton.setMenu(skeleton_menu)
+        self.btn_skeleton.setToolTip("Insert Structured Ticket Skeleton or Custom Template (Ctrl+Alt+S)")
+        self.update_templates_menu()
         self.secondary_toolbar.addWidget(self.btn_skeleton)
 
         self.secondary_toolbar.addSeparator()

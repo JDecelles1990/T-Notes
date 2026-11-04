@@ -100,3 +100,14 @@ def init_database(db_manager: DatabaseManager) -> None:
             conn.execute("INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');")
         except sqlite3.OperationalError:
             pass
+
+        # 7. Ensure custom_templates table exists
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS custom_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL UNIQUE,
+                content_html TEXT NOT NULL DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)

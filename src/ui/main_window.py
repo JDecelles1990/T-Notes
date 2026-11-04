@@ -9,6 +9,7 @@ from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
     QLabel,
     QMainWindow,
@@ -33,6 +34,7 @@ from src.ui.components.history_drawer import HistoryDrawer
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
+from src.ui.dialogs.add_template_dialog import AddTemplateDialog
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
 from src.ui.m365.launcher_widget import M365LauncherWidget
@@ -90,6 +92,7 @@ class TechPadMainWindow(QMainWindow):
         self._setup_shortcuts()
         self._setup_tray_and_hotkey()
         self._restore_workspace()
+        self._refresh_template_menus()
 
         # Install application-level event filter for reliable global shortcut interception
         if app := QApplication.instance():
@@ -245,6 +248,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar = TechPadToolBar(self)
         self.toolbar.image_requested.connect(self._on_insert_image_file)
         self.toolbar.skeleton_selected.connect(self._on_skeleton_selected)
+        self.toolbar.add_template_requested.connect(self._on_add_new_template)
         self.toolbar.checklist_requested.connect(self._on_insert_checklist)
         self.toolbar.copy_formatted_requested.connect(self._on_copy_formatted_note)
         self.toolbar.export_note_requested.connect(self._on_export_note)
@@ -1391,6 +1395,28 @@ class TechPadMainWindow(QMainWindow):
                 data = f.read()
             editor.insert_embedded_image(data)
 
+    def _refresh_template_menus(self) -> None:
+        """Refreshes the template dropdown menus with current custom templates."""
+        custom_templates = []
+        if hasattr(self, "scratchpad_service") and self.scratchpad_service:
+            custom_templates = self.scratchpad_service.get_custom_templates()
+        if hasattr(self, "toolbar") and self.toolbar:
+            self.toolbar.update_templates_menu(custom_templates)
+        if hasattr(self, "m365_workspace") and hasattr(self.m365_workspace, "update_templates_menu"):
+            self.m365_workspace.update_templates_menu(custom_templates)
+
+    def _on_add_new_template(self) -> None:
+        """Opens dialog to create a new custom template with rich formatting and saves it."""
+        dialog = AddTemplateDialog(self, image_service=self.image_service)
+        if dialog.exec() == QDialog.Accepted:
+            title, content_html = dialog.get_template_data()
+            try:
+                self.scratchpad_service.add_custom_template(title, content_html)
+                self._refresh_template_menus()
+                self.status_bar.showMessage(f"✓ Saved template '{title}'", 3500)
+            except Exception as e:
+                QMessageBox.warning(self, "Error Saving Template", f"Failed to save template: {e}")
+
     def _on_skeleton_selected(self, skeleton_name: str) -> None:
         """Inserts selected ticket template into active focused editor."""
         editor = self._get_active_editor()
@@ -1398,7 +1424,10 @@ class TechPadMainWindow(QMainWindow):
             return
         html = self.scratchpad_service.get_skeleton_html(skeleton_name)
         if html:
-            editor.textCursor().insertHtml(html)
+            if hasattr(editor, "insert_template_html"):
+                editor.insert_template_html(html)
+            else:
+                editor.textCursor().insertHtml(html)
 
     def _on_insert_checklist(self) -> None:
         """Inserts an interactive checklist item in the active focused editor."""

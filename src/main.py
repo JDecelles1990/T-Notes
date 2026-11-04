@@ -12,6 +12,7 @@ from src.database.migrations import init_database
 from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.repositories.session_repository import SessionRepository
+from src.repositories.template_repository import TemplateRepository
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
@@ -47,10 +48,11 @@ def main() -> int:
     scratchpad_repo = ScratchpadRepository(db_manager)
     image_repo = ImageRepository(db_manager)
     session_repo = SessionRepository(db_manager)
+    template_repo = TemplateRepository(db_manager)
 
     # Initialize Services (Business Logic Layer)
     image_service = ImageService(image_repo)
-    scratchpad_service = ScratchpadService(scratchpad_repo, image_service)
+    scratchpad_service = ScratchpadService(scratchpad_repo, image_service, template_repo)
     session_service = SessionService(session_repo, scratchpad_service)
 
     # Launch Main Window (Presentation Layer)

@@ -90,6 +90,22 @@ Stores persistent user preferences as key-value pairs.
 
 ---
 
+### 2.5 `custom_templates`
+Stores user-defined rich-text note templates with embedded formatting and images.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique identifier for the custom template. |
+| `title` | `TEXT` | `NOT NULL UNIQUE` | Unique title shown in the Template dropdown menu. |
+| `content_html` | `TEXT` | `NOT NULL DEFAULT ''` | Self-contained rich-text HTML markup with embedded Base64 JPEG images. |
+| `created_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of template creation. |
+| `updated_at` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of last template edit. |
+
+**Repository Access:**
+Managed via `TemplateRepository` (`src/repositories/template_repository.py`) adhering to atomic transaction boundaries (`with connection:`).
+
+---
+
 ## 3. SQLite PRAGMA Configuration
 
 Every connection initialized by `DatabaseManager` runs the following PRAGMAs:
