@@ -1,0 +1,84 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.TEAMS.CLIENT_SIGNINS",
+  "title": "Inspect Microsoft Teams Client Sign-In Activity",
+  "description": "Inspect recent Microsoft Teams desktop, web, and mobile client authentication events.",
+  "category": "teams",
+  "subcategory": "diagnostics",
+  "tags": [
+    "teams",
+    "signins",
+    "client",
+    "meetings",
+    "graph"
+  ],
+  "script_path": "teams/client-signins/Get-TeamsClientSignIns.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "3245f77b8a7659194cff483045a4929e482e8a79024d4b2fef5f93380f52546a",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Reports",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "AuditLog.Read.All",
+    "Directory.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Reports.Reader",
+        "Security.Reader"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "LookbackDays",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 30,
+      "default": 7,
+      "description": "Number of days of events to inspect (1..30)."
+    },
+    {
+      "name": "MaxRecords",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10,
+      "description": "Maximum number of events to return (1..100)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+  "timeout_seconds": 45,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "restricted",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

@@ -5,8 +5,7 @@
       "manifest_path": "entra-id/user-identity/operation.manifest.json",
       "manifest_sha256": "d119df2dc7d7d3e366496063fd668dda6d87a90a4e85e57033f9edf7f314959e",
       "category_ids": [
-        "entra-id",
-        "general"
+        "entra-id"
       ],
       "lifecycle": "active"
     },
@@ -14,8 +13,7 @@
       "manifest_path": "licensing/user-licenses/operation.manifest.json",
       "manifest_sha256": "d349f2ba22e9a386f792c8265bf5a7eeb305d56163c3b144a151c56064ea4f0e",
       "category_ids": [
-        "licensing",
-        "entra-id"
+        "licensing"
       ],
       "lifecycle": "active"
     },
@@ -23,9 +21,7 @@
       "manifest_path": "entra-id/user-signins/operation.manifest.json",
       "manifest_sha256": "48b6096735dfc2a968a424d2fbe8e9820faf776971b28e5c853ad7ebdc245e35",
       "category_ids": [
-        "entra-id",
-        "security",
-        "reports"
+        "entra-id"
       ],
       "lifecycle": "active"
     },
@@ -33,8 +29,112 @@
       "manifest_path": "exchange-online/mailbox-summary/operation.manifest.json",
       "manifest_sha256": "d6d0fc23114c02e89061628dfbf68ff296262edc255ea2d933ae1e7faa8f21f6",
       "category_ids": [
-        "exchange-online",
+        "exchange-online"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "general/tenant-user-overview/operation.manifest.json",
+      "manifest_sha256": "49cdef21712156d6ffdd167c91d951a499978f3cc2b355d0c3afe7981f3df863",
+      "category_ids": [
         "general"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "general/service-readiness/operation.manifest.json",
+      "manifest_sha256": "b7c1a1de0be60a70813f671919456e865184940ae0f784c00cdd144e4f8f44ca",
+      "category_ids": [
+        "general"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "entra-id/user-mfa-audit/operation.manifest.json",
+      "manifest_sha256": "7bf511ce3073ddf7718a2c3904398b03ec3163ec9322062c90a83e0d176cb0aa",
+      "category_ids": [
+        "entra-id",
+        "security"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "exchange-online/mailbox-quota-hold/operation.manifest.json",
+      "manifest_sha256": "5d898448d5d38fa3d3e59b0f217e801592208aa4ebdea81af83426d540a1cc44",
+      "category_ids": [
+        "exchange-online"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "licensing/service-plan-audit/operation.manifest.json",
+      "manifest_sha256": "43cf6307724bb3c1f36755d1381ab7dd1ecf40731aaeb84c6fe35de9f05210f1",
+      "category_ids": [
+        "licensing"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "teams/user-readiness/operation.manifest.json",
+      "manifest_sha256": "232118a497f536efa97858b927200ad1dcb2ff1c6a7dfa5298c8aeb805933317",
+      "category_ids": [
+        "teams"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "teams/client-signins/operation.manifest.json",
+      "manifest_sha256": "1f98b2064eb61c656e4c3c7a477d884fcec62faa82e2d90d564d8f332f2c9ac0",
+      "category_ids": [
+        "teams"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "sharepoint/access-diagnostic/operation.manifest.json",
+      "manifest_sha256": "a63296c034d97af508ae75df475cf4201105ad1d509cc80d3647aa7126ec728b",
+      "category_ids": [
+        "sharepoint"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "onedrive/sync-diagnostic/operation.manifest.json",
+      "manifest_sha256": "9b99dd302b52c2944b759002d715b0a7f826ee33e83aef829c30db9785f71da1",
+      "category_ids": [
+        "onedrive"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "intune/compliance-enrollment/operation.manifest.json",
+      "manifest_sha256": "29232fb306dc487fbbdaab09f717874ff652433d6d0fd434c5df3c6dcec09a5f",
+      "category_ids": [
+        "intune"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "security/risky-signins/operation.manifest.json",
+      "manifest_sha256": "0a0e0963e4d6625f851c18587125aaa1ca95c5b9d1d1e003951cdfcb3ecdaf30",
+      "category_ids": [
+        "security"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "reports/user-access-audit/operation.manifest.json",
+      "manifest_sha256": "1eaab0279b8b538e1b966da8d95cac941b7241d326ad20b2b7e7fdfb52dd8893",
+      "category_ids": [
+        "reports"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "other/upn-smtp-alignment/operation.manifest.json",
+      "manifest_sha256": "68a4dcb7a3cf1c6fe733ea1ebd5403080bea4150aa4240a9f99346a5922d4e1f",
+      "category_ids": [
+        "other"
       ],
       "lifecycle": "active"
     }

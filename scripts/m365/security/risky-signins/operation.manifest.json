@@ -1,0 +1,85 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.SECURITY.RISKY_SIGNIN_AUDIT",
+  "title": "Audit Risky Sign-Ins & Authentication Failures",
+  "description": "Inspect Entra ID sign-in logs for failed authentication attempts, MFA blocks, and security alerts.",
+  "category": "security",
+  "subcategory": "identity-protection",
+  "tags": [
+    "security",
+    "defender",
+    "risky-signins",
+    "audit",
+    "mfa",
+    "graph"
+  ],
+  "script_path": "security/risky-signins/Get-SecurityRiskySignIns.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "919aae373a87d5e7822d1483704c490bdfe182a51c161e5ea0be5f53214c0028",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Reports",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "AuditLog.Read.All",
+    "Directory.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Reports.Reader",
+        "Security.Reader"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "LookbackDays",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 30,
+      "default": 14,
+      "description": "Number of days of events to inspect (1..30)."
+    },
+    {
+      "name": "MaxRecords",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20,
+      "description": "Maximum number of events to return (1..100)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+  "timeout_seconds": 45,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "restricted",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

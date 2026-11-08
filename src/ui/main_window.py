@@ -460,7 +460,7 @@ class TechPadMainWindow(QMainWindow):
     def is_split_view_active(self) -> bool:
         """Returns True if Split View is currently active and open."""
         return getattr(self, "_user_split_view_active", False) and (
-            self.secondary_tab_widget.isVisible()
+            not self.secondary_tab_widget.isHidden()
             or getattr(self, "_split_auto_single_pane", False)
             or (getattr(self, "is_mini_hud", False) and getattr(self, "_saved_split_active", False))
             or (getattr(self, "is_m365_workspace", False) and getattr(self, "_notes_split_active", False))
@@ -728,12 +728,17 @@ class TechPadMainWindow(QMainWindow):
         # 3. Split view active state
         if self.is_mini_hud:
             split_active = getattr(self, "_saved_split_active", False) and (len(secondary_ids) > 0)
+        elif self.is_m365_workspace:
+            split_active = getattr(self, "_notes_split_active", False) and (len(secondary_ids) > 0)
         else:
             split_active = self.is_split_view_active and (len(secondary_ids) > 0)
 
-        # 4. Split sizes
+        # 4. Split sizes: preserve valid splitter sizes and avoid saving collapsed 0-width panes
         sizes = self.workspace_splitter.sizes() if hasattr(self, "workspace_splitter") else []
-        split_sizes_str = json.dumps(sizes) if sizes else ""
+        if sizes and len(sizes) == 2 and all(s >= 50 for s in sizes):
+            self._saved_splitter_sizes = sizes
+        saved_sizes = getattr(self, "_saved_splitter_sizes", None)
+        split_sizes_str = json.dumps(saved_sizes if saved_sizes else sizes) if (saved_sizes or sizes) else ""
 
         # 5. Window geometry and opacity
         geometry_hex = self.saveGeometry().toHex().data().decode("utf-8") if hasattr(self, "saveGeometry") else ""
@@ -830,20 +835,21 @@ class TechPadMainWindow(QMainWindow):
             if self.tab_widget.count() > 0:
                 self.tab_widget.setCurrentIndex(prim_focus_idx)
 
+            # Always populate secondary_tab_widget with sec_tickets so tabs are NEVER dropped or lost
+            sec_focus_idx = 0
+            for i, ticket in enumerate(sec_tickets):
+                editor = self._create_editor(ticket["id"], ticket.get("content_html", ""))
+                idx = self.secondary_tab_widget.add_ticket_tab(ticket, editor)
+                if ticket["id"] == split_active_id:
+                    sec_focus_idx = idx
+
+            if self.secondary_tab_widget.count() > 0:
+                self.secondary_tab_widget.setCurrentIndex(sec_focus_idx)
+
             if split_active and sec_tickets:
                 self._user_split_view_active = True
                 self.toolbar.btn_split.setChecked(True)
                 self.btn_toggle_split.setText("◫ Single (Alt+Z)")
-
-                sec_focus_idx = 0
-                for i, ticket in enumerate(sec_tickets):
-                    editor = self._create_editor(ticket["id"], ticket.get("content_html", ""))
-                    idx = self.secondary_tab_widget.add_ticket_tab(ticket, editor)
-                    if ticket["id"] == split_active_id:
-                        sec_focus_idx = idx
-
-                if self.secondary_tab_widget.count() > 0:
-                    self.secondary_tab_widget.setCurrentIndex(sec_focus_idx)
 
                 # Parse and apply splitter sizes
                 split_sizes = []
@@ -871,12 +877,14 @@ class TechPadMainWindow(QMainWindow):
                     self.tab_widget.show()
                     self.secondary_tab_widget.show()
                     self.btn_switch_split_pane.setVisible(False)
-                    if split_sizes and len(split_sizes) == 2 and sum(split_sizes) > 0:
+                    if split_sizes and len(split_sizes) == 2 and all(s >= 100 for s in split_sizes):
                         self.workspace_splitter.setSizes(split_sizes)
+                        self._saved_splitter_sizes = split_sizes
                     else:
                         total_w = self.workspace_splitter.width() or self.width() or 1000
                         half = max(200, total_w // 2)
                         self.workspace_splitter.setSizes([half, half])
+                        self._saved_splitter_sizes = [half, half]
 
                 if focused_id in {t["id"] for t in sec_tickets}:
                     sec_ed = self.secondary_tab_widget.get_current_editor()
@@ -894,6 +902,13 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_switch_split_pane.setVisible(False)
                 self.tab_widget.show()
                 self.secondary_tab_widget.hide()
+                if split_sizes_raw:
+                    try:
+                        split_sizes = json.loads(split_sizes_raw)
+                        if split_sizes and len(split_sizes) == 2 and all(s >= 100 for s in split_sizes):
+                            self._saved_splitter_sizes = split_sizes
+                    except Exception:
+                        pass
                 self._on_current_tab_changed(self.tab_widget.currentIndex())
 
             if focused_id:
@@ -1210,6 +1225,23 @@ class TechPadMainWindow(QMainWindow):
             self._on_current_tab_changed(index)
 
     def _close_current_tab(self) -> None:
+        """Closes the current active tab in whichever pane currently has focus."""
+        active_editor = self._get_active_editor()
+        if active_editor:
+            _, tw, idx = self._find_editor_by_id(active_editor.scratchpad_id)
+            if tw is self.secondary_tab_widget and idx >= 0:
+                self._on_secondary_tab_close_requested(idx)
+                return
+            elif tw is self.tab_widget and idx >= 0:
+                self._on_tab_close_requested(idx)
+                return
+
+        if not self.secondary_tab_widget.isHidden() and self.secondary_tab_widget.hasFocus():
+            idx = self.secondary_tab_widget.currentIndex()
+            if idx >= 0:
+                self._on_secondary_tab_close_requested(idx)
+                return
+
         idx = self.tab_widget.currentIndex()
         if idx >= 0:
             self._on_tab_close_requested(idx)
@@ -1287,10 +1319,19 @@ class TechPadMainWindow(QMainWindow):
             self._on_tabs_reordered()
 
     def _select_tab_index(self, index: int) -> None:
-        """Selects a tab by direct index (Ctrl+1..Ctrl+9)."""
-        if 0 <= index < self.tab_widget.count():
-            self.tab_widget.setCurrentIndex(index)
-            editor = self.tab_widget.get_current_editor()
+        """Selects a tab by direct index (Ctrl+1..Ctrl+9) in active pane."""
+        active_editor = self._get_active_editor()
+        tw = self.tab_widget
+        if active_editor:
+            _, found_tw, _ = self._find_editor_by_id(active_editor.scratchpad_id)
+            if found_tw is self.secondary_tab_widget:
+                tw = self.secondary_tab_widget
+        elif not self.secondary_tab_widget.isHidden() and self.secondary_tab_widget.hasFocus():
+            tw = self.secondary_tab_widget
+
+        if 0 <= index < tw.count():
+            tw.setCurrentIndex(index)
+            editor = tw.get_current_editor()
             if editor:
                 editor.setFocus()
 
@@ -1361,9 +1402,12 @@ class TechPadMainWindow(QMainWindow):
         # Check if already open in primary or secondary
         ed, tw, idx = self._find_editor_by_id(scratchpad_id)
         if tw and idx >= 0:
-            tw.setCurrentIndex(idx)
-            if ed:
-                ed.setFocus()
+            if tw is self.secondary_tab_widget and self.secondary_tab_widget.isHidden():
+                self.open_split_view(target_scratchpad_id=scratchpad_id)
+            else:
+                tw.setCurrentIndex(idx)
+                if ed:
+                    ed.setFocus()
             return
 
         ticket = self.scratchpad_service.restore_ticket(scratchpad_id)
@@ -1872,6 +1916,14 @@ class TechPadMainWindow(QMainWindow):
                         if ed and ed.scratchpad_id == target_scratchpad_id:
                             self._move_tab_between_panes(self.tab_widget, self.secondary_tab_widget, i)
                             break
+                    else:
+                        ticket = self.scratchpad_service.get_ticket(target_scratchpad_id)
+                        if ticket:
+                            if ticket.get("status") == "archived":
+                                ticket = self.scratchpad_service.restore_ticket(target_scratchpad_id)
+                            editor = self._create_editor(ticket["id"], ticket.get("content_html", ""))
+                            idx = self.secondary_tab_widget.add_ticket_tab(ticket, editor)
+                            self.secondary_tab_widget.setCurrentIndex(idx)
         else:
             if target_scratchpad_id is not None:
                 moved = False
@@ -1911,7 +1963,7 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_switch_split_pane.setVisible(False)
             total_w = self.workspace_splitter.width() or self.width() or 1000
             saved_sizes = getattr(self, "_saved_splitter_sizes", None)
-            if saved_sizes and len(saved_sizes) == 2 and sum(saved_sizes) > 0:
+            if saved_sizes and len(saved_sizes) == 2 and all(s >= 100 for s in saved_sizes):
                 self.workspace_splitter.setSizes(saved_sizes)
             else:
                 sidebar_w = min(400, max(250, total_w // 3))
@@ -1975,7 +2027,7 @@ class TechPadMainWindow(QMainWindow):
         self._saved_row1_visible = self.toolbar.isVisible()
         self._saved_row2_visible = self.toolbar.secondary_toolbar.isVisible()
         self._saved_drawer_visible = self.history_drawer.isVisible()
-        self._saved_split_visible = self.secondary_tab_widget.isVisible()
+        self._saved_split_visible = not self.secondary_tab_widget.isHidden()
 
         if self._saved_was_maximized:
             self.showNormal()
@@ -1994,7 +2046,7 @@ class TechPadMainWindow(QMainWindow):
             self._saved_split_visible = self._notes_visibility.get(self.secondary_tab_widget, False)
         else:
             self._saved_split_active = self.is_split_view_active
-            self._saved_split_visible = self.secondary_tab_widget.isVisible()
+            self._saved_split_visible = not self.secondary_tab_widget.isHidden()
         self._saved_compact_pane = getattr(self, "_compact_active_pane", 0)
         self.secondary_tab_widget.hide()
         self.tab_widget.show()
@@ -2461,7 +2513,9 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_switch_split_pane.setVisible(False)
             return
         if current_width < 750 and not self.split_auto_single_pane:
-            self._saved_splitter_sizes = self.workspace_splitter.sizes()
+            sizes = self.workspace_splitter.sizes()
+            if sizes and len(sizes) == 2 and all(s >= 50 for s in sizes):
+                self._saved_splitter_sizes = sizes
             self._split_auto_single_pane = True
             ed = self._get_active_editor()
             if ed and self.secondary_tab_widget.indexOf(ed) != -1:
@@ -2479,8 +2533,9 @@ class TechPadMainWindow(QMainWindow):
             self.tab_widget.show()
             self.secondary_tab_widget.show()
             self.btn_switch_split_pane.setVisible(False)
-            if getattr(self, "_saved_splitter_sizes", None):
-                self.workspace_splitter.setSizes(self._saved_splitter_sizes)
+            saved = getattr(self, "_saved_splitter_sizes", None)
+            if saved and len(saved) == 2 and all(s >= 100 for s in saved):
+                self.workspace_splitter.setSizes(saved)
             else:
                 half = max(200, self.workspace_splitter.width() // 2)
                 self.workspace_splitter.setSizes([half, half])

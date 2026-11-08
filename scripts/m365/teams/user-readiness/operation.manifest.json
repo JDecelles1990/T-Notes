@@ -1,0 +1,74 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.TEAMS.USER_READINESS",
+  "title": "Inspect Teams Licensing & Voice Service Plans",
+  "description": "Verify Microsoft Teams core collaboration, audio conferencing, and phone system service plans.",
+  "category": "teams",
+  "subcategory": "voice-and-policies",
+  "tags": [
+    "teams",
+    "voice",
+    "calling",
+    "meetings",
+    "readiness",
+    "graph"
+  ],
+  "script_path": "teams/user-readiness/Get-TeamsUserReadiness.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "a5ecb3db8b25e8cde30ea366f6cb83c1578b35e857a22a222126371ec9dce14a",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "LicenseAssignment.Read.All",
+    "User.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Directory.Readers",
+        "License.Administrator"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "IncludeVoicePlans",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Include Teams Phone and Audio Conferencing service plans."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_licenses",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "internal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

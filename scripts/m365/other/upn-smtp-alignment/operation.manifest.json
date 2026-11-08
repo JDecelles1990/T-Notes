@@ -1,0 +1,65 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.OTHER.UPN_SMTP_ALIGNMENT",
+  "title": "Verify User UPN & Directory Profile Alignment",
+  "description": "Utility check verifying user principal name formatting, account state, and directory metadata.",
+  "category": "other",
+  "subcategory": "utilities",
+  "tags": [
+    "other",
+    "utilities",
+    "upn",
+    "alignment",
+    "graph"
+  ],
+  "script_path": "other/upn-smtp-alignment/Get-UpnSmtpAlignment.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "decf1f407449e4563ec166f9c23dddf62339fa16a6f462e621ae1631968a9da5",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "StrictDomainCheck",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Enforce strict domain suffix comparison during alignment check."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}

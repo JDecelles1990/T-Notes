@@ -1,0 +1,73 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.GENERAL.SERVICE_READINESS_AUDIT",
+  "title": "Cross-Service Provisioning & Readiness Audit",
+  "description": "Audit core Microsoft 365 service plan readiness across Exchange, Teams, SharePoint, and OneDrive.",
+  "category": "general",
+  "subcategory": "service-readiness",
+  "tags": [
+    "general",
+    "readiness",
+    "audit",
+    "provisioning",
+    "graph"
+  ],
+  "script_path": "general/service-readiness/Get-ServiceReadinessAudit.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "4788fd3a52e752d8ffc0a580142e1b4caf74764a672945fd765ed33856344ac2",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "LicenseAssignment.Read.All",
+    "User.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Directory.Readers",
+        "License.Administrator"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "IncludeCollaborationPlans",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Include Teams, SharePoint, and OneDrive service plans in the readiness check."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_licenses",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "internal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

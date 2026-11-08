@@ -538,8 +538,8 @@ class M365ExecutionService:
                 self._validate_schema("operation-data", data, fragment=fragment)
                 self._verify_output_binding(manifest, target, data)
 
-            # Update retained identity resolution when Get-UserIdentity succeeds or partially succeeds
-            if script_id == "M365.ENTRA.USER_IDENTITY" and status in ("success", "partial") and isinstance(data, dict):
+            # Update retained identity resolution when an identity operation succeeds or partially succeeds
+            if status in ("success", "partial") and isinstance(data, dict):
                 resolved_uid = data.get("id")
                 resolved_upn = data.get("user_principal_name")
                 if resolved_uid and resolved_upn:
@@ -1104,4 +1104,21 @@ class M365ExecutionService:
             cursor.insertText(preview.formatted_text + "\n")
         editor.setTextCursor(cursor)
         return preview.formatted_text
+
+    def execute_workflow(
+        self,
+        workflow_id: str,
+        step_script_ids: list[str],
+        *,
+        ticket_id: str | int | None = None,
+    ) -> list[ExecutionOutcome]:
+        """Execute a sequence of individually validated operations for a guided workflow."""
+        outcomes: list[ExecutionOutcome] = []
+        for sid in step_script_ids:
+            outcome = self.execute(sid, None, ticket_id=ticket_id)
+            outcomes.append(outcome)
+            if outcome.status not in ("success", "partial"):
+                break
+        return outcomes
+
 

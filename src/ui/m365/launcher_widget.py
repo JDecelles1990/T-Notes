@@ -11,8 +11,8 @@ from PySide6.QtGui import QAction, QColor, QFont, QTextCharFormat
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-    QListWidgetItem, QMenu, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox,
-    QSplitter, QToolButton, QVBoxLayout, QWidget,
+    QListWidgetItem, QMenu, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
+    QSpinBox, QSplitter, QToolButton, QVBoxLayout, QWidget,
 )
 
 from src.core.constants import LOG_BADGES, TICKET_SKELETONS
@@ -25,7 +25,111 @@ from src.services.m365_execution_service import (
     build_synthetic_catalog_service,
 )
 from src.ui.components.editor import TechPadEditor
+from src.ui.dialogs.m365_help_dialog import M365HelpDialog
 from src.ui.m365.company_context_panel import CompanyContextPanel
+
+
+CATEGORY_FUNCTION_PROFILES: dict[str, dict[str, str]] = {
+    "dashboard": {
+        "badge": "◫ Workspace Overview & Live Telemetry",
+        "service": "Graph + ExchangeOnline",
+        "focus": "Monitor tenant connection health, active target identity, catalog inventory, and session execution metrics.",
+    },
+    "companies": {
+        "badge": "🏢 Tenant Directory & Context Verification",
+        "service": "Graph + ExchangeOnline",
+        "focus": "Manage client tenant profiles, verified domains, administrator accounts, and target user identity binding.",
+    },
+    "general": {
+        "badge": "🧭 Cross-Service Health & Readiness",
+        "service": "Graph",
+        "focus": "Run reusable cross-service account health overviews and multi-workload service plan readiness audits.",
+    },
+    "entra-id": {
+        "badge": "👤 Identity, MFA & Directory Access",
+        "service": "Graph",
+        "focus": "Inspect Entra ID user profiles, resolve canonical Object IDs, and audit interactive/MFA sign-in events.",
+    },
+    "exchange-online": {
+        "badge": "✉ Mailboxes, Quotas, Archive & Hold",
+        "service": "ExchangeOnline",
+        "focus": "Inspect Exchange Online mailbox type, primary SMTP, storage quota usage, archive status, and litigation hold.",
+    },
+    "licensing": {
+        "badge": "🔑 SKU Assignments & Service Plan Provisioning",
+        "service": "Graph",
+        "focus": "Audit assigned Microsoft 365 license SKUs and verify per-workload service plan provisioning status.",
+    },
+    "teams": {
+        "badge": "👥 Microsoft Teams Voice, Policies & Sign-Ins",
+        "service": "Graph",
+        "focus": "Inspect Teams collaboration/voice service plans and recent Teams desktop/web/mobile client sign-ins.",
+    },
+    "sharepoint": {
+        "badge": "🌐 SharePoint Online Site Access & Collaboration",
+        "service": "Graph",
+        "focus": "Analyze SharePoint Online site authentication events, permissions, and conditional access outcomes.",
+    },
+    "onedrive": {
+        "badge": "☁ OneDrive for Business Provisioning & Sync",
+        "service": "Graph",
+        "focus": "Verify OneDrive for Business storage plan provisioning and backing SharePoint storage readiness.",
+    },
+    "intune": {
+        "badge": "💻 Intune Device Management & Compliance",
+        "service": "Graph",
+        "focus": "Inspect Microsoft Intune enrollment, Company Portal access, and device compliance sign-in telemetry.",
+    },
+    "security": {
+        "badge": "🛡 Defender, Risky Sign-Ins & MFA Posture",
+        "service": "Graph",
+        "focus": "Audit risky sign-in events, authentication failures, legacy auth blocks, and MFA enforcement.",
+    },
+    "reports": {
+        "badge": "📊 Read-Only Access & Audit Reporting",
+        "service": "Graph",
+        "focus": "Generate read-only historical user access and sign-in audit summaries for ticket documentation.",
+    },
+    "workflows": {
+        "badge": "⇄ Guided Multi-Step Diagnostic Orchestration",
+        "service": "Graph + ExchangeOnline",
+        "focus": "Run pre-built multi-step diagnostic sequences where each operation is individually validated.",
+    },
+    "other": {
+        "badge": "🧰 Directory Utilities & UPN/SMTP Alignment",
+        "service": "Graph",
+        "focus": "Run specialized directory utilities such as UPN suffix and primary SMTP alignment checks.",
+    },
+}
+
+WORKFLOW_DEFINITIONS: dict[str, dict[str, object]] = {
+    "full_user_snapshot": {
+        "title": "Full User Diagnostic Snapshot (4 Steps)",
+        "steps": [
+            "M365.ENTRA.USER_IDENTITY",
+            "M365.ENTRA.USER_LICENSES",
+            "M365.ENTRA.USER_SIGNINS",
+            "M365.EXCHANGE.MAILBOX_SUMMARY",
+        ],
+    },
+    "security_triage": {
+        "title": "Security & Access Incident Triage (3 Steps)",
+        "steps": [
+            "M365.ENTRA.USER_IDENTITY",
+            "M365.ENTRA.USER_MFA_AUDIT",
+            "M365.SECURITY.RISKY_SIGNIN_AUDIT",
+        ],
+    },
+    "collaboration_readiness": {
+        "title": "Collaboration & Storage Readiness (4 Steps)",
+        "steps": [
+            "M365.ENTRA.USER_IDENTITY",
+            "M365.TEAMS.USER_READINESS",
+            "M365.SHAREPOINT.ACCESS_DIAGNOSTIC",
+            "M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC",
+        ],
+    },
+}
 
 
 class HoverToolButton(QToolButton):
@@ -67,6 +171,7 @@ class M365LauncherWidget(QWidget):
         self._parameter_widgets: dict[str, tuple[str, QWidget]] = {}
         self._current_outcome: Optional[ExecutionOutcome] = None
         self._showing_raw_json = False
+        self.help_dialog: Optional[M365HelpDialog] = None
         self.setObjectName("m365LauncherWorkspace")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""
@@ -117,7 +222,7 @@ class M365LauncherWidget(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
 
-        # Header Row: Title & Back Button
+        # Header Row: Title, Help ('?') & Back Button
         header = QHBoxLayout()
         title = QVBoxLayout()
         lbl_title = QLabel("M365 PowerShell Launcher", self)
@@ -127,6 +232,28 @@ class M365LauncherWidget(QWidget):
         title.addWidget(lbl_title)
         title.addWidget(lbl_sub)
         header.addLayout(title, 1)
+
+        self.btn_help = QToolButton(self)
+        self.btn_help.setText("?")
+        self.btn_help.setObjectName("btnM365Help")
+        self.btn_help.setAccessibleName("M365 PowerShell Launcher Help")
+        self.btn_help.setToolTip("How to use the M365 PowerShell Launcher workspace")
+        self.btn_help.setFocusPolicy(Qt.StrongFocus)
+        self.btn_help.setFixedSize(28, 26)
+        self.btn_help.setStyleSheet("""
+            QToolButton#btnM365Help {
+                background-color: #21262d; border: 1px solid #30363d; border-radius: 4px;
+                color: #58a6ff; font-weight: bold; font-size: 11pt;
+            }
+            QToolButton#btnM365Help:hover {
+                background-color: #30363d; border-color: #58a6ff; color: #ffffff;
+            }
+            QToolButton#btnM365Help:pressed {
+                background-color: #1f6feb; color: #ffffff;
+            }
+        """)
+        self.btn_help.clicked.connect(self.show_help_dialog)
+        header.addWidget(self.btn_help)
 
         self.back_button = QPushButton("Back to T-Notes", self)
         self.back_button.setObjectName("btnBackToNotes")
@@ -234,37 +361,111 @@ class M365LauncherWidget(QWidget):
         self.category_description.setWordWrap(True)
         catalog_layout.addWidget(self.category_title)
         catalog_layout.addWidget(self.category_description)
+
+        # Dedicated Per-Category Function Card & Action Bar
+        self.category_function_card = QWidget(catalog_group)
+        self.category_function_card.setObjectName("m365CategoryFunctionCard")
+        self.category_function_card.setStyleSheet("""
+            QWidget#m365CategoryFunctionCard {
+                background-color: #21262d;
+                border: 1px solid #30363d;
+                border-radius: 4px;
+            }
+        """)
+        cat_card_layout = QVBoxLayout(self.category_function_card)
+        cat_card_layout.setContentsMargins(6, 6, 6, 6)
+        cat_card_layout.setSpacing(4)
+
+        self.lbl_category_badge = QLabel(self.category_function_card)
+        self.lbl_category_badge.setWordWrap(True)
+        self.lbl_category_badge.setStyleSheet("color: #58a6ff; font-weight: bold; font-size: 9pt;")
+        cat_card_layout.addWidget(self.lbl_category_badge)
+
+        self.lbl_category_function_summary = QLabel(self.category_function_card)
+        self.lbl_category_function_summary.setWordWrap(True)
+        self.lbl_category_function_summary.setStyleSheet("color: #c9d1d9; font-size: 8.5pt;")
+        cat_card_layout.addWidget(self.lbl_category_function_summary)
+
+        cat_btn_style = """
+            QToolButton {
+                background-color: #161b22; border: 1px solid #30363d; border-radius: 3px;
+                color: #c9d1d9; font-size: 10px; font-weight: bold; padding: 3px 6px;
+            }
+            QToolButton:hover { background-color: #30363d; border-color: #58a6ff; color: #ffffff; }
+            QToolButton:pressed { background-color: #1f6feb; color: #ffffff; }
+            QToolButton:disabled { color: #6e7681; border-color: #21262d; }
+        """
+        cat_btn_row = QHBoxLayout()
+        cat_btn_row.setContentsMargins(0, 2, 0, 0)
+        cat_btn_row.setSpacing(4)
+
+        self.btn_cat_quick_setup = QToolButton(self.category_function_card)
+        self.btn_cat_quick_setup.setText("⚡ Quick Setup")
+        self.btn_cat_quick_setup.setAccessibleName("Quick setup synthetic company, connections and target")
+        self.btn_cat_quick_setup.setToolTip("Load synthetic catalog, select Alpine Ski House, connect Graph + ExchangeOnline, and bind client@alpine.example")
+        self.btn_cat_quick_setup.setStyleSheet(cat_btn_style)
+        self.btn_cat_quick_setup.clicked.connect(self.quick_setup_context)
+        cat_btn_row.addWidget(self.btn_cat_quick_setup)
+
+        self.btn_cat_primary_action = QToolButton(self.category_function_card)
+        self.btn_cat_primary_action.setText("▶ Run Category Action")
+        self.btn_cat_primary_action.setAccessibleName("Execute primary category action")
+        self.btn_cat_primary_action.setStyleSheet(cat_btn_style)
+        self.btn_cat_primary_action.clicked.connect(self.run_category_primary_action)
+        cat_btn_row.addWidget(self.btn_cat_primary_action)
+
+        self.btn_cat_secondary_action = QToolButton(self.category_function_card)
+        self.btn_cat_secondary_action.setText("🛡 Security Triage")
+        self.btn_cat_secondary_action.setAccessibleName("Run Security Triage Workflow")
+        self.btn_cat_secondary_action.setStyleSheet(cat_btn_style)
+        self.btn_cat_secondary_action.clicked.connect(lambda: self.run_guided_workflow("security_triage"))
+        self.btn_cat_secondary_action.setVisible(False)
+        cat_btn_row.addWidget(self.btn_cat_secondary_action)
+
+        self.btn_cat_tertiary_action = QToolButton(self.category_function_card)
+        self.btn_cat_tertiary_action.setText("☁ Collab Readiness")
+        self.btn_cat_tertiary_action.setAccessibleName("Run Collaboration Readiness Workflow")
+        self.btn_cat_tertiary_action.setStyleSheet(cat_btn_style)
+        self.btn_cat_tertiary_action.clicked.connect(lambda: self.run_guided_workflow("collaboration_readiness"))
+        self.btn_cat_tertiary_action.setVisible(False)
+        cat_btn_row.addWidget(self.btn_cat_tertiary_action)
+
+        cat_btn_row.addStretch(1)
+        cat_card_layout.addLayout(cat_btn_row)
+        catalog_layout.addWidget(self.category_function_card)
         self.search_input = QLineEdit(catalog_group)
         self.search_input.setPlaceholderText("Search names, descriptions, tags or services")
         self.search_input.setAccessibleName("Search category operations")
         self.search_input.setMaxLength(256)
         self.search_input.setClearButtonEnabled(True)
         catalog_layout.addWidget(self.search_input)
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(0, 0, 0, 0)
+        filter_row.setSpacing(6)
         self.risk_filter = QComboBox(catalog_group)
         self.risk_filter.setAccessibleName("Filter operations by risk")
         for label, value in (("All risks", "all"), ("Read only", "read_only"), ("Write", "write"), ("High impact", "high_impact")):
             self.risk_filter.addItem(label, value)
-        catalog_layout.addWidget(self.risk_filter)
+        filter_row.addWidget(self.risk_filter, 1)
         self.lifecycle_filter = QComboBox(catalog_group)
         self.lifecycle_filter.setAccessibleName("Filter operations by lifecycle")
         for label, value in (("Current operations", "current"), ("Archived operations", "archived"), ("All lifecycle states", "all")):
             self.lifecycle_filter.addItem(label, value)
-        catalog_layout.addWidget(self.lifecycle_filter)
+        filter_row.addWidget(self.lifecycle_filter, 1)
+        catalog_layout.addLayout(filter_row)
         self.catalog_status = QLabel(catalog_group)
         self.catalog_status.setTextFormat(Qt.PlainText)
         self.catalog_status.setWordWrap(True)
         catalog_layout.addWidget(self.catalog_status)
         self.operation_list = QListWidget(catalog_group)
         self.operation_list.setAccessibleName("Category operations; metadata preview only")
-        self.operation_list.setMinimumHeight(90)
-        self.operation_list.setMaximumHeight(180)
-        catalog_layout.addWidget(self.operation_list)
+        self.operation_list.setMinimumHeight(140)
+        catalog_layout.addWidget(self.operation_list, 2)
         self.operation_details = QPlainTextEdit(catalog_group)
         self.operation_details.setReadOnly(True)
         self.operation_details.setAccessibleName("Operation metadata and unavailable reasons")
-        self.operation_details.setMinimumHeight(130)
-        self.operation_details.setMaximumHeight(230)
-        catalog_layout.addWidget(self.operation_details)
+        self.operation_details.setMinimumHeight(190)
+        catalog_layout.addWidget(self.operation_details, 3)
 
         # Group 0 & 1: Company Selection & Identity Context
         for group in self._content_groups[:2]:
@@ -280,20 +481,25 @@ class M365LauncherWidget(QWidget):
             else M365ExecutionService(self.context_service, self.catalog_service)
         )
 
-        # Group 3: Parameters
+        # Group 3: Parameters (compact height & width so Script Catalog has maximum room)
         params_group = self._content_groups[3]
+        params_group.setMinimumSize(140, 56)
+        params_group.setMaximumHeight(165)
+        params_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         params_layout = params_group.layout()
+        params_layout.setContentsMargins(6, 8, 6, 6)
+        params_layout.setSpacing(4)
         old_p = params_layout.takeAt(0).widget()
         old_p.hide()
         old_p.deleteLater()
         self.parameters_status = QLabel("Select an operation to inspect or configure parameters.", params_group)
         self.parameters_status.setWordWrap(True)
-        self.parameters_status.setStyleSheet("color: #9cdcfe; font-size: 9pt;")
+        self.parameters_status.setStyleSheet("color: #9cdcfe; font-size: 8.5pt;")
         params_layout.addWidget(self.parameters_status)
         self.parameters_form_container = QWidget(params_group)
         self.parameters_form = QFormLayout(self.parameters_form_container)
-        self.parameters_form.setContentsMargins(0, 4, 0, 0)
-        self.parameters_form.setSpacing(4)
+        self.parameters_form.setContentsMargins(0, 2, 0, 0)
+        self.parameters_form.setSpacing(3)
         params_layout.addWidget(self.parameters_form_container)
         params_layout.addStretch(1)
 
@@ -356,9 +562,8 @@ class M365LauncherWidget(QWidget):
         self.history_list = QListWidget(exec_group)
         self.history_list.setAccessibleName("Session execution history")
         self.history_list.setMinimumHeight(80)
-        self.history_list.setMaximumHeight(150)
         self.history_list.currentItemChanged.connect(self._history_item_selected)
-        exec_layout.addWidget(self.history_list)
+        exec_layout.addWidget(self.history_list, 1)
 
         # Group 5: Parsed Results & Active Ticket Insertion
         results_group = self._content_groups[5]
@@ -392,9 +597,8 @@ class M365LauncherWidget(QWidget):
         self.results_output.setReadOnly(True)
         self.results_output.setAccessibleName("Parsed operation results and sanitized JSON")
         self.results_output.setPlaceholderText("Run a synthetic operation or select a history entry to inspect results.")
-        self.results_output.setMinimumHeight(110)
-        self.results_output.setMaximumHeight(200)
-        results_layout.addWidget(self.results_output)
+        self.results_output.setMinimumHeight(130)
+        results_layout.addWidget(self.results_output, 1)
 
         self.lbl_results_notice = QLabel("", results_group)
         self.lbl_results_notice.setWordWrap(True)
@@ -639,6 +843,15 @@ class M365LauncherWidget(QWidget):
         layout.addWidget(self.workspace_splitter, 1)
         self.scroll_area.viewport().installEventFilter(self)
 
+    def show_help_dialog(self) -> M365HelpDialog:
+        """Open the modal M365 PowerShell Launcher User Guide dialog."""
+        if self.help_dialog is None:
+            self.help_dialog = M365HelpDialog(self)
+        self.help_dialog.open()
+        self.help_dialog.raise_()
+        self.help_dialog.activateWindow()
+        return self.help_dialog
+
     def enable_synthetic_catalog(self) -> None:
         """Switch the catalog and execution service to the 4 S2 offline synthetic operations."""
         self.catalog_service = build_synthetic_catalog_service()
@@ -692,8 +905,212 @@ class M365LauncherWidget(QWidget):
         if self.catalog_service.validation_errors:
             message += " Catalog contains rejected metadata; review the registration files."
         self.catalog_status.setText(message)
+        self._update_category_function_card()
         if operations:
             self.operation_list.setCurrentRow(0)
+
+    def _update_category_function_card(self) -> None:
+        cat_id = self.current_category_id or "dashboard"
+        profile = CATEGORY_FUNCTION_PROFILES.get(cat_id, CATEGORY_FUNCTION_PROFILES["other"])
+        self.lbl_category_badge.setText(f"{profile['badge']}  ·  Service: {profile['service']}")
+
+        ctx = self.context_service
+        company = ctx.company
+        confirmed = ctx.confirmed_company
+        graph_state = ctx.connections.state("Graph").state
+        exo_state = ctx.connections.state("ExchangeOnline").state
+        target_str = (
+            f"{ctx.target.upn} ({ctx.target.object_id})"
+            if ctx.target is not None
+            else (ctx.target_input.upn or "none")
+        )
+        total_ops = sum(
+            len(self.catalog_service.operations(c.id))
+            for c in self.catalog_service.categories
+            if c.kind == "operations"
+        )
+        hist = self.execution_service.history
+        ok_runs = sum(1 for h in hist if h.get("status") in ("success", "partial"))
+
+        self.btn_cat_secondary_action.setVisible(cat_id == "workflows")
+        self.btn_cat_tertiary_action.setVisible(cat_id == "workflows")
+
+        if cat_id == "dashboard":
+            company_lbl = (
+                f"{company.display_name} (Confirmed)"
+                if (company and confirmed)
+                else (f"{company.display_name} (Unconfirmed)" if company else "None selected")
+            )
+            self.lbl_category_function_summary.setText(
+                f"{profile['focus']}\n"
+                f"• Tenant: {company_lbl} | Connections: Graph={graph_state}, EXO={exo_state}\n"
+                f"• Target: {target_str} | Loaded Scripts: {total_ops} | Session Runs: {len(hist)} ({ok_runs} OK)"
+            )
+            self.btn_cat_primary_action.setText("▶ Run Core Snapshot (4 Checks)")
+            self.btn_cat_primary_action.setToolTip("Execute Identity, Licenses, Sign-Ins, and Mailbox Summary sequentially")
+        elif cat_id == "companies":
+            companies = self.company_directory.search("")
+            comp_names = ", ".join(f"{c.display_name} ({c.primary_domain})" for c in companies[:4]) or "No companies"
+            admin_cnt = len(company.administrators) if company else 0
+            self.lbl_category_function_summary.setText(
+                f"{profile['focus']}\n"
+                f"• Directory ({len(companies)}): {comp_names}\n"
+                f"• Active Company Admins: {admin_cnt} | Admin Hint: {ctx.administrator_upn or 'none'} | Target: {target_str}"
+            )
+            self.btn_cat_primary_action.setText("🔑 Verify Target Identity")
+            self.btn_cat_primary_action.setToolTip("Run M365.ENTRA.USER_IDENTITY to verify and bind the target user's Entra Object ID")
+        elif cat_id == "workflows":
+            self.lbl_category_function_summary.setText(
+                f"{profile['focus']}\n"
+                "• 1. Full User Snapshot (Identity → Licenses → Sign-Ins → Mailbox Summary)\n"
+                "• 2. Security Triage (Identity → MFA Audit → Risky Sign-In Audit)\n"
+                "• 3. Collaboration Readiness (Identity → Teams → SharePoint → OneDrive)"
+            )
+            self.btn_cat_primary_action.setText("⇄ Full User Snapshot")
+            self.btn_cat_primary_action.setToolTip("Run the 4-step Full User Diagnostic Snapshot workflow")
+        else:
+            cat_ops = self.catalog_service.operations(cat_id)
+            cat_label = self.catalog_service.category(cat_id).label
+            op_titles = ", ".join(op.title for op in cat_ops) if cat_ops else "Click '🧪 Load Synthetic Snapshot' or '⚡ Quick Setup' to load category scripts."
+            self.lbl_category_function_summary.setText(
+                f"{profile['focus']}\n"
+                f"• {cat_label} Scripts ({len(cat_ops)}): {op_titles}"
+            )
+            self.btn_cat_primary_action.setText(f"▶ Run All {cat_label} ({len(cat_ops)})")
+            self.btn_cat_primary_action.setToolTip(f"Sequentially execute all PowerShell 7 operations in {cat_label}")
+
+    def quick_setup_context(self) -> bool:
+        """One-click helper to load the synthetic catalog and configure a verified synthetic tenant + target context."""
+        total_ops = sum(
+            len(self.catalog_service.operations(c.id))
+            for c in self.catalog_service.categories
+            if c.kind == "operations"
+        )
+        if total_ops == 0:
+            self.enable_synthetic_catalog()
+
+        companies = self.company_directory.search("Alpine") or self.company_directory.search("")
+        if not companies:
+            return False
+        company = companies[0]
+        idx = self.company_panel.company_combo.findData(company.company_id)
+        if idx >= 0:
+            self.company_panel.company_combo.setCurrentIndex(idx)
+        else:
+            self.context_service.select_company(company.company_id)
+
+        if not self.context_service.administrator_upn and company.administrators:
+            self.context_service.select_administrator(company.administrators[0].administrator_id)
+        self.context_service.connect_synthetic("Graph")
+        self.context_service.connect_synthetic("ExchangeOnline")
+        self.context_service.confirm_company()
+        default_upn = self.context_service.target_input.upn or f"client@{company.primary_domain}"
+        self.company_panel.target_upn.setText(default_upn)
+        self.context_service.set_target(default_upn)
+        try:
+            self.context_service.resolve_synthetic(
+                tenant_id=company.tenant_id,
+                resolved_upn=default_upn,
+                resolved_object_id="40000000-0000-4000-8000-000000000001",
+            )
+        except ValueError:
+            pass
+        self.company_panel.refresh_companies()
+        self._update_category_function_card()
+        return True
+
+    def run_category_primary_action(self):
+        """Execute the primary functional action for the currently selected category."""
+        cat_id = self.current_category_id or "dashboard"
+        if cat_id == "dashboard":
+            return self.run_guided_workflow("full_user_snapshot")
+        if cat_id == "companies":
+            if self.context_service.confirmed_company is None:
+                self.quick_setup_context()
+            outcome = self.execution_service.execute("M365.ENTRA.USER_IDENTITY")
+            self._on_operation_finished(outcome)
+            return [outcome]
+        if cat_id == "workflows":
+            return self.run_guided_workflow("full_user_snapshot")
+        return self.run_all_category_operations(cat_id)
+
+    def run_all_category_operations(self, category_id: Optional[str] = None) -> list[ExecutionOutcome]:
+        """Execute all PowerShell operations in the specified category and display a consolidated summary."""
+        cat_id = category_id or self.current_category_id or "general"
+        ops = self.catalog_service.operations(cat_id)
+        if not ops:
+            self.enable_synthetic_catalog()
+            ops = self.catalog_service.operations(cat_id)
+        if self.context_service.confirmed_company is None:
+            self.quick_setup_context()
+
+        step_ids = [op.id for op in ops]
+        if any(
+            json.loads(op.details).get("target_policy", {}).get("requires_resolved_identity")
+            for op in ops
+        ) and self.context_service.target is None:
+            if "M365.ENTRA.USER_IDENTITY" not in step_ids:
+                step_ids = ["M365.ENTRA.USER_IDENTITY", *step_ids]
+
+        ticket_id = self.ticket_editor.scratchpad_id if self._active_editor and self.ticket_editor.scratchpad_id > 0 else None
+        outcomes = self.execution_service.execute_workflow(f"CATEGORY.{cat_id.upper()}", step_ids, ticket_id=ticket_id)
+        if outcomes:
+            self._display_batch_outcomes(f"Category Run: {self.catalog_service.category(cat_id).label}", outcomes)
+        return outcomes
+
+    def run_guided_workflow(self, workflow_key: str) -> list[ExecutionOutcome]:
+        """Execute a named guided multi-step workflow and display the consolidated report."""
+        wf = WORKFLOW_DEFINITIONS.get(workflow_key)
+        if not wf:
+            return []
+        total_ops = sum(
+            len(self.catalog_service.operations(c.id))
+            for c in self.catalog_service.categories
+            if c.kind == "operations"
+        )
+        if total_ops == 0:
+            self.enable_synthetic_catalog()
+        if self.context_service.confirmed_company is None:
+            self.quick_setup_context()
+
+        ticket_id = self.ticket_editor.scratchpad_id if self._active_editor and self.ticket_editor.scratchpad_id > 0 else None
+        outcomes = self.execution_service.execute_workflow(
+            workflow_key,
+            list(wf["steps"]),
+            ticket_id=ticket_id,
+        )
+        if outcomes:
+            self._display_batch_outcomes(str(wf["title"]), outcomes)
+        return outcomes
+
+    def _display_batch_outcomes(self, title: str, outcomes: list[ExecutionOutcome]) -> None:
+        last = outcomes[-1]
+        self._current_outcome = last
+        self.btn_run_operation.setEnabled(self.current_operation_id is not None)
+        self.btn_cancel_operation.setEnabled(False)
+        ok_count = sum(1 for o in outcomes if o.status in ("success", "partial"))
+        self.lbl_exec_state.setText(
+            f"State: BATCH COMPLETE ({ok_count}/{len(outcomes)} succeeded) — {title}"
+        )
+        self._refresh_history_list()
+        combined_summary = f"### {title} ({ok_count}/{len(outcomes)} Steps Completed) ###\n\n" + "\n\n".join(
+            o.summary_text for o in outcomes
+        )
+        combined_json = json.dumps([o.result_envelope for o in outcomes], indent=2, ensure_ascii=False)
+        if self._showing_raw_json:
+            self.results_output.setPlainText(combined_json)
+        else:
+            self.results_output.setPlainText(combined_summary)
+
+        can_insert = (
+            last.insertion_preview is not None
+            and not last.insertion_preview.consumed
+            and self.ticket_editor.isEnabled()
+        )
+        self.btn_insert_into_ticket.setEnabled(can_insert)
+        self.lbl_results_notice.setText(f"Completed {len(outcomes)} step(s) for {title}.")
+        self.company_panel.refresh_status()
+        self._update_category_function_card()
 
     def _operation_changed(self, item, *_):
         self._clear_parameters_form()
@@ -828,6 +1245,7 @@ class M365LauncherWidget(QWidget):
         self._refresh_history_list()
         self._display_outcome(outcome)
         self.company_panel.refresh_status()
+        self._update_category_function_card()
 
     def _refresh_history_list(self) -> None:
         self.history_list.blockSignals(True)
@@ -1147,16 +1565,60 @@ class M365LauncherWidget(QWidget):
         for group in self._content_groups:
             self.content_layout.removeWidget(group)
 
-        for index, group in enumerate(self._content_groups):
-            if num_columns == 1:
-                self.content_layout.addWidget(group, index, 0)
-            else:
-                self.content_layout.addWidget(group, index // 2, index % 2)
+        if not hasattr(self, "_left_col_container"):
+            self._left_col_container = QWidget(self.content_widget)
+            self._left_col_layout = QVBoxLayout(self._left_col_container)
+            self._left_col_layout.setContentsMargins(0, 0, 0, 0)
+            self._left_col_layout.setSpacing(8)
+
+            self._right_col_container = QWidget(self.content_widget)
+            self._right_col_layout = QVBoxLayout(self._right_col_container)
+            self._right_col_layout.setContentsMargins(0, 0, 0, 0)
+            self._right_col_layout.setSpacing(8)
+
+        for group in self._content_groups:
+            self._left_col_layout.removeWidget(group)
+            self._right_col_layout.removeWidget(group)
+        self.content_layout.removeWidget(self._left_col_container)
+        self.content_layout.removeWidget(self._right_col_container)
+
+        for col in range(2):
+            self.content_layout.setColumnStretch(col, 0)
+        for row in range(6):
+            self.content_layout.setRowStretch(row, 0)
 
         self._current_columns = num_columns
         if num_columns == 1:
+            self._left_col_container.hide()
+            self._right_col_container.hide()
+            for index, group in enumerate(self._content_groups):
+                group.setParent(self.content_widget)
+                group.show()
+                self.content_layout.addWidget(group, index, 0)
+            self.content_layout.setColumnStretch(0, 1)
+            self.content_layout.setRowStretch(2, 4)  # Script Catalog (larger)
+            self.content_layout.setRowStretch(3, 0)  # Parameters (compact, no vertical stretch)
+            self.content_layout.setRowStretch(4, 2)  # Execution Workspace
+            self.content_layout.setRowStretch(5, 3)  # Parsed Results
             self.content_widget.setMinimumSize(220, 6 * 75)
         else:
+            self._left_col_container.show()
+            self._right_col_container.show()
+            # Left Column (60% width): Company Selection (compact) + Script Catalog (expands to fill height) + Execution Workspace
+            self._left_col_layout.addWidget(self._content_groups[0], 0)
+            self._left_col_layout.addWidget(self._content_groups[2], 4)
+            self._left_col_layout.addWidget(self._content_groups[4], 2)
+            # Right Column (40% width): Authentication & Tenant Context + Parameters (compact, zero dead space) + Parsed Results (expands)
+            self._right_col_layout.addWidget(self._content_groups[1], 0)
+            self._right_col_layout.addWidget(self._content_groups[3], 0)
+            self._right_col_layout.addWidget(self._content_groups[5], 3)
+            for group in self._content_groups:
+                group.show()
+            self.content_layout.addWidget(self._left_col_container, 0, 0)
+            self.content_layout.addWidget(self._right_col_container, 0, 1)
+            self.content_layout.setColumnStretch(0, 3)
+            self.content_layout.setColumnStretch(1, 2)
+            self.content_layout.setRowStretch(0, 1)
             self.content_widget.setMinimumSize(360, 3 * 75)
 
     def resizeEvent(self, event) -> None:

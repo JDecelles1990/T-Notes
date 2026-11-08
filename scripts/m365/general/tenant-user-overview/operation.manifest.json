@@ -1,0 +1,65 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.GENERAL.TENANT_USER_OVERVIEW",
+  "title": "Cross-Service User & Tenant Health Overview",
+  "description": "Inspect user account status, domain alignment, and cross-service readiness in Microsoft 365.",
+  "category": "general",
+  "subcategory": "health-checks",
+  "tags": [
+    "general",
+    "overview",
+    "health",
+    "diagnostics",
+    "graph"
+  ],
+  "script_path": "general/tenant-user-overview/Get-TenantUserOverview.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "ea1955b22dd33d7cc7c53bf29b45b6852e6ff8d8689392d3982389c3d17f13c0",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "VerifyDomainMatch",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Verify primary UPN suffix matches the confirmed tenant domain."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}

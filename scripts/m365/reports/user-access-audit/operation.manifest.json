@@ -1,0 +1,85 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.REPORTS.USER_ACCESS_AUDIT_REPORT",
+  "title": "Generate Read-Only User Access & Sign-In Audit Report",
+  "description": "Produce a read-only historical sign-in and application access summary report for ticket archival.",
+  "category": "reports",
+  "subcategory": "audit-reports",
+  "tags": [
+    "reports",
+    "audit",
+    "history",
+    "export",
+    "signins",
+    "graph"
+  ],
+  "script_path": "reports/user-access-audit/Get-UserAccessAuditReport.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "5d8a13301a298773231e104e31b3024e002b7d4522f8670517866c1ef2cf666b",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Reports",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "AuditLog.Read.All",
+    "Directory.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Reports.Reader",
+        "Security.Reader"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "LookbackDays",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 30,
+      "default": 30,
+      "description": "Number of days of events to inspect (1..30)."
+    },
+    {
+      "name": "MaxRecords",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 100,
+      "default": 25,
+      "description": "Maximum number of events to return (1..100)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+  "timeout_seconds": 45,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "restricted",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

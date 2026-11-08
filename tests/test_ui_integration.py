@@ -1910,3 +1910,226 @@ def test_ui_active_ticket_note_cursor_placement_and_copy_note(main_window, qapp,
 
     assert main_window._get_active_editor() == ed_sec
     assert f"#{sec_ticket['ticket_number']}" in main_window.lbl_active_info.text()
+
+
+def test_ui_split_view_closed_state_restart_never_drops_secondary_tickets(qapp, tmp_path):
+    """Verifies that closing Split View before quitting does NOT drop secondary tickets upon relaunch."""
+    db_file = tmp_path / "closed_split_restart.db"
+    manager = DatabaseManager(db_file)
+    init_database(manager)
+
+    scratch_repo = ScratchpadRepository(manager)
+    img_repo = ImageRepository(manager)
+    session_repo = SessionRepository(manager)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service)
+    session_service = SessionService(session_repo, scratch_service)
+
+    w1 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w1.show()
+    qapp.processEvents()
+
+    # Create 3 tickets: T1 in main, T2 and T3 in split view
+    w1.create_new_tab()
+    w1.create_new_tab()
+    qapp.processEvents()
+    assert w1.tab_widget.count() == 3
+
+    t1_id = w1.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = w1.tab_widget.get_editor_at(1).scratchpad_id
+    t3_id = w1.tab_widget.get_editor_at(2).scratchpad_id
+
+    # Open Split View with T2
+    w1.open_split_view(target_scratchpad_id=t2_id)
+    # Move T3 to Split View
+    ed, tw, idx = w1._find_editor_by_id(t3_id)
+    w1._move_tab_between_panes(w1.tab_widget, w1.secondary_tab_widget, idx)
+    qapp.processEvents()
+
+    assert w1.tab_widget.count() == 1
+    assert w1.secondary_tab_widget.count() == 2
+
+    # Close Split View (User toggles Single pane)
+    w1.close_split_view()
+    qapp.processEvents()
+    assert w1.secondary_tab_widget.isHidden() is True
+    assert w1.tab_widget.count() == 1
+    assert w1.secondary_tab_widget.count() == 2
+
+    # Close first window and exit
+    w1._force_quit = True
+    w1.close()
+    qapp.removeEventFilter(w1)
+    w1.deleteLater()
+    qapp.processEvents()
+
+    # Reopen second window on same database
+    w2 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w2.show()
+    qapp.processEvents()
+
+    # Verify: secondary_tab_widget STILL has T2 and T3, not lost!
+    assert w2.secondary_tab_widget.count() == 2
+    assert [w2.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]
+    assert w2.tab_widget.count() == 1
+    assert w2.tab_widget.get_editor_at(0).scratchpad_id == t1_id
+
+    # When user re-opens Split View, both tickets are immediately visible
+    w2.open_split_view()
+    qapp.processEvents()
+    assert w2.secondary_tab_widget.isVisible() is True
+    assert w2.secondary_tab_widget.count() == 2
+
+    w2._force_quit = True
+    w2.close()
+    qapp.removeEventFilter(w2)
+    w2.deleteLater()
+    qapp.processEvents()
+    manager.close()
+
+
+def test_ui_split_view_minimize_to_tray_and_quit_restores_split_view(qapp, tmp_path):
+    """Verifies that closing window to tray and quitting via tray preserves Split View active state and tickets."""
+    db_file = tmp_path / "tray_split_restart.db"
+    manager = DatabaseManager(db_file)
+    init_database(manager)
+
+    scratch_repo = ScratchpadRepository(manager)
+    img_repo = ImageRepository(manager)
+    session_repo = SessionRepository(manager)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service)
+    session_service = SessionService(session_repo, scratch_service)
+
+    w1 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w1.show()
+    qapp.processEvents()
+
+    w1.create_new_tab()
+    qapp.processEvents()
+    t1_id = w1.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = w1.tab_widget.get_editor_at(1).scratchpad_id
+
+    w1.open_split_view(target_scratchpad_id=t2_id)
+    qapp.processEvents()
+    assert w1.is_split_view_active is True
+    assert w1.secondary_tab_widget.count() == 1
+
+    # Simulate user clicking X (closeEvent minimizes to tray, hiding window)
+    w1.close()
+    qapp.processEvents()
+    assert w1.isHidden() is True
+    assert w1.tray_icon.isVisible() is True
+
+    # User right-clicks tray icon and chooses Quit
+    w1.quit_application()
+    qapp.removeEventFilter(w1)
+    w1.deleteLater()
+    qapp.processEvents()
+
+    # Reopen second window on same database
+    w2 = TechPadMainWindow(scratch_service, img_service, session_service)
+    w2.show()
+    qapp.processEvents()
+
+    # Split View must still be active and secondary ticket intact!
+    assert w2.is_split_view_active is True
+    assert w2.secondary_tab_widget.count() == 1
+    assert w2.secondary_tab_widget.get_editor_at(0).scratchpad_id == t2_id
+    assert w2.tab_widget.count() == 1
+    assert w2.tab_widget.get_editor_at(0).scratchpad_id == t1_id
+
+    w2._force_quit = True
+    w2.close()
+    qapp.removeEventFilter(w2)
+    w2.deleteLater()
+    qapp.processEvents()
+    manager.close()
+
+
+def test_ui_split_view_close_current_tab_targets_focused_pane(main_window, qapp):
+    """Verifies that Ctrl+W (_close_current_tab) closes the tab in the focused split pane, not the other."""
+    main_window.session_service.save_settings({"close_tab_action": "archive"})
+    main_window.create_new_tab()
+    qapp.processEvents()
+    assert main_window.tab_widget.count() == 2
+
+    t1_id = main_window.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = main_window.tab_widget.get_editor_at(1).scratchpad_id
+
+    main_window.open_split_view(target_scratchpad_id=t2_id)
+    qapp.processEvents()
+    assert main_window.tab_widget.count() == 1
+    assert main_window.secondary_tab_widget.count() == 1
+
+    sec_ed = main_window.secondary_tab_widget.get_current_editor()
+    sec_ed.setFocus()
+    main_window._on_editor_focused(sec_ed.scratchpad_id)
+    qapp.processEvents()
+    assert main_window._get_active_editor() == sec_ed
+
+    # Call _close_current_tab while focused in secondary pane
+    main_window._close_current_tab()
+    qapp.processEvents()
+
+    # The secondary pane tab should have closed, primary tab T1 must still be open!
+    assert main_window.tab_widget.count() == 1
+    assert main_window.tab_widget.get_editor_at(0).scratchpad_id == t1_id
+    assert main_window.secondary_tab_widget.count() == 0
+
+
+def test_ui_split_view_restore_ticket_reveals_hidden_secondary(main_window, qapp):
+    """Verifies that restoring or focusing a ticket in hidden secondary_tab_widget opens Split View."""
+    main_window.create_new_tab()
+    qapp.processEvents()
+    t1_id = main_window.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = main_window.tab_widget.get_editor_at(1).scratchpad_id
+
+    main_window.open_split_view(target_scratchpad_id=t2_id)
+    qapp.processEvents()
+    assert main_window.secondary_tab_widget.count() == 1
+
+    # Close Split View
+    main_window.close_split_view()
+    qapp.processEvents()
+    assert main_window.secondary_tab_widget.isHidden() is True
+
+    # User clicks on T2 from history or search
+    main_window._on_restore_ticket(t2_id)
+    qapp.processEvents()
+
+    # Split View must automatically open and reveal T2!
+    assert main_window.secondary_tab_widget.isHidden() is False
+    assert main_window.secondary_tab_widget.get_current_editor().scratchpad_id == t2_id
+
+
+def test_ui_split_view_restore_archived_ticket_when_secondary_not_empty(main_window, qapp):
+    """Verifies that restoring an archived ticket to Split View works when secondary pane is already populated."""
+    main_window.session_service.save_settings({"close_tab_action": "archive"})
+    main_window.create_new_tab()
+    main_window.create_new_tab()
+    qapp.processEvents()
+
+    t1_id = main_window.tab_widget.get_editor_at(0).scratchpad_id
+    t2_id = main_window.tab_widget.get_editor_at(1).scratchpad_id
+    t3_id = main_window.tab_widget.get_editor_at(2).scratchpad_id
+
+    # Open Split View with T2
+    main_window.open_split_view(target_scratchpad_id=t2_id)
+    qapp.processEvents()
+    assert main_window.secondary_tab_widget.count() == 1
+
+    # Archive T3 from primary pane
+    ed, tw, idx = main_window._find_editor_by_id(t3_id)
+    main_window._archive_tab(idx)
+    qapp.processEvents()
+    assert main_window.tab_widget.count() == 1
+    assert main_window.scratchpad_service.get_ticket(t3_id)["status"] == "archived"
+
+    # Now restore T3 into Split View via _on_history_split_restore
+    main_window._on_history_split_restore(t3_id)
+    qapp.processEvents()
+
+    # Secondary pane must now contain both T2 and T3!
+    assert main_window.secondary_tab_widget.count() == 2
+    assert [main_window.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]

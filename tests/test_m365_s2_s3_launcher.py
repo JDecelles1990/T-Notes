@@ -41,7 +41,7 @@ def exec_service(prepared_context):
 def test_s2_synthetic_catalog_loads_all_four_snapshot_operations():
     catalog = build_synthetic_catalog_service()
     assert not catalog.validation_errors
-    expected_ids = {
+    expected_core_ids = {
         "M365.ENTRA.USER_IDENTITY",
         "M365.ENTRA.USER_LICENSES",
         "M365.ENTRA.USER_SIGNINS",
@@ -53,7 +53,11 @@ def test_s2_synthetic_catalog_loads_all_four_snapshot_operations():
         if cat.kind == "operations"
         for op in catalog.operations(cat.id)
     }
-    assert found == expected_ids
+    assert expected_core_ids <= found
+    assert len(found) == 17
+    for cat in catalog.categories:
+        if cat.kind == "operations":
+            assert len(catalog.operations(cat.id)) >= 1, f"Category {cat.id} should have at least 1 script"
 
 
 def test_s2_user_identity_success_partial_and_errors(exec_service, prepared_context):
@@ -402,5 +406,104 @@ Write-Output 'ALL_MOCKS_PASSED'
     )
     assert proc.returncode == 0, f"stderr: {proc.stderr}"
     assert "ALL_MOCKS_PASSED" in proc.stdout
+
+
+def test_s3_launcher_help_button_and_user_guide_dialog(qapp):
+    widget = M365LauncherWidget(synthetic_mode=True)
+    widget.resize(1100, 800)
+    widget.show()
+    qapp.processEvents()
+    try:
+        assert widget.btn_help.isVisible() and widget.btn_help.isEnabled()
+        assert widget.btn_help.text() == "?"
+        assert widget.btn_help.accessibleName() == "M365 PowerShell Launcher Help"
+        assert "M365 PowerShell Launcher" in widget.btn_help.toolTip()
+        assert widget.help_dialog is None
+
+        QTest.mouseClick(widget.btn_help, Qt.LeftButton)
+        qapp.processEvents()
+
+        assert widget.help_dialog is not None
+        assert widget.help_dialog.isVisible()
+        guide_text = widget.help_dialog.help_browser.toPlainText()
+        assert "Load the Script Catalog" in guide_text
+        assert "Company Selection & Tenant Confirmation" in guide_text
+        assert "Authentication & Target Identity" in guide_text
+        assert "Browse Script Catalog & Configure Parameters" in guide_text
+        assert "Run, Cancel & Session Execution History" in guide_text
+        assert "Inspect Results & Insert into Active Ticket" in guide_text
+        assert "client@alpine.example" in guide_text
+        assert "partial.user@alpine.example" in guide_text
+        assert "missing@alpine.example" in guide_text
+        assert "denied@alpine.example" in guide_text
+
+        QTest.mouseClick(widget.help_dialog.btn_close, Qt.LeftButton)
+        qapp.processEvents()
+        assert not widget.help_dialog.isVisible()
+    finally:
+        widget.close()
+        widget.deleteLater()
+        qapp.processEvents()
+
+
+def test_s3_all_categories_separated_and_executable(qapp):
+    widget = M365LauncherWidget(synthetic_mode=True)
+    widget.resize(1100, 800)
+    widget.show()
+    qapp.processEvents()
+    try:
+        # 1. Verify Quick Setup configures context in one click
+        assert widget.quick_setup_context() is True
+        assert widget.context_service.confirmed_company is not None
+        assert widget.context_service.target is not None
+
+        # 2. Verify each of the 14 categories updates the separated category function card
+        badges_seen = set()
+        for row in range(widget.navigation.count()):
+            widget.navigation.setCurrentRow(row)
+            qapp.processEvents()
+            cat_id = widget.current_category_id
+            assert widget.category_function_card.isVisible()
+            badge_text = widget.lbl_category_badge.text()
+            assert badge_text
+            badges_seen.add((cat_id, badge_text))
+            if cat_id == "workflows":
+                assert widget.btn_cat_secondary_action.isVisible()
+                assert widget.btn_cat_tertiary_action.isVisible()
+            else:
+                assert not widget.btn_cat_secondary_action.isVisible()
+
+        assert len(badges_seen) == 14
+
+        # 3. Execute a category primary action on a newly added service category (e.g., Teams)
+        teams_row = [widget.navigation.item(i).data(Qt.UserRole) for i in range(14)].index("teams")
+        widget.navigation.setCurrentRow(teams_row)
+        qapp.processEvents()
+        teams_outcomes = widget.run_category_primary_action()
+        assert len(teams_outcomes) == 2
+        assert all(o.status == "success" for o in teams_outcomes)
+
+        # 4. Execute Security Triage guided workflow
+        sec_outcomes = widget.run_guided_workflow("security_triage")
+        assert len(sec_outcomes) == 3
+        assert all(o.status == "success" for o in sec_outcomes)
+        assert "Security & Access Incident Triage" in widget.results_output.toPlainText()
+
+        # 5. Verify Script Catalog groupbox is larger than Parameters groupbox and Parameters has no wasted vertical gap
+        catalog_group = widget._content_groups[2]
+        params_group = widget._content_groups[3]
+        auth_group = widget._content_groups[1]
+        results_group = widget._content_groups[5]
+        assert catalog_group.width() > params_group.width()
+        assert catalog_group.height() > params_group.height()
+        # Verify Parameters sits directly below Authentication & Tenant Context and directly above Parsed Results
+        assert params_group.geometry().top() - auth_group.geometry().bottom() <= 16
+        assert results_group.geometry().top() - params_group.geometry().bottom() <= 16
+    finally:
+        widget.close()
+        widget.deleteLater()
+        qapp.processEvents()
+
+
 
 

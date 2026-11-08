@@ -1,0 +1,73 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.LICENSING.SERVICE_PLAN_AUDIT",
+  "title": "Audit Assigned SKUs & Provisioning Service Plans",
+  "description": "Inspect assigned license SKUs and verify individual service plan provisioning state.",
+  "category": "licensing",
+  "subcategory": "provisioning",
+  "tags": [
+    "licensing",
+    "sku",
+    "service-plans",
+    "provisioning",
+    "graph"
+  ],
+  "script_path": "licensing/service-plan-audit/Get-ServicePlanAudit.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "655aa2c14edcf94650076e9f488a38cd79a9c65469ab7b7c77f2493a9512e070",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "LicenseAssignment.Read.All",
+    "User.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Directory.Readers",
+        "License.Administrator"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "OnlyProvisionedPlans",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Filter service plans to show actively provisioned plans."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_licenses",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "internal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

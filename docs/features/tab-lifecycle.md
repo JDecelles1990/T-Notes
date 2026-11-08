@@ -218,6 +218,11 @@ Tab layout and arrangement are continuously synchronized and reliably persisted:
      - `split_active_scratchpad_id`: Currently selected ticket in the secondary pane.
      - `split_sizes`: Exact horizontal splitter dimensions (e.g. `[420, 580]`).
    - On reboot, Split View automatically opens with the exact tickets in their respective panes, the exact tab orders within both panes, both tab selections, and the saved splitter proportions.
+   - **Never-Drop Guarantee for Secondary Tabs:** Even if Split View was closed prior to exiting or if the window was minimized to the system tray during exit, `_restore_workspace()` always instantiates and populates `secondary_tab_widget` with all secondary tickets (`sec_tickets`). Secondary tickets are never discarded, evicted, or purged from SQLite session state.
+   - **Safe Splitter Proportions:** Splitter dimensions are validated with `all(s >= 100 for s in split_sizes)` (and `s >= 50` on save). If a pane was collapsed to 0px (e.g. during workspace switching or single-pane HUD), the app safely resets to a 50/50 split rather than restoring an invisible 0-width pane.
+   - **Focus-Targeted Tab Closure (`Ctrl+W` / `Ctrl+F4`):** Tab closure commands automatically resolve focus via `_get_active_editor()` to target the tab in whichever pane currently has keyboard focus, preventing accidental closure of tickets in the inactive pane.
+   - **History & Search Restore to Hidden Secondary Pane:** Restoring a ticket that currently resides inside a hidden `secondary_tab_widget` automatically reopens Split View (`open_split_view()`) so the ticket is immediately visible and focused.
+   - **Multi-Ticket Secondary Restore:** Restoring an archived ticket to Split View when tickets are already open in the secondary pane appends the restored ticket to the secondary pane.
 
 ---
 
