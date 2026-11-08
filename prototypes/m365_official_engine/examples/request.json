@@ -18,8 +18,8 @@
   },
   "release_binding": {
     "script_version": "0.0.1-provisional",
-    "script_sha256": "0b5ccc113a88ef7077cc9130180a01d46483d95449ffb5de0039174eb4cafc80",
-    "manifest_sha256": "c59b16ff1fd7189eac447cc0eb9b8577a2ba99765c107a37aa78a48bd36b1a4f",
+    "script_sha256": "dfb5631523834c39307154ef21b1fc7dfcc8e77e10bb9f27b52f2fa4b8d72bca",
+    "manifest_sha256": "53c0621c63d44fd1d58be1d18923758dc6ebefed25c0a1f4da2c57a598b50ce8",
     "output_schema_sha256": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe"
   }
 }

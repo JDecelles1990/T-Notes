@@ -67,6 +67,14 @@ if ($scenario -like 'native_nested*' -or $scenario -eq 'native_enum') {
         'native_nested_array' { $result.data.events = @([datetime]::UtcNow) }
         'native_nested_dictionary' { $result.data.events = @(@{created_at=$event.created_at;app_display_name=$null;success=$true;error_code=0}) }
         'native_nested_null' { $event.created_at = $null }
+        'native_nested_array_ets' {
+            Add-Member -InputObject $result.data.events -MemberType ScriptProperty -Name Rank -Value {
+                [Console]::Out.WriteLine('NATIVE_NESTED_ARRAY_RANK_MUST_NOT_RUN'); 1
+            } -Force
+            Add-Member -InputObject $result.data.events -MemberType ScriptMethod -Name GetLowerBound -Value {
+                param($d) [Console]::Out.WriteLine('NATIVE_NESTED_ARRAY_LOWERBOUND_MUST_NOT_RUN'); 0
+            } -Force
+        }
     }
 }
 switch ($scenario) {
@@ -95,6 +103,39 @@ switch ($scenario) {
             [Console]::Out.WriteLine('NATIVE_TYPE_METHOD_MUST_NOT_RUN'); [string]
         } -Force
         $result.data.display_name = $value
+    }
+    'native_array_rank' {
+        Add-Member -InputObject $result.warnings -MemberType ScriptProperty -Name Rank -Value {
+            [Console]::Out.WriteLine('NATIVE_ARRAY_RANK_MUST_NOT_RUN'); 1
+        } -Force
+    }
+    'native_array_lowerbound' {
+        Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetLowerBound -Value {
+            param($d) [Console]::Out.WriteLine('NATIVE_ARRAY_LOWERBOUND_MUST_NOT_RUN'); 0
+        } -Force
+    }
+    'native_array_gettype' {
+        Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetType -Value {
+            [Console]::Out.WriteLine('NATIVE_ARRAY_GETTYPE_MUST_NOT_RUN'); [object[]]
+        } -Force
+    }
+    'native_array_ets_members' {
+        foreach ($prop in @('Length', 'LongLength', 'Count')) {
+            Add-Member -InputObject $result.warnings -MemberType ScriptProperty -Name $prop -Value {
+                [Console]::Out.WriteLine('NATIVE_ARRAY_ETS_PROP_MUST_NOT_RUN'); 0
+            } -Force
+        }
+        foreach ($meth in @('GetUpperBound', 'GetValue', 'GetEnumerator')) {
+            Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name $meth -Value {
+                [Console]::Out.WriteLine('NATIVE_ARRAY_ETS_METH_MUST_NOT_RUN'); $null
+            } -Force
+        }
+    }
+    'native_array_multidim' {
+        $result.warnings = [Array]::CreateInstance([object], [int[]]@(1, 1))
+    }
+    'native_array_nonzero_bound' {
+        $result.warnings = [Array]::CreateInstance([object], [int[]]@(1), [int[]]@(1))
     }
     'native_outer_dictionary' {
         return @{status=$result.status;operation_outcome=$result.operation_outcome;data=$result.data;warnings=@();errors=@()}

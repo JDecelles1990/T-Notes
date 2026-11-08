@@ -467,3 +467,101 @@ class EngineTests(unittest.TestCase):
 
     def test_native_type_method_not_evaluated(self):
         self.assert_native_rejected("native_type_method")
+
+    def test_native_array_rank_not_evaluated(self):
+        self.assert_native_rejected("native_array_rank")
+
+    def test_native_array_lowerbound_not_evaluated(self):
+        self.assert_native_rejected("native_array_lowerbound")
+
+    def test_native_array_gettype_not_evaluated(self):
+        self.assert_native_rejected("native_array_gettype")
+
+    def test_native_array_ets_members_not_evaluated(self):
+        self.assert_native_rejected("native_array_ets_members")
+
+    def test_native_nested_array_ets_not_evaluated(self):
+        self.assert_native_rejected("native_nested_array_ets", "native_nested")
+
+    def test_native_array_multidim_rejected(self):
+        self.assert_native_rejected("native_array_multidim")
+
+    def test_native_array_nonzero_bound_rejected(self):
+        self.assert_native_rejected("native_array_nonzero_bound")
+
+    def test_native_array_ets_side_effect_counters(self):
+        probe_root = self.output_dir / "array-ets-side-effect-probe"
+        target = probe_root / "prototypes" / "m365_official_engine"
+        if probe_root.exists():
+            shutil.rmtree(probe_root)
+        shutil.copytree(ROOT, target, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(ROOT.parents[1] / "docs/contracts/m365",
+                        target.parents[1] / "docs/contracts/m365")
+        original = (ROOT / "scripts/Fixture-Operation.ps1").read_text(encoding="utf-8")
+        cases = [
+            ("rank_scriptproperty",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptProperty -Name Rank -Value { [IO.File]::WriteAllText('INVOKED_FILE', '1'); 1 } -Force"),
+            ("lowerbound_scriptmethod",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetLowerBound -Value { param($d) [IO.File]::WriteAllText('INVOKED_FILE', '1'); 0 } -Force"),
+            ("gettype_scriptmethod",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetType -Value { [IO.File]::WriteAllText('INVOKED_FILE', '1'); [object[]] } -Force"),
+            ("length_scriptproperty",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptProperty -Name Length -Value { [IO.File]::WriteAllText('INVOKED_FILE', '1'); 0 } -Force"),
+            ("getupperbound_scriptmethod",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetUpperBound -Value { param($d) [IO.File]::WriteAllText('INVOKED_FILE', '1'); -1 } -Force"),
+            ("getvalue_scriptmethod",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetValue -Value { param($i) [IO.File]::WriteAllText('INVOKED_FILE', '1'); $null } -Force"),
+            ("getenumerator_scriptmethod",
+             "Add-Member -InputObject $result.warnings -MemberType ScriptMethod -Name GetEnumerator -Value { [IO.File]::WriteAllText('INVOKED_FILE', '1'); ([object[]]@()).GetEnumerator() } -Force"),
+        ]
+        summary = []
+        for case_name, mutation in cases:
+            with self.subTest(case=case_name):
+                constructed_file = probe_root / f"{case_name}-constructed.count"
+                invoked_file = probe_root / f"{case_name}-invoked.count"
+                injected = (
+                    f"[IO.File]::WriteAllText('{constructed_file.as_posix()}', '1')\n"
+                    + mutation.replace("INVOKED_FILE", invoked_file.as_posix())
+                    + "\nreturn $result"
+                )
+                source = original.replace("return $result", injected)
+                (target / "scripts/Fixture-Operation.ps1").write_text(source, encoding="utf-8", newline="\n")
+                manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+                manifest["script_sha256"] = digest(target / "scripts/Fixture-Operation.ps1")
+                (target / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
+                catalog = json.loads((ROOT / "catalog.json").read_text(encoding="utf-8"))
+                for asset_name in catalog["assets"]:
+                    catalog["assets"][asset_name] = digest(target / asset_name)
+                (target / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8", newline="\n")
+                anchor = json.loads((ROOT / "trust-anchor.json").read_text(encoding="utf-8"))
+                anchor["inventory_sha256"] = digest(target / "catalog.json")
+                (target / "trust-anchor.json").write_text(json.dumps(anchor, indent=2) + "\n", encoding="utf-8", newline="\n")
+                request = copy.deepcopy(self.base)
+                request["release_binding"]["script_sha256"] = manifest["script_sha256"]
+                request["release_binding"]["manifest_sha256"] = digest(target / "manifest.json")
+                result = Engine(target, digest(target / "trust-anchor.json")).execute(request)
+                self.last_execution = result
+                constructed_count = int(constructed_file.read_text(encoding="utf-8")) if constructed_file.exists() else 0
+                invoked_count = int(invoked_file.read_text(encoding="utf-8")) if invoked_file.exists() else 0
+                self.assertEqual(constructed_count, 1)
+                self.assertEqual(invoked_count, 0)
+                self.assertIsNone(result.error_code)
+                self.assertEqual(result.process_exit_code, 0)
+                self.assertEqual(result.logical_exit_code, 10)
+                self.assertEqual(result.response["origin"], "worker")
+                self.assertEqual(result.response["status"], "error")
+                self.assertEqual([e["code"] for e in result.response["errors"]], ["CONTRACT_VIOLATION"])
+                self.assertEqual(result.telemetry["stderr_bytes"], 0)
+                self.assertEqual(result.telemetry["final_job_active"], 0)
+                summary.append({
+                    "case": case_name,
+                    "constructed_count": constructed_count,
+                    "invoked_count": invoked_count,
+                    "logical_exit_code": result.logical_exit_code,
+                    "process_exit_code": result.process_exit_code,
+                    "status": result.response["status"],
+                    "error_codes": [e["code"] for e in result.response["errors"]],
+                })
+        (self.output_dir / "array-ets-side-effect-counters.json").write_text(
+            json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+        )

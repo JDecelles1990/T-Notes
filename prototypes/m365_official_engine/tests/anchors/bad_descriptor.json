@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/bad_descriptor.json",
-  "inventory_sha256": "09d69952f03e4cd9c37435943b2b2bb936b20772e20dc3de42229cf39902e729",
+  "inventory_sha256": "5ea4d291bad5dbcedcdf69e562fd87166f79d222affeba247984ea4fad841ec9",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"

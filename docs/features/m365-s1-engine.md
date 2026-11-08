@@ -27,31 +27,44 @@ string-array parameters. Invalid or mixed versions fail closed.
 
 ### Native return validation correction
 
-The S1 P2 correction adds `Assert-NativeOperationReturn` before any operation
-return is passed to JSON conversion. The outer return and non-null `data` must
-have the exact `System.Management.Automation.PSCustomObject` runtime type. Plain
-note properties represent JSON objects; one-dimensional, zero-based CLR arrays
+The S1 P2 and array-ETS corrections validate native return values in
+`Assert-NativeOperationReturn` before any operation return is passed to JSON
+conversion. The outer return and non-null `data` must have the exact
+`System.Management.Automation.PSCustomObject` runtime type. Plain note
+properties represent JSON objects; one-dimensional, zero-based CLR arrays
 represent JSON arrays, and warnings/errors must be object arrays. Leaves are
 strings, Booleans, finite CLR integer/floating/decimal numbers, or null. Enum,
 DateTime/DateTimeOffset, Hashtable/dictionary, arbitrary collections/provider
 objects and executable properties are rejected without conversion or getter
-evaluation. A small CLR helper unwraps `PSObject` and reads the actual runtime
-type without invoking an extended-type-system `GetType` script method, including
-for boxed value types. The worker compiles that helper in memory from its pinned
-protocol source using the bundled PowerShell utility before starting operation
-code; no new library or external executable is installed. These are the existing
-callable ABI's JSON-compatible values, not
-additional payload fields or schemas. The official schemas still decide allowed
-fields, bounds, null locations and status semantics in a separate mandatory step.
+evaluation. The compiled CLR helper `TNotesNativeReturnTypes` unwraps `PSObject`
+layers, verifies that `PSCustomObject` instances carry only `PSNoteProperty` and
+non-script CLR methods while arrays and primitives carry only non-script CLR
+adapter members, and inspects array dimensions (`System.Array.Rank`), lower
+bounds (`System.Array.GetLowerBound(0)`), lengths (`System.Array.Length`),
+elements (`System.Array.GetValue(i)`) and note-property values directly via CLR
+without invoking PowerShell ETS member dispatch (`Rank`, `GetLowerBound`,
+`GetUpperBound`, `Length`, `Count`, `GetValue`, `GetEnumerator`, `GetType`).
+The worker compiles that helper in memory from its pinned protocol source using
+the bundled PowerShell utility before starting operation code; no new library or
+external executable is installed. These are the existing callable ABI's
+JSON-compatible values, not additional payload fields or schemas. The official
+schemas still decide allowed fields, bounds, null locations and status semantics
+in a separate mandatory step.
 
-Traversal rejects reference cycles, permits repeated acyclic references, and uses
-the host parser's existing depth limit of 20 with a node budget of 1,048,576 (the
-wire byte ceiling). Native failures become a worker `CONTRACT_VIOLATION` return
-with null data; the host adapter continues to own envelope serialization/output.
-Real worker tests cover the original Hashtable and DateTime defects, numeric Enum
-serialization, nested objects/arrays, cycles, depth, nullability, unsupported
-containers and getters, plus valid nested data using an existing official schema.
-The nested fixture is test-only and does not deliver an S2 operation.
+Traversal tracks canonical reference targets (`PSObject` wrapper for
+`PSCustomObject`, unwrapped CLR reference for `System.Array`), rejects reference
+cycles, permits repeated acyclic references, and uses the host parser's existing
+depth limit of 20 with a node budget of 1,048,576 (the wire byte ceiling).
+Native failures become a worker `CONTRACT_VIOLATION` return with null data; the
+host adapter continues to own envelope serialization/output. Real worker tests
+cover the original Hashtable and DateTime defects, numeric Enum serialization,
+nested objects/arrays, cycles, depth, nullability, unsupported containers,
+multidimensional and non-zero-lower-bound arrays, object getters, and array ETS
+script members (`Rank`, `GetLowerBound`, `GetType`, `Length`, `Count`,
+`GetUpperBound`, `GetValue`, `GetEnumerator`) with isolated side-effect counters
+proving zero malicious member execution during validation, plus valid nested data
+using an existing official schema. The nested fixture is test-only and does not
+deliver an S2 operation.
 
 The synchronous engine stays independent of Qt, SQLite and application state.
 No GUI service imports or dispatches it. The production catalog remains empty,

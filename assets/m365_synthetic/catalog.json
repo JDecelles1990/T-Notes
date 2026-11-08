@@ -1,0 +1,42 @@
+{
+  "format_version": 1,
+  "operations": [
+    {
+      "manifest_path": "entra-id/user-identity/operation.manifest.json",
+      "manifest_sha256": "d119df2dc7d7d3e366496063fd668dda6d87a90a4e85e57033f9edf7f314959e",
+      "category_ids": [
+        "entra-id",
+        "general"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "licensing/user-licenses/operation.manifest.json",
+      "manifest_sha256": "d349f2ba22e9a386f792c8265bf5a7eeb305d56163c3b144a151c56064ea4f0e",
+      "category_ids": [
+        "licensing",
+        "entra-id"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "entra-id/user-signins/operation.manifest.json",
+      "manifest_sha256": "48b6096735dfc2a968a424d2fbe8e9820faf776971b28e5c853ad7ebdc245e35",
+      "category_ids": [
+        "entra-id",
+        "security",
+        "reports"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "exchange-online/mailbox-summary/operation.manifest.json",
+      "manifest_sha256": "d6d0fc23114c02e89061628dfbf68ff296262edc255ea2d933ae1e7faa8f21f6",
+      "category_ids": [
+        "exchange-online",
+        "general"
+      ],
+      "lifecycle": "active"
+    }
+  ]
+}

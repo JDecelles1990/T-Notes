@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/write_risk.json",
-  "inventory_sha256": "4a8bce3468d79a7d5d6b4ac5af128fc47cd093cbc3baef67b2ce9c5b382d6f4a",
+  "inventory_sha256": "cc8c595846765ede78d7857d387c884d51f028a38bcbf0bc3c3480fcbf46eb1f",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"

@@ -1,0 +1,63 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.ENTRA.USER_LICENSES",
+  "title": "Get-UserLicenses",
+  "description": "Retrieve assigned Microsoft 365 licenses and service plans for a resolved Entra user ID.",
+  "category": "licensing",
+  "tags": [
+    "entra",
+    "licensing",
+    "sku",
+    "service-plans",
+    "snapshot",
+    "synthetic"
+  ],
+  "script_path": "licensing/user-licenses/Get-UserLicenses.ps1",
+  "script_version": "0.3.0-synthetic.1",
+  "script_sha256": "cf08ef3f8710f3f0eecad688a95ad09366ce79239bcfaf4832bb4237e107ad75",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "LicenseAssignment.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Directory.Readers"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_licenses",
+  "timeout_seconds": 90,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

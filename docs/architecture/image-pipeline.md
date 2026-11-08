@@ -112,6 +112,35 @@ When users copy highlighted content containing both text, formatting, colors, an
 
 
 
+## 7. Interactive Image Resizing & Proportional Scaling (Normal & Split Views)
+
+`TechPadEditor` supports complete, interactive image resizing across both normal full-width editor panes and narrower Split View side panels:
+
+### 7.1 Resizing Methods
+1. **Interactive Visual Drag Resizing:**
+   - **Selection Outline & Corner Handle:** Clicking an embedded image highlights it with an accent blue selection border (`#007acc`) and a bottom-right corner resize handle.
+   - **Hover Feedback:** Hovering over the corner handle displays `Qt.SizeFDiagCursor` (`↘`).
+   - **Live Drag Preview:** Dragging the handle draws a real-time dashed preview box (`#60a5fa`) with a high-contrast pill badge displaying target dimensions (e.g. `480 × 270 px`).
+   - **Aspect Ratio Locking:** Dragging maintains proportional aspect ratio by default. Holding `Shift` unconstrains the aspect ratio.
+   - **Smooth Execution:** The format is finalized on mouse release, preventing layout jitter and collapsing changes into a single undo step.
+2. **Context Menu Quick Resize (`📏 Quick Resize`):**
+   - **Fit to Pane Width:** Computes available pane width (`viewport().width() - 24`). In Split View sidebar, this scales the image down to fit the side panel without horizontal scrollbars; in normal view, it scales to fit the main window.
+   - **Presets:** `100% (Original Size)`, `75%`, `50%`, `25%`.
+3. **Custom Resize Dialog (`📐 Custom Resize...` / Double-Click):**
+   - Double-clicking an image opens `ResizeImageDialog`.
+   - Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes).
+   - "🔗 Lock aspect ratio" checkbox (checked by default) dynamically syncs proportional height/width.
+   - Quick preset buttons (`25%`, `50%`, `75%`, `100%`, `Fit to Pane Width`).
+4. **Keyboard Deletion:**
+   - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the screenshot from the document.
+
+### 7.2 Persistence & HTML Fidelity
+- Resized dimensions are serialized natively by Qt as HTML attributes (`<img src="image://local/<uuid>.jpg" width="W" height="H" />`).
+- Re-opening tickets, switching tabs, and restoring session states preserves exact dimensions.
+- Copying rich notes (`📋 Copy Note`) embeds Base64 data with matching `width` and `height` attributes so external applications render scaled images.
+
+---
+
 ## Atomic note save and cache ownership
 
 The Notes save path extracts the `image://local/<name>` reference set and snapshots

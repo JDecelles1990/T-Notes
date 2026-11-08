@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/hash_mismatch.json",
-  "inventory_sha256": "6714570e449e6326babbdb44a20ce2950c2035a2d6c7e9e49c57553e0af3705a",
+  "inventory_sha256": "a617d0222493113c701a0780750864e5088b302227e69161a7c4c9e897b00c23",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"

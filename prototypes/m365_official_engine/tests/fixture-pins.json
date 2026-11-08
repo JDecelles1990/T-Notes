@@ -1,54 +1,54 @@
 {
   "good": {
     "file": "trust-anchor.json",
-    "sha256": "05dadb9880f8aad31f88478dd98af87363aa0bc64f8b854c14634a21ff3c5553"
+    "sha256": "e3ff800f189eca0c62fc5e1401a79c21e70c6ac390445bbf394186f13464ecd0"
   },
   "fault": {
     "file": "tests/anchors/fault.json",
-    "sha256": "396eced2a21ce9f9b2650b98c28e151fad9109f457d89a7f4a19b01c6daa1204"
-  },
-  "untrusted": {
-    "file": "tests/anchors/untrusted.json",
-    "sha256": "633c2744f2aa8381b6c6ce03048a89f4f24c502b61766a34abf8bda5c930a77d"
-  },
-  "traversal": {
-    "file": "tests/anchors/traversal.json",
-    "sha256": "48263230efcbd948fdf835834938e729541c26d63456469e1e6bad90aecfa630"
-  },
-  "hash_mismatch": {
-    "file": "tests/anchors/hash_mismatch.json",
-    "sha256": "bfdf8e1338783987f59db87fadb60e536bf070842c4d200d0e6cd7b48247de76"
-  },
-  "bad_descriptor": {
-    "file": "tests/anchors/bad_descriptor.json",
-    "sha256": "2663cdcf34fd6c32788cb1b9ce98323b90ba7be293581a00d6e7cf32f92c0040"
-  },
-  "timeout": {
-    "file": "tests/anchors/timeout.json",
-    "sha256": "523f4aed85676682f3c33be3de49e03a1e37fba4ce7b1454e923a0fa2fdcdd91"
-  },
-  "write_risk": {
-    "file": "tests/anchors/write_risk.json",
-    "sha256": "1bc49018fab3ce4bcfa4dbe5195cf579f457562b05aff506ad33289599f21296"
-  },
-  "missing_executable": {
-    "file": "tests/anchors/missing_executable.json",
-    "sha256": "e15cae342219cbc751d9ad9ec92d4a62c4bbb69ea051b52d981ae6ec2c434b63"
-  },
-  "executable_mismatch": {
-    "file": "tests/anchors/executable_mismatch.json",
-    "sha256": "e0cba9e6ac8f9b7acaa8bc9d6c11dba1c2fb2feefb3e084108a80bb6afe8f966"
-  },
-  "dependency_mismatch": {
-    "file": "tests/anchors/dependency_mismatch.json",
-    "sha256": "2208996e8d50da9072f852f470620c03f8d5580bd8ab07eee7403a360095c9cb"
-  },
-  "fault_timeout": {
-    "file": "tests/anchors/fault_timeout.json",
-    "sha256": "149b1a1147a18434b8e37d10c2c9d3497ffbcae5cf3575a555b1b7fc16e40e39"
+    "sha256": "3ae09adb4395706018157c660056afbc1c4c0cd80ca74f88b09c3b41ae952492"
   },
   "native_nested": {
     "file": "tests/anchors/native_nested.json",
-    "sha256": "552e1b46e11b59cf645fdf5de197a655dfc765671a94805174f13693d7256a1f"
+    "sha256": "07446f85cc0b8d85d905190ce5f4437407af580841831f3db8f47e2a4b3e0f25"
+  },
+  "untrusted": {
+    "file": "tests/anchors/untrusted.json",
+    "sha256": "1ac88dbfbaecbeb86645ec9ced1c7577af4de58a8123fef5d7738457fa793f5a"
+  },
+  "traversal": {
+    "file": "tests/anchors/traversal.json",
+    "sha256": "05753411e9b9b54946e05304a77d5e7f1ce924d6a36dc107bacf1c06fe50eae3"
+  },
+  "hash_mismatch": {
+    "file": "tests/anchors/hash_mismatch.json",
+    "sha256": "fdcb008b12db66b4a9a211faceaede9ccce428636c6894050b20a255619cc00b"
+  },
+  "bad_descriptor": {
+    "file": "tests/anchors/bad_descriptor.json",
+    "sha256": "53c10fb3efcfeacf72f5ca6af64d4c7c6ae74aae599b950c4c64c3f11080050f"
+  },
+  "timeout": {
+    "file": "tests/anchors/timeout.json",
+    "sha256": "44a26bb8afed51d8d4fed9137fbcddd82540414f4a888d5e1a2829666872208d"
+  },
+  "write_risk": {
+    "file": "tests/anchors/write_risk.json",
+    "sha256": "c893843c65dff63a150ce484abab8208f5c70e2aaf146c91eed254b385fdfd62"
+  },
+  "missing_executable": {
+    "file": "tests/anchors/missing_executable.json",
+    "sha256": "a0b8d794173b80e16d57856fcfbd5f34793816e61772209e6dd7a6c8edacbf47"
+  },
+  "executable_mismatch": {
+    "file": "tests/anchors/executable_mismatch.json",
+    "sha256": "4d5c2028b277891cf5f37506e82e05e76696d7bee8bafe1cbf86102ac348831c"
+  },
+  "dependency_mismatch": {
+    "file": "tests/anchors/dependency_mismatch.json",
+    "sha256": "f6b3c6058d1d2241fdee5d19509279caf202b7b0c3ab9f38333f5e769e148eaa"
+  },
+  "fault_timeout": {
+    "file": "tests/anchors/fault_timeout.json",
+    "sha256": "e90e10642ebe11d40866f8aa04857ce85c4d5e1de0b142d1cf1cdf589f0fa4c7"
   }
 }

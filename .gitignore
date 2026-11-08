@@ -71,3 +71,6 @@ Thumbs.db
 # Local exported ticket notes
 /T-Notes/
 
+# Scratch screenshots / user images
+ChatGPT Image*.png
+

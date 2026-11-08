@@ -166,6 +166,23 @@ The `Copy Note` dropdown menu features `💾 Export Note (T-Notes Folder)` (shor
 
 ---
 
+### 5.6 Interactive Image Resizing & Split-View Fitting
+`TechPadEditor` allows embedded screenshots and images to be resized interactively in both standard/normal editor views and side-by-side Split View sidebar panes:
+- **Interactive Corner Dragging:**
+  - Clicking any embedded image reveals an accent selection outline (`#007acc`) and bottom-right corner resize handle.
+  - Hovering over the handle displays a diagonal resize cursor (`Qt.SizeFDiagCursor`).
+  - Dragging the handle resizes the image with a live dashed bounding box and dimension pill (e.g. `450 × 225 px`).
+  - Aspect ratio is locked by default for proportional scaling; holding `Shift` unlocks independent width/height resizing.
+- **Context Menu Quick Resize (`📏 Quick Resize`):**
+  - Right-clicking an image reveals quick scaling presets: `Fit to Pane Width`, `100% (Original Size)`, `75%`, `50%`, `25%`.
+  - `Fit to Pane Width` automatically computes available editor space (`viewport().width() - 24`), perfectly fitting large images into the narrower Split View side panel without horizontal scrolling.
+- **Custom Dimension Modal (`📐 Custom Resize...` / Double-Click):**
+  - Double-clicking an image launches `ResizeImageDialog` with Width and Height spinboxes, aspect ratio locking, and one-click percentage presets.
+- **Keyboard Deletion:**
+  - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the image from the note.
+
+---
+
 ## 6. Interactive Task Checklists & Action Items
 
 To streamline multi-step incident troubleshooting, server maintenance checklists, and ticket resolution procedures, `TechPadEditor` features native, clickable task lists with live tab status badges:

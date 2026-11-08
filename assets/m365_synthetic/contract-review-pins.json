@@ -1,0 +1,13 @@
+{
+  "contract_version": "0.3.0",
+  "status": "USER ACCEPTED FOR S1; engine candidate requires independent review",
+  "schemas": {
+    "common": "e718b3bc83e3562deb9e743e99823a785a7839a2a1a4ae895afc38def8200ae6",
+    "company-profile": "b2e2628634fec9289e75fbcaa8b942acd39e60588dc0d307a291c4fc3753247d",
+    "error": "0d9a5d81efca5486e7dd5ff6f9735f5f51a75d43c60ea97d3882fd0386a94a20",
+    "execution-request": "c86e2c508afec1d358d12f3f83602c5e456c3807513a7db1e4b88ac8d8eda963",
+    "execution-result": "a3ab4200c5a303559fb301688d48ce1d45d493185c44281e35b1d6873b5234d6",
+    "operation-data": "eac11af0432f19d0ff6b8c424d99383dd4ae87a64810a6990272418a446273fe",
+    "script-manifest": "2f13a3c3f98dba6b5cfbfa2a7b9c9032acdf2665b522c7cc3a446d2654ad9e7c"
+  }
+}

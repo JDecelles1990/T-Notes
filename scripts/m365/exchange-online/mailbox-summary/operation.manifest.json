@@ -1,0 +1,67 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.EXCHANGE.MAILBOX_SUMMARY",
+  "title": "Get-MailboxSummary",
+  "description": "Retrieve Exchange Online mailbox type, primary SMTP, size and quota summary.",
+  "category": "exchange-online",
+  "tags": [
+    "exchange",
+    "mailbox",
+    "quota",
+    "smtp",
+    "snapshot",
+    "synthetic"
+  ],
+  "script_path": "exchange-online/mailbox-summary/Get-MailboxSummary.ps1",
+  "script_version": "0.3.0-synthetic.1",
+  "script_sha256": "29dc37e7935f1d1b41e80b5adf418258d22b4d913780e4da2370a5f28c7374b5",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [
+    {
+      "name": "ExchangeOnlineManagement",
+      "minimum_version": "3.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "ExchangeOnline"
+  ],
+  "graph_scopes": [],
+  "required_roles": [
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailbox"
+      ]
+    },
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailboxStatistics"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/mailbox_summary",
+  "timeout_seconds": 90,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

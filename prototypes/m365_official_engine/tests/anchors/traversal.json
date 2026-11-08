@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/traversal.json",
-  "inventory_sha256": "6252f09d195e1e826c50389e980e872552fc0217d35903f1ab4a6d2c6e0cfa1f",
+  "inventory_sha256": "850dee36467e93a55120e4d6e8c773c325d7fb702e78a1e0bbabfb3ceb0620cf",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"

@@ -1,0 +1,82 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.ENTRA.USER_SIGNINS",
+  "title": "Get-UserSignIns",
+  "description": "Inspect bounded recent Entra ID sign-in events for a resolved user ID.",
+  "category": "entra-id",
+  "tags": [
+    "entra",
+    "signins",
+    "audit",
+    "security",
+    "snapshot",
+    "synthetic"
+  ],
+  "script_path": "entra-id/user-signins/Get-UserSignIns.ps1",
+  "script_version": "0.3.0-synthetic.1",
+  "script_sha256": "48635d4211a832a77021b676db6430a327be18f1b470f2e5506509f9efcb67a3",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Reports",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "AuditLog.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Reports.Reader"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "LookbackDays",
+      "type": "integer",
+      "required": true,
+      "description": "UTC lookback window in days (1 to 30).",
+      "minimum": 1,
+      "maximum": 30,
+      "default": 7
+    },
+    {
+      "name": "MaxRecords",
+      "type": "integer",
+      "required": true,
+      "description": "Maximum number of sign-in events to return (1 to 50).",
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+  "timeout_seconds": 90,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

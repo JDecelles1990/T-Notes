@@ -3,11 +3,11 @@
 ## Offline M365 return validation boundary
 
 The isolated S1 engine checks native PowerShell return types before JSON conversion,
-then independently validates the return and selected payload schemas. The P2
-correction rejects unsupported native objects, cycles and executable properties
-without changing GUI dispatch or authentication. See the
-[S1 engine topic](../features/m365-s1-engine.md#native-return-validation-correction).
-This candidate requires independent rereview; S2/S3 and production dispatch remain gated.
+then independently validates the return and selected payload schemas. The P2 and
+array-ETS corrections reject unsupported native objects, cycles and executable ETS
+properties on both objects and arrays without changing production authentication.
+See the [S1 engine topic](../features/m365-s1-engine.md#native-return-validation-correction)
+and the [S2 & S3 offline synthetic launcher specification](../features/m365-s2-s3-launcher.md).
 
 ## M365 company and identity preview
 

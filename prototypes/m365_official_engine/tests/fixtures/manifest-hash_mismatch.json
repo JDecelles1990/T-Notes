@@ -72,7 +72,14 @@
         "native_nonfinite",
         "native_getter",
         "native_outer_dictionary",
-        "native_type_method"
+        "native_type_method",
+        "native_nested_array_ets",
+        "native_array_rank",
+        "native_array_lowerbound",
+        "native_array_gettype",
+        "native_array_ets_members",
+        "native_array_multidim",
+        "native_array_nonzero_bound"
       ],
       "default": "success",
       "max_length": 32

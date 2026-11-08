@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/timeout.json",
-  "inventory_sha256": "1b9dadaffc3c182d704b928a3498e7be1e17f952bab8d6259606de9fd77cf627",
+  "inventory_sha256": "27b8efc3e1bd6daa60d1b9721388b8bf4094c3671396d391f8a490b593726425",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"

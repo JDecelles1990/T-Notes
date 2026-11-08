@@ -9,7 +9,7 @@
   ],
   "script_path": "scripts/Not-Allowlisted.ps1",
   "script_version": "0.0.1-provisional",
-  "script_sha256": "0b5ccc113a88ef7077cc9130180a01d46483d95449ffb5de0039174eb4cafc80",
+  "script_sha256": "dfb5631523834c39307154ef21b1fc7dfcc8e77e10bb9f27b52f2fa4b8d72bca",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.0.0"
@@ -72,7 +72,14 @@
         "native_nonfinite",
         "native_getter",
         "native_outer_dictionary",
-        "native_type_method"
+        "native_type_method",
+        "native_nested_array_ets",
+        "native_array_rank",
+        "native_array_lowerbound",
+        "native_array_gettype",
+        "native_array_ets_members",
+        "native_array_multidim",
+        "native_array_nonzero_bound"
       ],
       "default": "success",
       "max_length": 32

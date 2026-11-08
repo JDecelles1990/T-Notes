@@ -43,7 +43,9 @@ def prepare():
                  "native_hashtable", "native_datetime", "native_datetimeoffset", "native_enum", "native_nested_valid",
                  "native_nested_object", "native_nested_array", "native_nested_dictionary", "native_nested_null",
                  "native_null_data", "native_null_field", "native_cycle", "native_array_cycle", "native_depth",
-                 "native_container", "native_nonfinite", "native_getter", "native_outer_dictionary", "native_type_method"]
+                 "native_container", "native_nonfinite", "native_getter", "native_outer_dictionary", "native_type_method",
+                 "native_nested_array_ets", "native_array_rank", "native_array_lowerbound", "native_array_gettype",
+                 "native_array_ets_members", "native_array_multidim", "native_array_nonzero_bound"]
     manifest["parameters"] = [
         {"name": "Scenario", "type": "string", "required": False, "description": "Synthetic test case only", "allowed_values": scenarios, "default": "success", "max_length": 32},
         {"name":"Count","type":"integer","required":False,"description":"Int64 ABI","default":7},

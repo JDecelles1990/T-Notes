@@ -34,14 +34,174 @@ function Assert-Schema($Value, [string] $Reference, $Options) {
 
 function Initialize-NativeReturnValidation {
     # Compiled from this pinned source before the operation runspace starts.
-    # CLR calls bypass PowerShell ETS methods, including on boxed value types.
+    # CLR calls bypass PowerShell ETS methods, including on boxed value types and arrays.
     Add-Type -TypeDefinition @'
 public static class TNotesNativeReturnTypes {
-    public static System.Type Get(object value) {
-        while (value is System.Management.Automation.PSObject) {
-            value = ((System.Management.Automation.PSObject)value).BaseObject;
+    private static void ValidateClrOnlyMembers(System.Management.Automation.PSObject pso) {
+        foreach (System.Management.Automation.PSMemberInfo member in pso.Members) {
+            if (member.MemberType == System.Management.Automation.PSMemberTypes.Property &&
+                member is System.Management.Automation.PSProperty) {
+                continue;
+            }
+            if (member.MemberType == System.Management.Automation.PSMemberTypes.ParameterizedProperty &&
+                member is System.Management.Automation.PSParameterizedProperty) {
+                continue;
+            }
+            if (member.MemberType == System.Management.Automation.PSMemberTypes.Method &&
+                !(member is System.Management.Automation.PSScriptMethod) &&
+                !(member is System.Management.Automation.PSCodeMethod)) {
+                continue;
+            }
+            throw new System.InvalidOperationException("Unsupported native member");
         }
-        return value == null ? null : value.GetType();
+    }
+
+    private static void ValidatePsoMembers(System.Management.Automation.PSObject pso, bool isCustomObject) {
+        if (!isCustomObject) {
+            ValidateClrOnlyMembers(pso);
+            return;
+        }
+        foreach (System.Management.Automation.PSMemberInfo member in pso.Members) {
+            ValidateClrOnlyMembers(System.Management.Automation.PSObject.AsPSObject(member));
+            if (member.MemberType == System.Management.Automation.PSMemberTypes.NoteProperty &&
+                member is System.Management.Automation.PSNoteProperty) {
+                continue;
+            }
+            if (member.MemberType == System.Management.Automation.PSMemberTypes.Method &&
+                !(member is System.Management.Automation.PSScriptMethod) &&
+                !(member is System.Management.Automation.PSCodeMethod)) {
+                continue;
+            }
+            throw new System.InvalidOperationException("Unsupported native property");
+        }
+    }
+
+    private static object UnwrapValidated(object value, out System.Management.Automation.PSObject customObjectWrapper) {
+        customObjectWrapper = null;
+        if (value == null) {
+            return null;
+        }
+        object current = value;
+        while (current is System.Management.Automation.PSObject) {
+            System.Management.Automation.PSObject pso = (System.Management.Automation.PSObject)current;
+            object immediate = pso.ImmediateBaseObject;
+            bool isCustom = immediate is System.Management.Automation.PSCustomObject;
+            ValidatePsoMembers(pso, isCustom);
+            if (isCustom) {
+                ValidateClrOnlyMembers(System.Management.Automation.PSObject.AsPSObject(immediate));
+                customObjectWrapper = pso;
+                return immediate;
+            }
+            current = immediate;
+        }
+        ValidateClrOnlyMembers(System.Management.Automation.PSObject.AsPSObject(current));
+        return current;
+    }
+
+    private static object UnwrapRaw(object value) {
+        object current = value;
+        while (current is System.Management.Automation.PSObject) {
+            System.Management.Automation.PSObject pso = (System.Management.Automation.PSObject)current;
+            object immediate = pso.ImmediateBaseObject;
+            if (immediate is System.Management.Automation.PSCustomObject) {
+                return immediate;
+            }
+            current = immediate;
+        }
+        return current;
+    }
+
+    public static System.Type Get(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        object raw = UnwrapValidated(value, out customObjectWrapper);
+        return raw == null ? null : raw.GetType();
+    }
+
+    public static bool IsArray(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        object raw = UnwrapValidated(value, out customObjectWrapper);
+        return raw is System.Array;
+    }
+
+    public static object GetReferenceTarget(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        object raw = UnwrapValidated(value, out customObjectWrapper);
+        return customObjectWrapper != null ? (object)customObjectWrapper : raw;
+    }
+
+    public static int GetArrayLength(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        object raw = UnwrapValidated(value, out customObjectWrapper);
+        System.Array array = raw as System.Array;
+        if (array == null || array.Rank != 1 || array.GetLowerBound(0) != 0) {
+            throw new System.InvalidOperationException("Unsupported native array");
+        }
+        return array.Length;
+    }
+
+    public static object GetArrayElement(object value, int index) {
+        System.Array array = UnwrapRaw(value) as System.Array;
+        if (array == null || array.Rank != 1 || array.GetLowerBound(0) != 0) {
+            throw new System.InvalidOperationException("Unsupported native array");
+        }
+        return array.GetValue(index);
+    }
+
+    public static string[] GetNotePropertyNames(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        UnwrapValidated(value, out customObjectWrapper);
+        if (customObjectWrapper == null) {
+            throw new System.InvalidOperationException("Invalid native object");
+        }
+        int count = 0;
+        foreach (System.Management.Automation.PSPropertyInfo prop in customObjectWrapper.Properties) {
+            if (!(prop is System.Management.Automation.PSNoteProperty)) {
+                throw new System.InvalidOperationException("Unsupported native property");
+            }
+            count++;
+        }
+        string[] names = new string[count];
+        int index = 0;
+        foreach (System.Management.Automation.PSPropertyInfo prop in customObjectWrapper.Properties) {
+            names[index++] = prop.Name;
+        }
+        return names;
+    }
+
+    public static object[] GetNotePropertyValues(object value) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        UnwrapValidated(value, out customObjectWrapper);
+        if (customObjectWrapper == null) {
+            throw new System.InvalidOperationException("Invalid native object");
+        }
+        int count = 0;
+        foreach (System.Management.Automation.PSPropertyInfo prop in customObjectWrapper.Properties) {
+            if (!(prop is System.Management.Automation.PSNoteProperty)) {
+                throw new System.InvalidOperationException("Unsupported native property");
+            }
+            count++;
+        }
+        object[] values = new object[count];
+        int index = 0;
+        foreach (System.Management.Automation.PSPropertyInfo prop in customObjectWrapper.Properties) {
+            values[index++] = ((System.Management.Automation.PSNoteProperty)prop).Value;
+        }
+        return values;
+    }
+
+    public static object GetNotePropertyValue(object value, string name) {
+        System.Management.Automation.PSObject customObjectWrapper;
+        UnwrapValidated(value, out customObjectWrapper);
+        if (customObjectWrapper == null) {
+            throw new System.InvalidOperationException("Invalid native object");
+        }
+        System.Management.Automation.PSPropertyInfo prop = customObjectWrapper.Properties[name];
+        if (prop == null ||
+            !string.Equals(prop.Name, name, System.StringComparison.Ordinal) ||
+            !(prop is System.Management.Automation.PSNoteProperty)) {
+            throw new System.InvalidOperationException("Invalid native return fields");
+        }
+        return ((System.Management.Automation.PSNoteProperty)prop).Value;
     }
 }
 '@ -ReferencedAssemblies ([System.Management.Automation.PSObject].Assembly.Location)
@@ -58,16 +218,19 @@ function Assert-NativeOperationReturn($Value) {
         [System.Collections.Generic.ReferenceEqualityComparer]::Instance)
     $budget = [long[]]@(1048576) # No valid <=1 MiB wire object can need more nodes.
     Assert-NativeJsonValue -Value $Value -Depth 0 -Active $active -Budget $budget
-    $names = @($Value.PSObject.Properties.Name)
-    if ($names.Count -ne 5) { throw 'Invalid native return fields' }
+    $names = [TNotesNativeReturnTypes]::GetNotePropertyNames($Value)
+    $nameCount = [TNotesNativeReturnTypes]::GetArrayLength($names)
+    if ($nameCount -ne 5) { throw 'Invalid native return fields' }
     foreach ($name in @('status','operation_outcome','data','warnings','errors')) {
         if ($names -cnotcontains $name) { throw 'Invalid native return fields' }
     }
-    if ($null -ne $Value.data -and [TNotesNativeReturnTypes]::Get($Value.data) -ne [System.Management.Automation.PSCustomObject]) {
+    $data = [TNotesNativeReturnTypes]::GetNotePropertyValue($Value, 'data')
+    if ($null -ne $data -and [TNotesNativeReturnTypes]::Get($data) -ne [System.Management.Automation.PSCustomObject]) {
         throw 'Invalid native data object'
     }
     foreach ($name in @('warnings','errors')) {
-        if ($null -eq $Value.$name -or [TNotesNativeReturnTypes]::Get($Value.$name) -ne [object[]]) {
+        $items = [TNotesNativeReturnTypes]::GetNotePropertyValue($Value, $name)
+        if ($null -eq $items -or [TNotesNativeReturnTypes]::Get($items) -ne [object[]]) {
             throw 'Invalid native diagnostic array'
         }
     }
@@ -88,25 +251,26 @@ function Assert-NativeJsonValue($Value, [int] $Depth, $Active, [long[]] $Budget)
         return
     }
     $isObject = $type -eq [System.Management.Automation.PSCustomObject]
-    $isArray = $Value -is [array]
+    $isArray = [TNotesNativeReturnTypes]::IsArray($Value)
     if (-not $isObject -and -not $isArray) { throw 'Unsupported native return value' }
-    if (-not $Active.Add($Value)) { throw 'Cyclic native return value' }
+    $target = [TNotesNativeReturnTypes]::GetReferenceTarget($Value)
+    if (-not $Active.Add($target)) { throw 'Cyclic native return value' }
     try {
         if ($isObject) {
-            foreach ($property in $Value.PSObject.Properties) {
-                # Do not execute user-supplied getters/aliases during traversal.
-                if ($property.MemberType -ne [System.Management.Automation.PSMemberTypes]::NoteProperty) {
-                    throw 'Unsupported native property'
-                }
-                Assert-NativeJsonValue -Value $property.Value -Depth ($Depth + 1) -Active $Active -Budget $Budget
+            $values = [TNotesNativeReturnTypes]::GetNotePropertyValues($Value)
+            $length = [TNotesNativeReturnTypes]::GetArrayLength($values)
+            for ($index = 0; $index -lt $length; $index++) {
+                $item = [TNotesNativeReturnTypes]::GetArrayElement($values, $index)
+                Assert-NativeJsonValue -Value $item -Depth ($Depth + 1) -Active $Active -Budget $Budget
             }
         } else {
-            if ($Value.Rank -ne 1 -or $Value.GetLowerBound(0) -ne 0) { throw 'Unsupported native array' }
-            foreach ($item in $Value) {
+            $length = [TNotesNativeReturnTypes]::GetArrayLength($Value)
+            for ($index = 0; $index -lt $length; $index++) {
+                $item = [TNotesNativeReturnTypes]::GetArrayElement($Value, $index)
                 Assert-NativeJsonValue -Value $item -Depth ($Depth + 1) -Active $Active -Budget $Budget
             }
         }
-    } finally { [void]$Active.Remove($Value) }
+    } finally { [void]$Active.Remove($target) }
 }
 
 function Freeze-Value($Value) {

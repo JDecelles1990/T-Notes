@@ -1,21 +1,29 @@
 """Adaptive M365 workspace shell with active ticket sidebar integration."""
 
 from datetime import datetime
+import json
+import re
+import threading
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, QEvent, QPoint
 from PySide6.QtGui import QAction, QColor, QFont, QTextCharFormat
 from PySide6.QtWidgets import (
-    QApplication, QColorDialog, QComboBox, QFileDialog, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
-    QMenu, QPlainTextEdit, QPushButton, QScrollArea, QSplitter, QToolButton,
-    QVBoxLayout, QWidget,
+    QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QListWidgetItem, QMenu, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox,
+    QSplitter, QToolButton, QVBoxLayout, QWidget,
 )
 
 from src.core.constants import LOG_BADGES, TICKET_SKELETONS
 from src.services.m365_catalog_service import CatalogError, M365CatalogService
 from src.services.m365_company_service import synthetic_directory
 from src.services.m365_context_service import CompanyContextService
+from src.services.m365_execution_service import (
+    ExecutionOutcome,
+    M365ExecutionService,
+    build_synthetic_catalog_service,
+)
 from src.ui.components.editor import TechPadEditor
 from src.ui.m365.company_context_panel import CompanyContextPanel
 
@@ -37,6 +45,7 @@ class M365LauncherWidget(QWidget):
     note_modified = Signal(int)                  # Emits scratchpad_id
     save_requested = Signal(int)                  # Emits scratchpad_id
     status_message_requested = Signal(str, int)  # Emits (message, timeout_ms)
+    operation_finished = Signal(object)          # Emits ExecutionOutcome
 
     def __init__(
         self,
@@ -46,6 +55,8 @@ class M365LauncherWidget(QWidget):
         company_directory=None,
         scratchpad_service=None,
         image_service=None,
+        execution_service=None,
+        synthetic_mode: bool = False,
     ):
         super().__init__(parent)
         self.scratchpad_service = scratchpad_service
@@ -53,6 +64,9 @@ class M365LauncherWidget(QWidget):
         self._active_editor = None
         self._current_ticket_number = ""
         self._stopwatch = None
+        self._parameter_widgets: dict[str, tuple[str, QWidget]] = {}
+        self._current_outcome: Optional[ExecutionOutcome] = None
+        self._showing_raw_json = False
         self.setObjectName("m365LauncherWorkspace")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.setStyleSheet("""
@@ -66,7 +80,8 @@ class M365LauncherWidget(QWidget):
                 subcontrol-origin: margin; left: 8px; padding: 0 3px;
             }
             QWidget#m365LauncherWorkspace QComboBox,
-            QWidget#m365LauncherWorkspace QPlainTextEdit {
+            QWidget#m365LauncherWorkspace QPlainTextEdit,
+            QWidget#m365LauncherWorkspace QSpinBox {
                 background-color: #2d2d30; color: #cccccc;
                 border: 1px solid #444444; border-radius: 3px; padding: 4px;
             }
@@ -77,7 +92,12 @@ class M365LauncherWidget(QWidget):
         """)
         self._current_columns = 2
         try:
-            self.catalog_service = catalog_service if catalog_service is not None else M365CatalogService()
+            if catalog_service is not None:
+                self.catalog_service = catalog_service
+            elif synthetic_mode:
+                self.catalog_service = build_synthetic_catalog_service()
+            else:
+                self.catalog_service = M365CatalogService()
         except (CatalogError, OSError, ImportError):
             # A catalog failure must not prevent startup or access to the Notes workspace.
             self.catalog_service = None
@@ -130,10 +150,18 @@ class M365LauncherWidget(QWidget):
         self.nav_toggle.setChecked(True)
         control_bar.addWidget(self.nav_toggle)
 
-        notice = QLabel("Catalog preview — no Microsoft 365 connection or execution.", self)
-        notice.setStyleSheet("color: #9cdcfe; font-size: 9pt;")
-        notice.setWordWrap(True)
-        control_bar.addWidget(notice, 1)
+        self.notice_label = QLabel("Catalog preview — no Microsoft 365 connection or execution.", self)
+        self.notice_label.setStyleSheet("color: #9cdcfe; font-size: 9pt;")
+        self.notice_label.setWordWrap(True)
+        control_bar.addWidget(self.notice_label, 1)
+
+        self.btn_load_synthetic_catalog = QToolButton(self)
+        self.btn_load_synthetic_catalog.setText("🧪 Load Synthetic Snapshot")
+        self.btn_load_synthetic_catalog.setAccessibleName("Load offline synthetic snapshot catalog")
+        self.btn_load_synthetic_catalog.setToolTip("Load the 4 offline synthetic User Snapshot operations (S2/S3)")
+        self.btn_load_synthetic_catalog.setFocusPolicy(Qt.StrongFocus)
+        self.btn_load_synthetic_catalog.clicked.connect(self.enable_synthetic_catalog)
+        control_bar.addWidget(self.btn_load_synthetic_catalog)
 
         self.ticket_panel_toggle = QToolButton(self)
         self.ticket_panel_toggle.setText("Active Ticket")
@@ -237,7 +265,8 @@ class M365LauncherWidget(QWidget):
         self.operation_details.setMinimumHeight(130)
         self.operation_details.setMaximumHeight(230)
         catalog_layout.addWidget(self.operation_details)
-        # Synthetic metadata/context only. No Notes DB, auth adapter or engine ownership.
+
+        # Group 0 & 1: Company Selection & Identity Context
         for group in self._content_groups[:2]:
             old = group.layout().takeAt(0).widget()
             old.hide()
@@ -245,6 +274,134 @@ class M365LauncherWidget(QWidget):
         self.company_directory = company_directory if company_directory is not None else synthetic_directory()
         self.context_service = CompanyContextService(self.company_directory)
         self.company_panel = CompanyContextPanel(self.context_service, *self._content_groups[:2])
+        self.execution_service = (
+            execution_service
+            if execution_service is not None
+            else M365ExecutionService(self.context_service, self.catalog_service)
+        )
+
+        # Group 3: Parameters
+        params_group = self._content_groups[3]
+        params_layout = params_group.layout()
+        old_p = params_layout.takeAt(0).widget()
+        old_p.hide()
+        old_p.deleteLater()
+        self.parameters_status = QLabel("Select an operation to inspect or configure parameters.", params_group)
+        self.parameters_status.setWordWrap(True)
+        self.parameters_status.setStyleSheet("color: #9cdcfe; font-size: 9pt;")
+        params_layout.addWidget(self.parameters_status)
+        self.parameters_form_container = QWidget(params_group)
+        self.parameters_form = QFormLayout(self.parameters_form_container)
+        self.parameters_form.setContentsMargins(0, 4, 0, 0)
+        self.parameters_form.setSpacing(4)
+        params_layout.addWidget(self.parameters_form_container)
+        params_layout.addStretch(1)
+
+        # Group 4: Execution Workspace (Run, Cancel, History)
+        exec_group = self._content_groups[4]
+        exec_layout = exec_group.layout()
+        old_e = exec_layout.takeAt(0).widget()
+        old_e.hide()
+        old_e.deleteLater()
+
+        action_btn_style = """
+            QToolButton {
+                background-color: #161b22; border: 1px solid #30363d; border-radius: 3px;
+                color: #c9d1d9; font-size: 11px; font-weight: bold; padding: 4px 8px;
+            }
+            QToolButton:hover { background-color: #30363d; border-color: #58a6ff; color: #ffffff; }
+            QToolButton:pressed { background-color: #1f6feb; color: #ffffff; }
+            QToolButton:disabled { color: #6e7681; border-color: #21262d; }
+        """
+
+        self.lbl_exec_state = QLabel("State: IDLE (Offline Synthetic)", exec_group)
+        self.lbl_exec_state.setWordWrap(True)
+        self.lbl_exec_state.setStyleSheet("font-weight: bold; color: #58a6ff; font-size: 9pt;")
+        exec_layout.addWidget(self.lbl_exec_state)
+
+        exec_btn_row = QHBoxLayout()
+        exec_btn_row.setSpacing(4)
+        self.btn_run_operation = QToolButton(exec_group)
+        self.btn_run_operation.setText("▶ Run (Synthetic)")
+        self.btn_run_operation.setAccessibleName("Run selected operation in offline synthetic mode")
+        self.btn_run_operation.setToolTip("Execute the selected operation against the offline synthetic worker")
+        self.btn_run_operation.setStyleSheet(action_btn_style)
+        self.btn_run_operation.setEnabled(False)
+        self.btn_run_operation.clicked.connect(lambda: self.run_selected_operation(async_mode=False))
+        exec_btn_row.addWidget(self.btn_run_operation)
+
+        self.btn_cancel_operation = QToolButton(exec_group)
+        self.btn_cancel_operation.setText("⏹ Cancel")
+        self.btn_cancel_operation.setAccessibleName("Cancel active operation")
+        self.btn_cancel_operation.setToolTip("Request cooperative cancellation of the running operation")
+        self.btn_cancel_operation.setStyleSheet(action_btn_style)
+        self.btn_cancel_operation.setEnabled(False)
+        self.btn_cancel_operation.clicked.connect(self.cancel_active_operation)
+        exec_btn_row.addWidget(self.btn_cancel_operation)
+
+        self.btn_clear_history = QToolButton(exec_group)
+        self.btn_clear_history.setText("🗑 Clear")
+        self.btn_clear_history.setAccessibleName("Clear session execution history")
+        self.btn_clear_history.setToolTip("Clear RAM-only execution history")
+        self.btn_clear_history.setStyleSheet(action_btn_style)
+        self.btn_clear_history.clicked.connect(self._clear_execution_history)
+        exec_btn_row.addWidget(self.btn_clear_history)
+        exec_btn_row.addStretch(1)
+        exec_layout.addLayout(exec_btn_row)
+
+        lbl_hist = QLabel("Session Execution History (RAM-only):", exec_group)
+        lbl_hist.setStyleSheet("color: #8b949e; font-size: 9pt;")
+        exec_layout.addWidget(lbl_hist)
+
+        self.history_list = QListWidget(exec_group)
+        self.history_list.setAccessibleName("Session execution history")
+        self.history_list.setMinimumHeight(80)
+        self.history_list.setMaximumHeight(150)
+        self.history_list.currentItemChanged.connect(self._history_item_selected)
+        exec_layout.addWidget(self.history_list)
+
+        # Group 5: Parsed Results & Active Ticket Insertion
+        results_group = self._content_groups[5]
+        results_layout = results_group.layout()
+        old_r = results_layout.takeAt(0).widget()
+        old_r.hide()
+        old_r.deleteLater()
+
+        results_btn_row = QHBoxLayout()
+        results_btn_row.setSpacing(4)
+        self.btn_toggle_json = QToolButton(results_group)
+        self.btn_toggle_json.setText("{ } Raw JSON")
+        self.btn_toggle_json.setAccessibleName("Toggle between formatted summary and sanitized JSON")
+        self.btn_toggle_json.setCheckable(True)
+        self.btn_toggle_json.setStyleSheet(action_btn_style)
+        self.btn_toggle_json.toggled.connect(self._toggle_results_view)
+        results_btn_row.addWidget(self.btn_toggle_json)
+
+        self.btn_insert_into_ticket = QToolButton(results_group)
+        self.btn_insert_into_ticket.setText("📥 Insert into Active Ticket")
+        self.btn_insert_into_ticket.setAccessibleName("Insert diagnostic summary into active ticket note")
+        self.btn_insert_into_ticket.setToolTip("Insert the validated diagnostic summary into the active ticket note (single-use per run)")
+        self.btn_insert_into_ticket.setStyleSheet(action_btn_style)
+        self.btn_insert_into_ticket.setEnabled(False)
+        self.btn_insert_into_ticket.clicked.connect(self.insert_current_result_into_ticket)
+        results_btn_row.addWidget(self.btn_insert_into_ticket)
+        results_btn_row.addStretch(1)
+        results_layout.addLayout(results_btn_row)
+
+        self.results_output = QPlainTextEdit(results_group)
+        self.results_output.setReadOnly(True)
+        self.results_output.setAccessibleName("Parsed operation results and sanitized JSON")
+        self.results_output.setPlaceholderText("Run a synthetic operation or select a history entry to inspect results.")
+        self.results_output.setMinimumHeight(110)
+        self.results_output.setMaximumHeight(200)
+        results_layout.addWidget(self.results_output)
+
+        self.lbl_results_notice = QLabel("", results_group)
+        self.lbl_results_notice.setWordWrap(True)
+        self.lbl_results_notice.setStyleSheet("color: #8b949e; font-size: 9pt;")
+        results_layout.addWidget(self.lbl_results_notice)
+
+        self.operation_finished.connect(self._on_operation_finished)
         self.navigation.currentItemChanged.connect(self._category_changed)
         self.search_input.textChanged.connect(self._refresh_operations)
         self.risk_filter.currentIndexChanged.connect(self._refresh_operations)
@@ -482,9 +639,21 @@ class M365LauncherWidget(QWidget):
         layout.addWidget(self.workspace_splitter, 1)
         self.scroll_area.viewport().installEventFilter(self)
 
+    def enable_synthetic_catalog(self) -> None:
+        """Switch the catalog and execution service to the 4 S2 offline synthetic operations."""
+        self.catalog_service = build_synthetic_catalog_service()
+        self.execution_service.catalog_service = self.catalog_service
+        self.notice_label.setText("Offline synthetic mode active — PowerShell 7 worker against local synthetic fixtures.")
+        self._refresh_operations()
+
     @property
     def current_category_id(self):
         item = self.navigation.currentItem()
+        return item.data(Qt.UserRole) if item else None
+
+    @property
+    def current_operation_id(self) -> Optional[str]:
+        item = self.operation_list.currentItem()
         return item.data(Qt.UserRole) if item else None
 
     def _category_changed(self, *_):
@@ -499,6 +668,8 @@ class M365LauncherWidget(QWidget):
         category = self.catalog_service.category(self.current_category_id)
         self.operation_list.clear()
         self.operation_details.clear()
+        self._clear_parameters_form()
+        self.btn_run_operation.setEnabled(False)
         operations = self.catalog_service.operations(category.id, self.search_input.text(),
                                                       self.risk_filter.currentData(), self.lifecycle_filter.currentData())
         for operation in operations:
@@ -525,17 +696,209 @@ class M365LauncherWidget(QWidget):
             self.operation_list.setCurrentRow(0)
 
     def _operation_changed(self, item, *_):
+        self._clear_parameters_form()
         if item is None:
             self.operation_details.clear()
+            self.btn_run_operation.setEnabled(False)
+            self.parameters_status.setText("Select an operation to inspect or configure parameters.")
             return
         try:
             operation = self.catalog_service.operation(item.data(Qt.UserRole))
         except CatalogError:
             self.operation_details.setPlainText("Unknown or invalid operation. Metadata unavailable.")
+            self.btn_run_operation.setEnabled(False)
             return
         self.operation_details.setPlainText(
             operation.title + "\n" + operation.description + "\n\nUnavailable:\n• "
             + "\n• ".join(operation.disabled_reasons) + "\n\n" + operation.details)
+        self._build_parameters_form(operation)
+        self.btn_run_operation.setEnabled(self.execution_service.state != "running")
+
+    def _clear_parameters_form(self) -> None:
+        self._parameter_widgets.clear()
+        while self.parameters_form.count():
+            child = self.parameters_form.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def _build_parameters_form(self, operation) -> None:
+        self._clear_parameters_form()
+        try:
+            details = json.loads(operation.details)
+            params = details.get("parameters", [])
+        except (ValueError, TypeError):
+            params = []
+
+        if not params:
+            self.parameters_status.setText(f"{operation.title}: No extra parameters required (uses target identity).")
+            return
+
+        self.parameters_status.setText(f"{operation.title}: Configure bounded operation parameters below.")
+        for spec in params:
+            name = spec.get("name", "")
+            ptype = spec.get("type", "string")
+            desc = spec.get("description", name)
+            if ptype == "integer":
+                spin = QSpinBox(self.parameters_form_container)
+                spin.setAccessibleName(name)
+                spin.setToolTip(desc)
+                spin.setMinimum(int(spec.get("minimum", 0)))
+                spin.setMaximum(int(spec.get("maximum", 10000)))
+                if "default" in spec:
+                    spin.setValue(int(spec["default"]))
+                self._parameter_widgets[name] = (ptype, spin)
+                self.parameters_form.addRow(f"{name}:", spin)
+            elif ptype == "boolean":
+                chk = QCheckBox(self.parameters_form_container)
+                chk.setAccessibleName(name)
+                chk.setToolTip(desc)
+                if "default" in spec:
+                    chk.setChecked(bool(spec["default"]))
+                self._parameter_widgets[name] = (ptype, chk)
+                self.parameters_form.addRow(f"{name}:", chk)
+            else:
+                edit = QLineEdit(self.parameters_form_container)
+                edit.setAccessibleName(name)
+                edit.setPlaceholderText(desc)
+                if "default" in spec:
+                    val = spec["default"]
+                    edit.setText(",".join(val) if isinstance(val, list) else str(val))
+                self._parameter_widgets[name] = (ptype, edit)
+                self.parameters_form.addRow(f"{name}:", edit)
+
+    def collect_parameters(self) -> dict:
+        """Read current parameter values from the dynamic parameter controls."""
+        values: dict = {}
+        for name, (ptype, widget) in self._parameter_widgets.items():
+            if ptype == "integer" and isinstance(widget, QSpinBox):
+                values[name] = int(widget.value())
+            elif ptype == "boolean" and isinstance(widget, QCheckBox):
+                values[name] = bool(widget.isChecked())
+            elif isinstance(widget, QLineEdit):
+                raw = widget.text().strip()
+                if ptype == "string_array":
+                    values[name] = [s.strip() for s in raw.split(",") if s.strip()] if raw else []
+                elif ptype == "number":
+                    try:
+                        values[name] = float(raw)
+                    except ValueError:
+                        values[name] = raw
+                else:
+                    values[name] = raw
+        return values
+
+    def run_selected_operation(self, *, async_mode: bool = False) -> Optional[ExecutionOutcome]:
+        """Execute the currently selected operation through M365ExecutionService."""
+        script_id = self.current_operation_id
+        if not script_id:
+            return None
+        params = self.collect_parameters()
+        ticket_id = self.ticket_editor.scratchpad_id if self._active_editor and self.ticket_editor.scratchpad_id > 0 else None
+        self.lbl_exec_state.setText(f"State: RUNNING ({script_id})...")
+        self.btn_run_operation.setEnabled(False)
+        self.btn_cancel_operation.setEnabled(True)
+
+        if async_mode:
+            def _worker():
+                outcome = self.execution_service.execute(script_id, params, ticket_id=ticket_id)
+                self.operation_finished.emit(outcome)
+
+            t = threading.Thread(target=_worker, daemon=True)
+            t.start()
+            return None
+
+        outcome = self.execution_service.execute(script_id, params, ticket_id=ticket_id)
+        self._on_operation_finished(outcome)
+        return outcome
+
+    def cancel_active_operation(self) -> bool:
+        """Request cooperative cancellation of the active operation."""
+        cancelled = self.execution_service.request_cancel()
+        if cancelled:
+            self.lbl_exec_state.setText("State: CANCELLING...")
+        return cancelled
+
+    def _on_operation_finished(self, outcome: ExecutionOutcome) -> None:
+        self._current_outcome = outcome
+        self.btn_run_operation.setEnabled(self.current_operation_id is not None)
+        self.btn_cancel_operation.setEnabled(False)
+        self.lbl_exec_state.setText(
+            f"State: {outcome.status.upper()} ({outcome.operation_outcome}) — {outcome.script_id}"
+        )
+        self._refresh_history_list()
+        self._display_outcome(outcome)
+        self.company_panel.refresh_status()
+
+    def _refresh_history_list(self) -> None:
+        self.history_list.blockSignals(True)
+        self.history_list.clear()
+        for rec in self.execution_service.history:
+            dur = f"{rec['duration_ms']}ms" if rec.get("duration_ms") is not None else "0ms"
+            label_txt = f"[{rec['status'].upper()}] {rec['script_id']} ({dur}) · {rec['completed_at']}"
+            item = QListWidgetItem(label_txt)
+            item.setData(Qt.UserRole, rec["correlation_id"])
+            self.history_list.addItem(item)
+        if self.history_list.count() > 0:
+            self.history_list.setCurrentRow(0)
+        self.history_list.blockSignals(False)
+
+    def _history_item_selected(self, item: Optional[QListWidgetItem], *_) -> None:
+        if item is None:
+            return
+        cid = item.data(Qt.UserRole)
+        outcome = self.execution_service.get_outcome(cid)
+        if outcome is not None:
+            self._current_outcome = outcome
+            self._display_outcome(outcome)
+
+    def _display_outcome(self, outcome: ExecutionOutcome) -> None:
+        if self._showing_raw_json:
+            self.results_output.setPlainText(outcome.sanitized_json)
+        else:
+            self.results_output.setPlainText(outcome.summary_text)
+        can_insert = (
+            outcome.insertion_preview is not None
+            and not outcome.insertion_preview.consumed
+            and self.ticket_editor.isEnabled()
+        )
+        self.btn_insert_into_ticket.setEnabled(can_insert)
+        if outcome.insertion_preview is not None and outcome.insertion_preview.consumed:
+            self.lbl_results_notice.setText("Note insertion complete for this correlation ID.")
+        elif outcome.status in ("success", "partial"):
+            self.lbl_results_notice.setText("Ready to insert validated summary into Active Ticket Notes.")
+        else:
+            self.lbl_results_notice.setText(f"Run ended with status '{outcome.status}'; note insertion unavailable.")
+
+    def _toggle_results_view(self, checked: bool) -> None:
+        self._showing_raw_json = checked
+        self.btn_toggle_json.setText("📋 Summary View" if checked else "{ } Raw JSON")
+        if self._current_outcome is not None:
+            self._display_outcome(self._current_outcome)
+
+    def _clear_execution_history(self) -> None:
+        self.execution_service.clear_history()
+        self.history_list.clear()
+        self._current_outcome = None
+        self.results_output.clear()
+        self.btn_insert_into_ticket.setEnabled(False)
+        self.lbl_results_notice.setText("Session history cleared.")
+        self.lbl_exec_state.setText("State: IDLE (Offline Synthetic)")
+
+    def insert_current_result_into_ticket(self) -> bool:
+        """Insert the current outcome's preview into the active ticket editor using its single-use token."""
+        if self._current_outcome is None or self._current_outcome.insertion_preview is None:
+            self.lbl_results_notice.setText("No eligible result preview available for insertion.")
+            return False
+        token = self._current_outcome.insertion_preview.token
+        try:
+            self.execution_service.insert_into_active_ticket(token, self.ticket_editor)
+            self._display_outcome(self._current_outcome)
+            self.status_message_requested.emit("✓ Inserted M365 diagnostic summary into Active Ticket note!", 3500)
+            return True
+        except ValueError as exc:
+            self.lbl_results_notice.setText(str(exc))
+            self.btn_insert_into_ticket.setEnabled(False)
+            return False
 
     def _on_nav_toggled(self, visible: bool) -> None:
         self.navigation.setVisible(visible)
@@ -587,6 +950,8 @@ class M365LauncherWidget(QWidget):
             self.btn_more.setEnabled(False)
             self.ticket_editor.setEnabled(False)
             self.ticket_editor.setPlainText("")
+            if self._current_outcome is not None:
+                self._display_outcome(self._current_outcome)
             return
 
         self.btn_template.setEnabled(True)
@@ -606,6 +971,8 @@ class M365LauncherWidget(QWidget):
         self.lbl_ticket_id.setText(f"#{t_num}" if t_num else "Ticket")
         self.lbl_ticket_client.setText(f"Client: {client}")
         self.lbl_ticket_subject.setText(f"Subject: {title}")
+        if self._current_outcome is not None:
+            self._display_outcome(self._current_outcome)
 
     def _on_stopwatch_tick(self, sid: int, elapsed_seconds: int) -> None:
         self._update_stopwatch_ui()

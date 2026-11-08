@@ -1,0 +1,56 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.ENTRA.USER_IDENTITY",
+  "title": "Get-UserIdentity",
+  "description": "Resolve an Entra ID user identity by UPN or object ID (offline synthetic candidate).",
+  "category": "entra-id",
+  "tags": [
+    "entra",
+    "identity",
+    "user",
+    "snapshot",
+    "synthetic"
+  ],
+  "script_path": "entra-id/user-identity/Get-UserIdentity.ps1",
+  "script_version": "0.3.0-synthetic.1",
+  "script_sha256": "243409de4f9e7e0af28b50da4bbe0981a63fe66cf1a9902d1ff08ceab108b6c7",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.0.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 90,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}

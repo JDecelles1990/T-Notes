@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 from typing import Dict, Optional, Tuple
-from PySide6.QtCore import QBuffer, QEvent, QIODevice, QMimeData, QPoint, Qt, QUrl, Signal
+from PySide6.QtCore import QBuffer, QEvent, QIODevice, QMimeData, QPoint, QRect, Qt, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
@@ -16,19 +16,25 @@ from PySide6.QtGui import (
     QImage,
     QKeyEvent,
     QMouseEvent,
+    QPainter,
+    QPen,
     QTextCharFormat,
     QTextCursor,
     QTextDocument,
+    QTextImageFormat,
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
     QMenu,
     QMessageBox,
     QTextEdit,
+    QToolTip,
 )
 from src.core.constants import LOCAL_IMAGE_URL_PREFIX
 from src.services.image_service import ImageService
+from src.ui.dialogs.resize_image_dialog import ResizeImageDialog
 
 
 class TechPadEditor(QTextEdit):
@@ -53,6 +59,16 @@ class TechPadEditor(QTextEdit):
         # In-memory dictionary holding unsaved image bytes {image_name: bytes}
         self.in_memory_images: Dict[str, bytes] = {}
         self._pressed_anchor = ""
+
+        # Image selection & interactive resize tracking
+        self._selected_image_pos: Optional[int] = None
+        self._is_resizing_image: bool = False
+        self._resize_start_pos: QPoint = QPoint()
+        self._resize_orig_width: int = 0
+        self._resize_orig_height: int = 0
+        self._resize_current_width: int = 0
+        self._resize_current_height: int = 0
+        self._resize_aspect_ratio: float = 1.0
 
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
@@ -346,6 +362,21 @@ class TechPadEditor(QTextEdit):
         has_ctrl = bool(mods & Qt.ControlModifier)
         has_shift = bool(mods & Qt.ShiftModifier)
 
+        # Handle image deletion when an image is selected
+        if self._selected_image_pos is not None:
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                c = self.textCursor()
+                c.setPosition(self._selected_image_pos)
+                c.setPosition(self._selected_image_pos + 1, QTextCursor.KeepAnchor)
+                c.removeSelectedText()
+                self._selected_image_pos = None
+                self.viewport().update()
+                event.accept()
+                return
+            elif not has_ctrl and not bool(mods & Qt.AltModifier):
+                self._selected_image_pos = None
+                self.viewport().update()
+
         # 1. Slide / Move tab left or right: Ctrl+Shift+PageDown / PageUp
         if has_ctrl and has_shift:
             if event.key() == Qt.Key_C:
@@ -511,14 +542,186 @@ class TechPadEditor(QTextEdit):
         else:
             super().dropEvent(event)
 
+    def _get_resize_handle_rect(self, rect: QRect) -> QRect:
+        """Calculates bottom-right corner resize handle bounding box for an image."""
+        handle_size = 9
+        return QRect(rect.right() - handle_size + 1, rect.bottom() - handle_size + 1, handle_size, handle_size)
+
+    def _get_image_info_at_doc_pos(self, doc_pos: int) -> Optional[dict]:
+        """Returns geometry and metadata for the image at character index doc_pos."""
+        if doc_pos < 0 or doc_pos >= self.document().characterCount():
+            return None
+        c = self.textCursor()
+        c.setPosition(doc_pos)
+        c.setPosition(doc_pos + 1, QTextCursor.KeepAnchor)
+        fmt = c.charFormat()
+        if not fmt.isImageFormat():
+            return None
+        img_fmt = fmt.toImageFormat()
+        name = img_fmt.name()
+
+        res = self.document().resource(QTextDocument.ImageResource, QUrl(name))
+        if not isinstance(res, QImage) or res.isNull():
+            raw_name = name.replace(LOCAL_IMAGE_URL_PREFIX, "").split("/")[-1]
+            res = self.document().resource(QTextDocument.ImageResource, QUrl(f"{LOCAL_IMAGE_URL_PREFIX}{raw_name}"))
+        if not isinstance(res, QImage) or res.isNull():
+            raw_name = name.replace(LOCAL_IMAGE_URL_PREFIX, "").split("/")[-1]
+            res = self.document().resource(QTextDocument.ImageResource, QUrl(raw_name))
+
+        orig_w = res.width() if isinstance(res, QImage) and not res.isNull() else 100
+        orig_h = res.height() if isinstance(res, QImage) and not res.isNull() else 100
+        curr_w = int(img_fmt.width()) if img_fmt.width() > 0 else orig_w
+        curr_h = int(img_fmt.height()) if img_fmt.height() > 0 else orig_h
+
+        c0 = self.textCursor()
+        c0.setPosition(doc_pos)
+        c1 = self.textCursor()
+        c1.setPosition(doc_pos + 1)
+        r0 = self.cursorRect(c0)
+        r1 = self.cursorRect(c1)
+        w = r1.left() - r0.left()
+        h = r0.height()
+        rect = QRect(r0.left(), r0.top(), max(1, w if w > 0 else curr_w), max(1, h if h > 0 else curr_h))
+
+        return {
+            "pos": doc_pos,
+            "name": name,
+            "qimage": res,
+            "current_width": curr_w,
+            "current_height": curr_h,
+            "original_width": orig_w,
+            "original_height": orig_h,
+            "rect": rect,
+        }
+
+    def _get_image_info_at_pos(self, pt: QPoint) -> Optional[dict]:
+        """Checks if viewport position pt intersects an embedded image."""
+        c = self.cursorForPosition(pt)
+        pos = c.position()
+        doc_len = self.document().characterCount()
+
+        # Check candidate character positions around the hit point
+        for candidate in (pos, pos - 1, pos + 1):
+            if 0 <= candidate < doc_len:
+                info = self._get_image_info_at_doc_pos(candidate)
+                if info and info["rect"].adjusted(-3, -3, 3, 3).contains(pt):
+                    return info
+
+        return None
+
+    def _get_image_at_pos(self, pos: QPoint) -> Optional[Tuple[str, QImage]]:
+        """Checks if the given viewport position is over an embedded image (legacy/public API)."""
+        info = self._get_image_info_at_pos(pos)
+        if info and isinstance(info["qimage"], QImage) and not info["qimage"].isNull():
+            return info["name"], info["qimage"]
+        return None
+
+    def _apply_image_size(self, pos: int, width: int, height: int) -> None:
+        """Applies new width and height to the QTextImageFormat at character index pos."""
+        if pos < 0 or pos >= self.document().characterCount():
+            return
+        c = self.textCursor()
+        c.setPosition(pos)
+        c.setPosition(pos + 1, QTextCursor.KeepAnchor)
+        fmt = c.charFormat()
+        if fmt.isImageFormat():
+            img_fmt = fmt.toImageFormat()
+            img_fmt.setWidth(float(width))
+            img_fmt.setHeight(float(height))
+            c.setCharFormat(img_fmt)
+            self.viewport().update()
+
+    def resize_image_at(self, pos: int, width: int, height: int) -> None:
+        """Public API allowing programmatic proportional or custom image resizing."""
+        self._apply_image_size(pos, width, height)
+
+    def _quick_resize_image(self, info: dict, mode) -> None:
+        """Resizes image via context menu preset or fits pane width."""
+        pos = info["pos"]
+        orig_w = info["original_width"]
+        orig_h = info["original_height"]
+        aspect = orig_w / max(1, orig_h)
+
+        if mode == "fit":
+            # Compute available width inside this editor pane (works in both normal and split views)
+            avail_w = max(50, self.viewport().width() - 24)
+            new_w = max(50, min(orig_w, avail_w))
+            new_h = max(20, int(round(new_w / aspect)))
+        else:
+            pct = float(mode)
+            new_w = max(20, int(round(orig_w * pct)))
+            new_h = max(20, int(round(orig_h * pct)))
+
+        self._apply_image_size(pos, new_w, new_h)
+        if parent_win := self.window():
+            if hasattr(parent_win, "status_bar"):
+                parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
+
+    def _open_resize_dialog(self, info: dict) -> None:
+        """Opens the ResizeImageDialog for custom dimensions with aspect ratio lock."""
+        pos = info["pos"]
+        avail_w = max(50, self.viewport().width() - 24)
+        dlg = ResizeImageDialog(
+            current_width=info["current_width"],
+            current_height=info["current_height"],
+            original_width=info["original_width"],
+            original_height=info["original_height"],
+            max_pane_width=avail_w,
+            parent=self,
+        )
+        if dlg.exec() == QDialog.Accepted:
+            new_w, new_h = dlg.get_dimensions()
+            self._apply_image_size(pos, new_w, new_h)
+            if parent_win := self.window():
+                if hasattr(parent_win, "status_bar"):
+                    parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Shows pointing hand cursor when hovering over hyperlinks or task checkboxes."""
+        # 1. Active interactive resize dragging
+        if getattr(self, "_is_resizing_image", False) and self._selected_image_pos is not None:
+            dx = event.pos().x() - self._resize_start_pos.x()
+            dy = event.pos().y() - self._resize_start_pos.y()
+            if event.modifiers() & Qt.ShiftModifier:
+                new_w = max(20, int(self._resize_orig_width + dx))
+                new_h = max(20, int(self._resize_orig_height + dy))
+            else:
+                new_w = max(20, int(self._resize_orig_width + dx))
+                new_h = max(20, int(round(new_w / self._resize_aspect_ratio)))
+            self._resize_current_width = new_w
+            self._resize_current_height = new_h
+            self.viewport().setCursor(Qt.SizeFDiagCursor)
+            self.viewport().update()
+            QToolTip.showText(self.mapToGlobal(event.pos()), f"{new_w} × {new_h} px (Hold Shift to unconstrain)", self)
+            event.accept()
+            return
+
+        # 2. Check hover over corner resize handle of currently selected image
+        if self._selected_image_pos is not None:
+            info = self._get_image_info_at_doc_pos(self._selected_image_pos)
+            if info:
+                handle_rect = self._get_resize_handle_rect(info["rect"])
+                if handle_rect.adjusted(-4, -4, 4, 4).contains(event.pos()):
+                    self.viewport().setCursor(Qt.SizeFDiagCursor)
+                    self.setToolTip("Drag to resize image (Hold Shift to unlock aspect ratio)")
+                    super().mouseMoveEvent(event)
+                    return
+
+        # 3. Check hover over any image
+        info = self._get_image_info_at_pos(event.pos())
+        if info:
+            self.viewport().setCursor(Qt.PointingHandCursor)
+            self.setToolTip("Click to select image • Double-click or Right-click to resize")
+            super().mouseMoveEvent(event)
+            return
+
+        # 4. Standard link and checklist anchors
         anchor = self.anchorAt(event.pos())
         if anchor:
-            self.viewport().setCursor(Qt.PointingHandCursor)
             if anchor.startswith("task://"):
+                self.viewport().setCursor(Qt.PointingHandCursor)
                 self.setToolTip("Click to toggle task completion")
             else:
+                self.viewport().setCursor(Qt.PointingHandCursor)
                 self.setToolTip(f"Open link: {anchor}")
         else:
             self.viewport().setCursor(Qt.IBeamCursor)
@@ -535,13 +738,67 @@ class TechPadEditor(QTextEdit):
         self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
         if event.button() == Qt.LeftButton:
+            # 1. Check if clicking on the resize handle of an already selected image
+            if self._selected_image_pos is not None:
+                img_info = self._get_image_info_at_doc_pos(self._selected_image_pos)
+                if img_info:
+                    handle_rect = self._get_resize_handle_rect(img_info["rect"])
+                    if handle_rect.adjusted(-4, -4, 4, 4).contains(event.pos()):
+                        self._is_resizing_image = True
+                        self._resize_start_pos = event.pos()
+                        self._resize_orig_width = img_info["current_width"]
+                        self._resize_orig_height = img_info["current_height"]
+                        self._resize_current_width = img_info["current_width"]
+                        self._resize_current_height = img_info["current_height"]
+                        self._resize_aspect_ratio = img_info["original_width"] / max(1, img_info["original_height"])
+                        event.accept()
+                        return
+
+            # 2. Check if clicking on an image to select it
+            clicked_img = self._get_image_info_at_pos(event.pos())
+            if clicked_img:
+                self._selected_image_pos = clicked_img["pos"]
+                self.viewport().update()
+                c = self.textCursor()
+                c.setPosition(clicked_img["pos"] + 1)
+                self.setTextCursor(c)
+                event.accept()
+                return
+            else:
+                if self._selected_image_pos is not None:
+                    self._selected_image_pos = None
+                    self.viewport().update()
+
             self._pressed_anchor = self.anchorAt(event.pos())
         else:
             self._pressed_anchor = ""
         super().mousePressEvent(event)
 
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """Opens ResizeImageDialog if double-clicking an embedded image."""
+        img_info = self._get_image_info_at_pos(event.pos())
+        if img_info:
+            self._open_resize_dialog(img_info)
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Launches external browser when clicking on an anchor or toggles task checkboxes."""
+        """Applies dragged resize dimensions, launches external links, or toggles task checkboxes."""
+        if getattr(self, "_is_resizing_image", False) and self._selected_image_pos is not None:
+            self._is_resizing_image = False
+            new_w = getattr(self, "_resize_current_width", 0)
+            new_h = getattr(self, "_resize_current_height", 0)
+            if new_w > 0 and new_h > 0:
+                self._apply_image_size(self._selected_image_pos, new_w, new_h)
+                if parent_win := self.window():
+                    if hasattr(parent_win, "status_bar"):
+                        parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
+            self.viewport().setCursor(Qt.IBeamCursor)
+            self.viewport().update()
+            event.accept()
+            return
+
         if event.button() == Qt.LeftButton:
             anchor = self.anchorAt(event.pos())
             if anchor and anchor == self._pressed_anchor:
@@ -570,49 +827,56 @@ class TechPadEditor(QTextEdit):
         self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
 
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if self._selected_image_pos is not None:
+            img_info = self._get_image_info_at_doc_pos(self._selected_image_pos)
+            if img_info:
+                rect = img_info["rect"]
+                painter = QPainter(self.viewport())
+                painter.setRenderHint(QPainter.Antialiasing)
+
+                # Selection outline
+                pen = QPen(QColor("#007acc"), 2, Qt.SolidLine)
+                painter.setPen(pen)
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRect(rect)
+
+                # Corner resize handle
+                handle_rect = self._get_resize_handle_rect(rect)
+                painter.setPen(QPen(QColor("#ffffff"), 1))
+                painter.setBrush(QColor("#007acc"))
+                painter.drawRect(handle_rect)
+
+                # Rubber-band preview during drag resizing
+                if getattr(self, "_is_resizing_image", False):
+                    preview_w = getattr(self, "_resize_current_width", rect.width())
+                    preview_h = getattr(self, "_resize_current_height", rect.height())
+                    preview_rect = QRect(rect.left(), rect.top(), preview_w, preview_h)
+
+                    preview_pen = QPen(QColor("#60a5fa"), 2, Qt.DashLine)
+                    painter.setPen(preview_pen)
+                    painter.setBrush(QColor(96, 165, 250, 35))
+                    painter.drawRect(preview_rect)
+
+                    dim_text = f" {preview_w} × {preview_h} px "
+                    metrics = painter.fontMetrics()
+                    text_w = metrics.horizontalAdvance(dim_text) + 8
+                    text_h = metrics.height() + 4
+                    badge_rect = QRect(preview_rect.right() - text_w, preview_rect.bottom() + 4, text_w, text_h)
+                    painter.setPen(Qt.NoPen)
+                    painter.setBrush(QColor(30, 30, 30, 220))
+                    painter.drawRoundedRect(badge_rect, 3, 3)
+                    painter.setPen(QColor("#ffffff"))
+                    painter.drawText(badge_rect, Qt.AlignCenter, dim_text)
+
+                painter.end()
+
     def focusInEvent(self, event) -> None:
         """Notifies main window when this editor receives focus for active tracking."""
         super().focusInEvent(event)
         self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
-
-    def _get_image_at_pos(self, pos: QPoint) -> Optional[Tuple[str, QImage]]:
-        """Checks if the given viewport position is over an embedded image.
-
-        Returns (resource_url, qimage) if found, else None.
-        """
-        cursor = self.cursorForPosition(pos)
-
-        def check_format(c: QTextCursor) -> Optional[str]:
-            fmt = c.charFormat()
-            if fmt.isImageFormat():
-                return fmt.toImageFormat().name()
-            return None
-
-        # 1. Direct cursor position check
-        name = check_format(cursor)
-
-        # 2. Check char immediately to the left
-        if not name:
-            c_left = QTextCursor(cursor)
-            if c_left.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor):
-                name = check_format(c_left)
-
-        # 3. Check char immediately to the right
-        if not name:
-            c_right = QTextCursor(cursor)
-            if c_right.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor):
-                name = check_format(c_right)
-
-        if not name:
-            return None
-
-        # Retrieve QImage from document resources
-        res = self.document().resource(QTextDocument.ImageResource, QUrl(name))
-        if isinstance(res, QImage) and not res.isNull():
-            return name, res
-
-        return None
 
     def _copy_image_to_clipboard(self, qimage: QImage) -> None:
         """Copies image to system clipboard and notifies status bar."""
@@ -654,12 +918,42 @@ class TechPadEditor(QTextEdit):
 
     def contextMenuEvent(self, event) -> None:
         """Provides enhanced context menu with image copy/export and technician quick-actions."""
-        img_info = self._get_image_at_pos(event.pos())
+        img_info_full = self._get_image_info_at_pos(event.pos())
         menu = QMenu(self)
 
         # 1. Image Actions (if right-clicking an embedded screenshot/image)
-        if img_info:
-            img_url, qimage = img_info
+        if img_info_full:
+            self._selected_image_pos = img_info_full["pos"]
+            self.viewport().update()
+            img_url = img_info_full["name"]
+            qimage = img_info_full["qimage"]
+
+            # Submenu: 📏 Quick Resize
+            menu_resize = menu.addMenu("📏 Quick Resize")
+            menu_resize.setToolTip("Quickly scale image to preset percentage or fit pane")
+
+            act_fit = menu_resize.addAction("Fit to Pane Width")
+            act_fit.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, "fit"))
+
+            menu_resize.addSeparator()
+            act_100 = menu_resize.addAction("100% (Original Size)")
+            act_100.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, 1.0))
+
+            act_75 = menu_resize.addAction("75%")
+            act_75.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, 0.75))
+
+            act_50 = menu_resize.addAction("50%")
+            act_50.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, 0.50))
+
+            act_25 = menu_resize.addAction("25%")
+            act_25.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, 0.25))
+
+            act_dialog = menu.addAction("📐 Custom Resize...")
+            act_dialog.setToolTip("Open resize dialog with custom dimensions and aspect ratio lock")
+            act_dialog.triggered.connect(lambda checked=False, i=img_info_full: self._open_resize_dialog(i))
+
+            menu.addSeparator()
+
             act_copy_img = menu.addAction("📋 Copy Image")
             act_copy_img.setToolTip("Copies raw image data to clipboard")
             act_copy_img.triggered.connect(lambda: self._copy_image_to_clipboard(qimage))

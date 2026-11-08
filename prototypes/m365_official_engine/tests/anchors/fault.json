@@ -2,7 +2,7 @@
   "contract_version": "0.3.0",
   "provenance": "PROVISIONAL_OFFLINE_SYNTHETIC",
   "inventory_path": "tests/catalogs/fault.json",
-  "inventory_sha256": "f452f06db2c4ba1068f05b30f40124b2c43e2086d968a4a29f1c5136cb3521e5",
+  "inventory_sha256": "f2421432b3a60a894942e526cc2a721dd4dca8a5af51c91ea8ac3b6f63002756",
   "powershell": {
     "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "sha256": "2a6769a3330dc1084d0154bfde7d164ab750ca7f700f313f9d417c1be78b2233"
