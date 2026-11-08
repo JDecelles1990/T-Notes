@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 from typing import Dict, Optional, Tuple
-from PySide6.QtCore import QBuffer, QIODevice, QMimeData, QPoint, Qt, QUrl, Signal
+from PySide6.QtCore import QBuffer, QEvent, QIODevice, QMimeData, QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
@@ -56,10 +56,12 @@ class TechPadEditor(QTextEdit):
 
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
+        self.viewport().installEventFilter(self)
         self.textChanged.connect(self._on_text_changed)
         self.cursorPositionChanged.connect(self._on_cursor_or_focus)
 
     def _on_cursor_or_focus(self) -> None:
+        self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
 
     def _on_text_changed(self) -> None:
@@ -523,7 +525,14 @@ class TechPadEditor(QTextEdit):
             self.setToolTip("")
         super().mouseMoveEvent(event)
 
+    def eventFilter(self, watched, event):
+        if watched == self.viewport() and event.type() in (QEvent.MouseButtonPress, QEvent.FocusIn):
+            self.setFocus()
+            self.editor_focused.emit(self.scratchpad_id)
+        return super().eventFilter(watched, event)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
         if event.button() == Qt.LeftButton:
             self._pressed_anchor = self.anchorAt(event.pos())
@@ -558,11 +567,13 @@ class TechPadEditor(QTextEdit):
                         event.accept()
                         return
         super().mouseReleaseEvent(event)
+        self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
 
     def focusInEvent(self, event) -> None:
         """Notifies main window when this editor receives focus for active tracking."""
         super().focusInEvent(event)
+        self.setFocus()
         self.editor_focused.emit(self.scratchpad_id)
 
     def _get_image_at_pos(self, pos: QPoint) -> Optional[Tuple[str, QImage]]:

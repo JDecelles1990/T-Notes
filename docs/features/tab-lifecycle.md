@@ -104,14 +104,35 @@ To prevent disorientation across concurrent support sessions, each tab automatic
   - In HUD mode, the arrows dynamically enable when `count > 1` and disable when only a single ticket tab is open.
   - Clicking either arrow cycles tabs with wrap-around, focuses the active editor immediately, and updates the HUD window title (`📌 [HUD] TechPad — #INC-...`).
 
-### Active Ticket & Cursor Placement Resolution Across Dual Panes
-In both single-window and side-by-side Split View modes, the **Active Ticket** (or Active Note) is deterministically governed by cursor placement:
-- **Instant Focus & Cursor Binding:** Placing the text cursor inside an editor via clicking (`mousePressEvent`), typing, arrow key navigation (`cursorPositionChanged`), or clicking a tab header (`tabBarClicked`) immediately designates that ticket as the active ticket.
-- **Unified State Synchronization:** When focus shifts between the Split View side panel and the main window:
-  - The bottom bar reflects the active ticket (`Active Ticket: #<num> | Client: ... | Subject: ...`).
-  - The top bar ribbon tools and format status indicators bind to the active note.
-  - The troubleshooting stopwatch syncs and logs time against that active ticket.
-  - The **`📋 Copy Note`** top-bar button extracts and copies the complete rich text, formatting, and Base64-embedded images of that exact active ticket note into the Windows Clipboard.
+### Active Ticket & Cursor Placement Resolution Across Dual Panes (Reconnaissance Protocol)
+
+In both single-window and side-by-side Split View modes, the **Active Ticket** (or Active Note) is deterministically governed by cursor placement and user focus across both panes:
+
+#### 1. Reconnaissance Mechanics & Event Interception
+- **Viewport & Mouse Event Filtering:**
+  - `TechPadEditor` installs an event filter directly on its `viewport()` (`viewport().installEventFilter(self)`). Any `MouseButtonPress` or `FocusIn` event triggers immediate `self.setFocus()` and emits `editor_focused.emit(self.scratchpad_id)`.
+  - In `TechPadEditor.mousePressEvent()` and `mouseReleaseEvent()`, `self.setFocus()` is invoked explicitly to ensure Qt's keyboard focus moves to the clicked editor immediately, even during text selection.
+  - Every cursor move (`cursorPositionChanged`) and keystroke in either pane guarantees that the editor claims focus and signals `editor_focused`.
+- **Tab Header & Switch Recognition:**
+  - Clicking any tab header in the Split View side panel (`secondary_tab_widget.tabBar().tabBarClicked`) or main window (`tab_widget.tabBar().tabBarClicked`) executes `_on_tab_header_clicked()`, calling `editor.setFocus()` and `_on_editor_focused(editor.scratchpad_id)`.
+  - Switching tabs via keyboard (`Ctrl+Tab`, `Ctrl+PageDown`, `Ctrl+1..9`) or code triggers `_on_secondary_tab_changed` / `_on_current_tab_changed`, transferring focus and synchronizing the active ticket.
+  - Creating a new tab in either pane (`create_new_tab` or `_create_new_secondary_tab`) immediately focuses and activates the newly created ticket.
+
+#### 2. Deterministic Focus Resolution (`_get_active_editor()`)
+Because toolbar buttons (`QToolButton`) use `Qt.NoFocus` to prevent stealing keyboard focus during toolbar interactions, clicking toolbar buttons (such as `Copy Note` or `Export Note`) preserves the existing focus state. `TechPadMainWindow._get_active_editor()` resolves the active editor using the following tiered priority:
+1. **Direct Keyboard Focus:** Checks `QApplication.focusWidget()`. If a `TechPadEditor` (or its viewport) has keyboard focus, it is returned and updates `_logical_active_scratchpad_id`.
+2. **Visible Pane Focus:** Checks whether the current editor in `secondary_tab_widget` (if visible / not hidden) or `tab_widget` has focus.
+3. **Tracked Logical Active ID:** Evaluates `_logical_active_scratchpad_id`. If it belongs to an open tab in either pane whose container is not hidden (`not tw.isHidden()`), that editor is returned.
+4. **Toolbar Current Editor:** Checks `self.toolbar._current_editor` if its containing tab widget is visible.
+5. **Default Fallback:** Falls back to the primary pane's current editor (`prim_ed or sec_ed`).
+
+#### 3. Unified State Synchronization
+When focus shifts between the Split View side panel and the main window:
+- **Status Bar:** Bottom bar reflects active ticket metadata: `Active Ticket: #<num> | Client: ... | Subject: ...`.
+- **Toolbar Ribbon:** Top bar formatting tools, color swatches, font size dropdown, and checklist indicators re-bind to the active editor.
+- **Troubleshooting Stopwatch:** Time tracking automatically updates and logs against the active ticket.
+- **Copy Note & Markdown Export:** `📋 Copy Note` (`Ctrl+Shift+C`) and `📤 Copy Clean Note for Ticket Tool` (`Ctrl+Alt+N`) operate strictly on the active ticket.
+- **Plain-Text File Export:** `💾 Export Note (T-Notes Folder)` (`Ctrl+Alt+E`) writes the unformatted plain text of the active ticket into the daily timestamped repository directory.
 
 ### Browser-Style Keyboard Shortcuts
 

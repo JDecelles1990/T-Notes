@@ -943,7 +943,7 @@ class TechPadMainWindow(QMainWindow):
             return focus_w.parent()
 
         # 2. Check which visible pane's editor currently has focus or cursor focus
-        sec_ed = self.secondary_tab_widget.get_current_editor() if self.secondary_tab_widget.isVisible() else None
+        sec_ed = self.secondary_tab_widget.get_current_editor() if not self.secondary_tab_widget.isHidden() else None
         prim_ed = self.tab_widget.get_current_editor()
 
         if sec_ed and (sec_ed.hasFocus() or (sec_ed.viewport() and sec_ed.viewport().hasFocus())):
@@ -956,13 +956,15 @@ class TechPadMainWindow(QMainWindow):
         # 3. Check tracked logical active scratchpad ID
         if getattr(self, "_logical_active_scratchpad_id", None):
             ed, tw, idx = self._find_editor_by_id(self._logical_active_scratchpad_id)
-            if ed and ed.isVisible():
+            if ed and (ed.isVisible() or (tw and not tw.isHidden())):
                 return ed
 
         # 4. Check toolbar's current editor reference
         if hasattr(self, "toolbar") and self.toolbar._current_editor:
-            if self.toolbar._current_editor.isVisible():
-                return self.toolbar._current_editor
+            tb_ed = self.toolbar._current_editor
+            _, tw, _ = self._find_editor_by_id(tb_ed.scratchpad_id)
+            if tb_ed.isVisible() or (tw and not tw.isHidden()):
+                return tb_ed
 
         # 5. Default fallback
         return prim_ed or sec_ed
@@ -985,6 +987,7 @@ class TechPadMainWindow(QMainWindow):
         idx = self.tab_widget.add_ticket_tab(ticket, editor)
         self.tab_widget.setCurrentIndex(idx)
         editor.setFocus()
+        self._on_editor_focused(ticket["id"])
         self.set_save_status("Saved", is_saved=True)
         self._on_tabs_reordered()
 
@@ -997,6 +1000,7 @@ class TechPadMainWindow(QMainWindow):
         idx = self.secondary_tab_widget.add_ticket_tab(ticket, editor)
         self.secondary_tab_widget.setCurrentIndex(idx)
         editor.setFocus()
+        self._on_editor_focused(ticket["id"])
         self.set_save_status("Saved", is_saved=True)
         self._on_tabs_reordered()
 
@@ -1149,6 +1153,7 @@ class TechPadMainWindow(QMainWindow):
             self._save_session_state()
         editor = self.tab_widget.get_editor_at(index)
         if editor:
+            editor.setFocus()
             self._on_editor_focused(editor.scratchpad_id)
         else:
             self.toolbar.set_active_editor(None)
@@ -1639,6 +1644,7 @@ class TechPadMainWindow(QMainWindow):
             self._save_session_state()
         editor = self.secondary_tab_widget.get_editor_at(index)
         if editor:
+            editor.setFocus()
             self._on_editor_focused(editor.scratchpad_id)
 
     def _on_secondary_tab_close_requested(self, index: int) -> None:

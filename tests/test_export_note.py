@@ -166,7 +166,6 @@ def test_main_window_export_active_ticket(qapp, services, tmp_path, monkeypatch)
         session_service=session_service,
     )
 
-    main_window.show()
     try:
             # 1. Primary pane active ticket
         editor = main_window._get_active_editor()

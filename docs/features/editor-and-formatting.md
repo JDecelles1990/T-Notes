@@ -154,7 +154,7 @@ The ribbon toolbar provides a dual-action popup button (`QToolButton.MenuButtonP
 
 ### 5.5 Active Ticket Plain-Text File Export (`💾 Export Note` / `Ctrl+Alt+E`)
 The `Copy Note` dropdown menu features `💾 Export Note (T-Notes Folder)` (shortcut `Ctrl+Alt+E`), which exports the active ticket unformatted plain-text note directly into the project repository folder:
-- **Active Ticket Scope:** Automatically targets whichever ticket editor currently has focus / cursor placement, across the primary tab editor, secondary Split View pane, or M365 Launcher right sidebar.
+- **Active Ticket Reconnaissance & Split View Scope:** Automatically resolves whichever ticket editor currently holds cursor placement or focus, across the primary tab editor, secondary Split View sidebar pane, or M365 Launcher right sidebar. When typing or clicking in a Split View side-panel ticket tab, the application immediately recognizes that tab as the Active Ticket, ensuring `Export Note` writes the Split panel note rather than defaulting to the main window's tab.
 - **Pure Plain Text:** Strips all HTML markup, formatting tags, image binaries, and embedded image placeholders (`\uFFFC`).
 - **Save Location:** Saved into a daily subfolder inside `C:\Dev\T-Notes\T-Notes\`:
   `C:\Dev\T-Notes\T-Notes\<YYYY-MM-DD>\` (e.g. `C:\Dev\T-Notes\T-Notes\2026-11-04\`). The subfolder is automatically created if it does not exist.
