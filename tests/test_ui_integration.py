@@ -2133,3 +2133,19 @@ def test_ui_split_view_restore_archived_ticket_when_secondary_not_empty(main_win
     # Secondary pane must now contain both T2 and T3!
     assert main_window.secondary_tab_widget.count() == 2
     assert [main_window.secondary_tab_widget.get_editor_at(i).scratchpad_id for i in range(2)] == [t2_id, t3_id]
+
+
+def test_ui_buttons_have_hover_click_glow(main_window):
+    """T-Notes toolbar, status bar and history buttons get the colorful glow animation."""
+    for name in ("btn_status_hud", "btn_m365", "btn_toggle_split", "btn_toggle_drawer"):
+        assert getattr(getattr(main_window, name), "_glow_animator", None) is not None
+    assert main_window.toolbar.btn_split._glow_animator is not None
+    assert main_window.toolbar.btn_history._glow_animator is not None
+    assert main_window.history_drawer.btn_restore._glow_animator is not None
+
+
+def test_ui_m365_launcher_buttons_have_glow(main_window):
+    """M365 Launcher buttons get the same colorful hover/click glow as T-Notes buttons."""
+    ws = main_window.m365_workspace
+    for name in ("back_button", "btn_help", "nav_toggle", "btn_run_operation", "btn_cancel_operation"):
+        assert getattr(getattr(ws, name), "_glow_animator", None) is not None, name

@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.ui.components.glow_effect import install_glow
+
 
 M365_HELP_GUIDE_HTML = """
 <div style="font-family: 'Segoe UI', -apple-system, Roboto, sans-serif; color: #cccccc; line-height: 1.45;">
@@ -169,6 +171,7 @@ class M365HelpDialog(QDialog):
         self.btn_close.setDefault(True)
         self.btn_close.clicked.connect(self.accept)
         footer.addWidget(self.btn_close)
+        install_glow(self.btn_close, "#38bdf8")
 
         layout.addLayout(footer)
 

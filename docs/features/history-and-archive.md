@@ -108,3 +108,7 @@ Archive itself also retries persistence without another edit. Close Other Tabs
 stops at the first failure; earlier individually successful archives remain.
 Archive audit metadata remains a subsequent operation; a failure there retains
 the editor for recovery. There is no batch-wide archive transaction.
+
+### History drawer slide transition
+
+Toggling the History drawer (`Ctrl+H`, ribbon, status bar) slides the dock open/closed (~220ms) via `PanelWidthTransition`. The drawer remains visible until the close animation ends; the last width (min 320px, default 380px) is remembered and re-applied with `resizeDocks`. Responsive auto-collapse and restore paths stay instant. See `docs/architecture/system-overview.md` section 7.

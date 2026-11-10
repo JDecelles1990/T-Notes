@@ -57,3 +57,7 @@ Seventeen independent PowerShell 7 operation scripts implement diagnostics acros
 - **Group 4 (`Execution Workspace`):** Provides `▶ Run (Synthetic)`, `⏹ Cancel`, `🗑 Clear`, live execution state badge, and a selectable `Session Execution History` list.
 - **Group 5 (`Parsed Results`):** Displays the formatted diagnostic summary or `{ } Raw JSON` (sanitized) in a read-only `QPlainTextEdit`, plus `📥 Insert into Active Ticket` which validates the single-use preview token and appends the diagnostic summary directly into the Active Ticket shared document editor.
 
+
+## Pane slide transitions
+
+The left Categories pane and right Active Ticket pane slide open/closed (~220ms) when toggled from the launcher bar or the status-bar `☰ Categories` / `Active Ticket` buttons (`PanelWidthTransition`; see `docs/architecture/system-overview.md` section 7). Panes keep their `110–180px` / `220px+` width limits after each transition, and toggles are instant when the launcher page is not visible.

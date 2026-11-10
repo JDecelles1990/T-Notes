@@ -87,6 +87,110 @@ class TechPadTabBar(QTabBar):
         self._scroll_direction: int = 0
         self._is_cross_scrolling: bool = False
 
+        # Colorful hover / click glow animation state (per tab index)
+        self.setMouseTracking(True)
+        self._glow_levels: dict[int, float] = {}
+        self._glow_hover_idx: int = -1
+        self._glow_press_idx: int = -1
+        self._glow_hue: float = 0.0
+        self._glow_timer = QTimer(self)
+        self._glow_timer.setInterval(16)
+        self._glow_timer.timeout.connect(self._glow_tick)
+        self.tabMoved.connect(lambda *_: self._reset_glow())
+
+    # -- hover / click glow ----------------------------------------------------
+    def glow_level(self, index: int) -> float:
+        """Current glow intensity of a tab: 0 idle, ~1 hover, ~1.7 pressed."""
+        return self._glow_levels.get(index, 0.0)
+
+    def _set_glow_hover(self, index: int) -> None:
+        if index != self._glow_hover_idx:
+            self._glow_hover_idx = index
+            self._start_glow_timer()
+
+    def _set_glow_press(self, index: int) -> None:
+        if index != self._glow_press_idx:
+            self._glow_press_idx = index
+            self._start_glow_timer()
+
+    def _start_glow_timer(self) -> None:
+        if not self._glow_timer.isActive():
+            self._glow_timer.start()
+
+    def _glow_tick(self) -> None:
+        """Eases each tab's glow level toward its hover/press target and cycles hue."""
+        self._glow_hue = (self._glow_hue + 16.0 / 3600.0) % 1.0
+        for idx in {self._glow_hover_idx, self._glow_press_idx} - {-1}:
+            self._glow_levels.setdefault(idx, 0.0)
+        for idx in list(self._glow_levels):
+            if idx == self._glow_press_idx:
+                target = 1.7
+            elif idx == self._glow_hover_idx:
+                target = 1.0
+            else:
+                target = 0.0
+            level = self._glow_levels[idx]
+            level += (target - level) * 0.22
+            if abs(target - level) < 0.02:
+                level = target
+            if level <= 0.0 and target == 0.0:
+                del self._glow_levels[idx]
+            else:
+                self._glow_levels[idx] = level
+        if not self._glow_levels and self._glow_hover_idx < 0 and self._glow_press_idx < 0:
+            self._glow_timer.stop()
+        self.update()
+
+    def _reset_glow(self) -> None:
+        self._glow_levels.clear()
+        self._glow_hover_idx = -1
+        self._glow_press_idx = -1
+        self._glow_timer.stop()
+        self.update()
+
+    def tabInserted(self, index: int) -> None:
+        super().tabInserted(index)
+        self._reset_glow()
+
+    def tabRemoved(self, index: int) -> None:
+        super().tabRemoved(index)
+        self._reset_glow()
+
+    def leaveEvent(self, event) -> None:
+        self._glow_press_idx = -1
+        self._set_glow_hover(-1)
+        super().leaveEvent(event)
+
+    def _paint_tab_glow(self, painter: QPainter, rect: QRect, base: QColor, level: float) -> None:
+        """Paints a soft, hue-cycling neon glow inside a tab's rectangle."""
+        h, s, v, _ = base.getHsvF()
+        hue = (max(h, 0.0) + self._glow_hue) % 1.0
+        boost = max(0.0, level - 1.0) / 0.7
+        glow = QColor.fromHsvF(hue, max(0.35, s - 0.4 * boost), 1.0)
+        strength = min(level, 1.7)
+
+        painter.save()
+        painter.setClipRect(rect.adjusted(0, 0, 0, 0))
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        fill = QColor(glow)
+        fill.setAlpha(int(34 * strength))
+        painter.fillRect(rect.adjusted(1, 2, -1, 0), fill)
+
+        layers = 6 + int(4 * boost)
+        for k in range(layers):
+            ring = QColor(glow)
+            falloff = (1.0 - k / layers) ** 2
+            ring.setAlpha(int(min(255, 210 * strength * falloff)))
+            painter.setPen(ring)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(rect.adjusted(1 + k, 2 + k, -2 - k, -1 - k), 3, 3)
+
+        stripe = QColor(glow)
+        stripe.setAlpha(int(min(255, 160 + 70 * strength)))
+        painter.fillRect(QRect(rect.x() + 1, rect.y(), rect.width() - 2, 3), stripe)
+        painter.restore()
+
     def _scroll_left_btn(self) -> Optional[QToolButton]:
         return self.findChild(QToolButton, "ScrollLeftButton")
 
@@ -225,9 +329,17 @@ class TechPadTabBar(QTabBar):
                 painter.fillRect(rect.adjusted(1, 2, -1, 0), QColor(10, 10, 10, 160))
                 painter.setPen(QColor("#007acc"))
                 painter.drawRect(rect.adjusted(1, 2, -2, -1))
+            # 4. Colorful hover / click glow animation (suppressed while dragging)
+            elif not self._is_dragging:
+                level = self._glow_levels.get(i, 0.0)
+                if level > 0.01:
+                    self._paint_tab_glow(painter, rect, color, level)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
+            idx = self.tabAt(event.position().toPoint())
+            self._set_glow_press(idx)
+            self._set_glow_hover(idx)
             idx = self.tabAt(event.position().toPoint())
             self._drag_tab_idx = idx if idx >= 0 else None
             self._drag_start_pos = event.position().toPoint()
@@ -239,6 +351,8 @@ class TechPadTabBar(QTabBar):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if not (event.buttons() & Qt.LeftButton):
+            self._set_glow_hover(self.tabAt(event.position().toPoint()))
         if self._drag_tab_idx is not None and (event.buttons() & Qt.LeftButton) and self._drag_start_pos:
             pos = event.position().toPoint()
             self._last_mouse_pos = pos
@@ -301,6 +415,7 @@ class TechPadTabBar(QTabBar):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self._set_glow_press(-1)
         self._stop_auto_scroll()
         self._destroy_drag_preview()
         win = self.window()

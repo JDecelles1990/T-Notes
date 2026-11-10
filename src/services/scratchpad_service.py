@@ -207,6 +207,10 @@ class ScratchpadService:
         """Returns all custom user-defined templates."""
         return self.template_repo.get_all()
 
+    def get_custom_template(self, template_id: int) -> Optional[Dict[str, Any]]:
+        """Returns a single custom template by its ID."""
+        return self.template_repo.get_by_id(template_id)
+
     def get_custom_template_titles(self) -> List[str]:
         """Returns titles of all custom user-defined templates."""
         return [t["title"] for t in self.template_repo.get_all()]
@@ -222,6 +226,23 @@ class ScratchpadService:
         if not content_html or not content_html.strip():
             raise ValueError("Template content cannot be empty.")
         return self.template_repo.create(clean_title, content_html)
+
+    def update_custom_template(self, template_id: int, title: str, content_html: str) -> bool:
+        """
+        Validates and updates an existing custom template.
+        Raises ValueError if title or content is empty, or if title conflicts.
+        """
+        clean_title = title.strip()
+        if not clean_title:
+            raise ValueError("Template title cannot be empty.")
+        if not content_html or not content_html.strip():
+            raise ValueError("Template content cannot be empty.")
+
+        existing = self.template_repo.get_by_title(clean_title)
+        if existing and existing.get("id") != template_id:
+            raise ValueError(f"A template named '{clean_title}' already exists.")
+
+        return self.template_repo.update(template_id, clean_title, content_html)
 
     def delete_custom_template(self, template_id: int) -> bool:
         """Deletes a custom template by its ID."""

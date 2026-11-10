@@ -291,3 +291,39 @@ When the user selects **✕ Quit TechPad** from the system tray context menu or 
 - The active ticket information label in the status bar subclasses `CompactLabel(QLabel)` with a horizontal `minimumSizeHint` width of 0.
 - This relaxes the status bar's minimum size from >800px down to ~380px, eliminating right-edge clipping on narrow monitors.
 
+
+## 6. Button Glow Animations (src/ui/components/glow_effect.py)
+
+- T-Notes toolbar, status-bar, History drawer and tab-corner buttons (QPushButton / QToolButton) are decorated once at the end of TechPadMainWindow._setup_ui() via pply_glow_to_buttons(). M365 workspace widgets are intentionally not decorated.
+- Each button owns a `GlowAnimator` (event filter + `QGraphicsDropShadowEffect`) with colors cycled from a 12-color accent palette.
+  - **Hover:** glow fades in (180ms) and slowly cycles through the hue wheel (3.6s loop).
+  - **Click (left press):** glow flares brighter and wider (level 1.7, 90ms) and settles back to hover level on release, or fades out if the cursor has left.
+  - **Idle / disabled / hidden:** the effect is disabled (`setEnabled(False)`) so resting buttons render crisp text with no per-frame cost.
+- Animations run on the Qt event loop (`QVariantAnimation`); nothing blocks the UI thread. `install_glow()` is idempotent.
+
+### 6.1 M365 Launcher buttons
+
+`TechPadMainWindow._setup_ui()` also passes `self.m365_workspace` to `apply_glow_to_buttons()`, so every `QPushButton` / `QToolButton` in the M365 PowerShell Launcher (Back, Help, category/ticket toggles, Run/Cancel/Clear, results actions, company/auth/target controls, ticket header tools, sidebar stopwatch) uses the same hover/click glow. The M365 help dialog's Close button is decorated via `install_glow()`.
+
+### 6.2 Ticket tab glow (`TechPadTabBar`)
+
+Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow instead of a graphics effect:
+- The bar enables mouse tracking and tracks the hovered / pressed tab index (`_set_glow_hover`, `_set_glow_press`). A 16ms `QTimer` eases per-tab levels (`glow_level(i)`: 0 idle, 1 hover, 1.7 pressed) and cycles the hue; it stops itself once all tabs are idle.
+- `_paint_tab_glow()` draws a hue-cycling tint, concentric inward glow rings and a bright top stripe over the tab's owned color; a click press widens and brightens the rings.
+- Glow is suppressed while a tab is being dragged, and resets on `tabInserted`, `tabRemoved`, `tabMoved` and mouse leave. Color-ownership, drag placeholder and reorder behavior are unchanged.
+
+## 7. Side-Pane Slide Transitions (`src/ui/components/panel_transition.py`)
+
+`PanelWidthTransition` animates a pane's width (220ms, InOutCubic `QVariantAnimation` driving `setFixedWidth`) when it is toggled. It is used by:
+
+| Module | Pane | Owner |
+| :--- | :--- | :--- |
+| T-Notes | Split sidebar (left, `secondary_tab_widget`) | `TechPadMainWindow._split_transition` (`open_split_view` / `close_split_view`) |
+| T-Notes | History drawer (right dock) | `TechPadMainWindow._history_transition` (`_toggle_history_drawer`) |
+| M365 Launcher | Categories (left, `navigation`) | `M365LauncherWidget._nav_transition` |
+| M365 Launcher | Active Ticket (right, `ticket_sidebar`) | `M365LauncherWidget._ticket_transition` |
+
+- **Open:** the pane is shown at ~1px and slides out to its target width (remembered width, saved splitter size or default), then the original min/max width limits are restored and exact splitter/dock sizes are applied.
+- **Close:** the pane slides in and is hidden only when the animation finishes; limits are restored and the previous splitter sizes are re-applied so a later show restores the old width.
+- **Safe fallbacks:** if the parent is not visible (startup, other workspace page, tray, Mini-HUD/compact single-pane Split) or `TRANSITIONS_ENABLED` is `False`, panes show/hide immediately with identical final state. Reversing a toggle mid-animation continues from the current width. `_save_session_state` does not record splitter sizes while the Split transition is running.
+- Tests set `panel_transition.TRANSITIONS_ENABLED = False` (autouse fixture in `tests/conftest.py`); `tests/test_panel_transition.py` opts back in.

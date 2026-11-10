@@ -3,7 +3,7 @@
 import base64
 from pathlib import Path
 import re
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
 from PIL import Image
@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
 
 from src.core.constants import JPEG_COMPRESSION_QUALITY, LOCAL_IMAGE_URL_PREFIX
 from src.services.image_service import ImageService
+from src.ui.components.glow_effect import apply_glow_to_buttons
 
 
 class TemplateEditor(QTextEdit):
@@ -219,32 +220,119 @@ class TemplateEditor(QTextEdit):
 
 class AddTemplateDialog(QDialog):
     """
-    Dialog for creating and adding a new technician template with rich text formatting,
-    color pickers, clipboard image support, and template persistence.
+    Dialog for managing technician templates: creating new templates, modifying existing
+    templates, deleting templates, and rich-text editing with inline formatting,
+    clipboard image compression, and dark-theme glowing controls.
     """
 
     def __init__(
         self,
         parent: Optional[QWidget] = None,
         image_service: Optional[ImageService] = None,
+        scratchpad_service: Optional[Any] = None,
         initial_title: str = "",
         initial_content: str = "",
+        custom_templates: Optional[List[Dict[str, Any]]] = None,
+        initial_template_id: Optional[int] = None,
     ):
         super().__init__(parent)
         self.image_service = image_service
-        self.setWindowTitle("Add New Template")
+        self.scratchpad_service = scratchpad_service
+        self._initial_custom_templates = list(custom_templates) if custom_templates is not None else None
+        self._cached_templates: List[Dict[str, Any]] = []
+        self._current_template_id: Optional[int] = None
+        self._action_mode: str = "create"  # "create", "update", or "delete"
+        self._was_saved_internally: bool = False
+        self._was_modified: bool = False
+        self._is_initializing: bool = True
+
+        self.setWindowTitle("Template Manager — New Template")
         self.setModal(True)
-        self.setMinimumSize(620, 520)
-        self.resize(680, 560)
+        self.setMinimumSize(640, 540)
+        self.resize(700, 580)
 
         self._setup_ui(initial_title, initial_content)
+        self.reload_templates(select_id=initial_template_id)
+        if initial_template_id is None:
+            if initial_title:
+                self.txt_title.setText(initial_title)
+            if initial_content:
+                self.editor.setHtml(initial_content)
+        self._is_initializing = False
 
     def _setup_ui(self, initial_title: str, initial_content: str) -> None:
         layout = QVBoxLayout(self)
         layout.setSpacing(10)
         layout.setContentsMargins(16, 16, 16, 16)
 
-        # 1. Top Section: Title
+        # 1. Top Section: Template Selector & Mode
+        selector_layout = QHBoxLayout()
+        selector_layout.setSpacing(8)
+
+        lbl_select = QLabel("Template:")
+        lbl_select.setStyleSheet("font-weight: bold; color: #9cdcfe; font-size: 10pt;")
+        selector_layout.addWidget(lbl_select)
+
+        self.combo_templates = QComboBox()
+        self.combo_templates.setStyleSheet("""
+            QComboBox {
+                background-color: #252526;
+                color: #ffffff;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-size: 10pt;
+                min-width: 260px;
+            }
+            QComboBox:hover {
+                border: 1px solid #007acc;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                selection-background-color: #007acc;
+                border: 1px solid #3c3c3c;
+            }
+        """)
+        self.combo_templates.currentIndexChanged.connect(self._on_template_selected)
+        selector_layout.addWidget(self.combo_templates, 1)
+
+        self.btn_new_template = QPushButton("➕ New Template")
+        self.btn_new_template.setToolTip("Switch to creating a brand new template")
+        self.btn_new_template.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 5px 12px;
+                color: #9cdcfe;
+                font-weight: 500;
+                font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: #383838;
+                border: 1px solid #007acc;
+                color: #ffffff;
+            }
+        """)
+        self.btn_new_template.clicked.connect(self._on_new_template_clicked)
+        selector_layout.addWidget(self.btn_new_template)
+
+        self.lbl_mode_badge = QLabel("Mode: Create New")
+        self.lbl_mode_badge.setStyleSheet("""
+            background-color: #1e3a5f;
+            color: #60a5fa;
+            border: 1px solid #2563eb;
+            border-radius: 3px;
+            padding: 3px 8px;
+            font-size: 9pt;
+            font-weight: bold;
+        """)
+        selector_layout.addWidget(self.lbl_mode_badge)
+
+        layout.addLayout(selector_layout)
+
+        # 2. Section: Title
         lbl_title = QLabel("Title")
         lbl_title.setStyleSheet("font-weight: bold; color: #9cdcfe; font-size: 11pt;")
         layout.addWidget(lbl_title)
@@ -266,7 +354,7 @@ class AddTemplateDialog(QDialog):
         """)
         layout.addWidget(self.txt_title)
 
-        # 2. Formatting Mini-Toolbar
+        # 3. Formatting Mini-Toolbar
         toolbar_container = QWidget()
         toolbar_layout = QHBoxLayout(toolbar_container)
         toolbar_layout.setContentsMargins(0, 4, 0, 4)
@@ -412,8 +500,8 @@ class AddTemplateDialog(QDialog):
         toolbar_layout.addStretch()
         layout.addWidget(toolbar_container)
 
-        # 3. Down Section: Template Text Editor
-        lbl_template = QLabel("Template")
+        # 4. Down Section: Template Text Editor
+        lbl_template = QLabel("Template Content")
         lbl_template.setStyleSheet("font-weight: bold; color: #9cdcfe; font-size: 11pt;")
         layout.addWidget(lbl_template)
 
@@ -423,8 +511,33 @@ class AddTemplateDialog(QDialog):
         self.editor.cursorPositionChanged.connect(self._update_format_buttons)
         layout.addWidget(self.editor)
 
-        # 4. Bottom Action Buttons
+        # 5. Bottom Action Buttons
         bottom_layout = QHBoxLayout()
+
+        self.btn_delete = QPushButton("🗑️ Delete Template")
+        self.btn_delete.setToolTip("Permanently delete this custom template")
+        self.btn_delete.setStyleSheet("""
+            QPushButton {
+                background-color: #7f1d1d;
+                border: 1px solid #991b1b;
+                border-radius: 4px;
+                padding: 6px 14px;
+                color: #fecaca;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #991b1b;
+                border-color: #ef4444;
+                color: #ffffff;
+            }
+            QPushButton:pressed {
+                background-color: #b91c1c;
+            }
+        """)
+        self.btn_delete.setVisible(False)
+        self.btn_delete.clicked.connect(self._on_delete_clicked)
+        bottom_layout.addWidget(self.btn_delete)
+
         bottom_layout.addStretch()
 
         self.btn_cancel = QPushButton("Cancel")
@@ -467,6 +580,125 @@ class AddTemplateDialog(QDialog):
         bottom_layout.addWidget(self.btn_cancel)
         bottom_layout.addWidget(self.btn_save)
         layout.addLayout(bottom_layout)
+
+        # Apply colorful glowing hover and click animations to all dialog buttons
+        apply_glow_to_buttons([self])
+
+    def reload_templates(self, select_id: Optional[int] = None) -> None:
+        """Populates the template dropdown with available custom templates."""
+        self.combo_templates.blockSignals(True)
+        self.combo_templates.clear()
+        self.combo_templates.addItem("➕ [Create New Template]", None)
+
+        if self.scratchpad_service is not None:
+            templates = self.scratchpad_service.get_custom_templates()
+        elif self._initial_custom_templates is not None:
+            templates = self._initial_custom_templates
+        else:
+            templates = []
+
+        self._cached_templates = list(templates)
+        target_index = 0
+        for tmpl in templates:
+            idx = self.combo_templates.count()
+            self.combo_templates.addItem(f"📋 {tmpl['title']}", tmpl["id"])
+            if select_id is not None and tmpl.get("id") == select_id:
+                target_index = idx
+
+        self.combo_templates.setCurrentIndex(target_index)
+        self.combo_templates.blockSignals(False)
+        self._on_template_selected(target_index)
+
+    def _on_template_selected(self, index: int) -> None:
+        template_id = self.combo_templates.itemData(index)
+        if template_id is None:
+            # Create new template mode
+            self._current_template_id = None
+            self._action_mode = "create"
+            self.setWindowTitle("Template Manager — New Template")
+            self.btn_save.setText("Save Template")
+            self.btn_delete.setVisible(False)
+            self.lbl_mode_badge.setText("Mode: Create New")
+            self.lbl_mode_badge.setStyleSheet("""
+                background-color: #1e3a5f;
+                color: #60a5fa;
+                border: 1px solid #2563eb;
+                border-radius: 3px;
+                padding: 3px 8px;
+                font-size: 9pt;
+                font-weight: bold;
+            """)
+            if not getattr(self, "_is_initializing", False):
+                self.txt_title.clear()
+                self.editor.clear()
+        else:
+            # Modify existing template mode
+            self._current_template_id = template_id
+            self._action_mode = "update"
+            tmpl = next((t for t in self._cached_templates if t.get("id") == template_id), None)
+            if tmpl:
+                self.setWindowTitle(f"Modify Template — {tmpl['title']}")
+                self.txt_title.setText(tmpl.get("title", ""))
+                self.editor.setHtml(tmpl.get("content_html", ""))
+                self.btn_save.setText("Update Template")
+                self.btn_delete.setVisible(True)
+                self.lbl_mode_badge.setText(f"Mode: Modify (#{template_id})")
+                self.lbl_mode_badge.setStyleSheet("""
+                    background-color: #064e3b;
+                    color: #34d399;
+                    border: 1px solid #059669;
+                    border-radius: 3px;
+                    padding: 3px 8px;
+                    font-size: 9pt;
+                    font-weight: bold;
+                """)
+
+    def _on_new_template_clicked(self) -> None:
+        self.combo_templates.setCurrentIndex(0)
+        self.txt_title.clear()
+        self.editor.clear()
+        self.txt_title.setFocus()
+
+    def _on_delete_clicked(self) -> None:
+        if self._current_template_id is None:
+            return
+
+        title = self.txt_title.text().strip() or "Untitled Template"
+        reply = QMessageBox.question(
+            self,
+            "Delete Template",
+            f"Are you sure you want to delete template '{title}'?\n\nThis action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        deleted_id = self._current_template_id
+        if self.scratchpad_service is not None:
+            try:
+                self.scratchpad_service.delete_custom_template(deleted_id)
+            except Exception as e:
+                QMessageBox.warning(self, "Error Deleting Template", f"Failed to delete template: {e}")
+                return
+        elif self._initial_custom_templates is not None:
+            self._initial_custom_templates = [
+                t for t in self._initial_custom_templates if t.get("id") != deleted_id
+            ]
+
+        self._was_modified = True
+        self._action_mode = "delete"
+
+        QMessageBox.information(
+            self,
+            "Template Deleted",
+            f"Template '{title}' has been successfully deleted.",
+        )
+
+        self.reload_templates(select_id=None)
+        self.txt_title.clear()
+        self.editor.clear()
+        self.txt_title.setFocus()
 
     def _create_separator(self) -> QWidget:
         sep = QWidget()
@@ -603,6 +835,27 @@ class AddTemplateDialog(QDialog):
             self.editor.setFocus()
             return
 
+        content_html = self.editor.get_self_contained_html()
+
+        if self.scratchpad_service is not None:
+            try:
+                if self._current_template_id is None:
+                    self.scratchpad_service.add_custom_template(title, content_html)
+                    self._action_mode = "create"
+                else:
+                    self.scratchpad_service.update_custom_template(self._current_template_id, title, content_html)
+                    self._action_mode = "update"
+                self._was_saved_internally = True
+                self._was_modified = True
+            except Exception as e:
+                action_word = "saving" if self._current_template_id is None else "updating"
+                QMessageBox.warning(self, f"Error {action_word.capitalize()} Template", f"Failed to {action_word} template: {e}")
+                return
+        else:
+            self._action_mode = "create" if self._current_template_id is None else "update"
+            self._was_saved_internally = False
+            self._was_modified = True
+
         self.accept()
 
     def get_template_data(self) -> Tuple[str, str]:
@@ -611,3 +864,18 @@ class AddTemplateDialog(QDialog):
         content_html = self.editor.get_self_contained_html()
         return title, content_html
 
+    def get_action_mode(self) -> str:
+        """Returns the action mode: 'create', 'update', or 'delete'."""
+        return self._action_mode
+
+    def get_target_template_id(self) -> Optional[int]:
+        """Returns the database ID of the template being updated/deleted, or None for newly created."""
+        return self._current_template_id
+
+    def was_saved_internally(self) -> bool:
+        """Returns True if the dialog saved/updated the template directly via scratchpad_service."""
+        return self._was_saved_internally
+
+    def was_modified(self) -> bool:
+        """Returns True if any template was created, modified, or deleted during this dialog session."""
+        return self._was_modified

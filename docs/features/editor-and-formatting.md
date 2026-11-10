@@ -129,16 +129,19 @@ One-click badges highlight critical event states inline:
 - `🟡 WARN`: Amber background (`#543810`), text (`#facc15`), border (`#eab308`).
 - `ℹ️ INFO`: Blue background (`#1e3a5f`), text (`#60a5fa`), border (`#3b82f6`).
 
-### 5.3 Structured Ticket Skeletons (`📋`)
-A dropdown menu provides instant structured outlines:
+### 5.3 Structured Ticket Skeletons (`📋`) & Custom Template Management
+A dropdown menu provides instant structured outlines and complete custom template lifecycle controls:
 - **Standard Incident Triage:** Sections for `[ISSUE DESCRIPTION]`, `[DIAGNOSTICS & TROUBLESHOOTING]`, `[ROOT CAUSE]`, and `[RESOLUTION STEPS]`.
 - **Quick Triage / Quick Fix:** Brief fields for Caller, Problem, Action Taken, and Status.
 - **Maintenance & Change Plan:** Outline covering Target Host, Pre-Execution Checks, Execution Steps, Post-Verification, and Rollback Plan.
-- **Custom Template Management (`🔳 Add a new template`):** Selecting `🔳 Add a new template` launches `AddTemplateDialog`:
-  - **Title Field:** Top labeled text input defining the template's display name in the menu.
-  - **Template Canvas:** Down labeled rich-text editor equipped with formatting controls (Bold, Italic, Underline, Text Color, Highlight Color, Monospace, Checkboxes, Timestamp, and Add Image), full copy/paste support, and clipboard image embedding.
-  - **Insertion:** Clicking any custom template from the dropdown menu inserts its content directly at the current cursor position in the active ticket note.
-  - **Persistence:** Stored in the SQLite `templates` table and instantly available across sessions and tabs.
+- **Custom Template Management (`🔳 Add a new template`):** Selecting `🔳 Add a new template` launches the unified `AddTemplateDialog` modal equipped with creation, modification, and deletion workflows:
+  - **Template Selector & Mode Switcher:** Top row dropdown allows choosing between `➕ [Create New Template]` and any previously created custom templates (`📋 <title>`). A dedicated `➕ New Template` button allows resetting back to create mode with one click.
+  - **Mode Badge Indicator:** Displays current operational state (`Mode: Create New` in electric blue vs. `Mode: Modify (#<id>)` in emerald green).
+  - **Modify Existing Templates:** Selecting an existing template immediately populates the Title field and editor canvas, updates the dialog window title to `Modify Template — <title>`, shifts the primary action button to `Update Template`, and reveals the red `🗑️ Delete Template` button. Saving commits atomic updates to SQLite (`custom_templates`) and immediately synchronizes toolbar menus.
+  - **Delete Existing Templates:** Clicking `🗑️ Delete Template` prompts an explicit safety confirmation dialog (`QMessageBox.question`). Once confirmed, the template is permanently deleted from SQLite, removed from the dropdown list, fields are cleared, and the mode is smoothly reset back to create mode. Menus in both the T-Notes toolbar and M365 Launcher are refreshed immediately.
+  - **Template Title & Rich-Text Canvas:** Title input with duplicate-name validation, plus a full-featured `TemplateEditor` with rich formatting (Bold, Italic, Underline, Strikethrough, Text Color, Highlight Color, Headings H1-H3, Bullet & Numbered Lists, Monospace Code Block, and Embedded Images).
+  - **Vibrant Glowing Button Animations:** All interactive buttons (Save/Update, New, Delete, Cancel, and formatting tool buttons) are wrapped with `apply_glow_to_buttons` to deliver vibrant cycling glow effects on hover and press flares matching the T-Notes dark theme.
+  - **Insertion at Cursor:** Selecting any custom template from the dropdown menu inserts its formatted content directly at the active cursor position in the focused note editor.
 
 ### 5.4 "Copy Note" Dual Workflows (`📋` / `📤`)
 The ribbon toolbar provides a dual-action popup button (`QToolButton.MenuButtonPopup`):

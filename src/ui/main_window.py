@@ -31,6 +31,8 @@ from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
 from src.ui.components.editor import TechPadEditor
+from src.ui.components.glow_effect import apply_glow_to_buttons
+from src.ui.components.panel_transition import PanelWidthTransition
 from src.ui.components.history_drawer import HistoryDrawer
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
@@ -228,7 +230,7 @@ class TechPadMainWindow(QMainWindow):
             lambda idx, gpos: self._handle_tab_cross_drag_move(self.tab_widget, idx, gpos)
         )
         self.workspace_splitter.addWidget(self.tab_widget)
-
+        self._split_transition = PanelWidthTransition(self.secondary_tab_widget, default_width=300)
         self.workspace_stack = QStackedWidget(self)
         self.workspace_stack.addWidget(self.workspace_splitter)
         self.m365_workspace = M365LauncherWidget(
@@ -276,7 +278,7 @@ class TechPadMainWindow(QMainWindow):
         self.history_drawer.delete_requested.connect(self._on_delete_ticket)
         self.addDockWidget(Qt.RightDockWidgetArea, self.history_drawer)
         self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
-
+        self._history_transition = PanelWidthTransition(self.history_drawer, default_width=380)
         # Status Bar
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -368,6 +370,19 @@ class TechPadMainWindow(QMainWindow):
         self.lbl_active_info = CompactLabel("")
         self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 16px;")
         self.status_bar.addWidget(self.lbl_active_info)
+
+        # 7. Colorful hover / click glow animations on T-Notes and M365 Launcher buttons
+        apply_glow_to_buttons(
+            [
+                self.toolbar,
+                self.toolbar.secondary_toolbar,
+                self.status_bar,
+                self.history_drawer,
+                self.tab_widget,
+                self.secondary_tab_widget,
+                self.m365_workspace,
+            ]
+        )
 
     def _toggle_m365_categories(self) -> None:
         """Toggles the M365 category navigation sidebar."""
@@ -735,7 +750,8 @@ class TechPadMainWindow(QMainWindow):
 
         # 4. Split sizes: preserve valid splitter sizes and avoid saving collapsed 0-width panes
         sizes = self.workspace_splitter.sizes() if hasattr(self, "workspace_splitter") else []
-        if sizes and len(sizes) == 2 and all(s >= 50 for s in sizes):
+        split_transition = getattr(self, "_split_transition", None)
+        if sizes and len(sizes) == 2 and all(s >= 50 for s in sizes) and not (split_transition and split_transition.running):
             self._saved_splitter_sizes = sizes
         saved_sizes = getattr(self, "_saved_splitter_sizes", None)
         split_sizes_str = json.dumps(saved_sizes if saved_sizes else sizes) if (saved_sizes or sizes) else ""
@@ -1457,16 +1473,35 @@ class TechPadMainWindow(QMainWindow):
             self.m365_workspace.update_templates_menu(custom_templates)
 
     def _on_add_new_template(self) -> None:
-        """Opens dialog to create a new custom template with rich formatting and saves it."""
-        dialog = AddTemplateDialog(self, image_service=self.image_service)
+        """Opens dialog to manage (create, modify, delete) custom templates with rich formatting."""
+        dialog = AddTemplateDialog(
+            self,
+            image_service=self.image_service,
+            scratchpad_service=self.scratchpad_service,
+        )
         if dialog.exec() == QDialog.Accepted:
             title, content_html = dialog.get_template_data()
-            try:
-                self.scratchpad_service.add_custom_template(title, content_html)
-                self._refresh_template_menus()
+            mode = dialog.get_action_mode()
+            if not dialog.was_saved_internally():
+                try:
+                    if mode == "update" and dialog.get_target_template_id() is not None:
+                        self.scratchpad_service.update_custom_template(dialog.get_target_template_id(), title, content_html)
+                    elif mode != "delete":
+                        self.scratchpad_service.add_custom_template(title, content_html)
+                except Exception as e:
+                    QMessageBox.warning(self, "Error Saving Template", f"Failed to save template: {e}")
+                    return
+
+            self._refresh_template_menus()
+            if mode == "update":
+                self.status_bar.showMessage(f"✓ Updated template '{title}'", 3500)
+            elif mode == "delete":
+                self.status_bar.showMessage(f"✓ Deleted template", 3500)
+            else:
                 self.status_bar.showMessage(f"✓ Saved template '{title}'", 3500)
-            except Exception as e:
-                QMessageBox.warning(self, "Error Saving Template", f"Failed to save template: {e}")
+        elif dialog.was_modified():
+            self._refresh_template_menus()
+            self.status_bar.showMessage("✓ Templates updated", 3500)
 
     def _on_skeleton_selected(self, skeleton_name: str) -> None:
         """Inserts selected ticket template into active focused editor."""
@@ -1957,17 +1992,27 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_switch_split_pane.setText("⇋ Pane 1/2 (Alt+Shift+Z)")
         else:
             self._split_auto_single_pane = False
-            self.secondary_tab_widget.show()
             self.tab_widget.show()
             if hasattr(self, "btn_switch_split_pane"):
                 self.btn_switch_split_pane.setVisible(False)
             total_w = self.workspace_splitter.width() or self.width() or 1000
             saved_sizes = getattr(self, "_saved_splitter_sizes", None)
             if saved_sizes and len(saved_sizes) == 2 and all(s >= 100 for s in saved_sizes):
-                self.workspace_splitter.setSizes(saved_sizes)
+                final_sizes = list(saved_sizes)
             else:
                 sidebar_w = min(400, max(250, total_w // 3))
-                self.workspace_splitter.setSizes([sidebar_w, total_w - sidebar_w])
+                final_sizes = [sidebar_w, total_w - sidebar_w]
+
+            def _apply_final_sizes(sizes=final_sizes) -> None:
+                self.workspace_splitter.setSizes(sizes)
+
+            if self.secondary_tab_widget.isHidden() and self._split_transition.animation_allowed():
+                # Slide the Split sidebar out; exact proportions are applied when it settles
+                self._split_transition.show_panel(target_width=final_sizes[0], on_finished=_apply_final_sizes)
+            else:
+                self._split_transition.cancel()
+                self.secondary_tab_widget.show()
+                _apply_final_sizes()
 
         self.toolbar.btn_split.setChecked(True)
         self.btn_toggle_split.setText("◫ Single (Alt+Z)")
@@ -1982,6 +2027,7 @@ class TechPadMainWindow(QMainWindow):
     def close_split_view(self) -> None:
         """Hides secondary (split) pane without moving or evicting its tabs."""
         self.flush_all_saves()
+        was_single_pane = self._split_auto_single_pane
         self._user_split_view_active = False
         self._split_auto_single_pane = False
         self._compact_active_pane = 0
@@ -1990,7 +2036,24 @@ class TechPadMainWindow(QMainWindow):
 
         # Do NOT move or consolidate secondary tabs into primary tab widget!
         # Secondary tabs remain safely in secondary_tab_widget so their placement is preserved.
-        self.secondary_tab_widget.hide()
+        if (
+            not was_single_pane
+            and not self.is_mini_hud
+            and self.secondary_tab_widget.isVisible()
+            and self._split_transition.animation_allowed()
+        ):
+            # Slide the Split sidebar closed, then restore its remembered splitter size
+            before = self.workspace_splitter.sizes()
+            if len(before) == 2 and all(s >= 50 for s in before):
+                self._saved_splitter_sizes = list(before)
+            self._split_transition.hide_panel(
+                on_finished=lambda sizes=list(before): (
+                    self.workspace_splitter.setSizes(sizes) if all(s > 0 for s in sizes) else None
+                )
+            )
+        else:
+            self._split_transition.cancel()
+            self.secondary_tab_widget.hide()
         self.tab_widget.show()
 
         if hasattr(self, "toolbar") and hasattr(self.toolbar, "btn_split"):
@@ -2313,16 +2376,20 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _toggle_history_drawer(self) -> None:
-        if self.history_drawer.isVisible():
+        if self._history_transition.is_open:
             self._user_history_drawer_open = False
             self.history_auto_collapsed = False
-            self.history_drawer.hide()
+            self._history_transition.hide_panel()
         else:
             self._user_history_drawer_open = True
             self.history_auto_collapsed = False
-            self.history_drawer.show()
-            if self.history_drawer.width() < 320:
-                self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
+            current_w = self.history_drawer.width()
+            remembered_w = self._history_transition.last_width
+            target = current_w if current_w >= 320 else (remembered_w if remembered_w >= 320 else 380)
+            self._history_transition.show_panel(
+                target_width=target,
+                on_finished=lambda: self.resizeDocks([self.history_drawer], [target], Qt.Horizontal),
+            )
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Minimizes to system tray if tray icon is active, preserving saves and session state."""
@@ -2505,6 +2572,8 @@ class TechPadMainWindow(QMainWindow):
                 self.history_auto_collapsed = False
                 if self._user_history_drawer_open and not self.is_m365_workspace:
                     self.history_drawer.show()
+                    if self.history_drawer.width() < 320:
+                        self.resizeDocks([self.history_drawer], [380], Qt.Horizontal)
 
     def _check_responsive_split(self, current_width: int) -> None:
         """Switches between side-by-side and compact single-pane Split View."""

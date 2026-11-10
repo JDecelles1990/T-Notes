@@ -8,6 +8,7 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, QEvent, QPoint
 from PySide6.QtGui import QAction, QColor, QFont, QTextCharFormat
+from src.ui.components.panel_transition import PanelWidthTransition
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
@@ -833,6 +834,9 @@ class M365LauncherWidget(QWidget):
         self.ticket_editor.content_modified.connect(self._on_editor_content_modified)
         sidebar_layout.addWidget(self.ticket_editor, 1)
 
+        # Slide transitions for the left (Categories) and right (Active Ticket) panes
+        self._nav_transition = PanelWidthTransition(self.navigation, default_width=130)
+        self._ticket_transition = PanelWidthTransition(self.ticket_sidebar, default_width=270)
         self.nav_toggle.toggled.connect(self._on_nav_toggled)
         self.ticket_panel_toggle.toggled.connect(self._on_ticket_panel_toggled)
 
@@ -1319,18 +1323,12 @@ class M365LauncherWidget(QWidget):
             return False
 
     def _on_nav_toggled(self, visible: bool) -> None:
-        self.navigation.setVisible(visible)
-        if visible and self.navigation.width() == 0:
-            sizes = self.workspace_splitter.sizes()
-            sizes[0] = 130
-            self.workspace_splitter.setSizes(sizes)
+        """Slides the Categories pane open/closed (instant when animation is unavailable)."""
+        self._nav_transition.set_open(visible)
 
     def _on_ticket_panel_toggled(self, visible: bool) -> None:
-        self.ticket_sidebar.setVisible(visible)
-        if visible and self.ticket_sidebar.width() == 0:
-            sizes = self.workspace_splitter.sizes()
-            sizes[2] = 270
-            self.workspace_splitter.setSizes(sizes)
+        """Slides the Active Ticket pane open/closed (instant when animation is unavailable)."""
+        self._ticket_transition.set_open(visible)
 
     def set_active_ticket(
         self,

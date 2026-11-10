@@ -278,3 +278,11 @@ retries without another edit. F8 unregistration, tray hiding and QApplication qu
 follow accepted shutdown only. Ordinary successful close-to-tray retains the
 existing background behavior. Synthetic tests cover visible/hidden failures and
 retry; physical desktop acceptance is separate.
+
+### Tab hover / click glow
+
+Ticket tabs in both panes glow with a colorful, slowly hue-cycling neon halo on mouse hover and flare brighter while pressed (see `docs/architecture/system-overview.md` section 6.2). The effect is purely visual: it is suppressed during drag/reorder and never changes tab order, selection or persistence.
+
+### Split sidebar slide transition
+
+Opening or closing the Split sidebar (`Alt+Z`, ribbon `◫`, status bar, context menus) slides the pane in/out over ~220ms instead of snapping. On close the pane stays visible until the slide finishes, but `is_split_view_active` flips immediately and tabs are never moved. Compact single-pane mode and Mini-HUD switch instantly. See `docs/architecture/system-overview.md` section 7.
