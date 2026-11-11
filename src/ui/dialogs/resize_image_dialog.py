@@ -1,10 +1,12 @@
-"""Modal dialog for resizing and annotating embedded images with drawing, shapes, text, zoom, and undo/redo."""
+"""Modal dialog for resizing and annotating embedded images with drawing, shapes, text, zoom, move, and undo/redo."""
 
+import math
 from typing import Optional, Tuple
-from PySide6.QtCore import QPoint, QPointF, QRect, Qt, Signal
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
+    QFontMetrics,
     QImage,
     QKeySequence,
     QMouseEvent,
@@ -157,15 +159,218 @@ class TextAnnotationDialog(QDialog):
         return self.chk_border.isChecked()
 
 
+class AnnotationItem:
+    """Represents a movable, rotatable, re-editable vector annotation object on the canvas."""
+
+    TYPE_PEN = "pen"
+    TYPE_LINE = "line"
+    TYPE_CIRCLE = "circle"
+    TYPE_RECTANGLE = "rectangle"
+    TYPE_TEXT = "text"
+
+    def __init__(
+        self,
+        item_type: str,
+        color: QColor,
+        stroke_width: int = 4,
+        rect: Optional[QRect] = None,
+        points: Optional[list[QPoint]] = None,
+        text: str = "",
+        font_size: int = 18,
+        draw_border: bool = False,
+        rotation: float = 0.0,
+    ):
+        self.item_type = item_type
+        self.color = QColor(color)
+        self.stroke_width = stroke_width
+        self.rect = QRect(rect) if rect else QRect()
+        self.points = [QPoint(p) for p in points] if points else []
+        self.text = text
+        self.font_size = font_size
+        self.draw_border = draw_border
+        self.rotation = float(rotation) % 360.0
+
+    def clone(self) -> "AnnotationItem":
+        return AnnotationItem(
+            item_type=self.item_type,
+            color=QColor(self.color),
+            stroke_width=self.stroke_width,
+            rect=QRect(self.rect) if self.rect.isValid() else None,
+            points=[QPoint(p) for p in self.points],
+            text=self.text,
+            font_size=self.font_size,
+            draw_border=self.draw_border,
+            rotation=self.rotation,
+        )
+
+    def rotate(self, angle_degrees: float) -> None:
+        """Rotates this item clockwise by angle_degrees."""
+        self.rotation = (self.rotation + angle_degrees) % 360.0
+
+    def get_bounding_rect(self) -> QRect:
+        """Returns the bounding box of this shape or text box in image pixel coordinates."""
+        if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
+            return self.rect.normalized()
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE) and self.points:
+            xs = [p.x() for p in self.points]
+            ys = [p.y() for p in self.points]
+            margin = max(6, self.stroke_width // 2 + 4)
+            return QRect(
+                min(xs) - margin,
+                min(ys) - margin,
+                max(xs) - min(xs) + margin * 2,
+                max(ys) - min(ys) + margin * 2,
+            ).normalized()
+        return QRect()
+
+    def contains_point(self, pt: QPoint) -> bool:
+        """Hit test checking whether point pt intersects this item for selection."""
+        b_rect = self.get_bounding_rect()
+        if not b_rect.isValid():
+            return False
+
+        check_pt = pt
+        if abs(self.rotation) > 0.001:
+            center = b_rect.center()
+            rad = math.radians(-self.rotation)
+            cos_a = math.cos(rad)
+            sin_a = math.sin(rad)
+            dx = pt.x() - center.x()
+            dy = pt.y() - center.y()
+            check_pt = QPoint(
+                int(round(center.x() + dx * cos_a - dy * sin_a)),
+                int(round(center.y() + dx * sin_a + dy * cos_a)),
+            )
+
+        if not b_rect.adjusted(-8, -8, 8, 8).contains(check_pt):
+            return False
+
+        if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
+            return b_rect.adjusted(-4, -4, 4, 4).contains(check_pt)
+
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE):
+            margin = max(6, self.stroke_width + 4)
+            for p in self.points:
+                if (p.x() - check_pt.x()) ** 2 + (p.y() - check_pt.y()) ** 2 <= margin ** 2:
+                    return True
+            for i in range(len(self.points) - 1):
+                p1 = self.points[i]
+                p2 = self.points[i + 1]
+                if self._dist_to_segment(check_pt, p1, p2) <= margin:
+                    return True
+            return False
+        return False
+
+    @staticmethod
+    def _dist_to_segment(p: QPoint, p1: QPoint, p2: QPoint) -> float:
+        l2 = (p1.x() - p2.x()) ** 2 + (p1.y() - p2.y()) ** 2
+        if l2 == 0:
+            return math.hypot(p.x() - p1.x(), p.y() - p1.y())
+        t = max(0.0, min(1.0, ((p.x() - p1.x()) * (p2.x() - p1.x()) + (p.y() - p1.y()) * (p2.y() - p1.y())) / l2))
+        proj_x = p1.x() + t * (p2.x() - p1.x())
+        proj_y = p1.y() + t * (p2.y() - p1.y())
+        return math.hypot(p.x() - proj_x, p.y() - proj_y)
+
+    def translate(self, dx: int, dy: int) -> None:
+        """Moves this item by (dx, dy) pixels."""
+        if self.rect.isValid():
+            self.rect.translate(dx, dy)
+        if self.points:
+            for p in self.points:
+                p.setX(p.x() + dx)
+                p.setY(p.y() + dy)
+
+    def render(self, painter: QPainter) -> None:
+        """Renders this item onto a QPainter at image coordinates."""
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        b_rect = self.get_bounding_rect()
+        if not b_rect.isValid():
+            painter.restore()
+            return
+
+        center = b_rect.center()
+        if abs(self.rotation) > 0.001:
+            painter.translate(center.x(), center.y())
+            painter.rotate(self.rotation)
+            painter.translate(-center.x(), -center.y())
+
+        if self.item_type == self.TYPE_PEN and len(self.points) > 0:
+            painter.setPen(QPen(self.color, self.stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            if len(self.points) == 1:
+                painter.drawPoint(self.points[0])
+            else:
+                for i in range(len(self.points) - 1):
+                    painter.drawLine(self.points[i], self.points[i + 1])
+
+        elif self.item_type == self.TYPE_LINE and len(self.points) >= 2:
+            painter.setPen(QPen(self.color, self.stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.drawLine(self.points[0], self.points[1])
+
+        elif self.item_type == self.TYPE_RECTANGLE:
+            painter.setPen(QPen(self.color, self.stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(self.rect)
+
+        elif self.item_type == self.TYPE_CIRCLE:
+            painter.setPen(QPen(self.color, self.stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(self.rect)
+
+        elif self.item_type == self.TYPE_TEXT and self.text:
+            if self.draw_border:
+                border_pen = QPen(self.color, max(1, self.stroke_width // 2), Qt.SolidLine)
+                painter.setPen(border_pen)
+                painter.setBrush(QColor(0, 0, 0, 160))
+                painter.drawRoundedRect(self.rect, 4, 4)
+
+            font = QFont("Arial", self.font_size, QFont.Bold)
+            painter.setFont(font)
+            text_rect = self.rect.adjusted(6, 6, -6, -6) if self.draw_border else self.rect
+
+            # 8-way drop shadow for high contrast on any background
+            painter.setPen(QColor(0, 0, 0, 230))
+            for dx, dy in ((-2, -2), (-2, 2), (2, -2), (2, 2), (0, 2), (2, 0), (0, -2), (-2, 0), (-1, -1), (1, 1)):
+                painter.drawText(text_rect.translated(dx, dy), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, self.text)
+
+            painter.setPen(self.color)
+            painter.drawText(text_rect, Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, self.text)
+
+        painter.restore()
+
+
 class ImageAnnotationCanvas(QWidget):
-    """Interactive canvas allowing technicians to draw, circle, add rectangles, and place text with zoom/pan."""
+    """Interactive canvas allowing technicians to draw, circle, add rectangles, move forms, and place text with zoom/pan."""
 
     zoom_changed = Signal(float)
+    tool_changed = Signal(str)
 
+    TOOL_SELECT = "select"
     TOOL_PEN = "pen"
+    TOOL_LINE = "line"
     TOOL_CIRCLE = "circle"
     TOOL_RECTANGLE = "rectangle"
     TOOL_TEXT = "text"
+
+    HANDLE_NONE = 0
+    HANDLE_ROTATE = 1
+    HANDLE_CORNER_TL = 2
+    HANDLE_CORNER_TR = 3
+    HANDLE_CORNER_BR = 4
+    HANDLE_CORNER_BL = 5
+    HANDLE_EDGE_TOP = 6
+    HANDLE_EDGE_BOTTOM = 7
+    HANDLE_EDGE_LEFT = 8
+    HANDLE_EDGE_RIGHT = 9
+    HANDLE_BODY = 10
+
+    ACTION_NONE = 0
+    ACTION_PAN = 1
+    ACTION_DRAW = 2
+    ACTION_MOVE = 3
+    ACTION_ROTATE = 4
+    ACTION_RESIZE = 5
 
     COLOR_PALETTE = [
         ("#ff3b30", "Red"),
@@ -180,15 +385,38 @@ class ImageAnnotationCanvas(QWidget):
         super().__init__(parent)
         self.setMinimumSize(420, 320)
         self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.StrongFocus)
         self.setCursor(Qt.CrossCursor)
 
-        # Base and working images (ARGB32 format for crisp alpha painting)
+        # Base pristine image (ARGB32 format for crisp alpha painting)
         self._base_image: QImage = image.copy().convertToFormat(QImage.Format_ARGB32_Premultiplied)
         self._current_image: QImage = self._base_image.copy()
 
-        # Undo / Redo history stacks
-        self._undo_stack: list[QImage] = []
-        self._redo_stack: list[QImage] = []
+        # Vector annotation items
+        self._items: list[AnnotationItem] = []
+        self._selected_item: Optional[AnnotationItem] = None
+
+        # Interactive manipulation states
+        self._action_mode: int = self.ACTION_NONE
+        self._is_moving_item: bool = False
+        self._is_rotating: bool = False
+        self._is_resizing: bool = False
+        self._shift_pressed: bool = False
+
+        self._move_item_start: QPoint = QPoint()
+        self._move_item_prev: QPoint = QPoint()
+
+        self._rotate_start_angle: float = 0.0
+        self._rotate_initial_angle: float = 0.0
+
+        self._resize_handle: int = self.HANDLE_NONE
+        self._resize_initial_rect: QRect = QRect()
+        self._resize_initial_pos: QPoint = QPoint()
+        self._resize_initial_center: QPointF = QPointF()
+
+        # Undo / Redo history stacks (stores snapshots of items list)
+        self._undo_stack: list[list[AnnotationItem]] = []
+        self._redo_stack: list[list[AnnotationItem]] = []
 
         # Current tool settings
         self._active_tool: str = self.TOOL_PEN
@@ -272,43 +500,53 @@ class ImageAnnotationCanvas(QWidget):
         return self._zoom_factor
 
     def set_font_size(self, size: int) -> None:
-        """Sets the active font size for text annotation."""
+        """Sets active font size and applies to selected text item if any."""
         self._font_size = max(8, min(96, size))
+        if self._selected_item and self._selected_item.item_type == AnnotationItem.TYPE_TEXT:
+            self._save_undo_state()
+            self._selected_item.font_size = self._font_size
+            self._regenerate_current_image()
+            self.update()
 
     def get_font_size(self) -> int:
         return self._font_size
 
     # -- History & State Management --------------------------------------------
     def _save_undo_state(self) -> None:
-        """Pushes working image snapshot to undo stack and clears redo stack."""
-        self._undo_stack.append(self._current_image.copy())
+        """Pushes working items snapshot to undo stack and clears redo stack."""
+        self._undo_stack.append([item.clone() for item in self._items])
         self._redo_stack.clear()
-        if len(self._undo_stack) > 30:
+        if len(self._undo_stack) > 40:
             self._undo_stack.pop(0)
 
     def undo(self) -> None:
         """Reverses the last annotation change."""
         if self._undo_stack:
-            self._redo_stack.append(self._current_image.copy())
-            self._current_image = self._undo_stack.pop()
-            self._was_annotated = len(self._undo_stack) > 0
+            self._redo_stack.append([item.clone() for item in self._items])
+            self._items = self._undo_stack.pop()
+            self._selected_item = None
+            self._was_annotated = len(self._items) > 0 or len(self._undo_stack) > 0
+            self._regenerate_current_image()
             self.update()
 
     def redo(self) -> None:
         """Re-applies the previously undone annotation change."""
         if self._redo_stack:
-            self._undo_stack.append(self._current_image.copy())
-            self._current_image = self._redo_stack.pop()
+            self._undo_stack.append([item.clone() for item in self._items])
+            self._items = self._redo_stack.pop()
+            self._selected_item = None
             self._was_annotated = True
+            self._regenerate_current_image()
             self.update()
 
     def reset_image(self) -> None:
         """Resets the image back to its original unmodified state."""
-        if not self._base_image.isNull():
-            self._save_undo_state()
-            self._current_image = self._base_image.copy()
-            self._was_annotated = False
-            self.update()
+        self._save_undo_state()
+        self._items.clear()
+        self._selected_item = None
+        self._was_annotated = False
+        self._regenerate_current_image()
+        self.update()
 
     def can_undo(self) -> bool:
         return len(self._undo_stack) > 0
@@ -317,19 +555,37 @@ class ImageAnnotationCanvas(QWidget):
         return len(self._redo_stack) > 0
 
     def was_annotated(self) -> bool:
-        return self._was_annotated
+        return self._was_annotated or len(self._items) > 0
 
     def get_annotated_image(self) -> QImage:
         return self._current_image
 
-    # -- Tool & Palette Configuration -----------------------------------------
+    def _regenerate_current_image(self) -> None:
+        """Bakes all current annotation items onto clean copy of base image for display/export."""
+        baked = self._base_image.copy()
+        painter = QPainter(baked)
+        painter.setRenderHint(QPainter.Antialiasing)
+        for item in self._items:
+            item.render(painter)
+        painter.end()
+        self._current_image = baked
+
+    # -- Tool, Selection & Move Configuration ----------------------------------
     def set_tool(self, tool_name: str) -> None:
         self._active_tool = tool_name
+        if tool_name != self.TOOL_SELECT:
+            self._selected_item = None
         self._update_cursor()
+        self.tool_changed.emit(tool_name)
+        self.update()
 
     def _update_cursor(self) -> None:
         if self._is_panning:
             self.setCursor(Qt.ClosedHandCursor)
+        elif self._is_moving_item:
+            self.setCursor(Qt.SizeAllCursor)
+        elif self._active_tool == self.TOOL_SELECT:
+            self.setCursor(Qt.ArrowCursor)
         elif self._active_tool == self.TOOL_TEXT:
             self.setCursor(Qt.IBeamCursor)
         else:
@@ -337,9 +593,167 @@ class ImageAnnotationCanvas(QWidget):
 
     def set_color(self, color: QColor) -> None:
         self._current_color = color
+        if self._selected_item:
+            self._save_undo_state()
+            self._selected_item.color = QColor(color)
+            self._regenerate_current_image()
+            self.update()
 
     def set_stroke_width(self, width: int) -> None:
         self._stroke_width = max(1, width)
+        if self._selected_item and self._selected_item.item_type != AnnotationItem.TYPE_TEXT:
+            self._save_undo_state()
+            self._selected_item.stroke_width = self._stroke_width
+            self._regenerate_current_image()
+            self.update()
+
+    def select_item_at(self, img_pt: QPoint) -> Optional[AnnotationItem]:
+        """Finds topmost item under img_pt and marks it selected."""
+        for item in reversed(self._items):
+            if item.contains_point(img_pt):
+                self._selected_item = item
+                self.update()
+                return item
+        self._selected_item = None
+        self.update()
+        return None
+
+    def get_items(self) -> list[AnnotationItem]:
+        return self._items
+
+    def get_selected_item(self) -> Optional[AnnotationItem]:
+        return self._selected_item
+
+    def delete_selected_item(self) -> bool:
+        """Deletes the currently selected item and refreshes canvas."""
+        if self._selected_item and self._selected_item in self._items:
+            self._save_undo_state()
+            self._items.remove(self._selected_item)
+            self._selected_item = None
+            self._regenerate_current_image()
+            self.update()
+            return True
+        return False
+
+    def move_selected_item(self, dx: int, dy: int) -> bool:
+        """Moves the currently selected item by (dx, dy) pixels."""
+        if self._selected_item:
+            self._save_undo_state()
+            self._selected_item.translate(dx, dy)
+            self._regenerate_current_image()
+            self.update()
+            return True
+        return False
+
+    def rotate_selected_item(self, angle: float = 90.0) -> bool:
+        """Rotates the currently selected item by angle degrees clockwise and records undo state."""
+        item = self._selected_item
+        if not item and self._items:
+            item = self._items[-1]
+            self._selected_item = item
+        if item:
+            self._save_undo_state()
+            item.rotate(angle)
+            self._was_annotated = True
+            self._regenerate_current_image()
+            self.update()
+            return True
+        return False
+
+    @staticmethod
+    def _unrotate_pt(pt: QPoint, center: QPointF, angle_degrees: float) -> QPointF:
+        rad = math.radians(-angle_degrees)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+        dx = pt.x() - center.x()
+        dy = pt.y() - center.y()
+        return QPointF(
+            center.x() + dx * cos_a - dy * sin_a,
+            center.y() + dx * sin_a + dy * cos_a,
+        )
+
+    @staticmethod
+    def snap_to_straight_line(p1: QPoint, p2: QPoint) -> QPoint:
+        """Snaps p2 relative to p1 to the nearest horizontal, vertical, or 45-degree diagonal line (Paint style)."""
+        dx = p2.x() - p1.x()
+        dy = p2.y() - p1.y()
+        if dx == 0 and dy == 0:
+            return p2
+
+        angle = math.degrees(math.atan2(dy, dx))
+        snapped_angle = round(angle / 45.0) * 45.0
+        dist = math.hypot(dx, dy)
+
+        snapped_rad = math.radians(snapped_angle)
+        new_dx = int(round(dist * math.cos(snapped_rad)))
+        new_dy = int(round(dist * math.sin(snapped_rad)))
+        return QPoint(p1.x() + new_dx, p1.y() + new_dy)
+
+    def get_selection_handle_at(self, vp_pos: QPoint) -> tuple[int, Optional[AnnotationItem]]:
+        """Hit-tests the active selected item to determine if vp_pos touches rotation handle, corners, edges, or body."""
+        if not self._selected_item:
+            return (self.HANDLE_NONE, None)
+
+        rect = self.get_image_display_rect()
+        if not rect.isValid() or self._current_image.isNull() or self._current_image.width() <= 0 or self._current_image.height() <= 0:
+            return (self.HANDLE_NONE, None)
+
+        scale_x = rect.width() / self._current_image.width()
+        scale_y = rect.height() / self._current_image.height()
+        b_rect = self._selected_item.get_bounding_rect()
+        if not b_rect.isValid():
+            return (self.HANDLE_NONE, None)
+
+        center_x = rect.x() + b_rect.center().x() * scale_x
+        center_y = rect.y() + b_rect.center().y() * scale_y
+        vp_w = max(16.0, b_rect.width() * scale_x)
+        vp_h = max(16.0, b_rect.height() * scale_y)
+        local_box = QRectF(-vp_w / 2.0 - 4.0, -vp_h / 2.0 - 4.0, vp_w + 8.0, vp_h + 8.0)
+
+        # Unrotate the viewport position into local coordinates
+        dx = vp_pos.x() - center_x
+        dy = vp_pos.y() - center_y
+        rad = math.radians(-self._selected_item.rotation)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+        local_x = dx * cos_a - dy * sin_a
+        local_y = dx * sin_a + dy * cos_a
+
+        # 1. Rotation handle: (0, local_box.top() - 24)
+        rot_y = local_box.top() - 24.0
+        if math.hypot(local_x - 0.0, local_y - rot_y) <= 12.0:
+            return (self.HANDLE_ROTATE, self._selected_item)
+
+        # 2. Corner handles (10px hit radius)
+        if math.hypot(local_x - local_box.left(), local_y - local_box.top()) <= 10.0:
+            return (self.HANDLE_CORNER_TL, self._selected_item)
+        if math.hypot(local_x - local_box.right(), local_y - local_box.top()) <= 10.0:
+            return (self.HANDLE_CORNER_TR, self._selected_item)
+        if math.hypot(local_x - local_box.right(), local_y - local_box.bottom()) <= 10.0:
+            return (self.HANDLE_CORNER_BR, self._selected_item)
+        if math.hypot(local_x - local_box.left(), local_y - local_box.bottom()) <= 10.0:
+            return (self.HANDLE_CORNER_BL, self._selected_item)
+
+        # 3. Edges of the rectangle (8px margin around perimeter for easy moving)
+        margin = 8.0
+        on_top = abs(local_y - local_box.top()) <= margin and (local_box.left() - margin <= local_x <= local_box.right() + margin)
+        if on_top:
+            return (self.HANDLE_EDGE_TOP, self._selected_item)
+        on_bottom = abs(local_y - local_box.bottom()) <= margin and (local_box.left() - margin <= local_x <= local_box.right() + margin)
+        if on_bottom:
+            return (self.HANDLE_EDGE_BOTTOM, self._selected_item)
+        on_left = abs(local_x - local_box.left()) <= margin and (local_box.top() - margin <= local_y <= local_box.bottom() + margin)
+        if on_left:
+            return (self.HANDLE_EDGE_LEFT, self._selected_item)
+        on_right = abs(local_x - local_box.right()) <= margin and (local_box.top() - margin <= local_y <= local_box.bottom() + margin)
+        if on_right:
+            return (self.HANDLE_EDGE_RIGHT, self._selected_item)
+
+        # 4. Inside the body
+        if local_box.contains(local_x, local_y):
+            return (self.HANDLE_BODY, self._selected_item)
+
+        return (self.HANDLE_NONE, None)
 
     # -- Painting & Mouse Handlers ---------------------------------------------
     def paintEvent(self, event: QPaintEvent) -> None:
@@ -352,18 +766,90 @@ class ImageAnnotationCanvas(QWidget):
 
         rect = self.get_image_display_rect()
         if rect.isValid() and not self._current_image.isNull():
-            # Render working image
+            # 1. Render baked working image
             painter.drawImage(rect, self._current_image)
 
-            # Image frame border
+            # 2. Image frame border
             painter.setPen(QPen(QColor("#3c3c3c"), 1))
             painter.drawRect(rect)
 
-            # Interactive shape drag preview overlay
-            if self._is_drawing and self._drag_start and self._drag_current:
-                scale_x = rect.width() / self._current_image.width()
-                scale_y = rect.height() / self._current_image.height()
+            scale_x = rect.width() / self._current_image.width()
+            scale_y = rect.height() / self._current_image.height()
 
+            # 3. Selection outline, rotation handle, corners, and edges around selected item
+            if self._selected_item:
+                b_rect = self._selected_item.get_bounding_rect()
+                center_x = rect.x() + b_rect.center().x() * scale_x
+                center_y = rect.y() + b_rect.center().y() * scale_y
+                vp_w = max(16.0, b_rect.width() * scale_x)
+                vp_h = max(16.0, b_rect.height() * scale_y)
+                local_box = QRectF(-vp_w / 2.0 - 4.0, -vp_h / 2.0 - 4.0, vp_w + 8.0, vp_h + 8.0)
+
+                painter.save()
+                painter.translate(center_x, center_y)
+                painter.rotate(self._selected_item.rotation)
+
+                # Dashed selection outline with accent tint
+                sel_pen = QPen(QColor("#007acc"), 1.5, Qt.DashLine)
+                painter.setPen(sel_pen)
+                painter.setBrush(QColor(0, 122, 204, 35))
+                painter.drawRect(local_box)
+
+                # Rotation stem and handle
+                stem_top = local_box.top() - 24.0
+                painter.setPen(QPen(QColor("#007acc"), 1.5, Qt.SolidLine))
+                painter.drawLine(QPointF(0.0, local_box.top()), QPointF(0.0, stem_top))
+
+                # Circular rotation handle
+                painter.setBrush(QColor("#00e5ff"))
+                painter.setPen(QPen(QColor("#ffffff"), 1.5))
+                painter.drawEllipse(QPointF(0.0, stem_top), 5.5, 5.5)
+
+                # Corner grab handles
+                painter.setBrush(QColor("#ffffff"))
+                painter.setPen(QPen(QColor("#007acc"), 1.5))
+                h_size = 7.0
+                for hx, hy in (
+                    (local_box.left(), local_box.top()),
+                    (local_box.right(), local_box.top()),
+                    (local_box.left(), local_box.bottom()),
+                    (local_box.right(), local_box.bottom()),
+                ):
+                    painter.drawRect(QRectF(hx - h_size / 2.0, hy - h_size / 2.0, h_size, h_size))
+
+                # Edge mid-handles
+                painter.setBrush(QColor("#ffffff"))
+                painter.setPen(QPen(QColor("#007acc"), 1.0))
+                m_size = 5.0
+                for hx, hy in (
+                    (0.0, local_box.top()),
+                    (0.0, local_box.bottom()),
+                    (local_box.left(), 0.0),
+                    (local_box.right(), 0.0),
+                ):
+                    painter.drawRect(QRectF(hx - m_size / 2.0, hy - m_size / 2.0, m_size, m_size))
+
+                painter.restore()
+
+                # Live angle badge when rotating
+                if self._is_rotating:
+                    angle_deg = int(round(self._selected_item.rotation)) % 360
+                    badge_text = f"⟳ {angle_deg}°"
+                    if self._shift_pressed:
+                        badge_text += " (Snap 15°)"
+                    painter.setFont(QFont("Arial", 9, QFont.Bold))
+                    fm = QFontMetrics(painter.font())
+                    tw = fm.horizontalAdvance(badge_text) + 16
+                    th = fm.height() + 8
+                    badge_rect = QRectF(center_x - tw / 2.0, center_y - vp_h / 2.0 - 55.0, tw, th)
+                    painter.setBrush(QColor(0, 0, 0, 200))
+                    painter.setPen(QPen(QColor("#00e5ff"), 1.5))
+                    painter.drawRoundedRect(badge_rect, 4.0, 4.0)
+                    painter.setPen(QColor("#ffffff"))
+                    painter.drawText(badge_rect, Qt.AlignCenter, badge_text)
+
+            # 4. Interactive shape drag preview overlay
+            if self._is_drawing and self._drag_start and self._drag_current:
                 vp_start = QPoint(
                     int(rect.x() + self._drag_start.x() * scale_x),
                     int(rect.y() + self._drag_start.y() * scale_y),
@@ -374,7 +860,11 @@ class ImageAnnotationCanvas(QWidget):
                 )
                 preview_rect = QRect(vp_start, vp_curr).normalized()
 
-                if self._active_tool == self.TOOL_RECTANGLE:
+                if self._active_tool == self.TOOL_LINE:
+                    line_pen = QPen(self._current_color, max(1, int(self._stroke_width * scale_x)), Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+                    painter.setPen(line_pen)
+                    painter.drawLine(vp_start, vp_curr)
+                elif self._active_tool == self.TOOL_RECTANGLE:
                     preview_pen = QPen(self._current_color, max(1, int(self._stroke_width * scale_x)), Qt.SolidLine)
                     painter.setPen(preview_pen)
                     painter.setBrush(Qt.NoBrush)
@@ -385,12 +875,10 @@ class ImageAnnotationCanvas(QWidget):
                     painter.setBrush(Qt.NoBrush)
                     painter.drawEllipse(preview_rect)
                 elif self._active_tool == self.TOOL_TEXT:
-                    # Paint-style dashed bounding rectangle with subtle tinted fill
                     dash_pen = QPen(self._current_color, 1, Qt.DashLine)
                     painter.setPen(dash_pen)
                     painter.setBrush(QColor(self._current_color.red(), self._current_color.green(), self._current_color.blue(), 25))
                     painter.drawRect(preview_rect)
-                    # Text box label preview
                     painter.setPen(self._current_color)
                     font_preview = QFont("Arial", max(8, int(self._font_size * scale_x)))
                     painter.setFont(font_preview)
@@ -406,7 +894,6 @@ class ImageAnnotationCanvas(QWidget):
                 self.zoom_out()
             event.accept()
         elif self._zoom_factor > 1.0:
-            # Pan vertically / horizontally with wheel
             dy = event.angleDelta().y() // 8
             dx = event.angleDelta().x() // 8
             self._pan_offset += QPoint(dx, dy)
@@ -416,8 +903,11 @@ class ImageAnnotationCanvas(QWidget):
             super().wheelEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        self.setFocus()
+
         # 1. Pan with Middle-click or Right-click
         if event.button() in (Qt.MiddleButton, Qt.RightButton):
+            self._action_mode = self.ACTION_PAN
             self._is_panning = True
             pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
             self._pan_start = pos - self._pan_offset
@@ -433,109 +923,400 @@ class ImageAnnotationCanvas(QWidget):
         if not img_pt:
             return
 
-        # 2. Text Tool: Begin click-and-drag text bounding rectangle (Paint style)
-        if self._active_tool == self.TOOL_TEXT:
-            self._is_drawing = True
-            self._drag_start = img_pt
-            self._drag_current = img_pt
+        # 2. Check if clicking on active handle of currently selected item
+        handle, item = self.get_selection_handle_at(pos)
+        if item and handle != self.HANDLE_NONE:
+            # Handle rotation
+            if handle == self.HANDLE_ROTATE:
+                self._save_undo_state()
+                self._action_mode = self.ACTION_ROTATE
+                self._is_rotating = True
+                rect = self.get_image_display_rect()
+                scale_x = rect.width() / self._current_image.width()
+                scale_y = rect.height() / self._current_image.height()
+                b_rect = item.get_bounding_rect()
+                center_x = rect.x() + b_rect.center().x() * scale_x
+                center_y = rect.y() + b_rect.center().y() * scale_y
+                self._rotate_start_angle = math.degrees(math.atan2(pos.y() - center_y, pos.x() - center_x))
+                self._rotate_initial_angle = item.rotation
+                self.setCursor(Qt.PointingHandCursor)
+                event.accept()
+                return
+
+            # Handle corner resizing
+            elif handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_TR, self.HANDLE_CORNER_BR, self.HANDLE_CORNER_BL):
+                self._save_undo_state()
+                self._action_mode = self.ACTION_RESIZE
+                self._is_resizing = True
+                self._resize_handle = handle
+                self._resize_initial_rect = QRect(item.rect)
+                self._resize_initial_pos = img_pt
+                self._resize_initial_center = QPointF(item.get_bounding_rect().center())
+                event.accept()
+                return
+
+            # Handle edge clicking or body clicking -> MOVE!
+            elif handle in (
+                self.HANDLE_EDGE_TOP,
+                self.HANDLE_EDGE_BOTTOM,
+                self.HANDLE_EDGE_LEFT,
+                self.HANDLE_EDGE_RIGHT,
+                self.HANDLE_BODY,
+            ):
+                self._save_undo_state()
+                self._action_mode = self.ACTION_MOVE
+                self._is_moving_item = True
+                self._move_item_start = img_pt
+                self._move_item_prev = img_pt
+                self.setCursor(Qt.SizeAllCursor)
+                event.accept()
+                return
+
+        # 3. Not touching the selected item's handles; check if clicking another item
+        hit_other = self.select_item_at(img_pt)
+        if hit_other:
+            self._save_undo_state()
+            self._action_mode = self.ACTION_MOVE
+            self._is_moving_item = True
+            self._move_item_start = img_pt
+            self._move_item_prev = img_pt
+            self.setCursor(Qt.SizeAllCursor)
             event.accept()
             return
 
-        # 3. Drawing tools (Pen, Circle, Rectangle)
+        # 4. Clicking empty space
+        if self._active_tool == self.TOOL_SELECT:
+            self._selected_item = None
+            self.update()
+            return
+
+        # 5. Drawing tool on empty space
+        self._selected_item = None
         self._save_undo_state()
+        self._action_mode = self.ACTION_DRAW
         self._is_drawing = True
         self._drag_start = img_pt
         self._drag_current = img_pt
         self._freehand_points = [img_pt]
+        self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+        self._shift_pressed = bool(event.modifiers() & Qt.ShiftModifier)
 
-        # Handle panning drag
-        if self._is_panning:
+        # 1. Panning canvas
+        if self._action_mode == self.ACTION_PAN and self._is_panning:
             self._pan_offset = pos - self._pan_start
             self.update()
             event.accept()
             return
 
-        if not self._is_drawing:
+        # 2. Rotating selected item
+        if self._action_mode == self.ACTION_ROTATE and self._selected_item:
+            rect = self.get_image_display_rect()
+            if rect.isValid() and not self._current_image.isNull():
+                scale_x = rect.width() / self._current_image.width()
+                scale_y = rect.height() / self._current_image.height()
+                b_rect = self._selected_item.get_bounding_rect()
+                center_x = rect.x() + b_rect.center().x() * scale_x
+                center_y = rect.y() + b_rect.center().y() * scale_y
+                curr_angle = math.degrees(math.atan2(pos.y() - center_y, pos.x() - center_x))
+                delta = curr_angle - self._rotate_start_angle
+                new_angle = (self._rotate_initial_angle + delta) % 360.0
+                if event.modifiers() & Qt.ShiftModifier:
+                    new_angle = round(new_angle / 15.0) * 15.0
+                self._selected_item.rotation = new_angle
+                self._regenerate_current_image()
+                self.update()
+            event.accept()
             return
 
-        img_pt = self.viewport_to_image_coords(pos, clamp=True)
-        if not img_pt:
+        # 3. Resizing selected item
+        if self._action_mode == self.ACTION_RESIZE and self._selected_item:
+            img_pt = self.viewport_to_image_coords(pos, clamp=True)
+            if img_pt and self._selected_item.rect.isValid():
+                center = self._resize_initial_center
+                rot = self._selected_item.rotation
+                p_curr = self._unrotate_pt(img_pt, center, rot)
+                p_start = self._unrotate_pt(self._resize_initial_pos, center, rot)
+                dx = int(p_curr.x() - p_start.x())
+                dy = int(p_curr.y() - p_start.y())
+
+                init_r = self._resize_initial_rect
+                min_s = 20
+                if self._resize_handle == self.HANDLE_CORNER_BR:
+                    nw = max(min_s, init_r.width() + dx)
+                    nh = max(min_s, init_r.height() + dy)
+                    self._selected_item.rect = QRect(init_r.left(), init_r.top(), nw, nh)
+                elif self._resize_handle == self.HANDLE_CORNER_TL:
+                    nl = min(init_r.right() - min_s, init_r.left() + dx)
+                    nt = min(init_r.bottom() - min_s, init_r.top() + dy)
+                    self._selected_item.rect = QRect(nl, nt, init_r.right() - nl, init_r.bottom() - nt)
+                elif self._resize_handle == self.HANDLE_CORNER_TR:
+                    nr = max(init_r.left() + min_s, init_r.right() + dx)
+                    nt = min(init_r.bottom() - min_s, init_r.top() + dy)
+                    self._selected_item.rect = QRect(init_r.left(), nt, nr - init_r.left(), init_r.bottom() - nt)
+                elif self._resize_handle == self.HANDLE_CORNER_BL:
+                    nl = min(init_r.right() - min_s, init_r.left() + dx)
+                    nb = max(init_r.top() + min_s, init_r.bottom() + dy)
+                    self._selected_item.rect = QRect(nl, init_r.top(), init_r.right() - nl, nb - init_r.top())
+
+                self._regenerate_current_image()
+                self.update()
+            event.accept()
             return
 
-        self._drag_current = img_pt
+        # 4. Moving selected item
+        if self._action_mode == self.ACTION_MOVE and self._selected_item:
+            img_pt = self.viewport_to_image_coords(pos, clamp=True)
+            if img_pt:
+                dx = img_pt.x() - self._move_item_prev.x()
+                dy = img_pt.y() - self._move_item_prev.y()
+                if dx != 0 or dy != 0:
+                    self._selected_item.translate(dx, dy)
+                    self._move_item_prev = img_pt
+                    self._regenerate_current_image()
+                    self.update()
+            event.accept()
+            return
 
-        if self._active_tool == self.TOOL_PEN:
-            prev_pt = self._freehand_points[-1]
-            painter = QPainter(self._current_image)
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(self._current_color, self._stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.drawLine(prev_pt, img_pt)
-            painter.end()
-            self._freehand_points.append(img_pt)
-            self._was_annotated = True
+        # 5. Drawing mode
+        if self._action_mode == self.ACTION_DRAW and self._is_drawing:
+            img_pt = self.viewport_to_image_coords(pos, clamp=True)
+            if img_pt:
+                if self._active_tool == self.TOOL_LINE and self._drag_start:
+                    if event.modifiers() & Qt.ShiftModifier:
+                        self._drag_current = self.snap_to_straight_line(self._drag_start, img_pt)
+                    else:
+                        self._drag_current = img_pt
+                else:
+                    self._drag_current = img_pt
 
-        self.update()
+                if self._active_tool == self.TOOL_PEN:
+                    prev_pt = self._freehand_points[-1]
+                    painter = QPainter(self._current_image)
+                    painter.setRenderHint(QPainter.Antialiasing)
+                    painter.setPen(QPen(self._current_color, self._stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                    painter.drawLine(prev_pt, img_pt)
+                    painter.end()
+                    self._freehand_points.append(img_pt)
+                    self._was_annotated = True
+                self.update()
+            return
+
+        # 6. Hover cursor update
+        handle, item = self.get_selection_handle_at(pos)
+        if item and handle != self.HANDLE_NONE:
+            if handle == self.HANDLE_ROTATE:
+                self.setCursor(Qt.PointingHandCursor)
+            elif handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_BR):
+                self.setCursor(Qt.SizeFDiagCursor)
+            elif handle in (self.HANDLE_CORNER_TR, self.HANDLE_CORNER_BL):
+                self.setCursor(Qt.SizeBDiagCursor)
+            elif handle in (
+                self.HANDLE_EDGE_TOP,
+                self.HANDLE_EDGE_BOTTOM,
+                self.HANDLE_EDGE_LEFT,
+                self.HANDLE_EDGE_RIGHT,
+                self.HANDLE_BODY,
+            ):
+                self.setCursor(Qt.SizeAllCursor)
+            return
+
+        # If hovering over any other item on the canvas
+        img_pt = self.viewport_to_image_coords(pos)
+        if img_pt and any(it.contains_point(img_pt) for it in self._items):
+            self.setCursor(Qt.SizeAllCursor)
+            return
+
+        self._update_cursor()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if self._is_panning and event.button() in (Qt.MiddleButton, Qt.RightButton, Qt.LeftButton):
+        if self._action_mode == self.ACTION_PAN:
+            self._action_mode = self.ACTION_NONE
             self._is_panning = False
             self._update_cursor()
             event.accept()
             return
 
-        if not self._is_drawing or event.button() != Qt.LeftButton:
+        if self._action_mode == self.ACTION_ROTATE:
+            self._action_mode = self.ACTION_NONE
+            self._is_rotating = False
+            if self._selected_item and abs(self._selected_item.rotation - self._rotate_initial_angle) < 0.01 and self._undo_stack:
+                self._undo_stack.pop()
+            self._regenerate_current_image()
+            self._update_cursor()
+            self.update()
+            event.accept()
             return
-        self._is_drawing = False
 
-        if self._active_tool == self.TOOL_TEXT and self._drag_start and self._drag_current:
-            # Calculate user-dragged text rectangle
-            shape_rect = QRect(self._drag_start, self._drag_current).normalized()
-            if shape_rect.width() < 24 or shape_rect.height() < 20:
-                # If clicked without dragging a bounding box, expand to generous default box
-                shape_rect = QRect(self._drag_start.x(), self._drag_start.y(), 260, max(50, self._font_size * 3))
+        if self._action_mode == self.ACTION_RESIZE:
+            self._action_mode = self.ACTION_NONE
+            self._is_resizing = False
+            self._regenerate_current_image()
+            self._update_cursor()
+            self.update()
+            event.accept()
+            return
 
-            # Clamp bounding box to image boundaries
-            img_w = self._current_image.width()
-            img_h = self._current_image.height()
-            shape_rect = shape_rect.intersected(QRect(0, 0, img_w, img_h))
+        if self._action_mode == self.ACTION_MOVE:
+            self._action_mode = self.ACTION_NONE
+            self._is_moving_item = False
+            if self._move_item_prev == self._move_item_start and self._undo_stack:
+                self._undo_stack.pop()
+            self._regenerate_current_image()
+            self._update_cursor()
+            self.update()
+            event.accept()
+            return
 
-            # Prompt technician for text and font size inside the rectangle
-            self._prompt_and_add_text_rect(shape_rect)
+        if self._action_mode == self.ACTION_DRAW:
+            self._action_mode = self.ACTION_NONE
+            self._is_drawing = False
 
-        elif self._active_tool == self.TOOL_PEN and len(self._freehand_points) == 1:
-            painter = QPainter(self._current_image)
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(self._current_color, self._stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            pt = self._freehand_points[0]
-            painter.drawPoint(pt)
-            painter.end()
-            self._was_annotated = True
+            if self._active_tool == self.TOOL_TEXT and self._drag_start and self._drag_current:
+                shape_rect = QRect(self._drag_start, self._drag_current).normalized()
+                if shape_rect.width() < 24 or shape_rect.height() < 20:
+                    shape_rect = QRect(self._drag_start.x(), self._drag_start.y(), 260, max(50, self._font_size * 3))
+                img_w = self._current_image.width()
+                img_h = self._current_image.height()
+                shape_rect = shape_rect.intersected(QRect(0, 0, img_w, img_h))
+                self._prompt_and_add_text_rect(shape_rect)
 
-        elif self._active_tool in (self.TOOL_RECTANGLE, self.TOOL_CIRCLE) and self._drag_start and self._drag_current:
-            shape_rect = QRect(self._drag_start, self._drag_current).normalized()
-            if shape_rect.width() > 2 or shape_rect.height() > 2:
-                painter = QPainter(self._current_image)
-                painter.setRenderHint(QPainter.Antialiasing)
-                painter.setPen(QPen(self._current_color, self._stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-                painter.setBrush(Qt.NoBrush)
-                if self._active_tool == self.TOOL_RECTANGLE:
-                    painter.drawRect(shape_rect)
-                elif self._active_tool == self.TOOL_CIRCLE:
-                    painter.drawEllipse(shape_rect)
-                painter.end()
+            elif self._active_tool == self.TOOL_PEN and len(self._freehand_points) >= 1:
+                item = AnnotationItem(
+                    AnnotationItem.TYPE_PEN,
+                    self._current_color,
+                    self._stroke_width,
+                    points=self._freehand_points,
+                )
+                self._items.append(item)
+                self._selected_item = item
                 self._was_annotated = True
-            else:
-                # Discard unused undo state if drag was negligible
-                if self._undo_stack:
-                    self._undo_stack.pop()
+                self._regenerate_current_image()
 
-        self._drag_start = None
-        self._drag_current = None
-        self._freehand_points.clear()
-        self.update()
+            elif self._active_tool == self.TOOL_LINE and self._drag_start and self._drag_current:
+                end_pt = self._drag_current
+                if (event.modifiers() & Qt.ShiftModifier) or self._shift_pressed:
+                    end_pt = self.snap_to_straight_line(self._drag_start, end_pt)
+                dist = math.hypot(end_pt.x() - self._drag_start.x(), end_pt.y() - self._drag_start.y())
+                if dist >= 3:
+                    item = AnnotationItem(
+                        AnnotationItem.TYPE_LINE,
+                        self._current_color,
+                        self._stroke_width,
+                        points=[self._drag_start, end_pt],
+                    )
+                    self._items.append(item)
+                    self._selected_item = item
+                    self._was_annotated = True
+                    self._regenerate_current_image()
+                    self.set_tool(self.TOOL_SELECT)
+                else:
+                    if self._undo_stack:
+                        self._undo_stack.pop()
+
+            elif self._active_tool in (self.TOOL_RECTANGLE, self.TOOL_CIRCLE) and self._drag_start and self._drag_current:
+                shape_rect = QRect(self._drag_start, self._drag_current).normalized()
+                if shape_rect.width() > 2 or shape_rect.height() > 2:
+                    item_type = AnnotationItem.TYPE_RECTANGLE if self._active_tool == self.TOOL_RECTANGLE else AnnotationItem.TYPE_CIRCLE
+                    item = AnnotationItem(
+                        item_type,
+                        self._current_color,
+                        self._stroke_width,
+                        rect=shape_rect,
+                    )
+                    self._items.append(item)
+                    self._selected_item = item
+                    self._was_annotated = True
+                    self._regenerate_current_image()
+                    self.set_tool(self.TOOL_SELECT)
+                else:
+                    if self._undo_stack:
+                        self._undo_stack.pop()
+
+            self._drag_start = None
+            self._drag_current = None
+            self._freehand_points.clear()
+            self._update_cursor()
+            self.update()
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """Double clicking a text item in Select mode re-opens dialog to edit its text."""
+        if event.button() == Qt.LeftButton:
+            pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+            img_pt = self.viewport_to_image_coords(pos)
+            if img_pt:
+                for item in reversed(self._items):
+                    if item.contains_point(img_pt):
+                        self._selected_item = item
+                        if item.item_type == AnnotationItem.TYPE_TEXT:
+                            dlg = TextAnnotationDialog(item.rect, item.font_size, item.color, self)
+                            dlg.text_edit.setPlainText(item.text)
+                            dlg.chk_border.setChecked(item.draw_border)
+                            if dlg.exec() == QDialog.Accepted:
+                                new_text = dlg.get_text()
+                                if new_text:
+                                    self._save_undo_state()
+                                    item.text = new_text
+                                    item.font_size = dlg.get_font_size()
+                                    item.draw_border = dlg.should_draw_border()
+                                    self._regenerate_current_image()
+                                    self.update()
+                        self.update()
+                        event.accept()
+                        return
+        super().mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        """Allows deleting, nudging, and rotating selected forms using keyboard shortcuts."""
+        if not self._selected_item and self._items and event.key() in (
+            Qt.Key_BracketLeft, Qt.Key_BracketRight,
+            Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down,
+            Qt.Key_Delete, Qt.Key_Backspace,
+        ):
+            self._selected_item = self._items[-1]
+            self.update()
+
+        if self._selected_item:
+            if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
+                self.delete_selected_item()
+                event.accept()
+                return
+
+            # Rotate shortcuts: [ (rotate -15°) and ] (rotate +15°)
+            if event.key() == Qt.Key_BracketLeft:
+                self.rotate_selected_item(-15.0)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_BracketRight:
+                self.rotate_selected_item(15.0)
+                event.accept()
+                return
+
+            step = 10 if event.modifiers() & Qt.ShiftModifier else 1
+            dx, dy = 0, 0
+            if event.key() == Qt.Key_Left:
+                dx = -step
+            elif event.key() == Qt.Key_Right:
+                dx = step
+            elif event.key() == Qt.Key_Up:
+                dy = -step
+            elif event.key() == Qt.Key_Down:
+                dy = step
+
+            if dx != 0 or dy != 0:
+                self.move_selected_item(dx, dy)
+                event.accept()
+                return
+
+            if event.key() == Qt.Key_Escape:
+                self._selected_item = None
+                self.update()
+                event.accept()
+                return
+
+        super().keyPressEvent(event)
 
     def add_text_in_rect(
         self,
@@ -544,38 +1325,26 @@ class ImageAnnotationCanvas(QWidget):
         font_size: Optional[int] = None,
         draw_border: bool = False,
     ) -> None:
-        """Renders text inside the specified bounding rectangle with high-contrast shadow and optional callout border."""
+        """Renders text inside specified bounding rectangle and registers as movable annotation item."""
         if not text.strip():
             return
         self._save_undo_state()
         size = font_size if font_size is not None else self._font_size
 
-        painter = QPainter(self._current_image)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Optional callout border box around text
-        if draw_border:
-            border_pen = QPen(self._current_color, max(1, self._stroke_width // 2), Qt.SolidLine)
-            painter.setPen(border_pen)
-            painter.setBrush(QColor(0, 0, 0, 160))  # Semi-transparent dark background for readability
-            painter.drawRoundedRect(rect, 4, 4)
-
-        font = QFont("Arial", size, QFont.Bold)
-        painter.setFont(font)
-
-        text_rect = rect.adjusted(6, 6, -6, -6) if draw_border else rect
-
-        # High-contrast 8-way outline/shadow for readability over any background
-        painter.setPen(QColor(0, 0, 0, 230))
-        for dx, dy in ((-2, -2), (-2, 2), (2, -2), (2, 2), (0, 2), (2, 0), (0, -2), (-2, 0), (-1, -1), (1, 1)):
-            painter.drawText(text_rect.translated(dx, dy), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, text.strip())
-
-        # Primary text in selected color
-        painter.setPen(self._current_color)
-        painter.drawText(text_rect, Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, text.strip())
-        painter.end()
-
+        item = AnnotationItem(
+            item_type=AnnotationItem.TYPE_TEXT,
+            color=self._current_color,
+            stroke_width=self._stroke_width,
+            rect=rect,
+            text=text.strip(),
+            font_size=size,
+            draw_border=draw_border,
+        )
+        self._items.append(item)
+        self._selected_item = item
         self._was_annotated = True
+        self._regenerate_current_image()
+        self.set_tool(self.TOOL_SELECT)
         self.update()
 
     def add_text_at(self, img_pt: QPoint, text: str) -> None:
@@ -597,7 +1366,7 @@ class ImageAnnotationCanvas(QWidget):
 
 
 class ResizeImageDialog(QDialog):
-    """Dialog allowing technicians to resize an image, apply drawings/callouts/text, zoom, and maximize."""
+    """Dialog allowing technicians to resize an image, apply/move drawings/shapes/text, zoom, and maximize."""
 
     def __init__(
         self,
@@ -625,11 +1394,13 @@ class ResizeImageDialog(QDialog):
         self._aspect_ratio = self._orig_w / self._orig_h
 
         self._updating = False
+        self._has_shown = False
         self.canvas: Optional[ImageAnnotationCanvas] = None
 
         if self._image and not self._image.isNull():
             self.resize(1020, 680)
             self.setMinimumSize(820, 520)
+            self.setWindowState(self.windowState() | Qt.WindowMaximized)
         else:
             self.setMinimumWidth(380)
 
@@ -656,6 +1427,14 @@ class ResizeImageDialog(QDialog):
             self.tool_group = QButtonGroup(self)
             self.tool_group.setExclusive(True)
 
+            self.btn_tool_select = QToolButton()
+            self.btn_tool_select.setText("↖️ Select / Move")
+            self.btn_tool_select.setCheckable(True)
+            self.btn_tool_select.setToolTip("Select and drag to move text, shapes, or drawings (Delete to remove)")
+            self.btn_tool_select.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_SELECT))
+            self.tool_group.addButton(self.btn_tool_select)
+            tb_layout.addWidget(self.btn_tool_select)
+
             self.btn_tool_pen = QToolButton()
             self.btn_tool_pen.setText("✏️ Draw")
             self.btn_tool_pen.setCheckable(True)
@@ -664,6 +1443,14 @@ class ResizeImageDialog(QDialog):
             self.btn_tool_pen.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_PEN))
             self.tool_group.addButton(self.btn_tool_pen)
             tb_layout.addWidget(self.btn_tool_pen)
+
+            self.btn_tool_line = QToolButton()
+            self.btn_tool_line.setText("📏 Line")
+            self.btn_tool_line.setCheckable(True)
+            self.btn_tool_line.setToolTip("Draw straight line (Hold Shift for straight horizontal, vertical, or 45° snap)")
+            self.btn_tool_line.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_LINE))
+            self.tool_group.addButton(self.btn_tool_line)
+            tb_layout.addWidget(self.btn_tool_line)
 
             self.btn_tool_circle = QToolButton()
             self.btn_tool_circle.setText("⭕ Circle")
@@ -688,6 +1475,12 @@ class ResizeImageDialog(QDialog):
             self.btn_tool_text.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_TEXT))
             self.tool_group.addButton(self.btn_tool_text)
             tb_layout.addWidget(self.btn_tool_text)
+
+            self.btn_rotate_90 = QToolButton()
+            self.btn_rotate_90.setText("⟳ Rotate 90°")
+            self.btn_rotate_90.setToolTip("Rotate selected form or text 90° clockwise (Ctrl+R)")
+            self.btn_rotate_90.clicked.connect(self._on_rotate_90)
+            tb_layout.addWidget(self.btn_rotate_90)
 
             tb_layout.addSpacing(6)
 
@@ -820,14 +1613,26 @@ class ResizeImageDialog(QDialog):
             tb_layout.addWidget(self.btn_reset)
 
             # Full Screen Maximize / Restore Button
-            self.btn_maximize = QPushButton("⛶ Maximize")
-            self.btn_maximize.setToolTip("Toggle full screen (F11 or double-click top bar)")
+            init_max = bool(self.windowState() & Qt.WindowMaximized)
+            self.btn_maximize = QPushButton("❐ Restore" if init_max else "⛶ Maximize")
+            self.btn_maximize.setToolTip(
+                "Restore Image Editor to normal window size (F11 or double-click top bar)"
+                if init_max
+                else "Toggle full screen (F11 or double-click top bar)"
+            )
             self.btn_maximize.clicked.connect(self._toggle_maximize)
             tb_layout.addWidget(self.btn_maximize)
 
             main_layout.addWidget(toolbar_box)
 
-            # Keyboard shortcuts for undo/redo, zoom, and maximize
+            # Keyboard shortcuts for tools, undo/redo, zoom, and maximize
+            QShortcut(QKeySequence("V"), self, lambda: self.btn_tool_select.click())
+            QShortcut(QKeySequence("P"), self, lambda: self.btn_tool_pen.click())
+            QShortcut(QKeySequence("L"), self, lambda: self.btn_tool_line.click())
+            QShortcut(QKeySequence("C"), self, lambda: self.btn_tool_circle.click())
+            QShortcut(QKeySequence("R"), self, lambda: self.btn_tool_rect.click())
+            QShortcut(QKeySequence("T"), self, lambda: self.btn_tool_text.click())
+            QShortcut(QKeySequence("Ctrl+R"), self, self._on_rotate_90)
             QShortcut(QKeySequence("Ctrl+Z"), self, self._on_undo)
             QShortcut(QKeySequence("Ctrl+Y"), self, self._on_redo)
             QShortcut(QKeySequence("Ctrl+Shift+Z"), self, self._on_redo)
@@ -845,6 +1650,7 @@ class ResizeImageDialog(QDialog):
             # Left Canvas
             self.canvas = ImageAnnotationCanvas(self._image, self)
             self.canvas.zoom_changed.connect(self._on_zoom_changed)
+            self.canvas.tool_changed.connect(self._sync_toolbar_tool_buttons)
             body_splitter.addWidget(self.canvas)
 
             # Right Side Panel: Dimensions Form & Presets
@@ -990,15 +1796,39 @@ class ResizeImageDialog(QDialog):
 
         apply_glow_to_buttons([self])
 
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._has_shown:
+            self._has_shown = True
+            if self._image and not self._image.isNull():
+                self.setWindowState(self.windowState() | Qt.WindowMaximized)
+                if hasattr(self, "btn_maximize"):
+                    self.btn_maximize.setText("❐ Restore")
+                    self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if hasattr(self, "btn_maximize"):
+            if self.isMaximized() or bool(self.windowState() & Qt.WindowMaximized):
+                self.btn_maximize.setText("❐ Restore")
+                self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
+            else:
+                self.btn_maximize.setText("⛶ Maximize")
+                self.btn_maximize.setToolTip("Maximize Image Editor to full screen (F11 or double-click top bar)")
+
     def _toggle_maximize(self) -> None:
         """Toggles window between maximized (full screen) and normal restored geometry."""
-        if self.isMaximized():
-            self.showNormal()
+        if self.isMaximized() or bool(self.windowState() & Qt.WindowMaximized):
+            self.setWindowState(self.windowState() & ~Qt.WindowMaximized)
+            if self.isVisible():
+                self.showNormal()
             if hasattr(self, "btn_maximize"):
                 self.btn_maximize.setText("⛶ Maximize")
                 self.btn_maximize.setToolTip("Maximize Image Editor to full screen (F11 or double-click top bar)")
         else:
-            self.showMaximized()
+            self.setWindowState(self.windowState() | Qt.WindowMaximized)
+            if self.isVisible():
+                self.showMaximized()
             if hasattr(self, "btn_maximize"):
                 self.btn_maximize.setText("❐ Restore")
                 self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
@@ -1055,6 +1885,26 @@ class ResizeImageDialog(QDialog):
     def _on_reset(self) -> None:
         if self.canvas:
             self.canvas.reset_image()
+
+    def _on_rotate_90(self) -> None:
+        if self.canvas:
+            self.canvas.rotate_selected_item(90.0)
+
+    def _sync_toolbar_tool_buttons(self, tool_name: str) -> None:
+        if not hasattr(self, "btn_tool_select"):
+            return
+        if tool_name == ImageAnnotationCanvas.TOOL_SELECT:
+            self.btn_tool_select.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_PEN:
+            self.btn_tool_pen.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_LINE:
+            self.btn_tool_line.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_CIRCLE:
+            self.btn_tool_circle.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_RECTANGLE:
+            self.btn_tool_rect.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_TEXT:
+            self.btn_tool_text.setChecked(True)
 
     def _apply_styling(self) -> None:
         self.setStyleSheet("""

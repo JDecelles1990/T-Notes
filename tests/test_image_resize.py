@@ -15,6 +15,7 @@ from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
 from src.ui.dialogs.resize_image_dialog import (
+    AnnotationItem,
     ImageAnnotationCanvas,
     ResizeImageDialog,
     TextAnnotationDialog,
@@ -507,7 +508,7 @@ def test_image_editor_zoom_and_pan(qapp):
 
 
 def test_image_editor_window_title_and_maximize(qapp):
-    """Verifies that the dialog is named 'Image Editor' and can maximize to full screen."""
+    """Verifies that the dialog is named 'Image Editor', pops up maximized by default, and toggles restore/maximize."""
     img = QImage(200, 100, QImage.Format_ARGB32_Premultiplied)
     img.fill(0xFF445566)
 
@@ -526,16 +527,19 @@ def test_image_editor_window_title_and_maximize(qapp):
         flags = dlg.windowFlags()
         assert bool(flags & Qt.WindowMinMaxButtonsHint)
 
-        # Test toggle maximize to full screen
-        assert not dlg.isMaximized()
-        dlg._toggle_maximize()
-        assert dlg.isMaximized()
+        # Dialog pops up maximized at full screen by default
+        assert dlg.isMaximized() or bool(dlg.windowState() & Qt.WindowMaximized)
         assert dlg.btn_maximize.text() == "❐ Restore"
 
         # Test toggle restore back to normal size
         dlg._toggle_maximize()
         assert not dlg.isMaximized()
         assert dlg.btn_maximize.text() == "⛶ Maximize"
+
+        # Test toggle back to full screen
+        dlg._toggle_maximize()
+        assert dlg.isMaximized() or bool(dlg.windowState() & Qt.WindowMaximized)
+        assert dlg.btn_maximize.text() == "❐ Restore"
     finally:
         dlg.deleteLater()
 
@@ -577,6 +581,370 @@ def test_text_annotation_rectangle_and_size_like_paint(qapp):
         assert text_dlg.get_text() == "Test callout content"
     finally:
         text_dlg.deleteLater()
+
+
+def test_image_editor_move_shapes_and_text(qapp):
+    """Verifies that drawn shapes (rectangles, circles, pen) and text can be selected, moved via drag or arrow keys, deleted, and undone."""
+    img = QImage(600, 400, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(600, 400)
+
+    # 1. Add a rectangle item
+    rect_item = AnnotationItem(
+        AnnotationItem.TYPE_RECTANGLE,
+        QColor("#ff3b30"),
+        stroke_width=4,
+        rect=QRect(50, 50, 100, 80),
+    )
+    canvas.get_items().append(rect_item)
+
+    # 2. Add a text item
+    canvas.add_text_in_rect(QRect(200, 150, 150, 60), "INITIAL TEXT", font_size=18, draw_border=True)
+    assert len(canvas.get_items()) == 2
+    text_item = canvas.get_items()[-1]
+    assert text_item.item_type == AnnotationItem.TYPE_TEXT
+    assert text_item.text == "INITIAL TEXT"
+
+    # 3. Switch to Select tool
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_SELECT)
+    assert canvas._active_tool == ImageAnnotationCanvas.TOOL_SELECT
+
+    # 4. Select the rectangle by clicking inside it
+    hit = canvas.select_item_at(QPoint(80, 80))
+    assert hit is rect_item
+    assert canvas.get_selected_item() is rect_item
+
+    # 5. Move the rectangle with move_selected_item (+30, +20)
+    canvas.move_selected_item(30, 20)
+    assert rect_item.rect == QRect(80, 70, 100, 80)
+
+    # Verify Undo restores rectangle to (50, 50)
+    canvas.undo()
+    rect_after_undo = canvas.get_items()[0]
+    assert rect_after_undo.rect == QRect(50, 50, 100, 80)
+
+    # Verify Redo moves it forward again to (80, 70)
+    canvas.redo()
+    selected = canvas.get_items()[0]
+    assert selected.rect == QRect(80, 70, 100, 80)
+
+    # 6. Select text item by clicking inside it
+    hit_text = canvas.select_item_at(QPoint(250, 170))
+    assert hit_text is not None
+    assert hit_text.item_type == AnnotationItem.TYPE_TEXT
+    assert canvas.get_selected_item() == hit_text
+    orig_text_rect = QRect(hit_text.rect)
+
+    # 7. Nudge text with Arrow keys (keyboard navigation)
+    # Right arrow: +1px
+    key_right = QKeyEvent(QEvent.KeyPress, Qt.Key_Right, Qt.NoModifier)
+    canvas.keyPressEvent(key_right)
+    assert canvas.get_selected_item().rect.x() == orig_text_rect.x() + 1
+
+    # Shift + Down arrow: +10px
+    key_shift_down = QKeyEvent(QEvent.KeyPress, Qt.Key_Down, Qt.ShiftModifier)
+    canvas.keyPressEvent(key_shift_down)
+    assert canvas.get_selected_item().rect.y() == orig_text_rect.y() + 10
+
+    # 8. Test mouse drag move simulation in canvas
+    disp_rect = canvas.get_image_display_rect()
+    curr_rect = canvas.get_selected_item().rect
+    img_pt = QPoint(curr_rect.center())
+    vp_x = int(disp_rect.x() + img_pt.x() * (disp_rect.width() / img.width()))
+    vp_y = int(disp_rect.y() + img_pt.y() * (disp_rect.height() / img.height()))
+
+    press_ev = QMouseEvent(QEvent.MouseButtonPress, QPointF(vp_x, vp_y), QPointF(vp_x, vp_y), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mousePressEvent(press_ev)
+    assert canvas._is_moving_item is True
+
+    # Drag horizontally in viewport
+    move_ev = QMouseEvent(QEvent.MouseMove, QPointF(vp_x + 20, vp_y), QPointF(vp_x + 20, vp_y), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mouseMoveEvent(move_ev)
+
+    release_ev = QMouseEvent(QEvent.MouseButtonRelease, QPointF(vp_x + 20, vp_y), QPointF(vp_x + 20, vp_y), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+    canvas.mouseReleaseEvent(release_ev)
+    assert canvas._is_moving_item is False
+
+    # 9. Delete selected text item
+    key_del = QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier)
+    canvas.keyPressEvent(key_del)
+    assert len(canvas.get_items()) == 1
+    assert canvas.get_selected_item() is None
+
+    # Undo restores the deleted item
+    canvas.undo()
+    assert len(canvas.get_items()) == 2
+    assert canvas.get_items()[-1].item_type == AnnotationItem.TYPE_TEXT
+
+    # 10. Test Dialog tool shortcuts and toolbar buttons
+    dlg = ResizeImageDialog(
+        current_width=600,
+        current_height=400,
+        original_width=600,
+        original_height=400,
+        image=img,
+    )
+    try:
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_PEN
+        dlg.btn_tool_select.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_SELECT
+        dlg.btn_tool_rect.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_RECTANGLE
+    finally:
+        dlg.deleteLater()
+
+
+def test_image_editor_edge_move_and_rotation(qapp):
+    """Verifies that forms and text can be moved by clicking and dragging their bounding box edges, and can be rotated."""
+    img = QImage(600, 400, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(600, 400)
+
+    # 1. Add a rectangle form at (100, 100, 200, 100)
+    rect_item = AnnotationItem(
+        AnnotationItem.TYPE_RECTANGLE,
+        QColor("#ff3b30"),
+        stroke_width=4,
+        rect=QRect(100, 100, 200, 100),
+    )
+    canvas.get_items().append(rect_item)
+    canvas._selected_item = rect_item
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_SELECT)
+
+    disp_rect = canvas.get_image_display_rect()
+    scale_x = disp_rect.width() / img.width()
+    scale_y = disp_rect.height() / img.height()
+
+    # 2. Test Edge Hit Testing:
+    # Top Edge:
+    top_edge_vp = QPoint(
+        int(disp_rect.x() + 200 * scale_x),
+        int(disp_rect.y() + 100 * scale_y - 4),
+    )
+    handle, it = canvas.get_selection_handle_at(top_edge_vp)
+    assert it is rect_item
+    assert handle == ImageAnnotationCanvas.HANDLE_EDGE_TOP
+
+    # Drag Top Edge to move item:
+    press_ev = QMouseEvent(QEvent.MouseButtonPress, QPointF(top_edge_vp), QPointF(top_edge_vp), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mousePressEvent(press_ev)
+    assert canvas._action_mode == ImageAnnotationCanvas.ACTION_MOVE
+
+    move_ev = QMouseEvent(QEvent.MouseMove, QPointF(top_edge_vp.x() + 25, top_edge_vp.y() + 15), QPointF(top_edge_vp.x() + 25, top_edge_vp.y() + 15), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mouseMoveEvent(move_ev)
+
+    release_ev = QMouseEvent(QEvent.MouseButtonRelease, QPointF(top_edge_vp.x() + 25, top_edge_vp.y() + 15), QPointF(top_edge_vp.x() + 25, top_edge_vp.y() + 15), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+    canvas.mouseReleaseEvent(release_ev)
+    assert canvas._action_mode == ImageAnnotationCanvas.ACTION_NONE
+
+    # Item moved from (100, 100)
+    assert rect_item.rect.x() > 100
+    assert rect_item.rect.y() > 100
+
+    # 3. Test Rotation Handle Hit Testing & Dragging:
+    # Rotation handle is 24px above the top edge
+    b_rect = rect_item.get_bounding_rect()
+    rot_handle_vp = QPoint(
+        int(disp_rect.x() + b_rect.center().x() * scale_x),
+        int(disp_rect.y() + b_rect.top() * scale_y - 24),
+    )
+    handle_rot, it_rot = canvas.get_selection_handle_at(rot_handle_vp)
+    assert it_rot is rect_item
+    assert handle_rot == ImageAnnotationCanvas.HANDLE_ROTATE
+
+    # Drag rotation handle to rotate:
+    rot_press = QMouseEvent(QEvent.MouseButtonPress, QPointF(rot_handle_vp), QPointF(rot_handle_vp), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mousePressEvent(rot_press)
+    assert canvas._action_mode == ImageAnnotationCanvas.ACTION_ROTATE
+    assert canvas._is_rotating is True
+
+    # Drag 90 degrees to the right
+    center_vp_x = int(disp_rect.x() + b_rect.center().x() * scale_x)
+    center_vp_y = int(disp_rect.y() + b_rect.center().y() * scale_y)
+    rot_move = QMouseEvent(QEvent.MouseMove, QPointF(center_vp_x + 50, center_vp_y), QPointF(center_vp_x + 50, center_vp_y), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mouseMoveEvent(rot_move)
+    assert canvas._selected_item.rotation != 0.0
+
+    rot_release = QMouseEvent(QEvent.MouseButtonRelease, QPointF(center_vp_x + 50, center_vp_y), QPointF(center_vp_x + 50, center_vp_y), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+    canvas.mouseReleaseEvent(rot_release)
+    assert canvas._action_mode == ImageAnnotationCanvas.ACTION_NONE
+    assert canvas._is_rotating is False
+
+    # 4. Test rotate_selected_item (90 degrees):
+    prev_rot = rect_item.rotation
+    canvas.rotate_selected_item(90.0)
+    assert round(rect_item.rotation) == round((prev_rot + 90.0) % 360.0)
+
+    # Undo restores rotation
+    canvas.undo()
+    assert round(canvas.get_items()[0].rotation) == round(prev_rot)
+
+    # 5. Test Keyboard Rotation Shortcuts: [ and ]
+    key_bracket_right = QKeyEvent(QEvent.KeyPress, Qt.Key_BracketRight, Qt.NoModifier)
+    canvas.keyPressEvent(key_bracket_right)
+    assert round(canvas.get_selected_item().rotation) == round((prev_rot + 15.0) % 360.0)
+
+    key_bracket_left = QKeyEvent(QEvent.KeyPress, Qt.Key_BracketLeft, Qt.NoModifier)
+    canvas.keyPressEvent(key_bracket_left)
+    assert round(canvas.get_selected_item().rotation) == round(prev_rot)
+
+    # 6. Test Text Box Edge Move and Rotation:
+    canvas.add_text_in_rect(QRect(50, 50, 160, 60), "ROTATING TEXT", font_size=18, draw_border=True)
+    text_item = canvas.get_selected_item()
+    assert text_item.item_type == AnnotationItem.TYPE_TEXT
+    assert text_item.text == "ROTATING TEXT"
+    assert canvas._active_tool == ImageAnnotationCanvas.TOOL_SELECT
+
+    # Rotate text 45 degrees
+    text_item.rotate(45.0)
+    assert text_item.rotation == 45.0
+    annotated = canvas.get_annotated_image()
+    assert not annotated.isNull()
+
+    # 7. Test Dialog Rotate 90 Button and Shortcut (Ctrl+R):
+    dlg = ResizeImageDialog(
+        current_width=600,
+        current_height=400,
+        original_width=600,
+        original_height=400,
+        image=img,
+    )
+    try:
+        dlg.canvas.add_text_in_rect(QRect(100, 100, 120, 50), "TEST", font_size=16)
+        dlg.btn_rotate_90.click()
+        assert dlg.canvas.get_selected_item().rotation == 90.0
+        dlg.btn_rotate_90.click()
+        assert dlg.canvas.get_selected_item().rotation == 180.0
+    finally:
+        dlg.deleteLater()
+
+
+def test_image_editor_line_tool_and_shift_snap(qapp):
+    """Verifies the Line tool, straight line snapping when holding Shift, moving, rotating, and dialog toolbar integration."""
+    # 1. Test snap_to_straight_line helper (0°, 45°, 90°, etc.)
+    p1 = QPoint(100, 100)
+
+    # Near horizontal (dx=100, dy=4 -> snapped angle 0°)
+    snap_h = ImageAnnotationCanvas.snap_to_straight_line(p1, QPoint(200, 104))
+    assert snap_h.y() == 100
+    assert snap_h.x() == 200
+
+    # Near vertical (dx=3, dy=100 -> snapped angle 90°)
+    snap_v = ImageAnnotationCanvas.snap_to_straight_line(p1, QPoint(103, 200))
+    assert snap_v.x() == 100
+    assert snap_v.y() == 200
+
+    # Near 45° diagonal (dx=102, dy=98 -> snapped angle 45°)
+    snap_d = ImageAnnotationCanvas.snap_to_straight_line(p1, QPoint(202, 198))
+    # Distance is approx 141.4 -> dx and dy should be equal
+    assert snap_d.x() - p1.x() == snap_d.y() - p1.y()
+
+    # 2. Test Canvas Line Drawing without Shift (free angle)
+    img = QImage(600, 400, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(600, 400)
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_LINE)
+    assert canvas._active_tool == ImageAnnotationCanvas.TOOL_LINE
+
+    disp_rect = canvas.get_image_display_rect()
+    scale_x = disp_rect.width() / img.width()
+    scale_y = disp_rect.height() / img.height()
+
+    vp_p1 = QPoint(int(disp_rect.x() + 50 * scale_x), int(disp_rect.y() + 50 * scale_y))
+    vp_p2 = QPoint(int(disp_rect.x() + 150 * scale_x), int(disp_rect.y() + 90 * scale_y))
+
+    # Mouse press at (50, 50)
+    press_ev = QMouseEvent(QEvent.MouseButtonPress, QPointF(vp_p1), QPointF(vp_p1), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mousePressEvent(press_ev)
+    assert canvas._is_drawing is True
+
+    # Mouse move to (150, 90)
+    move_ev = QMouseEvent(QEvent.MouseMove, QPointF(vp_p2), QPointF(vp_p2), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+    canvas.mouseMoveEvent(move_ev)
+
+    # Mouse release at (150, 90)
+    rel_ev = QMouseEvent(QEvent.MouseButtonRelease, QPointF(vp_p2), QPointF(vp_p2), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+    canvas.mouseReleaseEvent(rel_ev)
+
+    assert len(canvas.get_items()) == 1
+    free_line = canvas.get_items()[0]
+    assert free_line.item_type == AnnotationItem.TYPE_LINE
+    assert len(free_line.points) == 2
+    assert free_line.points[0] == QPoint(50, 50)
+    assert free_line.points[1] == QPoint(150, 90)
+    # Drawing a line switches back to Select tool automatically
+    assert canvas._active_tool == ImageAnnotationCanvas.TOOL_SELECT
+    assert canvas.get_selected_item() is free_line
+
+    # 3. Test Canvas Line Drawing WITH Shift (straight horizontal line snap)
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_LINE)
+    vp_p3 = QPoint(int(disp_rect.x() + 50 * scale_x), int(disp_rect.y() + 200 * scale_x))
+    vp_p4 = QPoint(int(disp_rect.x() + 250 * scale_x), int(disp_rect.y() + 208 * scale_x))
+
+    press_ev_shift = QMouseEvent(QEvent.MouseButtonPress, QPointF(vp_p3), QPointF(vp_p3), Qt.LeftButton, Qt.LeftButton, Qt.ShiftModifier)
+    canvas.mousePressEvent(press_ev_shift)
+
+    move_ev_shift = QMouseEvent(QEvent.MouseMove, QPointF(vp_p4), QPointF(vp_p4), Qt.LeftButton, Qt.LeftButton, Qt.ShiftModifier)
+    canvas.mouseMoveEvent(move_ev_shift)
+
+    rel_ev_shift = QMouseEvent(QEvent.MouseButtonRelease, QPointF(vp_p4), QPointF(vp_p4), Qt.LeftButton, Qt.NoButton, Qt.ShiftModifier)
+    canvas.mouseReleaseEvent(rel_ev_shift)
+
+    assert len(canvas.get_items()) == 2
+    straight_line = canvas.get_items()[1]
+    assert straight_line.item_type == AnnotationItem.TYPE_LINE
+    # Because Shift was held and dy was very small (8px vs 200px), it snapped to perfectly straight horizontal line
+    assert straight_line.points[0].y() == straight_line.points[1].y()
+
+    # 4. Test Move and Rotate on Line Item
+    canvas.select_item_at(straight_line.points[0])
+    assert canvas.get_selected_item() is straight_line
+
+    orig_p0 = QPoint(straight_line.points[0])
+    orig_p1 = QPoint(straight_line.points[1])
+    canvas.move_selected_item(15, 25)
+    assert straight_line.points[0] == QPoint(orig_p0.x() + 15, orig_p0.y() + 25)
+    assert straight_line.points[1] == QPoint(orig_p1.x() + 15, orig_p1.y() + 25)
+
+    # Undo restores straight line position
+    canvas.undo()
+    restored_line = canvas.get_items()[1]
+    assert restored_line.points[0] == orig_p0
+    assert restored_line.points[1] == orig_p1
+
+    # Rotate straight line 90 degrees
+    canvas.select_item_at(restored_line.points[0])
+    canvas.rotate_selected_item(90.0)
+    assert canvas.get_selected_item().rotation == 90.0
+
+    # 5. Test Dialog Toolbar Line button and shortcut
+    dlg = ResizeImageDialog(
+        current_width=600,
+        current_height=400,
+        original_width=600,
+        original_height=400,
+        image=img,
+    )
+    try:
+        assert hasattr(dlg, "btn_tool_line")
+        assert dlg.btn_tool_line.text() == "📏 Line"
+        dlg.btn_tool_line.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_LINE
+
+        # Verify tool changed signal syncs toolbar button
+        dlg.canvas.set_tool(ImageAnnotationCanvas.TOOL_LINE)
+        assert dlg.btn_tool_line.isChecked()
+    finally:
+        dlg.deleteLater()
+
+
+
 
 
 

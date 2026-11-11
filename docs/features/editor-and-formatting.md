@@ -258,14 +258,29 @@ When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text 
 
 ## 7. Image Editor: Visual Markup, Paint-Style Text Boxes, Precision Zoom & Fullscreen
 
-Double-clicking any embedded screenshot or image (or choosing **🖼️ Image Editor (Resize & Markup)...** from the right-click context menu) launches the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`).
+Double-clicking any embedded screenshot or image (or choosing **🖼️ Image Editor (Resize & Markup)...** from the right-click context menu) launches the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`), which automatically pops up maximized at full-screen size by default for immediate high-resolution inspection and markup.
 
 ### 7.1 Interactive Visual Annotation Canvas (`ImageAnnotationCanvas`)
 Technicians can annotate, call out, and mark up screenshots directly within T-Notes without needing an external image editor:
-- **✏️ Freehand Pen (`TOOL_PEN`):** Freeform pen drawing with anti-aliasing and smooth joint caps for circling anomalous log lines or diagram components.
-- **⭕ Circle / Ellipse Callout (`TOOL_CIRCLE`):** Interactive click-and-drag ellipse tool with real-time drag preview for highlighting buttons, badges, or error messages.
-- **🔲 Rectangle Callout Box (`TOOL_RECTANGLE`):** Interactive click-and-drag rectangle box with real-time drag preview for bounding text blocks or IP configurations.
-- **🔤 Paint-Style Text Box Tool (`TOOL_TEXT`):**
+- **↖️ Select / Move & Rotate Tool (`TOOL_SELECT` / `V`):**
+  - **Click to Select:** Click any drawn shape (rectangle, circle, straight line, freehand line) or text box to select it. The selected item displays an accent dashed border (`#007acc`) with corner grab handles, edge grab handles, and an overhead rotation handle.
+  - **Edge-Drag Repositioning (Paint-Style Move):** Clicking and dragging directly on any of the 4 perimeter edges of the bounding box (or anywhere inside) immediately repositions the shape or text box in real time with `SizeAllCursor` (`✥`).
+  - **Overhead Rotation Handle (Free Rotation):** Drag the cyan circular handle positioned above the top edge to rotate the shape or text box smoothly around its center. A real-time badge (`⟳ 45°`) indicates the angle. Holding `Shift` snaps rotation to 15° increments (0°, 15°, 30°, 45°, 90°, etc.).
+  - **Quick 90° Rotate Button & Shortcut (`Ctrl+R`):** Click the toolbar button `⟳ Rotate 90°` or press `Ctrl+R` to rotate the selected item 90° clockwise.
+  - **Keyboard Step Rotation (`[` and `]`):** Press `[` to rotate -15° (counter-clockwise) or `]` to rotate +15° (clockwise).
+  - **Corner & Edge Resize Handles:** Drag any corner handle to resize the bounding box of rectangles, circles, and text boxes.
+  - **Keyboard Nudging:** Press `Up`, `Down`, `Left`, `Right` arrow keys to nudge the item by 1 pixel (or by 10 pixels when holding `Shift`).
+  - **Delete Item:** Press `Delete` or `Backspace` to remove the selected form, line, or text box.
+  - **In-Place Re-Editing:** Double-clicking any placed text box in Select mode re-opens the `TextAnnotationDialog` to update its text content, font size, or callout border.
+  - **Escape:** Press `Esc` to deselect the active item.
+- **✏️ Freehand Pen (`TOOL_PEN` / `P`):** Freeform pen drawing with anti-aliasing and smooth joint caps for circling anomalous log lines or diagram components.
+- **📏 Straight Line Tool (`TOOL_LINE` / `L`):**
+  - **Vector Line Drawing:** Click and drag to create crisp two-point callout lines and pointers with anti-aliasing, rounded end caps, and custom stroke thickness.
+  - **Paint-Style Shift Straight-Snapping:** Holding `Shift` while dragging automatically snaps the line angle to perfectly straight horizontal ($0^\circ, 180^\circ$), vertical ($90^\circ, 270^\circ$), or $45^\circ$ diagonal angles ($45^\circ, 135^\circ, 225^\circ, 315^\circ$), exactly replicating Microsoft Paint.
+  - **Full Select, Move & Rotate Support:** Lines are interactive vector items (`AnnotationItem.TYPE_LINE`) that can be selected, moved by dragging their bounding box edges or body, rotated via the overhead handle or `Ctrl+R`, nudged with arrow keys, and reversed with Undo/Redo.
+- **⭕ Circle / Ellipse Callout (`TOOL_CIRCLE` / `C`):** Interactive click-and-drag ellipse tool with real-time drag preview for highlighting buttons, badges, or error messages.
+- **🔲 Rectangle Callout Box (`TOOL_RECTANGLE` / `R`):** Interactive click-and-drag rectangle box with real-time drag preview for bounding text blocks or IP configurations.
+- **🔤 Paint-Style Text Box Tool (`TOOL_TEXT` / `T`):**
   - **Drag Bounding Rectangle:** Click and drag directly on the image to draw a dashed bounding box defining the text boundary, identical to MS Paint.
   - **Font Size Selection:** Adjust font size from the toolbar (`Font: [ 18 ] pt`, 8–96 pt) or customize it in the prompt dialog.
   - **Multi-Line Text & Alignment:** Prompts with `TextAnnotationDialog` allowing single-line or multi-line diagnostics. Text wraps automatically inside the bounding rectangle.
@@ -287,15 +302,16 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
 - **Keyboard Shortcuts:** `Ctrl++` / `Ctrl+=` (Zoom In), `Ctrl+-` (Zoom Out), `Ctrl+0` (Reset to 100%).
 - **Panning:** When zoomed in, Middle-click drag, Right-click drag, or scrolling the mouse wheel smoothly pans the image.
 
-### 7.3 Fullscreen Maximization on Double-Click Top Bar
-- **Double-Click Top Bar:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame immediately maximizes the Image Editor to full screen for fine-grained screenshot work. Double-clicking again restores normal window size.
-- **Dedicated Maximize Button:** Click `⛶ Maximize` / `❐ Restore` in the top-right toolbar.
-- **F11 Keyboard Shortcut:** Press `F11` to toggle full screen.
+### 7.3 Default Full-Screen Pop-up & Maximization Controls
+- **Default Full Screen:** The Image Editor automatically pops up maximized at full-screen size upon opening, ensuring technicians have maximal visual workspace for high-DPI screenshots, callouts, and detailed inspection.
+- **Double-Click Top Bar:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame immediately toggles the Image Editor between full screen and normal restored window geometry (1020 × 680 px).
+- **Dedicated Maximize / Restore Button:** Click `❐ Restore` / `⛶ Maximize` in the top-right toolbar.
+- **F11 Keyboard Shortcut:** Press `F11` to toggle full screen at any time.
 
 ### 7.4 Reversible History Stack (Undo, Redo & Reset)
-All markup actions can be completely reversed:
-- **↺ Undo (`Ctrl+Z`):** Steps backward through the 30-level annotation snapshot stack, reverting image state.
-- **↻ Redo (`Ctrl+Y` / `Ctrl+Shift+Z`):** Re-applies undone annotation operations.
+All markup actions (drawing, adding shapes, adding/moving/editing/deleting text and forms) can be completely reversed:
+- **↺ Undo (`Ctrl+Z`):** Steps backward through the 40-level annotation snapshot stack, reverting item positions, edits, or removals.
+- **↻ Redo (`Ctrl+Y` / `Ctrl+Shift+Z`):** Re-applies undone operations.
 - **🔄 Reset Image:** Restores the image back to its pristine base state when the dialog opened, while still recording an undo snapshot in case the reset was accidental.
 - **Cancel:** Dismissing the dialog with `Cancel` or `Esc` discards all in-progress markup without touching the document.
 

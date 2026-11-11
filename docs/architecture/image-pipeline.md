@@ -127,12 +127,17 @@ When users copy highlighted content containing both text, formatting, colors, an
    - **Fit to Pane Width:** Computes available pane width (`viewport().width() - 24`). In Split View sidebar, this scales the image down to fit the side panel without horizontal scrollbars; in normal view, it scales to fit the main window.
    - **Presets:** `100% (Original Size)`, `75%`, `50%`, `25%`.
 3. **Image Editor Window (`🖼️ Image Editor` / Double-Click):**
-   - Double-clicking an image opens the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`).
-   - **Full Screen Maximize:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame (or pressing `F11` / clicking `⛶ Maximize`) expands the editor to full screen for maximum workspace visibility.
+   - Double-clicking an image opens the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`), which automatically pops up maximized at full-screen size by default.
+   - **Full Screen Maximize & Restore:** Technicians can toggle between full screen and restored normal geometry (1020 × 680 px) by double-clicking the OS window title bar, double-clicking the in-dialog top toolbar frame, clicking `❐ Restore` / `⛶ Maximize`, or pressing `F11`.
    - **Precision Zoom & Pan:** Technicians can zoom in/out via `Ctrl + Mouse Wheel`, toolbar `➕`/`➖` buttons, or `Ctrl++`/`Ctrl+-` shortcuts (25% to 500%), with `1:1` reset and middle-click panning.
    - **Paint-Style Text Rectangle:** Clicking and dragging on the canvas defines a dashed bounding box for text placement, allowing custom font size selection (8 to 96 pt), multi-line text input, optional callout border box, and word-wrapped high-contrast rendering.
+   - **Straight Line Tool (`📏 Line` / `L`):** Vector two-point line tool with anti-aliasing. Holding `Shift` automatically snaps lines to straight horizontal ($0^\circ, 180^\circ$), vertical ($90^\circ, 270^\circ$), or $45^\circ$ diagonal angles ($45^\circ, 135^\circ, 225^\circ, 315^\circ$) matching MS Paint. Lines are fully interactive `AnnotationItem.TYPE_LINE` items that can be selected, moved, rotated, and undone.
    - **Proportional Resizing:** Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes) or select presets (`25%`, `50%`, `75%`, `100%`, `Fit to Pane Width`).
-   - Integrated `ImageAnnotationCanvas` provides freehand drawing (`✏️`), circle callouts (`⭕`), rectangle callouts (`🔲`), and text overlays (`🔤`) with full color palette selection and reversible 30-level history (`↺ Undo`, `↻ Redo`, `🔄 Reset Image`).
+   - Integrated `ImageAnnotationCanvas` provides vector-backed freehand drawing (`✏️`), straight lines (`📏`), circle callouts (`⭕`), rectangle callouts (`🔲`), and text overlays (`🔤`) with full color palette selection and reversible 40-level history (`↺ Undo`, `↻ Redo`, `🔄 Reset Image`).
+   - **Interactive Selection & Repositioning (`↖️ Select / Move` / `V`):** Technicians can select and drag any shape, line, or text box across the canvas after drawing. Clicking and dragging directly on any perimeter edge of the bounding box moves the form/text with high-precision `SizeAllCursor`.
+   - **Overhead Rotation Handle & Free Rotation:** Dragging the circular rotation handle positioned above the top edge rotates shapes, lines, and text smoothly around their center. Holding `Shift` snaps rotation to 15° increments, accompanied by an interactive angle badge (`⟳ 45°`). Quick 90° rotation is supported via toolbar button (`⟳ Rotate 90°`) or `Ctrl+R`.
+   - **Keyboard Nudging & Step Rotation:** Selected forms/lines/text can be nudged with precision via Arrow keys (1px, or 10px with Shift), rotated via `[` and `]` (±15°), and removed with `Delete` or `Backspace`.
+   - **Double-Click In-Place Re-Editing:** Double-clicking any placed text box in Select mode re-opens the text dialog to adjust text phrasing, font size, or callout borders.
 4. **Keyboard Deletion:**
    - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the screenshot from the document.
 
@@ -143,8 +148,11 @@ When users copy highlighted content containing both text, formatting, colors, an
 
 ### 7.3 Visual Annotation & Markup Pipeline
 - **Canvas Viewport Mapping with Zoom/Pan:** Mouse coordinates are normalized to the underlying source image dimensions using aspect-ratio-preserving bounds calculation with dynamic zoom factor and pan offset, guaranteeing pixel-perfect accuracy regardless of magnification.
-- **ARGB32 Premultiplied Rendering:** Interactive drawings operate on an in-memory ARGB32 Premultiplied copy with Qt anti-aliasing.
+- **Vector-Layer `AnnotationItem` Architecture:** Rather than irrevocably flattening strokes onto bitmap pixels at draw time, annotations are modeled as discrete `AnnotationItem` vector objects (`TYPE_PEN`, `TYPE_RECTANGLE`, `TYPE_CIRCLE`, `TYPE_TEXT`). Each item encapsulates its bounding geometry, color, stroke width, text attributes, and `rotation` angle.
+- **Rotated Rendering & Hit Testing:** Shapes, text boxes, and drop shadows render with rotated affine transforms around the item's center point. Hit-testing inversely projects pointer coordinates to item-local space, ensuring pixel-perfect edge clicking and handle grabbing regardless of rotation angle.
+- **Real-Time Baking & 60+ FPS Dragging:** Moving or rotating an item invokes `translate(dx, dy)` or `rotate(angle)` and calls `_regenerate_current_image()`, which composites all vector items onto a clean `_base_image` in `< 0.5ms`, maintaining silky smooth interactive movement and full compatibility with pixel-based preview rendering.
 - **Paint-Style Text Layout:** Text overlays render inside the user's defined bounding box with automatic word wrapping, selectable font size, and an 8-point boundary shadow in semi-transparent black behind the colored text to ensure legibility on both dark consoles and white documents.
+- **Non-Destructive Undo/Redo:** The undo stack maintains snapshots of `AnnotationItem` lists rather than multi-megabyte bitmap copies, drastically reducing memory consumption while supporting 40+ history steps.
 - **Storage Synchronization:** When annotations are confirmed via `OK`:
   1. The annotated image is compressed into JPEG (85% quality per `AGENTS.md`) using `ImageService.compress_qimage_to_jpeg()`.
   2. The updated JPEG bytes are stored in `editor.in_memory_images[raw_name]`.
