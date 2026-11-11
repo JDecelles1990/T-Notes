@@ -13,6 +13,8 @@ from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.repositories.session_repository import SessionRepository
 from src.repositories.template_repository import TemplateRepository
+from src.services.autostart_service import AutostartService
+from src.services.backup_service import BackupService
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
@@ -54,18 +56,45 @@ def main() -> int:
     image_service = ImageService(image_repo)
     scratchpad_service = ScratchpadService(scratchpad_repo, image_service, template_repo)
     session_service = SessionService(session_repo, scratchpad_service)
+    autostart_service = AutostartService()
+    backup_service = BackupService(db_manager, scratchpad_repo, image_repo)
+
+    # Automatic Daily Database Snapshot (rolling 7-day retention)
+    try:
+        backup_service.maybe_run_daily_backup(retention_days=7)
+    except Exception as e:
+        print(f"Warning: Daily backup could not be created: {e}", file=sys.stderr)
 
     # Launch Main Window (Presentation Layer)
     window = TechPadMainWindow(
         scratchpad_service=scratchpad_service,
         image_service=image_service,
         session_service=session_service,
+        autostart_service=autostart_service,
+        backup_service=backup_service,
     )
-    window.show()
+
+    # Evaluate Startup Mode (--tray flag and Smart Restore)
+    is_tray_flag = "--tray" in sys.argv
+    smart_restore = session_service.get_setting("smart_restore_enabled", "true").lower() == "true"
+    last_state = session_service.get_setting("last_window_state", "visible")
+
+    if is_tray_flag:
+        if smart_restore and last_state == "visible":
+            window.show()
+        else:
+            window.hide()
+            if getattr(window, "tray_icon", None) and hasattr(window.tray_icon, "show_message"):
+                window.tray_icon.show_message(
+                    f"{APP_NAME} Active",
+                    f"{APP_NAME} is running in the background. Press F8 to open.",
+                    timeout=3500,
+                )
+    else:
+        window.show()
 
     return app.exec()
 
 
 if __name__ == "__main__":
     sys.exit(main())
-

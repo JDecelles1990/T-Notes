@@ -286,3 +286,17 @@ Ticket tabs in both panes glow with a colorful, slowly hue-cycling neon halo on 
 ### Split sidebar slide transition
 
 Opening or closing the Split sidebar (`Alt+Z`, ribbon `◫`, status bar, context menus) slides the pane in/out over ~220ms instead of snapping. On close the pane stays visible until the slide finishes, but `is_split_view_active` flips immediately and tabs are never moved. Compact single-pane mode and Mini-HUD switch instantly. See `docs/architecture/system-overview.md` section 7.
+
+---
+
+## 7. Windows Autostart & Smart Restore Lifecycle
+TechPad integrates with Windows startup to ensure technician notes and global hotkeys are immediately available upon workstation login:
+- **Registry Management (`AutostartService`):**
+  - Manages the user-level registry run key `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\TNotes`.
+  - Configures `pythonw.exe <main_path> --tray` (GUI mode) so no command prompt or terminal window flashes during Windows boot.
+  - Requires zero administrator or UAC elevation.
+- **Smart Session State Recovery:**
+  - `TechPadMainWindow` continuously records its presentation state (`"visible"` vs. `"tray"`) in the `app_settings` key-value table.
+  - When Windows boots with `--tray`:
+    - If `smart_restore_enabled` is active and the window was visible when the session ended, the main window is immediately restored to the desktop.
+    - If the window was minimized or in the system tray, the app boots silently into the tray and presents a brief toast notification (*T-Notes is active in the background. Press F8 to open.*).

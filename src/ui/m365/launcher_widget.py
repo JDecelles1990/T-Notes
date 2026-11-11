@@ -584,7 +584,7 @@ class M365LauncherWidget(QWidget):
         results_btn_row.addWidget(self.btn_toggle_json)
 
         self.btn_insert_into_ticket = QToolButton(results_group)
-        self.btn_insert_into_ticket.setText("📥 Insert into Active Ticket")
+        self.btn_insert_into_ticket.setText("📤 Insert into Active Ticket")
         self.btn_insert_into_ticket.setAccessibleName("Insert diagnostic summary into active ticket note")
         self.btn_insert_into_ticket.setToolTip("Insert the validated diagnostic summary into the active ticket note (single-use per run)")
         self.btn_insert_into_ticket.setStyleSheet(action_btn_style)
@@ -1107,9 +1107,12 @@ class M365LauncherWidget(QWidget):
             self.results_output.setPlainText(combined_summary)
 
         can_insert = (
-            last.insertion_preview is not None
-            and not last.insertion_preview.consumed
+            self.ticket_editor is not None
             and self.ticket_editor.isEnabled()
+            and (
+                (last.insertion_preview is not None and not last.insertion_preview.consumed)
+                or bool(self.results_output.toPlainText().strip())
+            )
         )
         self.btn_insert_into_ticket.setEnabled(can_insert)
         self.lbl_results_notice.setText(f"Completed {len(outcomes)} step(s) for {title}.")
@@ -1278,11 +1281,10 @@ class M365LauncherWidget(QWidget):
             self.results_output.setPlainText(outcome.sanitized_json)
         else:
             self.results_output.setPlainText(outcome.summary_text)
-        can_insert = (
-            outcome.insertion_preview is not None
-            and not outcome.insertion_preview.consumed
-            and self.ticket_editor.isEnabled()
-        )
+        if outcome.insertion_preview is not None:
+            can_insert = (not outcome.insertion_preview.consumed) and (self.ticket_editor is not None and self.ticket_editor.isEnabled())
+        else:
+            can_insert = (self.ticket_editor is not None and self.ticket_editor.isEnabled()) and bool(self.results_output.toPlainText().strip())
         self.btn_insert_into_ticket.setEnabled(can_insert)
         if outcome.insertion_preview is not None and outcome.insertion_preview.consumed:
             self.lbl_results_notice.setText("Note insertion complete for this correlation ID.")
@@ -1307,20 +1309,52 @@ class M365LauncherWidget(QWidget):
         self.lbl_exec_state.setText("State: IDLE (Offline Synthetic)")
 
     def insert_current_result_into_ticket(self) -> bool:
-        """Insert the current outcome's preview into the active ticket editor using its single-use token."""
-        if self._current_outcome is None or self._current_outcome.insertion_preview is None:
-            self.lbl_results_notice.setText("No eligible result preview available for insertion.")
+        """Insert the current outcome or results preview into the active ticket editor inside a formatted monospace container."""
+        if not hasattr(self, "ticket_editor") or self.ticket_editor is None or not self.ticket_editor.isEnabled():
+            self.lbl_results_notice.setText("No active ticket editor is available for note insertion.")
             return False
-        token = self._current_outcome.insertion_preview.token
-        try:
-            self.execution_service.insert_into_active_ticket(token, self.ticket_editor)
-            self._display_outcome(self._current_outcome)
-            self.status_message_requested.emit("✓ Inserted M365 diagnostic summary into Active Ticket note!", 3500)
-            return True
-        except ValueError as exc:
-            self.lbl_results_notice.setText(str(exc))
-            self.btn_insert_into_ticket.setEnabled(False)
+
+        if self._current_outcome is not None and self._current_outcome.insertion_preview is not None:
+            if self._current_outcome.insertion_preview.consumed:
+                self.lbl_results_notice.setText("This result preview has already been inserted into the ticket.")
+                self.btn_insert_into_ticket.setEnabled(False)
+                return False
+            token = self._current_outcome.insertion_preview.token
+            try:
+                self.execution_service.insert_into_active_ticket(token, self.ticket_editor)
+                self._display_outcome(self._current_outcome)
+                self.status_message_requested.emit("✓ Inserted M365 diagnostic summary into Active Ticket note!", 3500)
+                return True
+            except ValueError as exc:
+                self.lbl_results_notice.setText(str(exc))
+                self.btn_insert_into_ticket.setEnabled(False)
+                return False
+
+        # Fallback: format and insert current results output in styled monospace block
+        output_text = self.results_output.toPlainText().strip()
+        if not output_text:
+            self.lbl_results_notice.setText("No output available to insert.")
             return False
+
+        script_id = (self._current_outcome.script_id if self._current_outcome else None) or self.current_operation_id or "M365 PowerShell"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        import html
+        escaped_text = html.escape(output_text)
+        formatted_html = (
+            f'<div style="background-color: #252526; border: 1px solid #3c3c3c; border-radius: 4px; padding: 8px; font-family: Consolas, monospace; color: #9cdcfe;">'
+            f'<div style="color: #4fc1ff; font-weight: bold; margin-bottom: 4px;">=== M365 Output: {script_id} ({timestamp}) ===</div>'
+            f'<pre style="margin: 0; white-space: pre-wrap; font-family: Consolas, monospace; color: #cccccc;"><code>{escaped_text}</code></pre>'
+            f'</div><br>'
+        )
+
+        cursor = self.ticket_editor.textCursor()
+        cursor.insertHtml(formatted_html)
+        self.ticket_editor.setTextCursor(cursor)
+        self.ticket_editor.ensureCursorVisible()
+
+        self.status_message_requested.emit(f"✓ Inserted M365 output ({script_id}) into Active Ticket note!", 3500)
+        self.lbl_results_notice.setText(f"✓ Inserted into Active Ticket at {timestamp}.")
+        return True
 
     def _on_nav_toggled(self, visible: bool) -> None:
         """Slides the Categories pane open/closed (instant when animation is unavailable)."""

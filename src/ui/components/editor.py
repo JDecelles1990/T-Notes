@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 from src.core.constants import LOCAL_IMAGE_URL_PREFIX
 from src.services.image_service import ImageService
 from src.ui.dialogs.resize_image_dialog import ResizeImageDialog
+from src.ui.components.find_replace_bar import FindReplaceBar
 
 
 class TechPadEditor(QTextEdit):
@@ -76,8 +77,21 @@ class TechPadEditor(QTextEdit):
         self.textChanged.connect(self._on_text_changed)
         self.cursorPositionChanged.connect(self._on_cursor_or_focus)
 
+        # In-Note Floating Find & Replace Bar
+        self.find_replace_bar = FindReplaceBar(self)
+
     def _on_cursor_or_focus(self) -> None:
         self.setFocus()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "find_replace_bar") and self.find_replace_bar and self.find_replace_bar.isVisible():
+            self.find_replace_bar.reposition()
+
+    def show_find_replace(self, replace_mode: bool = False) -> None:
+        selected = self.textCursor().selectedText()
+        query = selected if (selected and "\u2029" not in selected and "\n" not in selected and len(selected) <= 60) else ""
+        self.find_replace_bar.show_bar(replace_mode=replace_mode, initial_query=query)
         self.editor_focused.emit(self.scratchpad_id)
 
     def _on_text_changed(self) -> None:
@@ -376,6 +390,23 @@ class TechPadEditor(QTextEdit):
             elif not has_ctrl and not bool(mods & Qt.AltModifier):
                 self._selected_image_pos = None
                 self.viewport().update()
+
+        # 0. In-Note Find / Replace: Ctrl+F (Find), Ctrl+H (Replace)
+        if has_ctrl and not has_shift and not bool(mods & Qt.AltModifier):
+            if event.key() == Qt.Key_F:
+                if self.find_replace_bar.isVisible():
+                    self.find_replace_bar.toggle_replace_mode()
+                else:
+                    self.show_find_replace(replace_mode=False)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_H:
+                if self.find_replace_bar.isVisible() and self.find_replace_bar.replace_container.isVisible():
+                    self.find_replace_bar.toggle_replace_mode()
+                else:
+                    self.show_find_replace(replace_mode=True)
+                event.accept()
+                return
 
         # 1. Slide / Move tab left or right: Ctrl+Shift+PageDown / PageUp
         if has_ctrl and has_shift:

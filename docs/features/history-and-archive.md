@@ -17,7 +17,7 @@ The **History Drawer** is a collapsible side panel (`QDockWidget`) that stores c
 
 ## 2. Drawer Layout & Components
 
-- **Dock Area:** Docked to the right side of the main window (`Qt.RightDockWidgetArea`), toggleable via `Ctrl+H`, the top toolbar compact button (`🕰️`), or the status bar button (`🕰️ History`).
+- **Dock Area:** Docked to the right side of the main window (`Qt.RightDockWidgetArea`), toggleable via `Alt+H`, the top toolbar compact button (`🕰️`), or the status bar button (`🕰️ History`).
 - **Live Search Field (`QLineEdit`):** Positioned at the top of the drawer with clear button. Typing immediately filters tickets in real time.
 - **Ticket List (`QListWidget`):** Displays archived tickets with:
   - Header: `#{ticket_number} — {client_name} ({title})`
@@ -111,4 +111,4 @@ the editor for recovery. There is no batch-wide archive transaction.
 
 ### History drawer slide transition
 
-Toggling the History drawer (`Ctrl+H`, ribbon, status bar) slides the dock open/closed (~220ms) via `PanelWidthTransition`. The drawer remains visible until the close animation ends; the last width (min 320px, default 380px) is remembered and re-applied with `resizeDocks`. Responsive auto-collapse and restore paths stay instant. See `docs/architecture/system-overview.md` section 7.
+Toggling the History drawer (`Alt+H`, ribbon, status bar) slides the dock open/closed (~220ms) via `PanelWidthTransition`. The drawer remains visible until the close animation ends; the last width (min 320px, default 380px) is remembered and re-applied with `resizeDocks`. Responsive auto-collapse and restore paths stay instant. See `docs/architecture/system-overview.md` section 7.

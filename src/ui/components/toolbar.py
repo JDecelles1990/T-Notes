@@ -336,7 +336,7 @@ class TechPadToolBar(QToolBar):
         # 7. History Section Toggle Button (🕰️)
         self.btn_history = QToolButton(self.secondary_toolbar)
         self.btn_history.setText("🕰️")
-        self.btn_history.setToolTip("Ticket History & Archive (Ctrl+H)")
+        self.btn_history.setToolTip("Ticket History & Archive (Alt+H)")
         self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px;")
         self.btn_history.clicked.connect(self.history_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_history)

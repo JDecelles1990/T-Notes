@@ -44,6 +44,7 @@ class TechPadSystemTray(QSystemTrayIcon):
     toggle_requested = Signal()
     new_tab_requested = Signal()
     hud_requested = Signal()
+    export_zip_requested = Signal()
     quit_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None):
@@ -64,6 +65,9 @@ class TechPadSystemTray(QSystemTrayIcon):
         self.act_hud = menu.addAction("📌 Mini-HUD Mode (Alt+T)")
         self.act_hud.triggered.connect(self.hud_requested.emit)
 
+        self.act_export = menu.addAction("📦 Export All Notes (ZIP)...")
+        self.act_export.triggered.connect(self.export_zip_requested.emit)
+
         menu.addSeparator()
 
         self.act_quit = menu.addAction(f"✕ Quit {APP_NAME}")
@@ -75,4 +79,3 @@ class TechPadSystemTray(QSystemTrayIcon):
         """Toggles window visibility upon left-click or double-click."""
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.toggle_requested.emit()
-

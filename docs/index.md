@@ -46,7 +46,7 @@ and future backend functionality are not adopted by this candidate.
 | **Full-Text Search** | [`database/fts-and-search.md`](database/fts-and-search.md) | SQLite FTS5 configuration, prefix token matching, automatic sync triggers (`ai`, `ad`, `au`), and legacy table rebuild migrations. |
 | **Workspace & Tabs** | [`features/tab-lifecycle.md`](features/tab-lifecycle.md) | Side-by-side Split View (`Alt+Z` / `◫`), tab migration between panes, multi-tab tracking, unique tab color ownership, live running minutes, drag reordering, and browser-style shortcuts. |
 | **Editor & Text Tools** | [`features/editor-and-formatting.md`](features/editor-and-formatting.md) | Rich text shortcuts, interactive task checklists (`task://toggle`), F8 global hotkey toggle, code blocks, triage badges, Ticket Stopwatch (`⏱️`), and system tray minimization. |
-| **History & Drawer** | [`features/history-and-archive.md`](features/history-and-archive.md) | Collapsible side drawer (`Ctrl+H` / `🕰️`), restoring directly into split view (`◫`), real-time FTS filtering, ticket archival audit trails, and tab restoration (`Ctrl+Shift+T`). |
+| **History & Drawer** | [`features/history-and-archive.md`](features/history-and-archive.md) | Collapsible side drawer (`Alt+H` / `🕰️`), restoring directly into split view (`◫`), real-time FTS filtering, ticket archival audit trails, and tab restoration (`Ctrl+Shift+T`). |
 | **Architecture Decisions** | [`decisions/`](decisions/) | Historical record of key technical and architectural decisions (ADRs 0001, 0002, 0003, 0004, 0005, 0006). |
 
 ---

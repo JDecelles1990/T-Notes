@@ -3,7 +3,7 @@
 ## S001 workspace shortcut boundary
 
 The S001 candidate suspends existing Notes QActions (including nested toolbar-menu
-actions), Ctrl+S, Ctrl+H, Ctrl+comma and Alt+Z shortcuts while M365 is displayed.
+actions), Ctrl+S, Ctrl+F, Ctrl+H, Alt+H, Ctrl+comma and Alt+Z shortcuts while M365 is displayed.
 Its application event filter bypasses ticket Ctrl+T/W/F4/Tab/PageUp/PageDown/number
 handling there, preventing accidental edits, closing or reordering of hidden tabs.
 Back restores exact prior enabled states, including previously disabled actions.
@@ -37,6 +37,8 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 ### Formatting & Editing Shortcuts
 | Action | Shortcut | Description |
 | :--- | :--- | :--- |
+| **Find in Note** | `Ctrl+F` | Opens the floating in-editor search overlay bar. |
+| **Replace in Note** | `Ctrl+H` | Opens the floating in-editor search and replace overlay bar. |
 | **Bold** | `Ctrl+B` | Toggles bold font weight for selected text. |
 | **Italic** | `Ctrl+I` | Toggles italic text style. |
 | **Underline** | `Ctrl+U` | Toggles text underline. |
@@ -181,6 +183,35 @@ The `Copy Note` dropdown menu features `💾 Export Note (T-Notes Folder)` (shor
   - `Fit to Pane Width` automatically computes available editor space (`viewport().width() - 24`), perfectly fitting large images into the narrower Split View side panel without horizontal scrolling.
 - **Custom Dimension Modal (`📐 Custom Resize...` / Double-Click):**
   - Double-clicking an image launches `ResizeImageDialog` with Width and Height spinboxes, aspect ratio locking, and one-click percentage presets.
+
+---
+
+### 5.7 In-Note Search & Replace Overlay (`Ctrl+F`)
+`TechPadEditor` integrates a floating, VS Code-style search & replace overlay bar (`FindReplaceBar`) positioned at the top-right of the editor canvas:
+- **Instant Search-as-You-Type:** Typing immediately scans the document and displays a match count badge (`X of Y` in emerald green, or `0 of 0` in red when no matches exist).
+- **Match Highlighting:** Leverages `QTextEdit.ExtraSelection` to provide non-destructive visual highlighting:
+  - All matching occurrences across the document are softly tinted in amber (`rgba(100, 75, 0, 0.6)`).
+  - The current active match is highlighted with a bright blue accent (`#007acc`).
+  - Automatically scrolls the editor viewport to ensure the active match is visible (`ensureCursorVisible()`).
+- **Match Navigation:** Navigate forward (`Enter` or `▼`) and backward (`Shift+Enter` or `▲`). Pressing `Ctrl+F` while the bar is open toggles between Find and Replace modes.
+- **Match Case Toggle (`Aa`):** Toggles case-sensitive string matching.
+- **In-Place Text Replacement:** Clicking `▶` expands the Replace row:
+  - `Replace`: Replaces the current active match and jumps immediately to the next match.
+  - `Replace All`: Atomically replaces all occurrences in reverse document order within a single edit block (`beginEditBlock()`), preserving undo stack integrity.
+- **Quick Dismissal:** Pressing `Esc` or clicking `✕` closes the overlay, removes all highlights, and restores text cursor focus directly to the editor.
+
+---
+
+### 5.8 M365 PowerShell Diagnostic Output Bridge
+The M365 Launcher features a direct one-click `📤 Insert into Active Ticket` action:
+- **Monospace Container Formatting:** Wraps raw PowerShell script outputs and JSON summaries inside an isolated dark container block:
+  ```html
+  <div style="background-color: #252526; border: 1px solid #3c3c3c; border-radius: 4px; padding: 8px; font-family: Consolas, monospace; color: #9cdcfe;">
+    <div style="color: #4fc1ff; font-weight: bold; margin-bottom: 4px;">=== M365 Output: <script_id> (<timestamp>) ===</div>
+    <pre style="margin: 0; white-space: pre-wrap; font-family: Consolas, monospace; color: #cccccc;"><code>...</code></pre>
+  </div><br>
+  ```
+- **Active Ticket Scope:** Injects directly into the focused note editor across either primary, secondary (Split View), or M365 sidebar panels, with status bar notification.
 - **Keyboard Deletion:**
   - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the image from the note.
 
@@ -312,7 +343,7 @@ To support portrait monitors (e.g. 1050x1680 at 150% scaling yielding a 700-logi
 ### 10.2 Responsive History Drawer Auto-Collapse
 - **Automatic Collapse:** When horizontal workspace width falls below 850px, the History drawer automatically hides (`history_auto_collapsed = True`) to prioritize the active ticket editor canvas.
 - **Automatic Restoration:** When width expands to 900px or greater, the History drawer automatically reopens (`history_auto_collapsed = False`).
-- **User Intent Preservation:** The user's explicit visibility preference (`_user_history_drawer_open`) is tracked separately from responsive overrides. If the user explicitly toggles the drawer (via `Ctrl+H` or toolbar button) while in narrow mode, their explicit choice takes precedence and clears the auto-collapse flag.
+- **User Intent Preservation:** The user's explicit visibility preference (`_user_history_drawer_open`) is tracked separately from responsive overrides. If the user explicitly toggles the drawer (via `Alt+H` or toolbar button) while in narrow mode, their explicit choice takes precedence and clears the auto-collapse flag.
 - **Session Persistence Safety:** Saving workspace state on window close records the user's explicit preference, ensuring an auto-collapsed drawer is never permanently marked as closed in persistent session storage.
 
 ### 10.3 Responsive Compact Split View (Single-Pane Mode)

@@ -327,3 +327,19 @@ Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow ins
 - **Close:** the pane slides in and is hidden only when the animation finishes; limits are restored and the previous splitter sizes are re-applied so a later show restores the old width.
 - **Safe fallbacks:** if the parent is not visible (startup, other workspace page, tray, Mini-HUD/compact single-pane Split) or `TRANSITIONS_ENABLED` is `False`, panes show/hide immediately with identical final state. Reversing a toggle mid-animation continues from the current width. `_save_session_state` does not record splitter sizes while the Split transition is running.
 - Tests set `panel_transition.TRANSITIONS_ENABLED = False` (autouse fixture in `tests/conftest.py`); `tests/test_panel_transition.py` opts back in.
+
+## 8. Backup & Autostart Infrastructure
+
+### 8.1 Online SQLite Snapshots & Bulk Notes Export (`src/services/backup_service.py`)
+- **Online SQLite Backup API:** Leverages `sqlite3.Connection.backup()` to create consistent point-in-time snapshots of `techpad.db` without locking the active database or interrupting concurrent WAL operations.
+- **Daily Automated Snapshots:** Automatically triggers on application startup or background save, writing snapshots to `~/.techpad/backups/techpad_YYYY-MM-DD.db.bak`.
+- **Rolling 7-Day Retention:** Snapshots older than 7 calendar days are automatically pruned, preserving disk storage.
+- **Bulk Notes ZIP Export (`export_all_notes_to_zip`):** Packages all active and archived notes into a portable `.zip` archive containing:
+  - `tickets/`: Individual `.md` files for every ticket with YAML frontmatter metadata and converted Markdown body.
+  - `images/`: Embedded JPEG images referenced via relative paths.
+  - `manifest.json`: Machine-readable index of exported tickets and media.
+
+### 8.2 Windows Autostart & Smart Recovery (`src/services/autostart_service.py`)
+- **HKCU Run Registry Management:** Reads and writes to `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\TNotes` without requiring administrator privileges or UAC elevation.
+- **Silent Boot via `pythonw.exe`:** Configures GUI-mode execution passing `--tray` to prevent terminal console flashing on workstation boot.
+- **Smart Restore:** Restores either desktop window presentation or silent system tray residency based on the technician's previous session state.

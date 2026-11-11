@@ -2149,3 +2149,18 @@ def test_ui_m365_launcher_buttons_have_glow(main_window):
     ws = main_window.m365_workspace
     for name in ("back_button", "btn_help", "nav_toggle", "btn_run_operation", "btn_cancel_operation"):
         assert getattr(getattr(ws, name), "_glow_animator", None) is not None, name
+
+
+def test_history_pane_shortcut_is_alt_h(main_window):
+    """Verifies that the History pane toggle shortcut is Alt+H and buttons reflect it."""
+    # Status bar button text and tooltip
+    assert "Alt+H" in main_window.btn_toggle_drawer.text()
+    assert "Alt+H" in main_window.btn_toggle_drawer.toolTip()
+    assert "Alt+H" in main_window.toolbar.btn_history.toolTip()
+
+    # Verify shortcut bindings
+    shortcut_map = {s.key().toString(): s for s in main_window._notes_shortcuts}
+    assert "Alt+H" in shortcut_map
+    assert "Ctrl+H" in shortcut_map
+    assert "Ctrl+F" in shortcut_map
+

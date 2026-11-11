@@ -58,12 +58,16 @@ class TechPadMainWindow(QMainWindow):
         scratchpad_service: ScratchpadService,
         image_service: ImageService,
         session_service: SessionService,
+        autostart_service: Optional[Any] = None,
+        backup_service: Optional[Any] = None,
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self.scratchpad_service = scratchpad_service
         self.image_service = image_service
         self.session_service = session_service
+        self.autostart_service = autostart_service
+        self.backup_service = backup_service
 
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION} — Technician Scratchpad")
         self.resize(1100, 750)
@@ -321,10 +325,10 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.addWidget(self.btn_switch_split_pane)
 
         # 4. Toggle history drawer button in status bar (on the right side of the Split button, left side of bottom bar)
-        self.btn_toggle_drawer = QPushButton("🕰️ History (Ctrl+H)")
+        self.btn_toggle_drawer = QPushButton("🕰️ History (Alt+H)")
         self.btn_toggle_drawer.setObjectName("btnSecondary")
         self.btn_toggle_drawer.setFlat(True)
-        self.btn_toggle_drawer.setToolTip("Toggle History and Archival drawer (Ctrl+H)")
+        self.btn_toggle_drawer.setToolTip("Toggle History and Archival drawer (Alt+H)")
         self.btn_toggle_drawer.clicked.connect(self._toggle_history_drawer)
         self.status_bar.addWidget(self.btn_toggle_drawer)
 
@@ -439,7 +443,9 @@ class TechPadMainWindow(QMainWindow):
         """
         self._notes_shortcuts = [
             QShortcut(QKeySequence("Ctrl+S"), self, self.flush_all_saves, context=Qt.ApplicationShortcut),
-            QShortcut(QKeySequence("Ctrl+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Ctrl+F"), self, self._on_find_requested, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Ctrl+H"), self, self._on_replace_requested, context=Qt.ApplicationShortcut),
+            QShortcut(QKeySequence("Alt+H"), self, self._toggle_history_drawer, context=Qt.ApplicationShortcut),
             QShortcut(QKeySequence("Ctrl+,"), self, self._open_settings_dialog, context=Qt.ApplicationShortcut),
             QShortcut(QKeySequence("Alt+Z"), self, self._toggle_split_view, context=Qt.ApplicationShortcut),
             QShortcut(QKeySequence("Alt+Shift+Z"), self, self.switch_compact_split_pane, context=Qt.ApplicationShortcut),
@@ -655,6 +661,7 @@ class TechPadMainWindow(QMainWindow):
         self.tray_icon.toggle_requested.connect(self.toggle_window_visibility)
         self.tray_icon.new_tab_requested.connect(self._create_new_tab_and_show)
         self.tray_icon.hud_requested.connect(self.toggle_mini_hud_mode)
+        self.tray_icon.export_zip_requested.connect(self._export_notes_to_zip)
         self.tray_icon.quit_requested.connect(self.quit_application)
         self.tray_icon.show()
 
@@ -1365,10 +1372,35 @@ class TechPadMainWindow(QMainWindow):
         clamped = max(60, min(100, value))
         self.setWindowOpacity(clamped / 100.0)
 
+    def _export_notes_to_zip(self) -> None:
+        """Exports all notes and images into a user-selected ZIP archive."""
+        if not self.backup_service:
+            QMessageBox.information(self, "Export Notes", "Backup service is not available.")
+            return
+        default_name = f"tnotes_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        dest_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export All Notes as ZIP",
+            default_name,
+            "ZIP Archives (*.zip);;All Files (*)",
+        )
+        if dest_path:
+            try:
+                self.backup_service.export_all_notes_to_zip(Path(dest_path))
+                self.status_bar.showMessage(f"✓ Exported all notes to {Path(dest_path).name}", 4000)
+                QMessageBox.information(self, "Export Complete", f"Successfully exported all notes and media to:\n\n{dest_path}")
+            except Exception as e:
+                QMessageBox.warning(self, "Export Failed", f"Failed to export notes: {e}")
+
     def _open_settings_dialog(self) -> None:
         """Opens preferences dialog and applies updated settings."""
         current_settings = self.session_service.get_settings()
-        dlg = SettingsDialog(current_settings, self)
+        dlg = SettingsDialog(
+            current_settings,
+            parent=self,
+            autostart_service=self.autostart_service,
+            backup_service=self.backup_service,
+        )
         if dlg.exec():
             new_settings = dlg.get_settings()
             self.session_service.save_settings(new_settings)
@@ -2375,6 +2407,18 @@ class TechPadMainWindow(QMainWindow):
         self.history_drawer.refresh_list()
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
+    def _on_find_requested(self) -> None:
+        """Opens in-editor find bar on active editor."""
+        editor = self._get_active_editor()
+        if editor and hasattr(editor, "show_find_replace"):
+            editor.show_find_replace(replace_mode=False)
+
+    def _on_replace_requested(self) -> None:
+        """Opens in-editor find and replace bar in replace mode on active editor."""
+        editor = self._get_active_editor()
+        if editor and hasattr(editor, "show_find_replace"):
+            editor.show_find_replace(replace_mode=True)
+
     def _toggle_history_drawer(self) -> None:
         if self._history_transition.is_open:
             self._user_history_drawer_open = False
@@ -2428,6 +2472,8 @@ class TechPadMainWindow(QMainWindow):
 
         # If system tray is active and not forcing quit, minimize to tray
         if getattr(self, "tray_icon", None) and self.tray_icon.isVisible() and not getattr(self, "_force_quit", False):
+            if hasattr(self, "session_service") and self.session_service:
+                self.session_service.save_settings({"last_window_state": "tray"})
             event.ignore()
             self.hide()
             if getattr(self, "_first_minimize_to_tray", True):
@@ -2448,6 +2494,8 @@ class TechPadMainWindow(QMainWindow):
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
+        if hasattr(self, "session_service") and self.session_service:
+            self.session_service.save_settings({"last_window_state": "visible"})
         self._clamp_geometry_to_screen()
         self._check_responsive_layout(self.width())
 
