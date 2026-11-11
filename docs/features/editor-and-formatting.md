@@ -217,6 +217,28 @@ The M365 Launcher features a direct one-click `📤 Insert into Active Ticket` a
 
 ---
 
+### 5.9 Note Navigation, Horizontal Scrolling & Precision Zoom
+`TechPadEditor` in the **T-Notes** module provides multi-axis navigation and viewport font scaling:
+- **Horizontal Scroll with `Ctrl+Shift+Mouse Wheel`:**
+  - Rolling the mouse wheel while holding `Ctrl+Shift` scrolls the editor viewport horizontally across wide code blocks, tables, long URLs, and oversized images.
+  - Rolling wheel upward / forward scrolls left (toward the beginning of the line).
+  - Rolling wheel downward / backward scrolls right (toward the end of the line).
+  - Dedicated horizontal tilt wheels and trackpad horizontal scroll gestures (`dx != 0`) are also supported natively.
+- **Precision Zoom with `Shift+Mouse Wheel`:**
+  - Rolling the mouse wheel forward while holding `Shift` (without `Ctrl`) zooms into note text (+10% font scaling per notch, up to +250%).
+  - Rolling the mouse wheel backward while holding `Shift` (without `Ctrl`) zooms out of note text (-10% font scaling per notch, down to 20%).
+  - A real-time status bar notification reflects the current zoom percentage (e.g. `🔍 Editor Zoom: 120% (Ctrl+0 to reset • Shift+Wheel to zoom)`).
+- **Fast Vertical Scroll with `Ctrl+Mouse Wheel`:**
+  - Rolling the mouse wheel while holding `Ctrl` (without `Shift`) accelerates vertical scrolling by full page steps, allowing technicians to rapidly navigate long tickets, PowerShell logs, and lengthy diagnostic histories.
+- **Keyboard Zoom Shortcuts:**
+  - `Ctrl++` / `Ctrl+=`: Zoom in
+  - `Ctrl+-`: Zoom out
+  - `Ctrl+0`: Reset zoom back to 100%
+- **Context Menu Reset Action:**
+  - Right-clicking anywhere in the note editor when zoomed reveals `🔍 Reset Zoom to 100% (Currently X%) (Ctrl+0)` to instantly restore standard font sizing.
+
+---
+
 ## 6. Interactive Task Checklists & Action Items
 
 To streamline multi-step incident troubleshooting, server maintenance checklists, and ticket resolution procedures, `TechPadEditor` features native, clickable task lists with live tab status badges:

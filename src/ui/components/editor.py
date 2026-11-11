@@ -15,13 +15,16 @@ from PySide6.QtGui import (
     QFont,
     QImage,
     QKeyEvent,
+    QKeySequence,
     QMouseEvent,
     QPainter,
     QPen,
+    QShortcut,
     QTextCharFormat,
     QTextCursor,
     QTextDocument,
     QTextImageFormat,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -52,6 +55,9 @@ class TechPadEditor(QTextEdit):
     CHECKBOX_UNCHECKED_HTML = '<a href="task://toggle" style="color: #4ade80; text-decoration: none; font-family: Consolas, monospace; font-size: 13px; font-weight: bold;">[ ]</a>&nbsp;'
     CHECKBOX_CHECKED_HTML = '<a href="task://toggle" style="color: #4ade80; text-decoration: none; font-family: Consolas, monospace; font-size: 13px; font-weight: bold;">[✔]</a>&nbsp;'
 
+    MIN_ZOOM_LEVEL: int = -8
+    MAX_ZOOM_LEVEL: int = 25
+
     def __init__(self, scratchpad_id: int, image_service: ImageService, parent=None):
         super().__init__(parent)
         self.scratchpad_id = scratchpad_id
@@ -60,6 +66,9 @@ class TechPadEditor(QTextEdit):
         # In-memory dictionary holding unsaved image bytes {image_name: bytes}
         self.in_memory_images: Dict[str, bytes] = {}
         self._pressed_anchor = ""
+
+        # Zoom level tracking (-8 to +25 steps relative to base font styling)
+        self._zoom_level: int = 0
 
         # Image selection & interactive resize tracking
         self._selected_image_pos: Optional[int] = None
@@ -79,6 +88,92 @@ class TechPadEditor(QTextEdit):
 
         # In-Note Floating Find & Replace Bar
         self.find_replace_bar = FindReplaceBar(self)
+
+        # Keyboard Zoom Shortcuts (Ctrl++, Ctrl+=, Ctrl+-, Ctrl+0)
+        QShortcut(QKeySequence("Ctrl++"), self, self.zoom_in, context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence("Ctrl+="), self, self.zoom_in, context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence("Ctrl+-"), self, self.zoom_out, context=Qt.WidgetWithChildrenShortcut)
+        QShortcut(QKeySequence("Ctrl+0"), self, self.reset_zoom, context=Qt.WidgetWithChildrenShortcut)
+
+    # -- Zoom & Navigation Controls --------------------------------------------
+    def zoom_in(self, steps: int = 1) -> None:
+        """Zooms into editor text by steps (up to MAX_ZOOM_LEVEL)."""
+        if self._zoom_level < self.MAX_ZOOM_LEVEL:
+            applied = min(steps, self.MAX_ZOOM_LEVEL - self._zoom_level)
+            self.zoomIn(applied)
+            self._zoom_level += applied
+            self._show_zoom_indicator()
+
+    def zoom_out(self, steps: int = 1) -> None:
+        """Zooms out of editor text by steps (down to MIN_ZOOM_LEVEL)."""
+        if self._zoom_level > self.MIN_ZOOM_LEVEL:
+            applied = min(steps, self._zoom_level - self.MIN_ZOOM_LEVEL)
+            self.zoomOut(applied)
+            self._zoom_level -= applied
+            self._show_zoom_indicator()
+
+    def reset_zoom(self) -> None:
+        """Resets editor zoom level back to 100% (default base styling)."""
+        if self._zoom_level > 0:
+            self.zoomOut(self._zoom_level)
+        elif self._zoom_level < 0:
+            self.zoomIn(-self._zoom_level)
+        self._zoom_level = 0
+        self._show_zoom_indicator()
+
+    def get_zoom_level(self) -> int:
+        return self._zoom_level
+
+    def get_zoom_percentage(self) -> int:
+        return max(20, int(round(100 * (10 + self._zoom_level) / 10.0)))
+
+    def _show_zoom_indicator(self) -> None:
+        pct = self.get_zoom_percentage()
+        msg = f"🔍 Editor Zoom: {pct}% (Ctrl+0 to reset • Shift+Wheel to zoom)"
+        if parent_win := self.window():
+            if hasattr(parent_win, "status_bar"):
+                parent_win.status_bar.showMessage(msg, 1500)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        """Handles horizontal scrolling with Ctrl+Shift+Wheel, editor zoom with Shift+Wheel, and fast vertical scroll with Ctrl+Wheel."""
+        mods = event.modifiers()
+        has_ctrl = bool(mods & Qt.ControlModifier)
+        has_shift = bool(mods & Qt.ShiftModifier)
+
+        # 1. Horizontal scroll with Ctrl+Shift+Wheel
+        if has_ctrl and has_shift:
+            dy = event.angleDelta().y()
+            dx = event.angleDelta().x()
+            if dy != 0:
+                # Vertical wheel rolled with Ctrl+Shift: Up -> Scroll Left, Down -> Scroll Right
+                step_px = int(round(-dy * 0.5))
+                if step_px == 0:
+                    step_px = -1 if dy > 0 else 1
+                hbar = self.horizontalScrollBar()
+                hbar.setValue(hbar.value() + step_px)
+            elif dx != 0:
+                # Dedicated horizontal wheel/tilt: Right -> Scroll Right, Left -> Scroll Left
+                step_px = int(round(dx * 0.5))
+                if step_px == 0:
+                    step_px = 1 if dx > 0 else -1
+                hbar = self.horizontalScrollBar()
+                hbar.setValue(hbar.value() + step_px)
+            event.accept()
+            return
+
+        # 2. Zoom in / Zoom out with Shift+Wheel (without Ctrl)
+        if has_shift and not has_ctrl:
+            dy = event.angleDelta().y()
+            if dy > 0:
+                self.zoom_in()
+            elif dy < 0:
+                self.zoom_out()
+            event.accept()
+            return
+
+        # 3. Ctrl+Wheel (without Shift) -> Fast vertical scroll (Qt page step)
+        # 4. Standard Wheel (no modifiers) -> Normal vertical scroll
+        super().wheelEvent(event)
 
     def _on_cursor_or_focus(self) -> None:
         self.setFocus()
@@ -393,7 +488,19 @@ class TechPadEditor(QTextEdit):
 
         # 0. In-Note Find / Replace: Ctrl+F (Find), Ctrl+H (Replace)
         if has_ctrl and not has_shift and not bool(mods & Qt.AltModifier):
-            if event.key() == Qt.Key_F:
+            if event.key() in (Qt.Key_Plus, Qt.Key_Equal):
+                self.zoom_in()
+                event.accept()
+                return
+            elif event.key() == Qt.Key_Minus:
+                self.zoom_out()
+                event.accept()
+                return
+            elif event.key() == Qt.Key_0:
+                self.reset_zoom()
+                event.accept()
+                return
+            elif event.key() == Qt.Key_F:
                 if self.find_replace_bar.isVisible():
                     self.find_replace_bar.toggle_replace_mode()
                 else:
@@ -990,9 +1097,9 @@ class TechPadEditor(QTextEdit):
             if hasattr(parent_win, "status_bar"):
                 parent_win.status_bar.showMessage(f"✓ Saved image to {file_path}", 3500)
 
-    def contextMenuEvent(self, event) -> None:
-        """Provides enhanced context menu with image copy/export and technician quick-actions."""
-        img_info_full = self._get_image_info_at_pos(event.pos())
+    def create_custom_context_menu(self, pos: QPoint) -> QMenu:
+        """Constructs enhanced context menu with image copy/export, zoom reset, and formatting actions."""
+        img_info_full = self._get_image_info_at_pos(pos)
         menu = QMenu(self)
 
         # 1. Image Actions (if right-clicking an embedded screenshot/image)
@@ -1049,6 +1156,11 @@ class TechPadEditor(QTextEdit):
         act_copy_note.setToolTip("Copies all note text, formatting, colors, and embedded images to clipboard")
         act_copy_note.triggered.connect(self._copy_entire_formatted_note_action)
 
+        if self._zoom_level != 0:
+            act_reset_zoom = menu.addAction(f"🔍 Reset Zoom to 100% (Currently {self.get_zoom_percentage()}%) (Ctrl+0)")
+            act_reset_zoom.setToolTip("Reset editor text size back to 100%")
+            act_reset_zoom.triggered.connect(self.reset_zoom)
+
         menu.addSeparator()
 
         # 3. Technician quick formatting actions
@@ -1061,6 +1173,11 @@ class TechPadEditor(QTextEdit):
         act_code = menu.addAction("</> Insert Code Block (Ctrl+Alt+C)")
         act_code.triggered.connect(self._insert_code_block)
 
+        return menu
+
+    def contextMenuEvent(self, event) -> None:
+        """Surfaces the enhanced context menu at click location."""
+        menu = self.create_custom_context_menu(event.pos())
         menu.exec(event.globalPos())
 
     def _copy_entire_formatted_note_action(self) -> None:
