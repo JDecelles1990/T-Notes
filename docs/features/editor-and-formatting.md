@@ -256,16 +256,21 @@ When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text 
 
 ---
 
-## 7. Image Manipulation & Annotation Pipeline: Resize, Draw, Shapes, Text & Colors
+## 7. Image Editor: Visual Markup, Paint-Style Text Boxes, Precision Zoom & Fullscreen
 
-Double-clicking any embedded screenshot or image (or choosing **📐 Resize & Annotate Image...** from the right-click context menu) launches the modal `ResizeImageDialog`.
+Double-clicking any embedded screenshot or image (or choosing **🖼️ Image Editor (Resize & Markup)...** from the right-click context menu) launches the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`).
 
 ### 7.1 Interactive Visual Annotation Canvas (`ImageAnnotationCanvas`)
 Technicians can annotate, call out, and mark up screenshots directly within T-Notes without needing an external image editor:
 - **✏️ Freehand Pen (`TOOL_PEN`):** Freeform pen drawing with anti-aliasing and smooth joint caps for circling anomalous log lines or diagram components.
 - **⭕ Circle / Ellipse Callout (`TOOL_CIRCLE`):** Interactive click-and-drag ellipse tool with real-time drag preview for highlighting buttons, badges, or error messages.
 - **🔲 Rectangle Callout Box (`TOOL_RECTANGLE`):** Interactive click-and-drag rectangle box with real-time drag preview for bounding text blocks or IP configurations.
-- **🔤 Text Overlay with High-Contrast Shadow (`TOOL_TEXT`):** Clicking anywhere on the canvas opens a text prompt dialog. Rendered text includes an automated 8-directional drop shadow (dark perimeter outline) to guarantee legibility over both dark backgrounds (terminal consoles) and bright backgrounds (Word/Excel dialogs).
+- **🔤 Paint-Style Text Box Tool (`TOOL_TEXT`):**
+  - **Drag Bounding Rectangle:** Click and drag directly on the image to draw a dashed bounding box defining the text boundary, identical to MS Paint.
+  - **Font Size Selection:** Adjust font size from the toolbar (`Font: [ 18 ] pt`, 8–96 pt) or customize it in the prompt dialog.
+  - **Multi-Line Text & Alignment:** Prompts with `TextAnnotationDialog` allowing single-line or multi-line diagnostics. Text wraps automatically inside the bounding rectangle.
+  - **Optional Callout Border Box:** Checkbox `🔲 Draw Callout Box` renders a rounded border outline and dark background behind the text for maximum emphasis.
+  - **High-Contrast 8-Way Shadow:** Automated black perimeter outline ensures 100% legibility over dark terminal consoles or bright white backgrounds.
 - **🎨 Color Palette & Custom Color Picker:** Instant selection of high-visibility callout colors:
   - 🔴 Red (`#ff3b30`)
   - 🟡 Yellow (`#ffcc00`)
@@ -276,31 +281,42 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
   - Dedicated **🎨 More...** button opening `QColorDialog` for full 24-bit custom color selection.
 - **Line Stroke Width Selector:** Switch line thickness between `2px` (fine detail), `4px` (standard callout, default), and `8px` (bold highlight).
 
-### 7.2 Reversible History Stack (Undo, Redo & Reset)
+### 7.2 Precision Zoom & Panning (Ctrl + Wheel & +/- Controls)
+- **Ctrl + Mouse Wheel:** Scroll up to zoom in (up to 500%), scroll down to zoom out (down to 25%).
+- **Toolbar Zoom Buttons:** Click `➕` to zoom in (+25%), `➖` to zoom out (-20%), and `1:1` to reset zoom back to 100% fit.
+- **Keyboard Shortcuts:** `Ctrl++` / `Ctrl+=` (Zoom In), `Ctrl+-` (Zoom Out), `Ctrl+0` (Reset to 100%).
+- **Panning:** When zoomed in, Middle-click drag, Right-click drag, or scrolling the mouse wheel smoothly pans the image.
+
+### 7.3 Fullscreen Maximization on Double-Click Top Bar
+- **Double-Click Top Bar:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame immediately maximizes the Image Editor to full screen for fine-grained screenshot work. Double-clicking again restores normal window size.
+- **Dedicated Maximize Button:** Click `⛶ Maximize` / `❐ Restore` in the top-right toolbar.
+- **F11 Keyboard Shortcut:** Press `F11` to toggle full screen.
+
+### 7.4 Reversible History Stack (Undo, Redo & Reset)
 All markup actions can be completely reversed:
 - **↺ Undo (`Ctrl+Z`):** Steps backward through the 30-level annotation snapshot stack, reverting image state.
 - **↻ Redo (`Ctrl+Y` / `Ctrl+Shift+Z`):** Re-applies undone annotation operations.
 - **🔄 Reset Image:** Restores the image back to its pristine base state when the dialog opened, while still recording an undo snapshot in case the reset was accidental.
 - **Cancel:** Dismissing the dialog with `Cancel` or `Esc` discards all in-progress markup without touching the document.
 
-### 7.3 Proportional Resizing & Aspect Ratio Lock
+### 7.5 Proportional Resizing & Aspect Ratio Lock
 The right side panel integrates dimension controls:
 - **Spinboxes:** Direct numerical width and height adjustments in pixels.
 - **🔗 Lock Aspect Ratio:** Preserves proportional scaling when enabled (default). Unchecking allows independent horizontal/vertical resizing.
 - **Quick Presets:** Instant scaling buttons for `25%`, `50%`, `75%`, and `100%` (original size).
 - **Fit to Pane Width:** Automatically scales the image to the editor's current pane width (respecting split-view side pane boundaries).
 
-### 7.4 Auto-Save & Storage Pipeline Integration
+### 7.6 Auto-Save & Storage Pipeline Integration
 When the dialog is accepted (`OK`):
 1. The modified `QImage` is compressed to JPEG (quality 85 per `AGENTS.md`) using `ImageService.compress_qimage_to_jpeg()`.
 2. The JPEG bytes are stored in the editor's `in_memory_images` cache under the image UUID key.
 3. The `QTextDocument` resource cache is refreshed (`addResource`) so the document repaints instantaneously.
 4. Auto-save signal `content_modified(scratchpad_id)` is emitted, scheduling SQLite persistence to the `scratchpad_images` table during the debounced write cycle.
 
-### 7.5 Image Context Menu: Copy & Save As...
+### 7.7 Image Context Menu: Copy & Save As...
 
 When right-clicking on any embedded screenshot or image in `TechPadEditor`:
-- **📐 Resize & Annotate Image...:** Launches the full annotation and resize modal dialog.
+- **🖼️ Image Editor (Resize & Markup)...:** Launches the full Image Editor modal window.
 - **📏 Quick Resize Submenu:** Offers one-click presets (`Fit to Pane Width`, `100%`, `75%`, `50%`, `25%`).
 - **📋 Copy Image:** Copies the full-resolution bitmap directly into the system clipboard (`QApplication.clipboard().setImage`), ready to paste (`Ctrl+V`) into external applications such as Slack, Microsoft Teams, Outlook, Word, or Jira.
 - **💾 Save Image As...:** Opens a file dialog allowing export to `.png` (lossless) or `.jpg` (raw original bytes without recompression artifacts).

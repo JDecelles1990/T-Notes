@@ -126,11 +126,12 @@ When users copy highlighted content containing both text, formatting, colors, an
 2. **Context Menu Quick Resize (`📏 Quick Resize`):**
    - **Fit to Pane Width:** Computes available pane width (`viewport().width() - 24`). In Split View sidebar, this scales the image down to fit the side panel without horizontal scrollbars; in normal view, it scales to fit the main window.
    - **Presets:** `100% (Original Size)`, `75%`, `50%`, `25%`.
-3. **Resize & Visual Annotation Dialog (`📐 Resize & Annotate Image...` / Double-Click):**
-   - Double-clicking an image opens the modal `ResizeImageDialog`.
-   - Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes) or select presets.
-   - "🔗 Lock aspect ratio" checkbox (checked by default) dynamically syncs proportional height/width.
-   - Quick preset buttons (`25%`, `50%`, `75%`, `100%`, `Fit to Pane Width`).
+3. **Image Editor Window (`🖼️ Image Editor` / Double-Click):**
+   - Double-clicking an image opens the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`).
+   - **Full Screen Maximize:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame (or pressing `F11` / clicking `⛶ Maximize`) expands the editor to full screen for maximum workspace visibility.
+   - **Precision Zoom & Pan:** Technicians can zoom in/out via `Ctrl + Mouse Wheel`, toolbar `➕`/`➖` buttons, or `Ctrl++`/`Ctrl+-` shortcuts (25% to 500%), with `1:1` reset and middle-click panning.
+   - **Paint-Style Text Rectangle:** Clicking and dragging on the canvas defines a dashed bounding box for text placement, allowing custom font size selection (8 to 96 pt), multi-line text input, optional callout border box, and word-wrapped high-contrast rendering.
+   - **Proportional Resizing:** Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes) or select presets (`25%`, `50%`, `75%`, `100%`, `Fit to Pane Width`).
    - Integrated `ImageAnnotationCanvas` provides freehand drawing (`✏️`), circle callouts (`⭕`), rectangle callouts (`🔲`), and text overlays (`🔤`) with full color palette selection and reversible 30-level history (`↺ Undo`, `↻ Redo`, `🔄 Reset Image`).
 4. **Keyboard Deletion:**
    - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the screenshot from the document.
@@ -141,9 +142,9 @@ When users copy highlighted content containing both text, formatting, colors, an
 - Copying rich notes (`📋 Copy Note`) embeds Base64 data with matching `width` and `height` attributes so external applications render scaled images.
 
 ### 7.3 Visual Annotation & Markup Pipeline
-- **Canvas Viewport Mapping:** Mouse coordinates are normalized to the underlying source image dimensions using aspect-ratio-preserving bounds calculation, guaranteeing accurate pixel placement regardless of dialog dimensions.
+- **Canvas Viewport Mapping with Zoom/Pan:** Mouse coordinates are normalized to the underlying source image dimensions using aspect-ratio-preserving bounds calculation with dynamic zoom factor and pan offset, guaranteeing pixel-perfect accuracy regardless of magnification.
 - **ARGB32 Premultiplied Rendering:** Interactive drawings operate on an in-memory ARGB32 Premultiplied copy with Qt anti-aliasing.
-- **Text Shading:** Rendered text includes an 8-way drop shadow in semi-transparent black (`rgba(0, 0, 0, 0.86)`) behind the colored text to ensure legibility on both dark consoles and white documents.
+- **Paint-Style Text Layout:** Text overlays render inside the user's defined bounding box with automatic word wrapping, selectable font size, and an 8-point boundary shadow in semi-transparent black behind the colored text to ensure legibility on both dark consoles and white documents.
 - **Storage Synchronization:** When annotations are confirmed via `OK`:
   1. The annotated image is compressed into JPEG (85% quality per `AGENTS.md`) using `ImageService.compress_qimage_to_jpeg()`.
   2. The updated JPEG bytes are stored in `editor.in_memory_images[raw_name]`.

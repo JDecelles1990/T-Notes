@@ -746,9 +746,9 @@ class TechPadEditor(QTextEdit):
             if parent_win := self.window():
                 if hasattr(parent_win, "status_bar"):
                     if annotated:
-                        parent_win.status_bar.showMessage(f"✓ Saved markup and resized image to {new_w} × {new_h} px", 3000)
+                        parent_win.status_bar.showMessage(f"✓ Saved markup and resized image in Image Editor to {new_w} × {new_h} px", 3000)
                     else:
-                        parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
+                        parent_win.status_bar.showMessage(f"✓ Resized image in Image Editor to {new_w} × {new_h} px", 3000)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         # 1. Active interactive resize dragging

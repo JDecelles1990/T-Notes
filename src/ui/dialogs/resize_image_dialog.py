@@ -1,7 +1,7 @@
-"""Modal dialog for resizing and annotating embedded images with drawing, shapes, text, and undo/redo."""
+"""Modal dialog for resizing and annotating embedded images with drawing, shapes, text, zoom, and undo/redo."""
 
 from typing import Optional, Tuple
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtCore import QPoint, QPointF, QRect, Qt, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -22,12 +22,11 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QFrame,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSpinBox,
     QSplitter,
+    QTextEdit,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -35,8 +34,133 @@ from PySide6.QtWidgets import (
 from src.ui.components.glow_effect import apply_glow_to_buttons
 
 
+class DoubleClickableFrame(QFrame):
+    """Toolbar frame that emits double_clicked when double-clicking on empty areas."""
+
+    double_clicked = Signal()
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            self.double_clicked.emit()
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+
+
+class TextAnnotationDialog(QDialog):
+    """Dialog allowing technicians to write text, choose font size, and set border options."""
+
+    def __init__(
+        self,
+        rect: QRect,
+        font_size: int = 18,
+        color: QColor = QColor("#ff3b30"),
+        parent: Optional[QWidget] = None,
+    ):
+        super().__init__(parent)
+        self.setWindowTitle("Add Text to Image")
+        self.resize(380, 240)
+        self.setModal(True)
+        self._setup_ui(rect, font_size, color)
+
+    def _setup_ui(self, rect: QRect, font_size: int, color: QColor) -> None:
+        layout = QVBoxLayout(self)
+        layout.setSpacing(8)
+        layout.setContentsMargins(12, 12, 12, 12)
+
+        info_lbl = QLabel(f"Text Box: <b>{rect.width()} × {rect.height()} px</b> at ({rect.x()}, {rect.y()})")
+        info_lbl.setStyleSheet("color: #888888; font-size: 8.5pt;")
+        layout.addWidget(info_lbl)
+
+        self.text_edit = QTextEdit()
+        self.text_edit.setPlaceholderText("Type text to place inside rectangle (multi-line supported)...")
+        self.text_edit.setAcceptRichText(False)
+        self.text_edit.setStyleSheet("""
+            QTextEdit {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 6px;
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }
+            QTextEdit:focus {
+                border-color: #007acc;
+            }
+        """)
+        layout.addWidget(self.text_edit, 1)
+
+        opts_row = QHBoxLayout()
+        opts_row.setSpacing(8)
+
+        lbl_size = QLabel("Font Size:")
+        lbl_size.setStyleSheet("color: #9cdcfe; font-weight: bold;")
+        opts_row.addWidget(lbl_size)
+
+        self.spin_size = QSpinBox()
+        self.spin_size.setRange(8, 96)
+        self.spin_size.setValue(font_size)
+        self.spin_size.setSuffix(" pt")
+        opts_row.addWidget(self.spin_size)
+
+        self.chk_border = QCheckBox("🔲 Draw Callout Box")
+        self.chk_border.setChecked(False)
+        self.chk_border.setToolTip("Draw rounded border box and dark background behind text")
+        self.chk_border.setStyleSheet("color: #cccccc;")
+        opts_row.addWidget(self.chk_border)
+
+        opts_row.addStretch()
+        layout.addLayout(opts_row)
+
+        btn_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btn_box.accepted.connect(self.accept)
+        btn_box.rejected.connect(self.reject)
+        layout.addWidget(btn_box)
+
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #252526;
+                color: #cccccc;
+            }
+            QLabel {
+                color: #cccccc;
+            }
+            QSpinBox {
+                background-color: #1e1e1e;
+                color: #cccccc;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 3px 6px;
+            }
+            QPushButton {
+                background-color: #333333;
+                color: #cccccc;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 4px 12px;
+            }
+            QPushButton:hover {
+                background-color: #3e3e42;
+                border-color: #007acc;
+                color: #ffffff;
+            }
+        """)
+
+    def get_text(self) -> str:
+        return self.text_edit.toPlainText().strip()
+
+    def get_font_size(self) -> int:
+        return self.spin_size.value()
+
+    def should_draw_border(self) -> bool:
+        return self.chk_border.isChecked()
+
+
 class ImageAnnotationCanvas(QWidget):
-    """Interactive canvas allowing technicians to draw, circle, add rectangles, and place text on an image."""
+    """Interactive canvas allowing technicians to draw, circle, add rectangles, and place text with zoom/pan."""
+
+    zoom_changed = Signal(float)
 
     TOOL_PEN = "pen"
     TOOL_CIRCLE = "circle"
@@ -72,6 +196,12 @@ class ImageAnnotationCanvas(QWidget):
         self._stroke_width: int = 4
         self._font_size: int = 18
 
+        # Zoom & Pan state
+        self._zoom_factor: float = 1.0  # Range 0.25 to 5.0
+        self._pan_offset: QPoint = QPoint(0, 0)
+        self._is_panning: bool = False
+        self._pan_start: QPoint = QPoint()
+
         # Drawing state
         self._is_drawing: bool = False
         self._drag_start: Optional[QPoint] = None
@@ -79,9 +209,9 @@ class ImageAnnotationCanvas(QWidget):
         self._freehand_points: list[QPoint] = []
         self._was_annotated: bool = False
 
-    # -- Coordinate Mapping ----------------------------------------------------
+    # -- Coordinate Mapping & Zoom ---------------------------------------------
     def get_image_display_rect(self) -> QRect:
-        """Calculates scaled image bounding box centered in the canvas while preserving aspect ratio."""
+        """Calculates scaled image bounding box centered in the canvas with zoom and pan applied."""
         if self._current_image.isNull():
             return QRect()
         canvas_w = self.width()
@@ -91,17 +221,18 @@ class ImageAnnotationCanvas(QWidget):
         if img_w <= 0 or img_h <= 0 or canvas_w <= 0 or canvas_h <= 0:
             return QRect()
 
-        scale = min(canvas_w / img_w, canvas_h / img_h)
+        fit_scale = min(canvas_w / img_w, canvas_h / img_h)
+        scale = fit_scale * self._zoom_factor
         scaled_w = max(1, int(img_w * scale))
         scaled_h = max(1, int(img_h * scale))
-        x = (canvas_w - scaled_w) // 2
-        y = (canvas_h - scaled_h) // 2
+        x = (canvas_w - scaled_w) // 2 + self._pan_offset.x()
+        y = (canvas_h - scaled_h) // 2 + self._pan_offset.y()
         return QRect(x, y, scaled_w, scaled_h)
 
-    def viewport_to_image_coords(self, pt: QPoint) -> Optional[QPoint]:
+    def viewport_to_image_coords(self, pt: QPoint, clamp: bool = False) -> Optional[QPoint]:
         """Translates canvas viewport point to original image pixel coordinates."""
         rect = self.get_image_display_rect()
-        if not rect.contains(pt):
+        if not clamp and not rect.contains(pt):
             return None
         img_w = self._current_image.width()
         img_h = self._current_image.height()
@@ -110,6 +241,42 @@ class ImageAnnotationCanvas(QWidget):
         x = int((pt.x() - rect.x()) * (img_w / rect.width()))
         y = int((pt.y() - rect.y()) * (img_h / rect.height()))
         return QPoint(max(0, min(img_w - 1, x)), max(0, min(img_h - 1, y)))
+
+    # -- Zoom Controls ---------------------------------------------------------
+    def zoom_in(self) -> None:
+        """Zooms in by 25% up to 500%."""
+        self.set_zoom_factor(self._zoom_factor * 1.25)
+
+    def zoom_out(self) -> None:
+        """Zooms out by 20% down to 25%."""
+        self.set_zoom_factor(self._zoom_factor / 1.25)
+
+    def reset_zoom(self) -> None:
+        """Resets zoom back to fit (100%) and centers pan."""
+        self._zoom_factor = 1.0
+        self._pan_offset = QPoint(0, 0)
+        self.zoom_changed.emit(self._zoom_factor)
+        self.update()
+
+    def set_zoom_factor(self, factor: float) -> None:
+        """Sets clamped zoom factor (0.25 to 5.0) and updates display."""
+        new_factor = max(0.25, min(5.0, factor))
+        if abs(new_factor - self._zoom_factor) > 0.001:
+            self._zoom_factor = new_factor
+            if self._zoom_factor <= 1.0:
+                self._pan_offset = QPoint(0, 0)
+            self.zoom_changed.emit(self._zoom_factor)
+            self.update()
+
+    def get_zoom_factor(self) -> float:
+        return self._zoom_factor
+
+    def set_font_size(self, size: int) -> None:
+        """Sets the active font size for text annotation."""
+        self._font_size = max(8, min(96, size))
+
+    def get_font_size(self) -> int:
+        return self._font_size
 
     # -- History & State Management --------------------------------------------
     def _save_undo_state(self) -> None:
@@ -158,7 +325,12 @@ class ImageAnnotationCanvas(QWidget):
     # -- Tool & Palette Configuration -----------------------------------------
     def set_tool(self, tool_name: str) -> None:
         self._active_tool = tool_name
-        if tool_name == self.TOOL_TEXT:
+        self._update_cursor()
+
+    def _update_cursor(self) -> None:
+        if self._is_panning:
+            self.setCursor(Qt.ClosedHandCursor)
+        elif self._active_tool == self.TOOL_TEXT:
             self.setCursor(Qt.IBeamCursor)
         else:
             self.setCursor(Qt.CrossCursor)
@@ -200,16 +372,59 @@ class ImageAnnotationCanvas(QWidget):
                     int(rect.x() + self._drag_current.x() * scale_x),
                     int(rect.y() + self._drag_current.y() * scale_y),
                 )
-                preview_pen = QPen(self._current_color, max(1, int(self._stroke_width * scale_x)), Qt.SolidLine)
-                painter.setPen(preview_pen)
-                painter.setBrush(Qt.NoBrush)
+                preview_rect = QRect(vp_start, vp_curr).normalized()
 
                 if self._active_tool == self.TOOL_RECTANGLE:
-                    painter.drawRect(QRect(vp_start, vp_curr).normalized())
+                    preview_pen = QPen(self._current_color, max(1, int(self._stroke_width * scale_x)), Qt.SolidLine)
+                    painter.setPen(preview_pen)
+                    painter.setBrush(Qt.NoBrush)
+                    painter.drawRect(preview_rect)
                 elif self._active_tool == self.TOOL_CIRCLE:
-                    painter.drawEllipse(QRect(vp_start, vp_curr).normalized())
+                    preview_pen = QPen(self._current_color, max(1, int(self._stroke_width * scale_x)), Qt.SolidLine)
+                    painter.setPen(preview_pen)
+                    painter.setBrush(Qt.NoBrush)
+                    painter.drawEllipse(preview_rect)
+                elif self._active_tool == self.TOOL_TEXT:
+                    # Paint-style dashed bounding rectangle with subtle tinted fill
+                    dash_pen = QPen(self._current_color, 1, Qt.DashLine)
+                    painter.setPen(dash_pen)
+                    painter.setBrush(QColor(self._current_color.red(), self._current_color.green(), self._current_color.blue(), 25))
+                    painter.drawRect(preview_rect)
+                    # Text box label preview
+                    painter.setPen(self._current_color)
+                    font_preview = QFont("Arial", max(8, int(self._font_size * scale_x)))
+                    painter.setFont(font_preview)
+                    painter.drawText(preview_rect.adjusted(4, 4, -4, -4), Qt.AlignLeft | Qt.AlignTop, "🔤 Text Box...")
+
+    def wheelEvent(self, event) -> None:
+        """Handles Ctrl+Mouse Wheel for zooming and standard wheel for panning when zoomed in."""
+        if event.modifiers() & Qt.ControlModifier:
+            delta = event.angleDelta().y()
+            if delta > 0:
+                self.zoom_in()
+            elif delta < 0:
+                self.zoom_out()
+            event.accept()
+        elif self._zoom_factor > 1.0:
+            # Pan vertically / horizontally with wheel
+            dy = event.angleDelta().y() // 8
+            dx = event.angleDelta().x() // 8
+            self._pan_offset += QPoint(dx, dy)
+            self.update()
+            event.accept()
+        else:
+            super().wheelEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        # 1. Pan with Middle-click or Right-click
+        if event.button() in (Qt.MiddleButton, Qt.RightButton):
+            self._is_panning = True
+            pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+            self._pan_start = pos - self._pan_offset
+            self.setCursor(Qt.ClosedHandCursor)
+            event.accept()
+            return
+
         if event.button() != Qt.LeftButton:
             return
 
@@ -218,10 +433,15 @@ class ImageAnnotationCanvas(QWidget):
         if not img_pt:
             return
 
+        # 2. Text Tool: Begin click-and-drag text bounding rectangle (Paint style)
         if self._active_tool == self.TOOL_TEXT:
-            self._prompt_and_add_text(img_pt)
+            self._is_drawing = True
+            self._drag_start = img_pt
+            self._drag_current = img_pt
+            event.accept()
             return
 
+        # 3. Drawing tools (Pen, Circle, Rectangle)
         self._save_undo_state()
         self._is_drawing = True
         self._drag_start = img_pt
@@ -229,11 +449,19 @@ class ImageAnnotationCanvas(QWidget):
         self._freehand_points = [img_pt]
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+
+        # Handle panning drag
+        if self._is_panning:
+            self._pan_offset = pos - self._pan_start
+            self.update()
+            event.accept()
+            return
+
         if not self._is_drawing:
             return
 
-        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
-        img_pt = self.viewport_to_image_coords(pos)
+        img_pt = self.viewport_to_image_coords(pos, clamp=True)
         if not img_pt:
             return
 
@@ -252,11 +480,32 @@ class ImageAnnotationCanvas(QWidget):
         self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self._is_panning and event.button() in (Qt.MiddleButton, Qt.RightButton, Qt.LeftButton):
+            self._is_panning = False
+            self._update_cursor()
+            event.accept()
+            return
+
         if not self._is_drawing or event.button() != Qt.LeftButton:
             return
         self._is_drawing = False
 
-        if self._active_tool == self.TOOL_PEN and len(self._freehand_points) == 1:
+        if self._active_tool == self.TOOL_TEXT and self._drag_start and self._drag_current:
+            # Calculate user-dragged text rectangle
+            shape_rect = QRect(self._drag_start, self._drag_current).normalized()
+            if shape_rect.width() < 24 or shape_rect.height() < 20:
+                # If clicked without dragging a bounding box, expand to generous default box
+                shape_rect = QRect(self._drag_start.x(), self._drag_start.y(), 260, max(50, self._font_size * 3))
+
+            # Clamp bounding box to image boundaries
+            img_w = self._current_image.width()
+            img_h = self._current_image.height()
+            shape_rect = shape_rect.intersected(QRect(0, 0, img_w, img_h))
+
+            # Prompt technician for text and font size inside the rectangle
+            self._prompt_and_add_text_rect(shape_rect)
+
+        elif self._active_tool == self.TOOL_PEN and len(self._freehand_points) == 1:
             painter = QPainter(self._current_image)
             painter.setRenderHint(QPainter.Antialiasing)
             painter.setPen(QPen(self._current_color, self._stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
@@ -288,43 +537,67 @@ class ImageAnnotationCanvas(QWidget):
         self._freehand_points.clear()
         self.update()
 
-    def add_text_at(self, img_pt: QPoint, text: str) -> None:
-        """Draws text directly onto image at specified pixel point (used by UI prompt and tests)."""
+    def add_text_in_rect(
+        self,
+        rect: QRect,
+        text: str,
+        font_size: Optional[int] = None,
+        draw_border: bool = False,
+    ) -> None:
+        """Renders text inside the specified bounding rectangle with high-contrast shadow and optional callout border."""
         if not text.strip():
             return
         self._save_undo_state()
+        size = font_size if font_size is not None else self._font_size
+
         painter = QPainter(self._current_image)
         painter.setRenderHint(QPainter.Antialiasing)
-        font = QFont("Arial", self._font_size, QFont.Bold)
+
+        # Optional callout border box around text
+        if draw_border:
+            border_pen = QPen(self._current_color, max(1, self._stroke_width // 2), Qt.SolidLine)
+            painter.setPen(border_pen)
+            painter.setBrush(QColor(0, 0, 0, 160))  # Semi-transparent dark background for readability
+            painter.drawRoundedRect(rect, 4, 4)
+
+        font = QFont("Arial", size, QFont.Bold)
         painter.setFont(font)
 
-        # High-contrast outline/shadow for maximum visibility
-        painter.setPen(QColor(0, 0, 0, 220))
-        for dx, dy in ((-1, -1), (-1, 1), (1, -1), (1, 1), (0, 1), (1, 0), (0, -1), (-1, 0)):
-            painter.drawText(img_pt.x() + dx, img_pt.y() + dy, text.strip())
+        text_rect = rect.adjusted(6, 6, -6, -6) if draw_border else rect
+
+        # High-contrast 8-way outline/shadow for readability over any background
+        painter.setPen(QColor(0, 0, 0, 230))
+        for dx, dy in ((-2, -2), (-2, 2), (2, -2), (2, 2), (0, 2), (2, 0), (0, -2), (-2, 0), (-1, -1), (1, 1)):
+            painter.drawText(text_rect.translated(dx, dy), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, text.strip())
 
         # Primary text in selected color
         painter.setPen(self._current_color)
-        painter.drawText(img_pt.x(), img_pt.y(), text.strip())
+        painter.drawText(text_rect, Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, text.strip())
         painter.end()
+
         self._was_annotated = True
         self.update()
 
-    def _prompt_and_add_text(self, img_pt: QPoint) -> None:
-        """Prompts for text and renders it at the selected point with high-contrast drop shadow."""
-        text, ok = QInputDialog.getText(
-            self,
-            "Add Text on Image",
-            "Enter text to overlay on the image:",
-            QLineEdit.Normal,
-            "",
-        )
-        if ok and text.strip():
-            self.add_text_at(img_pt, text.strip())
+    def add_text_at(self, img_pt: QPoint, text: str) -> None:
+        """Draws text starting at specified pixel point (backward-compatible API)."""
+        if not text.strip():
+            return
+        rect = QRect(img_pt.x(), img_pt.y(), 300, max(60, self._font_size * 3))
+        self.add_text_in_rect(rect, text, self._font_size, draw_border=False)
+
+    def _prompt_and_add_text_rect(self, rect: QRect) -> None:
+        """Prompts for text and renders it inside the user's dragged bounding rectangle."""
+        dlg = TextAnnotationDialog(rect, self._font_size, self._current_color, self)
+        if dlg.exec() == QDialog.Accepted:
+            text = dlg.get_text()
+            chosen_size = dlg.get_font_size()
+            draw_border = dlg.should_draw_border()
+            if text:
+                self.add_text_in_rect(rect, text, chosen_size, draw_border)
 
 
 class ResizeImageDialog(QDialog):
-    """Dialog allowing technicians to resize an image and apply drawings, circles, rectangles, text, and colors."""
+    """Dialog allowing technicians to resize an image, apply drawings/callouts/text, zoom, and maximize."""
 
     def __init__(
         self,
@@ -337,8 +610,11 @@ class ResizeImageDialog(QDialog):
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Resize Image")
+        self.setWindowTitle("Image Editor")
         self.setModal(True)
+
+        # Enable OS Minimize and Maximize/Restore buttons for double-click title bar maximize
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinMaxButtonsHint)
 
         self._image = image
         self._orig_w = max(1, original_width)
@@ -352,8 +628,8 @@ class ResizeImageDialog(QDialog):
         self.canvas: Optional[ImageAnnotationCanvas] = None
 
         if self._image and not self._image.isNull():
-            self.resize(920, 620)
-            self.setMinimumSize(780, 500)
+            self.resize(1020, 680)
+            self.setMinimumSize(820, 520)
         else:
             self.setMinimumWidth(380)
 
@@ -367,8 +643,11 @@ class ResizeImageDialog(QDialog):
 
         # 1. Top Annotation Toolbar (if image is available)
         if self._image and not self._image.isNull():
-            toolbar_box = QFrame()
+            toolbar_box = DoubleClickableFrame()
             toolbar_box.setObjectName("annotationToolbar")
+            toolbar_box.double_clicked.connect(self._toggle_maximize)
+            toolbar_box.setToolTip("Double-click top bar to toggle full screen")
+
             tb_layout = QHBoxLayout(toolbar_box)
             tb_layout.setContentsMargins(6, 4, 6, 4)
             tb_layout.setSpacing(6)
@@ -405,12 +684,27 @@ class ResizeImageDialog(QDialog):
             self.btn_tool_text = QToolButton()
             self.btn_tool_text.setText("🔤 Text")
             self.btn_tool_text.setCheckable(True)
-            self.btn_tool_text.setToolTip("Click on image to add custom text")
+            self.btn_tool_text.setToolTip("Click and drag rectangle on image to add custom text (Paint style)")
             self.btn_tool_text.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_TEXT))
             self.tool_group.addButton(self.btn_tool_text)
             tb_layout.addWidget(self.btn_tool_text)
 
-            tb_layout.addSpacing(8)
+            tb_layout.addSpacing(6)
+
+            # Font Size Selector for Text
+            lbl_font = QLabel("Font:")
+            lbl_font.setStyleSheet("color: #9cdcfe; font-weight: bold;")
+            tb_layout.addWidget(lbl_font)
+
+            self.spin_font_size = QSpinBox()
+            self.spin_font_size.setRange(8, 96)
+            self.spin_font_size.setValue(18)
+            self.spin_font_size.setSuffix(" pt")
+            self.spin_font_size.setToolTip("Font size for text overlay (8 to 96 pt)")
+            self.spin_font_size.valueChanged.connect(self._on_font_size_changed)
+            tb_layout.addWidget(self.spin_font_size)
+
+            tb_layout.addSpacing(6)
 
             # Color Swatches Palette
             lbl_color = QLabel("Color:")
@@ -447,7 +741,7 @@ class ResizeImageDialog(QDialog):
             self.btn_custom_color.clicked.connect(self._choose_custom_color)
             tb_layout.addWidget(self.btn_custom_color)
 
-            tb_layout.addSpacing(8)
+            tb_layout.addSpacing(6)
 
             # Stroke Width Selection
             lbl_width = QLabel("Line:")
@@ -478,6 +772,35 @@ class ResizeImageDialog(QDialog):
             stroke_grp.addButton(self.btn_stroke_med)
             stroke_grp.addButton(self.btn_stroke_thick)
 
+            tb_layout.addSpacing(6)
+
+            # Zoom In / Out / Reset Controls
+            lbl_zoom = QLabel("Zoom:")
+            lbl_zoom.setStyleSheet("color: #9cdcfe; font-weight: bold;")
+            tb_layout.addWidget(lbl_zoom)
+
+            self.btn_zoom_out = QToolButton()
+            self.btn_zoom_out.setText("➖")
+            self.btn_zoom_out.setToolTip("Zoom out (Ctrl+- or Ctrl+Wheel Down)")
+            self.btn_zoom_out.clicked.connect(self._on_zoom_out)
+            tb_layout.addWidget(self.btn_zoom_out)
+
+            self.lbl_zoom_val = QLabel("100%")
+            self.lbl_zoom_val.setStyleSheet("color: #cccccc; min-width: 36px; qproperty-alignment: AlignCenter;")
+            tb_layout.addWidget(self.lbl_zoom_val)
+
+            self.btn_zoom_in = QToolButton()
+            self.btn_zoom_in.setText("➕")
+            self.btn_zoom_in.setToolTip("Zoom in (Ctrl++ or Ctrl+Wheel Up)")
+            self.btn_zoom_in.clicked.connect(self._on_zoom_in)
+            tb_layout.addWidget(self.btn_zoom_in)
+
+            self.btn_zoom_reset = QToolButton()
+            self.btn_zoom_reset.setText("1:1")
+            self.btn_zoom_reset.setToolTip("Reset Zoom to 100% (Ctrl+0)")
+            self.btn_zoom_reset.clicked.connect(self._on_zoom_reset)
+            tb_layout.addWidget(self.btn_zoom_reset)
+
             tb_layout.addStretch()
 
             # Reversal / History Buttons
@@ -496,12 +819,23 @@ class ResizeImageDialog(QDialog):
             self.btn_reset.clicked.connect(self._on_reset)
             tb_layout.addWidget(self.btn_reset)
 
+            # Full Screen Maximize / Restore Button
+            self.btn_maximize = QPushButton("⛶ Maximize")
+            self.btn_maximize.setToolTip("Toggle full screen (F11 or double-click top bar)")
+            self.btn_maximize.clicked.connect(self._toggle_maximize)
+            tb_layout.addWidget(self.btn_maximize)
+
             main_layout.addWidget(toolbar_box)
 
-            # Keyboard shortcuts for undo/redo
+            # Keyboard shortcuts for undo/redo, zoom, and maximize
             QShortcut(QKeySequence("Ctrl+Z"), self, self._on_undo)
             QShortcut(QKeySequence("Ctrl+Y"), self, self._on_redo)
             QShortcut(QKeySequence("Ctrl+Shift+Z"), self, self._on_redo)
+            QShortcut(QKeySequence("Ctrl++"), self, self._on_zoom_in)
+            QShortcut(QKeySequence("Ctrl+="), self, self._on_zoom_in)
+            QShortcut(QKeySequence("Ctrl+-"), self, self._on_zoom_out)
+            QShortcut(QKeySequence("Ctrl+0"), self, self._on_zoom_reset)
+            QShortcut(QKeySequence("F11"), self, self._toggle_maximize)
 
         # 2. Main Body: Splitter with Canvas (Left) and Dimensions/Presets (Right)
         if self._image and not self._image.isNull():
@@ -510,6 +844,7 @@ class ResizeImageDialog(QDialog):
 
             # Left Canvas
             self.canvas = ImageAnnotationCanvas(self._image, self)
+            self.canvas.zoom_changed.connect(self._on_zoom_changed)
             body_splitter.addWidget(self.canvas)
 
             # Right Side Panel: Dimensions Form & Presets
@@ -575,7 +910,7 @@ class ResizeImageDialog(QDialog):
 
             side_layout.addStretch()
             body_splitter.addWidget(side_panel)
-            body_splitter.setSizes([630, 270])
+            body_splitter.setSizes([720, 270])
             main_layout.addWidget(body_splitter, 1)
 
         else:
@@ -655,6 +990,19 @@ class ResizeImageDialog(QDialog):
 
         apply_glow_to_buttons([self])
 
+    def _toggle_maximize(self) -> None:
+        """Toggles window between maximized (full screen) and normal restored geometry."""
+        if self.isMaximized():
+            self.showNormal()
+            if hasattr(self, "btn_maximize"):
+                self.btn_maximize.setText("⛶ Maximize")
+                self.btn_maximize.setToolTip("Maximize Image Editor to full screen (F11 or double-click top bar)")
+        else:
+            self.showMaximized()
+            if hasattr(self, "btn_maximize"):
+                self.btn_maximize.setText("❐ Restore")
+                self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
+
     def _set_canvas_tool(self, tool_name: str) -> None:
         if self.canvas:
             self.canvas.set_tool(tool_name)
@@ -674,6 +1022,27 @@ class ResizeImageDialog(QDialog):
     def _set_stroke_width(self, width: int) -> None:
         if self.canvas:
             self.canvas.set_stroke_width(width)
+
+    def _on_font_size_changed(self, size: int) -> None:
+        if self.canvas:
+            self.canvas.set_font_size(size)
+
+    def _on_zoom_in(self) -> None:
+        if self.canvas:
+            self.canvas.zoom_in()
+
+    def _on_zoom_out(self) -> None:
+        if self.canvas:
+            self.canvas.zoom_out()
+
+    def _on_zoom_reset(self) -> None:
+        if self.canvas:
+            self.canvas.reset_zoom()
+
+    def _on_zoom_changed(self, factor: float) -> None:
+        pct = int(round(factor * 100))
+        if hasattr(self, "lbl_zoom_val"):
+            self.lbl_zoom_val.setText(f"{pct}%")
 
     def _on_undo(self) -> None:
         if self.canvas:
@@ -798,3 +1167,7 @@ class ResizeImageDialog(QDialog):
     def get_annotated_image(self) -> Optional[QImage]:
         """Returns the modified QImage with baked-in annotations, or None."""
         return self.canvas.get_annotated_image() if self.canvas else None
+
+
+# Backward-compatible alias for modern naming
+ImageEditorDialog = ResizeImageDialog

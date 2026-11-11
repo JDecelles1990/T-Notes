@@ -1,7 +1,7 @@
 """Unit and integration tests for image resizing in normal and split views."""
 
 from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, Qt
-from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QTextDocument
+from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QTextDocument, QWheelEvent
 from PySide6.QtWidgets import QApplication, QDialog
 import pytest
 
@@ -14,7 +14,11 @@ from src.repositories.template_repository import TemplateRepository
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
-from src.ui.dialogs.resize_image_dialog import ImageAnnotationCanvas, ResizeImageDialog
+from src.ui.dialogs.resize_image_dialog import (
+    ImageAnnotationCanvas,
+    ResizeImageDialog,
+    TextAnnotationDialog,
+)
 from src.ui.main_window import TechPadMainWindow
 
 
@@ -283,8 +287,8 @@ def test_image_annotation_canvas_tools_and_history(qapp):
     canvas.set_color(QColor("#ffcc00"))  # Yellow
     canvas.add_text_at(QPoint(120, 40), "ALERT")
     assert canvas.was_annotated()
-    # Surrounding pixel should have text or shadow color
-    assert canvas.get_annotated_image().pixelColor(120, 40) != QColor(255, 255, 255)
+    # Glyphs render inside the text bounding box
+    assert any(canvas.get_annotated_image().pixelColor(x, y) != QColor(255, 255, 255) for x in range(120, 160) for y in range(40, 70))
 
     # 7. Test Reset Image back to pristine state
     canvas.reset_image()
@@ -421,5 +425,158 @@ def test_editor_double_click_opens_resize_dialog_and_applies_markup(qapp, servic
             pass
         qapp.removeEventFilter(main_window)
         main_window.deleteLater()
+
+
+def test_image_editor_zoom_and_pan(qapp):
+    """Verifies image zoom in, zoom out, reset, and Ctrl+Wheel / toolbar zoom controls."""
+    img = QImage(200, 200, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(400, 400)
+
+    # Initial zoom is 1.0 (100%)
+    assert canvas.get_zoom_factor() == 1.0
+
+    # Zoom in
+    canvas.zoom_in()
+    assert canvas.get_zoom_factor() == 1.25
+
+    # Zoom in again
+    canvas.zoom_in()
+    assert round(canvas.get_zoom_factor(), 3) == 1.562
+
+    # Zoom out
+    canvas.zoom_out()
+    assert canvas.get_zoom_factor() == 1.25
+
+    # Reset zoom
+    canvas.reset_zoom()
+    assert canvas.get_zoom_factor() == 1.0
+
+    # Ctrl+Mouse Wheel Zoom In
+    wheel_in = QWheelEvent(
+        QPointF(200, 200),
+        QPointF(200, 200),
+        QPoint(0, 0),
+        QPoint(0, 120),
+        Qt.NoButton,
+        Qt.ControlModifier,
+        Qt.ScrollUpdate,
+        False,
+    )
+    canvas.wheelEvent(wheel_in)
+    assert canvas.get_zoom_factor() == 1.25
+
+    # Ctrl+Mouse Wheel Zoom Out
+    wheel_out = QWheelEvent(
+        QPointF(200, 200),
+        QPointF(200, 200),
+        QPoint(0, 0),
+        QPoint(0, -120),
+        Qt.NoButton,
+        Qt.ControlModifier,
+        Qt.ScrollUpdate,
+        False,
+    )
+    canvas.wheelEvent(wheel_out)
+    assert canvas.get_zoom_factor() == 1.0
+
+    # Test dialog zoom toolbar integration
+    dlg = ResizeImageDialog(
+        current_width=200,
+        current_height=200,
+        original_width=200,
+        original_height=200,
+        image=img,
+    )
+    try:
+        assert dlg.lbl_zoom_val.text() == "100%"
+        dlg.btn_zoom_in.click()
+        assert dlg.canvas.get_zoom_factor() == 1.25
+        assert dlg.lbl_zoom_val.text() == "125%"
+
+        dlg.btn_zoom_out.click()
+        assert dlg.canvas.get_zoom_factor() == 1.0
+        assert dlg.lbl_zoom_val.text() == "100%"
+
+        dlg.btn_zoom_reset.click()
+        assert dlg.canvas.get_zoom_factor() == 1.0
+    finally:
+        dlg.deleteLater()
+
+
+def test_image_editor_window_title_and_maximize(qapp):
+    """Verifies that the dialog is named 'Image Editor' and can maximize to full screen."""
+    img = QImage(200, 100, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFF445566)
+
+    dlg = ResizeImageDialog(
+        current_width=200,
+        current_height=100,
+        original_width=200,
+        original_height=100,
+        image=img,
+    )
+    try:
+        # Verify Window Title is 'Image Editor'
+        assert dlg.windowTitle() == "Image Editor"
+
+        # Verify Window Flags include MinMaxButtonsHint for OS title bar double-click maximize
+        flags = dlg.windowFlags()
+        assert bool(flags & Qt.WindowMinMaxButtonsHint)
+
+        # Test toggle maximize to full screen
+        assert not dlg.isMaximized()
+        dlg._toggle_maximize()
+        assert dlg.isMaximized()
+        assert dlg.btn_maximize.text() == "❐ Restore"
+
+        # Test toggle restore back to normal size
+        dlg._toggle_maximize()
+        assert not dlg.isMaximized()
+        assert dlg.btn_maximize.text() == "⛶ Maximize"
+    finally:
+        dlg.deleteLater()
+
+
+def test_text_annotation_rectangle_and_size_like_paint(qapp):
+    """Verifies Paint-style text placement inside a bounding rectangle with custom font size and optional border."""
+    img = QImage(400, 300, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(400, 300)
+
+    # 1. Custom font size selection
+    canvas.set_font_size(24)
+    assert canvas.get_font_size() == 24
+
+    # 2. Add text within explicit bounding rectangle with callout border
+    target_box = QRect(40, 40, 220, 80)
+    canvas.add_text_in_rect(target_box, "SERVER ERROR\nCHECK IIS", font_size=24, draw_border=True)
+    assert canvas.was_annotated()
+
+    # Pixels inside target rectangle must be colored (border and text)
+    annotated = canvas.get_annotated_image()
+    assert any(annotated.pixelColor(x, y) != QColor(255, 255, 255) for x in range(40, 260) for y in range(40, 120))
+
+    # 3. Test TextAnnotationDialog
+    text_dlg = TextAnnotationDialog(target_box, font_size=20, color=QColor("#ff3b30"))
+    try:
+        assert text_dlg.windowTitle() == "Add Text to Image"
+        assert text_dlg.get_font_size() == 20
+        text_dlg.spin_size.setValue(32)
+        assert text_dlg.get_font_size() == 32
+
+        assert not text_dlg.should_draw_border()
+        text_dlg.chk_border.setChecked(True)
+        assert text_dlg.should_draw_border()
+
+        text_dlg.text_edit.setPlainText("Test callout content")
+        assert text_dlg.get_text() == "Test callout content"
+    finally:
+        text_dlg.deleteLater()
+
 
 
