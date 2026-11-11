@@ -103,6 +103,23 @@ class SettingsDialog(QDialog):
         self.chk_smart_restore.setChecked(self._settings.get("smart_restore_enabled", "true") == "true")
         form.addRow("Session Recovery:", self.chk_smart_restore)
 
+        # 8. Technician Name & Email (for summaries & sign-offs)
+        self.txt_technician_name = QLineEdit(self._settings.get("technician_name", ""))
+        self.txt_technician_name.setPlaceholderText("e.g. Jonathan Decelles")
+        form.addRow("Default Name:", self.txt_technician_name)
+
+        self.txt_technician_email = QLineEdit(self._settings.get("technician_email", ""))
+        self.txt_technician_email.setPlaceholderText("e.g. Jonathan_Decelles1990@hotmail.com")
+        form.addRow("Default Email:", self.txt_technician_email)
+
+        # 9. Default Summary Language
+        self.combo_default_language = QComboBox()
+        self.combo_default_language.addItem("English (EN)", "en")
+        self.combo_default_language.addItem("Français (FR)", "fr")
+        curr_lang = self._settings.get("summary_default_language", "en")
+        self.combo_default_language.setCurrentIndex(1 if curr_lang == "fr" else 0)
+        form.addRow("Default Summary Language:", self.combo_default_language)
+
         layout.addLayout(form)
 
         # Backup & Export Group
@@ -227,4 +244,7 @@ class SettingsDialog(QDialog):
             "window_opacity": str(self.spin_opacity.value()),
             "autostart_enabled": "true" if self.chk_autostart.isChecked() else "false",
             "smart_restore_enabled": "true" if self.chk_smart_restore.isChecked() else "false",
+            "technician_name": self.txt_technician_name.text().strip(),
+            "technician_email": self.txt_technician_email.text().strip(),
+            "summary_default_language": self.combo_default_language.currentData() or "en",
         }

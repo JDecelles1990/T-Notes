@@ -30,6 +30,9 @@ class TechPadToolBar(QToolBar):
     copy_formatted_requested = Signal() # Emits when rich formatted copy requested
     export_note_requested = Signal()
     export_file_requested = Signal()     # Emits when 'Export Note' to file is clicked
+    copy_client_email_requested = Signal(str)  # Emits language ('en' or 'fr')
+    copy_psa_note_requested = Signal(str)      # Emits language ('en' or 'fr')
+    summary_dialog_requested = Signal()        # Emits to open interactive summary dialog
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
     split_view_requested = Signal()     # Emits when split view toggle clicked
@@ -269,6 +272,35 @@ class TechPadToolBar(QToolBar):
         self.act_export_file.setToolTip("Export plain text note to T-Notes folder without formatting or images (overwrites within same hour)")
         self.act_export_file.triggered.connect(self.export_file_requested.emit)
         copy_menu.addAction(self.act_export_file)
+
+        copy_menu.addSeparator()
+
+        self.act_copy_email_en = QAction("✉️ Copy Client Email (EN)", self.secondary_toolbar)
+        self.act_copy_email_en.setToolTip("Generates polite client resolution email in English")
+        self.act_copy_email_en.triggered.connect(lambda: self.copy_client_email_requested.emit("en"))
+        copy_menu.addAction(self.act_copy_email_en)
+
+        self.act_copy_email_fr = QAction("✉️ Copier le courriel client (FR)", self.secondary_toolbar)
+        self.act_copy_email_fr.setToolTip("Génère un courriel de résolution poli en français pour le client")
+        self.act_copy_email_fr.triggered.connect(lambda: self.copy_client_email_requested.emit("fr"))
+        copy_menu.addAction(self.act_copy_email_fr)
+
+        self.act_copy_psa_en = QAction("🏢 Copy PSA Note (EN)", self.secondary_toolbar)
+        self.act_copy_psa_en.setToolTip("Generates structured internal PSA work note in English with logged time")
+        self.act_copy_psa_en.triggered.connect(lambda: self.copy_psa_note_requested.emit("en"))
+        copy_menu.addAction(self.act_copy_psa_en)
+
+        self.act_copy_psa_fr = QAction("🏢 Copier la note PSA (FR)", self.secondary_toolbar)
+        self.act_copy_psa_fr.setToolTip("Génère une note interne PSA structurée en français avec temps consigné")
+        self.act_copy_psa_fr.triggered.connect(lambda: self.copy_psa_note_requested.emit("fr"))
+        copy_menu.addAction(self.act_copy_psa_fr)
+
+        copy_menu.addSeparator()
+
+        self.act_summary_dialog = QAction("✨ Format Ticket Summary... / Résumé...", self.secondary_toolbar)
+        self.act_summary_dialog.setToolTip("Open interactive bilingual summary formatter dialog")
+        self.act_summary_dialog.triggered.connect(self.summary_dialog_requested.emit)
+        copy_menu.addAction(self.act_summary_dialog)
 
         self.btn_copy_note.setMenu(copy_menu)
         self.btn_copy_note.clicked.connect(self.copy_formatted_requested.emit)

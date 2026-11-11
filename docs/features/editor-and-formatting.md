@@ -256,12 +256,55 @@ When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text 
 
 ---
 
-## 7. Image Context Menu: Copy & Save As...
+## 7. Image Manipulation & Annotation Pipeline: Resize, Draw, Shapes, Text & Colors
+
+Double-clicking any embedded screenshot or image (or choosing **📐 Resize & Annotate Image...** from the right-click context menu) launches the modal `ResizeImageDialog`.
+
+### 7.1 Interactive Visual Annotation Canvas (`ImageAnnotationCanvas`)
+Technicians can annotate, call out, and mark up screenshots directly within T-Notes without needing an external image editor:
+- **✏️ Freehand Pen (`TOOL_PEN`):** Freeform pen drawing with anti-aliasing and smooth joint caps for circling anomalous log lines or diagram components.
+- **⭕ Circle / Ellipse Callout (`TOOL_CIRCLE`):** Interactive click-and-drag ellipse tool with real-time drag preview for highlighting buttons, badges, or error messages.
+- **🔲 Rectangle Callout Box (`TOOL_RECTANGLE`):** Interactive click-and-drag rectangle box with real-time drag preview for bounding text blocks or IP configurations.
+- **🔤 Text Overlay with High-Contrast Shadow (`TOOL_TEXT`):** Clicking anywhere on the canvas opens a text prompt dialog. Rendered text includes an automated 8-directional drop shadow (dark perimeter outline) to guarantee legibility over both dark backgrounds (terminal consoles) and bright backgrounds (Word/Excel dialogs).
+- **🎨 Color Palette & Custom Color Picker:** Instant selection of high-visibility callout colors:
+  - 🔴 Red (`#ff3b30`)
+  - 🟡 Yellow (`#ffcc00`)
+  - 🟢 Green (`#34c759`)
+  - 🔵 Cyan (`#00e5ff`)
+  - ⚪ White (`#ffffff`)
+  - ⚫ Black (`#000000`)
+  - Dedicated **🎨 More...** button opening `QColorDialog` for full 24-bit custom color selection.
+- **Line Stroke Width Selector:** Switch line thickness between `2px` (fine detail), `4px` (standard callout, default), and `8px` (bold highlight).
+
+### 7.2 Reversible History Stack (Undo, Redo & Reset)
+All markup actions can be completely reversed:
+- **↺ Undo (`Ctrl+Z`):** Steps backward through the 30-level annotation snapshot stack, reverting image state.
+- **↻ Redo (`Ctrl+Y` / `Ctrl+Shift+Z`):** Re-applies undone annotation operations.
+- **🔄 Reset Image:** Restores the image back to its pristine base state when the dialog opened, while still recording an undo snapshot in case the reset was accidental.
+- **Cancel:** Dismissing the dialog with `Cancel` or `Esc` discards all in-progress markup without touching the document.
+
+### 7.3 Proportional Resizing & Aspect Ratio Lock
+The right side panel integrates dimension controls:
+- **Spinboxes:** Direct numerical width and height adjustments in pixels.
+- **🔗 Lock Aspect Ratio:** Preserves proportional scaling when enabled (default). Unchecking allows independent horizontal/vertical resizing.
+- **Quick Presets:** Instant scaling buttons for `25%`, `50%`, `75%`, and `100%` (original size).
+- **Fit to Pane Width:** Automatically scales the image to the editor's current pane width (respecting split-view side pane boundaries).
+
+### 7.4 Auto-Save & Storage Pipeline Integration
+When the dialog is accepted (`OK`):
+1. The modified `QImage` is compressed to JPEG (quality 85 per `AGENTS.md`) using `ImageService.compress_qimage_to_jpeg()`.
+2. The JPEG bytes are stored in the editor's `in_memory_images` cache under the image UUID key.
+3. The `QTextDocument` resource cache is refreshed (`addResource`) so the document repaints instantaneously.
+4. Auto-save signal `content_modified(scratchpad_id)` is emitted, scheduling SQLite persistence to the `scratchpad_images` table during the debounced write cycle.
+
+### 7.5 Image Context Menu: Copy & Save As...
 
 When right-clicking on any embedded screenshot or image in `TechPadEditor`:
+- **📐 Resize & Annotate Image...:** Launches the full annotation and resize modal dialog.
+- **📏 Quick Resize Submenu:** Offers one-click presets (`Fit to Pane Width`, `100%`, `75%`, `50%`, `25%`).
 - **📋 Copy Image:** Copies the full-resolution bitmap directly into the system clipboard (`QApplication.clipboard().setImage`), ready to paste (`Ctrl+V`) into external applications such as Slack, Microsoft Teams, Outlook, Word, or Jira.
 - **💾 Save Image As...:** Opens a file dialog allowing export to `.png` (lossless) or `.jpg` (raw original bytes without recompression artifacts).
-- Both actions display instantaneous feedback in the window status bar (`✓ Copied image to clipboard!` / `✓ Saved image to <path>`).
+- All actions display instantaneous feedback in the window status bar (`✓ Copied image to clipboard!` / `✓ Saved image to <path>`).
 
 ---
 
@@ -410,3 +453,27 @@ When a template is selected from the `📋 Template` dropdown menu:
 3. Any embedded Base64 image data URIs are automatically unpacked into unique JPEG resources (`image://local/<uuid>.jpg`), registered in the `QTextDocument` resource cache, and added to the editor's `in_memory_images`.
 4. The rich content is inserted directly at the active cursor position (`cursor.insertHtml(...)`), preserving existing ticket context.
 5. Auto-save is triggered via `content_modified(scratchpad_id)`, persisting all newly unpacked images to `scratchpad_images` in SQLite.
+
+---
+
+## 12. Bilingual Client & PSA Summary Formatter (English & Français)
+
+The `📋 Copy Note` tool button on the secondary toolbar integrates a comprehensive bilingual summary formatting suite:
+
+### 12.1 One-Click Toolbar Actions
+Under the `📋 Copy Note` dropdown menu, technicians can instantly generate and copy clean, targeted summaries:
+- **`✉️ Copy Client Email (EN)`**: Generates a polite, clear client resolution email in English with greetings, issue description, actions taken, next steps, and sign-off.
+- **`✉️ Copier le courriel client (FR)`**: Generates an equivalent client resolution email in French with standardized courteous phrasing (`Bonjour...`, `Actions effectuées et résolution...`, `Cordialement...`).
+- **`🏢 Copy PSA Note (EN)`**: Formats an internal ticketing work note (ConnectWise, ServiceNow, Jira, HaloPSA) with ticket header, billable time (rounded up to 15-minute / 0.25h increments), issue, chronological troubleshooting, root cause, and resolution.
+- **`🏢 Copier la note PSA (FR)`**: Formats an internal French PSA work note with standard French headings (`BILLET`, `PROBLÈME SIGNALÉ`, `DÉPANNAGE / TRAVAIL EFFECTUÉ`, `CAUSE RACINE`, `RÉSOLUTION`).
+
+### 12.2 Interactive Summary Formatter Dialog (`SummaryFormatterDialog`)
+Clicking **`✨ Format Ticket Summary... / Résumé...`** opens a two-column modal workspace:
+- **Language Switcher**: Instant `🇬🇧 English` | `🇫🇷 Français` toggle dynamically updates all dialog field labels, preset options, and live preview text in real time.
+- **Target Presets**:
+  1. *Client Resolution Email / Courriel de résolution client*: Customer-facing message omitting internal-only diagnostics.
+  2. *Internal PSA Note / Note interne PSA*: Standardized engineering work note with logged billable time.
+  3. *Escalation Handover / Transfert d'escalade*: Technical handover summary for Tier 2/3 and Engineering escalation.
+- **Smart Bilingual Section Detection**: Automatically extracts content by parsing note HTML and markdown across English and French keywords (`Issue` / `Problème`, `Troubleshooting` / `Dépannage`, `Resolution` / `Résolution`, `Root Cause` / `Cause racine`, `Next Steps` / `Prochaines étapes`) and interactive checklist items (`- [x]`).
+- **Output Formats**: Single-click buttons for copying plain text or rich HTML formatting.
+- **Preferences Persistence**: Default Name (e.g., `Jonathan Decelles`), Default Email (e.g., `Jonathan_Decelles1990@hotmail.com`), and preferred default summary language (`en` or `fr`) are persisted in `app_settings` via `SessionService` and configurable in both `SettingsDialog` and `SummaryFormatterDialog`. These fields automatically populate the technician signature block at the end of client emails and PSA ticket notes.

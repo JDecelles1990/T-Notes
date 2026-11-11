@@ -289,6 +289,11 @@ class ScratchpadService:
             return ""
 
         text = html
+
+        # Remove head and style blocks completely (Qt rich text CSS rules)
+        text = re.sub(r'<head[^>]*>.*?</head>', '', text, flags=re.IGNORECASE | re.DOTALL)
+        text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.IGNORECASE | re.DOTALL)
+
         # Replace line breaks and paragraphs
         text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
         text = re.sub(r'</p>', '\n', text, flags=re.IGNORECASE)

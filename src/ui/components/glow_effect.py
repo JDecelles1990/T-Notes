@@ -128,8 +128,10 @@ class GlowAnimator(QObject):
 
     # -- events ----------------------------------------------------------------
     def eventFilter(self, watched, event) -> bool:  # noqa: N802 (Qt API)
+        button = getattr(self, "_button", None)
+        if not button:
+            return False
         etype = event.type()
-        button = self._button
         if etype == QEvent.Enter:
             if button.isEnabled():
                 if self._hue.state() != QVariantAnimation.Running:

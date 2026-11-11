@@ -2164,3 +2164,45 @@ def test_history_pane_shortcut_is_alt_h(main_window):
     assert "Ctrl+H" in shortcut_map
     assert "Ctrl+F" in shortcut_map
 
+
+def test_main_window_summary_copy_actions(main_window, qapp, monkeypatch):
+    """Verifies that 1-click bilingual client email and PSA note copy actions format properly."""
+    from PySide6.QtWidgets import QApplication
+
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    editor.setPlainText("Configured active directory domain trust.")
+
+    captured_mimes = []
+    monkeypatch.setattr(QApplication.clipboard(), "setMimeData", lambda md: captured_mimes.append(md))
+
+    # 1. 1-Click Client Email EN
+    main_window._on_copy_client_email(lang="en")
+    assert len(captured_mimes) == 1
+    clip_text = captured_mimes[-1].text()
+    assert "Hello " in clip_text
+    assert "Regarding Ticket" in clip_text
+    assert "✓" in main_window.status_bar.currentMessage()
+
+    # 2. 1-Click Client Email FR
+    main_window._on_copy_client_email(lang="fr")
+    assert len(captured_mimes) == 2
+    clip_text = captured_mimes[-1].text()
+    assert "Bonjour " in clip_text
+    assert "Concernant le billet" in clip_text
+
+    # 3. 1-Click PSA Note EN
+    main_window._on_copy_psa_note(lang="en")
+    assert len(captured_mimes) == 3
+    clip_text = captured_mimes[-1].text()
+    assert "=== TICKET:" in clip_text
+    assert "WORK PERFORMED / TROUBLESHOOTING:" in clip_text
+
+    # 4. 1-Click PSA Note FR
+    main_window._on_copy_psa_note(lang="fr")
+    assert len(captured_mimes) == 4
+    clip_text = captured_mimes[-1].text()
+    assert "=== BILLET :" in clip_text
+    assert "DÉPANNAGE / TRAVAIL EFFECTUÉ :" in clip_text
+
+

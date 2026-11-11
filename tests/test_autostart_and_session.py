@@ -74,3 +74,10 @@ def test_settings_dialog_autostart_and_smart_restore(qapp):
     assert saved["autostart_enabled"] == "false"
     assert saved["smart_restore_enabled"] == "false"
 
+    # Test default technician name and email
+    dlg.txt_technician_name.setText("Jonathan Decelles")
+    dlg.txt_technician_email.setText("Jonathan_Decelles1990@hotmail.com")
+    updated = dlg.get_settings()
+    assert updated["technician_name"] == "Jonathan Decelles"
+    assert updated["technician_email"] == "Jonathan_Decelles1990@hotmail.com"
+

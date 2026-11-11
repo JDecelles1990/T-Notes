@@ -126,11 +126,12 @@ When users copy highlighted content containing both text, formatting, colors, an
 2. **Context Menu Quick Resize (`📏 Quick Resize`):**
    - **Fit to Pane Width:** Computes available pane width (`viewport().width() - 24`). In Split View sidebar, this scales the image down to fit the side panel without horizontal scrollbars; in normal view, it scales to fit the main window.
    - **Presets:** `100% (Original Size)`, `75%`, `50%`, `25%`.
-3. **Custom Resize Dialog (`📐 Custom Resize...` / Double-Click):**
-   - Double-clicking an image opens `ResizeImageDialog`.
-   - Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes).
+3. **Resize & Visual Annotation Dialog (`📐 Resize & Annotate Image...` / Double-Click):**
+   - Double-clicking an image opens the modal `ResizeImageDialog`.
+   - Technicians can enter exact pixel dimensions (`Width` and `Height` spinboxes) or select presets.
    - "🔗 Lock aspect ratio" checkbox (checked by default) dynamically syncs proportional height/width.
    - Quick preset buttons (`25%`, `50%`, `75%`, `100%`, `Fit to Pane Width`).
+   - Integrated `ImageAnnotationCanvas` provides freehand drawing (`✏️`), circle callouts (`⭕`), rectangle callouts (`🔲`), and text overlays (`🔤`) with full color palette selection and reversible 30-level history (`↺ Undo`, `↻ Redo`, `🔄 Reset Image`).
 4. **Keyboard Deletion:**
    - Pressing `Delete` or `Backspace` while an image is selected immediately deletes the screenshot from the document.
 
@@ -138,6 +139,16 @@ When users copy highlighted content containing both text, formatting, colors, an
 - Resized dimensions are serialized natively by Qt as HTML attributes (`<img src="image://local/<uuid>.jpg" width="W" height="H" />`).
 - Re-opening tickets, switching tabs, and restoring session states preserves exact dimensions.
 - Copying rich notes (`📋 Copy Note`) embeds Base64 data with matching `width` and `height` attributes so external applications render scaled images.
+
+### 7.3 Visual Annotation & Markup Pipeline
+- **Canvas Viewport Mapping:** Mouse coordinates are normalized to the underlying source image dimensions using aspect-ratio-preserving bounds calculation, guaranteeing accurate pixel placement regardless of dialog dimensions.
+- **ARGB32 Premultiplied Rendering:** Interactive drawings operate on an in-memory ARGB32 Premultiplied copy with Qt anti-aliasing.
+- **Text Shading:** Rendered text includes an 8-way drop shadow in semi-transparent black (`rgba(0, 0, 0, 0.86)`) behind the colored text to ensure legibility on both dark consoles and white documents.
+- **Storage Synchronization:** When annotations are confirmed via `OK`:
+  1. The annotated image is compressed into JPEG (85% quality per `AGENTS.md`) using `ImageService.compress_qimage_to_jpeg()`.
+  2. The updated JPEG bytes are stored in `editor.in_memory_images[raw_name]`.
+  3. The `QTextDocument` resource cache is refreshed under `image://local/<raw_name>` and `<raw_name>`.
+  4. `editor.content_modified.emit(scratchpad_id)` marks the note dirty for background SQLite persistence during debounced auto-save.
 
 ---
 

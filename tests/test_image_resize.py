@@ -1,7 +1,7 @@
 """Unit and integration tests for image resizing in normal and split views."""
 
-from PySide6.QtCore import QPoint, QRect, Qt
-from PySide6.QtGui import QImage, QKeyEvent
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, Qt
+from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QTextDocument
 from PySide6.QtWidgets import QApplication, QDialog
 import pytest
 
@@ -14,7 +14,7 @@ from src.repositories.template_repository import TemplateRepository
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
-from src.ui.dialogs.resize_image_dialog import ResizeImageDialog
+from src.ui.dialogs.resize_image_dialog import ImageAnnotationCanvas, ResizeImageDialog
 from src.ui.main_window import TechPadMainWindow
 
 
@@ -200,4 +200,226 @@ def test_editor_image_resize_in_split_view(qapp, services):
             pass
         qapp.removeEventFilter(main_window)
         main_window.deleteLater()
+
+
+def test_image_annotation_canvas_tools_and_history(qapp):
+    """Verifies draw, circle, rectangle, text tools, color/stroke customization, and undo/redo/reset."""
+    # Create a 200x200 solid white test image
+    base_img = QImage(200, 200, QImage.Format_ARGB32_Premultiplied)
+    base_img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(base_img)
+    canvas.resize(400, 400)
+    rect = canvas.get_image_display_rect()
+    assert rect.isValid()
+
+    # Initial state
+    assert not canvas.was_annotated()
+    assert not canvas.can_undo()
+    assert not canvas.can_redo()
+
+    # Helper function to map image coordinates to canvas viewport
+    def to_vp(ix: int, iy: int) -> QPointF:
+        scale_x = rect.width() / 200.0
+        scale_y = rect.height() / 200.0
+        return QPointF(rect.x() + ix * scale_x, rect.y() + iy * scale_y)
+
+    def mouse_ev(ev_type, p: QPointF) -> QMouseEvent:
+        return QMouseEvent(ev_type, p, p, Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+
+    # 1. Test Freehand Pen drawing
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_PEN)
+    canvas.set_color(QColor("#ff3b30"))
+    canvas.set_stroke_width(4)
+
+    p1 = to_vp(50, 50)
+    p2 = to_vp(70, 70)
+    canvas.mousePressEvent(mouse_ev(QEvent.Type.MouseButtonPress, p1))
+    canvas.mouseMoveEvent(mouse_ev(QEvent.Type.MouseMove, p2))
+    canvas.mouseReleaseEvent(mouse_ev(QEvent.Type.MouseButtonRelease, p2))
+
+    assert canvas.was_annotated()
+    assert canvas.can_undo()
+    annotated_img = canvas.get_annotated_image()
+    # Check that pixel at (50, 50) or (70, 70) is no longer pure white
+    assert annotated_img.pixelColor(50, 50) != QColor(255, 255, 255)
+
+    # 2. Test Undo
+    canvas.undo()
+    assert not canvas.was_annotated()
+    assert canvas.can_redo()
+    assert canvas.get_annotated_image().pixelColor(50, 50) == QColor(255, 255, 255)
+
+    # 3. Test Redo
+    canvas.redo()
+    assert canvas.was_annotated()
+    assert canvas.get_annotated_image().pixelColor(50, 50) != QColor(255, 255, 255)
+
+    # 4. Test Rectangle tool
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_RECTANGLE)
+    canvas.set_color(QColor("#34c759"))  # Green
+    canvas.set_stroke_width(2)
+
+    r_start = to_vp(10, 10)
+    r_end = to_vp(60, 60)
+    canvas.mousePressEvent(mouse_ev(QEvent.Type.MouseButtonPress, r_start))
+    canvas.mouseMoveEvent(mouse_ev(QEvent.Type.MouseMove, r_end))
+    canvas.mouseReleaseEvent(mouse_ev(QEvent.Type.MouseButtonRelease, r_end))
+    # Border of rectangle should now be colored
+    assert canvas.get_annotated_image().pixelColor(10, 10) != QColor(255, 255, 255)
+
+    # 5. Test Circle tool
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_CIRCLE)
+    canvas.set_color(QColor("#00e5ff"))  # Cyan
+    c_start = to_vp(100, 100)
+    c_end = to_vp(180, 180)
+    canvas.mousePressEvent(mouse_ev(QEvent.Type.MouseButtonPress, c_start))
+    canvas.mouseMoveEvent(mouse_ev(QEvent.Type.MouseMove, c_end))
+    canvas.mouseReleaseEvent(mouse_ev(QEvent.Type.MouseButtonRelease, c_end))
+    assert canvas.was_annotated()
+
+    # 6. Test Text tool (programmatic text placement)
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_TEXT)
+    canvas.set_color(QColor("#ffcc00"))  # Yellow
+    canvas.add_text_at(QPoint(120, 40), "ALERT")
+    assert canvas.was_annotated()
+    # Surrounding pixel should have text or shadow color
+    assert canvas.get_annotated_image().pixelColor(120, 40) != QColor(255, 255, 255)
+
+    # 7. Test Reset Image back to pristine state
+    canvas.reset_image()
+    assert not canvas.was_annotated()
+    # Image should be back to all white
+    assert canvas.get_annotated_image().pixelColor(50, 50) == QColor(255, 255, 255)
+    assert canvas.get_annotated_image().pixelColor(10, 10) == QColor(255, 255, 255)
+
+    # Undo reset should restore all annotations
+    canvas.undo()
+    assert canvas.was_annotated()
+    assert canvas.get_annotated_image().pixelColor(50, 50) != QColor(255, 255, 255)
+
+
+def test_resize_image_dialog_with_annotation_controls(qapp):
+    """Verifies that ResizeImageDialog integrates markup toolbar, tool selection, swatches, and dimensions."""
+    img = QImage(300, 200, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    dlg = ResizeImageDialog(
+        current_width=300,
+        current_height=200,
+        original_width=300,
+        original_height=200,
+        image=img,
+    )
+
+    try:
+        assert dlg.canvas is not None
+        assert not dlg.was_image_annotated()
+
+        # Tool buttons switch tool on canvas
+        dlg.btn_tool_circle.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_CIRCLE
+
+        dlg.btn_tool_rect.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_RECTANGLE
+
+        dlg.btn_tool_pen.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_PEN
+
+        dlg.btn_tool_text.click()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_TEXT
+
+        # Stroke width buttons
+        dlg.btn_stroke_thin.click()
+        assert dlg.canvas._stroke_width == 2
+
+        dlg.btn_stroke_thick.click()
+        assert dlg.canvas._stroke_width == 8
+
+        # Annotate via canvas helper
+        dlg.canvas.add_text_at(QPoint(50, 50), "NOTE")
+        assert dlg.was_image_annotated()
+        annotated = dlg.get_annotated_image()
+        assert annotated is not None and not annotated.isNull()
+
+        # Undo via dialog button
+        dlg.btn_undo.click()
+        assert not dlg.was_image_annotated()
+
+        # Redo via dialog button
+        dlg.btn_redo.click()
+        assert dlg.was_image_annotated()
+
+        # Reset via dialog button
+        dlg.btn_reset.click()
+        assert not dlg.was_image_annotated()
+
+    finally:
+        dlg.deleteLater()
+
+
+def test_editor_double_click_opens_resize_dialog_and_applies_markup(qapp, services):
+    """Verifies that double-clicking an image in TechPadEditor opens the dialog and applies markup and dimensions."""
+    scratch_service, img_service, session_service = services
+    main_window = TechPadMainWindow(scratch_service, img_service, session_service)
+
+    try:
+        editor = main_window.tab_widget.get_current_editor()
+        assert editor is not None
+
+        # Insert a 400x200 test image
+        img = QImage(400, 200, QImage.Format_RGB32)
+        img.fill(0xFF336699)
+        editor.insert_embedded_image(img)
+
+        info = editor._get_image_info_at_doc_pos(0)
+        assert info is not None
+        raw_name = info["name"].replace("image://local/", "").split("/")[-1]
+
+        # Prepare a marked-up QImage
+        annotated_img = QImage(400, 200, QImage.Format_RGB32)
+        annotated_img.fill(0xFFFF0000)  # Red filled
+
+        class MockAnnotateDialog:
+            def __init__(self, *args, **kwargs):
+                pass
+            def exec(self):
+                return QDialog.Accepted
+            def was_image_annotated(self):
+                return True
+            def get_annotated_image(self):
+                return annotated_img
+            def get_dimensions(self):
+                return (350, 175)
+
+        import src.ui.components.editor as editor_mod
+        orig_dlg = editor_mod.ResizeImageDialog
+        editor_mod.ResizeImageDialog = MockAnnotateDialog
+        try:
+            editor._open_resize_dialog(info)
+
+            # Check that in_memory_images contains updated JPEG bytes
+            assert raw_name in editor.in_memory_images
+            assert len(editor.in_memory_images[raw_name]) > 0
+
+            # Check dimensions updated to (350, 175)
+            info_after = editor._get_image_info_at_doc_pos(0)
+            assert info_after["current_width"] == 350
+            assert info_after["current_height"] == 175
+
+            # Check QTextDocument resource was updated with annotated image
+            res = editor.document().resource(QTextDocument.ImageResource, info["name"])
+            assert isinstance(res, QImage) and not res.isNull()
+            assert res.pixelColor(10, 10) == QColor(255, 0, 0)
+        finally:
+            editor_mod.ResizeImageDialog = orig_dlg
+
+    finally:
+        try:
+            main_window.quit_application()
+        except Exception:
+            pass
+        qapp.removeEventFilter(main_window)
+        main_window.deleteLater()
+
 

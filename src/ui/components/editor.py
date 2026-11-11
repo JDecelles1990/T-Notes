@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 from typing import Dict, Optional, Tuple
-from PySide6.QtCore import QBuffer, QEvent, QIODevice, QMimeData, QPoint, QRect, Qt, QUrl, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QEvent, QIODevice, QMimeData, QPoint, QRect, Qt, QUrl, Signal
 from PySide6.QtGui import (
     QColor,
     QDesktopServices,
@@ -688,8 +688,41 @@ class TechPadEditor(QTextEdit):
             if hasattr(parent_win, "status_bar"):
                 parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
 
+    def _update_annotated_image(self, info: dict, new_qimage: QImage) -> None:
+        """Updates the embedded image resource, in-memory cache, and document layout after annotation."""
+        raw_name = info["name"].replace(LOCAL_IMAGE_URL_PREFIX, "").split("/")[-1]
+
+        # Compress the annotated QImage to JPEG (quality 82-85 per AGENTS.md)
+        if self.image_service:
+            jpeg_bytes = self.image_service.compress_qimage_to_jpeg(new_qimage)
+        else:
+            byte_array = QByteArray()
+            buffer = QBuffer(byte_array)
+            buffer.open(QIODevice.WriteOnly)
+            new_qimage.save(buffer, "JPEG", 85)
+            jpeg_bytes = bytes(byte_array.data())
+
+        # Update in-memory images cache so auto-save writes the new blob to SQLite
+        self.in_memory_images[raw_name] = jpeg_bytes
+
+        # Update document resource cache under both image://local/<name> and <name>
+        self.document().addResource(QTextDocument.ImageResource, QUrl(f"{LOCAL_IMAGE_URL_PREFIX}{raw_name}"), new_qimage)
+        self.document().addResource(QTextDocument.ImageResource, QUrl(raw_name), new_qimage)
+
+        # Update info dictionary with new image reference and dimensions
+        info["qimage"] = new_qimage
+        info["original_width"] = new_qimage.width()
+        info["original_height"] = new_qimage.height()
+
+        # Invalidate document layout for this position so the new image repaints immediately
+        self.document().markContentsDirty(info["pos"], 1)
+
+        # Mark modified so debounced auto-save triggers and syncs to database
+        self.content_modified.emit(self.scratchpad_id)
+        self.viewport().update()
+
     def _open_resize_dialog(self, info: dict) -> None:
-        """Opens the ResizeImageDialog for custom dimensions with aspect ratio lock."""
+        """Opens the ResizeImageDialog for custom dimensions with aspect ratio lock and markup."""
         pos = info["pos"]
         avail_w = max(50, self.viewport().width() - 24)
         dlg = ResizeImageDialog(
@@ -698,14 +731,24 @@ class TechPadEditor(QTextEdit):
             original_width=info["original_width"],
             original_height=info["original_height"],
             max_pane_width=avail_w,
+            image=info.get("qimage"),
             parent=self,
         )
         if dlg.exec() == QDialog.Accepted:
+            annotated = False
+            if hasattr(dlg, "was_image_annotated") and dlg.was_image_annotated():
+                annotated_img = dlg.get_annotated_image()
+                if annotated_img and not annotated_img.isNull():
+                    self._update_annotated_image(info, annotated_img)
+                    annotated = True
             new_w, new_h = dlg.get_dimensions()
             self._apply_image_size(pos, new_w, new_h)
             if parent_win := self.window():
                 if hasattr(parent_win, "status_bar"):
-                    parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
+                    if annotated:
+                        parent_win.status_bar.showMessage(f"✓ Saved markup and resized image to {new_w} × {new_h} px", 3000)
+                    else:
+                        parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         # 1. Active interactive resize dragging
@@ -979,8 +1022,8 @@ class TechPadEditor(QTextEdit):
             act_25 = menu_resize.addAction("25%")
             act_25.triggered.connect(lambda checked=False, i=img_info_full: self._quick_resize_image(i, 0.25))
 
-            act_dialog = menu.addAction("📐 Custom Resize...")
-            act_dialog.setToolTip("Open resize dialog with custom dimensions and aspect ratio lock")
+            act_dialog = menu.addAction("📐 Resize & Annotate Image...")
+            act_dialog.setToolTip("Open dialog to resize, draw shapes, add text callouts, or annotate image")
             act_dialog.triggered.connect(lambda checked=False, i=img_info_full: self._open_resize_dialog(i))
 
             menu.addSeparator()

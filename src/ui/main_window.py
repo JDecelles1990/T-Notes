@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import sys
 from typing import Optional
-from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
+from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -40,6 +40,8 @@ from src.ui.components.toolbar import TechPadToolBar
 from src.ui.dialogs.add_template_dialog import AddTemplateDialog
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
+from src.ui.dialogs.summary_formatter_dialog import SummaryFormatterDialog
+from src.services.summary_formatter_service import SummaryFormatterService
 from src.ui.m365.launcher_widget import M365LauncherWidget
 
 
@@ -260,6 +262,9 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.copy_formatted_requested.connect(self._on_copy_formatted_note)
         self.toolbar.export_note_requested.connect(self._on_export_note)
         self.toolbar.export_file_requested.connect(self._on_export_active_ticket_file)
+        self.toolbar.copy_client_email_requested.connect(self._on_copy_client_email)
+        self.toolbar.copy_psa_note_requested.connect(self._on_copy_psa_note)
+        self.toolbar.summary_dialog_requested.connect(self._open_summary_formatter_dialog)
         self.toolbar.split_view_requested.connect(self._toggle_split_view)
         self.toolbar.mini_hud_requested.connect(self.toggle_mini_hud_mode)
         self.toolbar.opacity_changed.connect(self._on_opacity_changed)
@@ -1606,6 +1611,76 @@ class TechPadMainWindow(QMainWindow):
             self.status_bar.showMessage(msg, 4000)
         except Exception as e:
             QMessageBox.warning(self, "Export Failed", f"Could not export note to file: {e}")
+
+    def _on_copy_client_email(self, lang: str = "en") -> None:
+        """Copies formatted client resolution email to clipboard in requested language."""
+        editor = self._get_active_editor()
+        if not editor:
+            return
+        self._execute_save(editor.scratchpad_id)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        tech_name = self.session_service.get_setting("technician_name", "") if self.session_service else ""
+        tech_email = self.session_service.get_setting("technician_email", "") if self.session_service else ""
+        sections = SummaryFormatterService.parse_ticket(
+            ticket,
+            technician_name=tech_name,
+            technician_email=tech_email,
+        )
+        plain, rich_html = SummaryFormatterService.format_client_email(sections, lang=lang, include_time=False)
+
+        mime = QMimeData()
+        mime.setHtml(rich_html)
+        mime.setText(plain)
+        QApplication.clipboard().setMimeData(mime)
+
+        t_label = f"#{ticket.get('ticket_number', '')}".strip()
+        if lang == "fr":
+            msg = f"✓ Courriel de résolution client copié ({t_label}) !" if t_label != "#" else "✓ Courriel de résolution client copié !"
+        else:
+            msg = f"✓ Copied client resolution email ({t_label}) to clipboard!" if t_label != "#" else "✓ Copied client resolution email to clipboard!"
+        self.status_bar.showMessage(msg, 3500)
+
+    def _on_copy_psa_note(self, lang: str = "en") -> None:
+        """Copies structured internal PSA ticket work note to clipboard in requested language."""
+        editor = self._get_active_editor()
+        if not editor:
+            return
+        self._execute_save(editor.scratchpad_id)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        tech_name = self.session_service.get_setting("technician_name", "") if self.session_service else ""
+        tech_email = self.session_service.get_setting("technician_email", "") if self.session_service else ""
+        sections = SummaryFormatterService.parse_ticket(
+            ticket,
+            technician_name=tech_name,
+            technician_email=tech_email,
+        )
+        plain, rich_html = SummaryFormatterService.format_psa_note(sections, lang=lang, include_time=True)
+
+        mime = QMimeData()
+        mime.setHtml(rich_html)
+        mime.setText(plain)
+        QApplication.clipboard().setMimeData(mime)
+
+        t_label = f"#{ticket.get('ticket_number', '')}".strip()
+        if lang == "fr":
+            msg = f"✓ Note interne PSA copiée ({t_label}) !" if t_label != "#" else "✓ Note interne PSA copiée !"
+        else:
+            msg = f"✓ Copied internal PSA note ({t_label}) to clipboard!" if t_label != "#" else "✓ Copied internal PSA note to clipboard!"
+        self.status_bar.showMessage(msg, 3500)
+
+    def _open_summary_formatter_dialog(self) -> None:
+        """Opens interactive bilingual ticket summary formatter dialog."""
+        editor = self._get_active_editor()
+        if not editor:
+            return
+        self._execute_save(editor.scratchpad_id)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        dlg = SummaryFormatterDialog(
+            ticket=ticket,
+            session_service=self.session_service,
+            parent=self,
+        )
+        dlg.exec()
 
     def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
         """Displays rich context menu on right-clicking a tab or the primary tab bar."""
