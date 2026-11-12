@@ -92,9 +92,20 @@ class CompanyContextService:
     transient host reference. Neither is proof. All dispatch is structurally absent.
     """
 
-    def __init__(self, directory, *, connection_manager=None):
+    def __init__(
+        self,
+        directory,
+        *,
+        connection_manager=None,
+        live_connection_manager=None,
+        mode: str = "synthetic",
+    ):
+        if mode not in ("synthetic", "live"):
+            raise ValueError(f"Unsupported M365 execution mode: {mode}")
         self.directory = directory
-        self.connections = connection_manager or SyntheticConnectionManager()
+        self._synthetic_connections = connection_manager or SyntheticConnectionManager()
+        self._live_connections = live_connection_manager
+        self._mode = mode
         self.company_id = None
         self.administrator_id = None
         self.admin_identity_ref = str(uuid4())
@@ -106,10 +117,41 @@ class CompanyContextService:
         self.target = None
         self.target_status = "Unresolved — no client selected."
 
+    @property
+    def mode(self) -> str:
+        return self._mode
+
+    @property
+    def is_live(self) -> bool:
+        return self._mode == "live"
+
+    @property
+    def connections(self):
+        if self._mode == "live":
+            if self._live_connections is None:
+                from src.services.m365_connection_manager import LiveConnectionManager
+                self._live_connections = LiveConnectionManager()
+            return self._live_connections
+        return self._synthetic_connections
+
+    def set_mode(self, mode: str) -> None:
+        """Switch between 'synthetic' and 'live' modes, terminating any active session."""
+        if mode not in ("synthetic", "live"):
+            raise ValueError(f"Unsupported M365 execution mode: {mode}")
+        if mode == self._mode:
+            return
+        self._synthetic_connections.clear()
+        if self._live_connections is not None:
+            self._live_connections.clear()
+        self._mode = mode
+        self._invalidate()
+
     def _invalidate(self):
         self.session_generation += 1
         self.admin_identity_ref = str(uuid4())
-        self.connections.clear()
+        self._synthetic_connections.clear()
+        if self._live_connections is not None:
+            self._live_connections.clear()
         self.confirmed_company = None
         self.target_input = TargetInput()
         self.target = None
@@ -165,6 +207,8 @@ class CompanyContextService:
         self.confirmed_company = (company.company_id, company.tenant_id, self.directory.revision, self.session_generation)
 
     def connect_synthetic(self, service, **fixture):
+        if self._mode == "live":
+            raise ValueError("Simulated connections are disabled in Live Pilot mode.")
         company = self.company
         if company is None or not self.administrator_upn:
             raise ValueError("Select a company and enter an administrator UPN first.")
@@ -172,6 +216,38 @@ class CompanyContextService:
         self.target = None
         self.target_status = "Unresolved — connection context changed."
         self.connections.simulate(service, company.tenant_id, self.administrator_upn, self.session_generation, **fixture)
+
+    def connect_live(
+        self,
+        service,
+        *,
+        auth_mode="browser",
+        scopes=None,
+        organization=None,
+        cancel_event=None,
+        on_event=None,
+    ):
+        """Establish an interactive live service connection inside the isolated worker."""
+        if self._mode != "live":
+            raise ValueError("Switch to Live Pilot mode before starting interactive M365 sign-in.")
+        company = self.company
+        if company is None or not self.administrator_upn:
+            raise ValueError("Select a company and enter an administrator UPN first.")
+        self.target = None
+        self.target_status = "Unresolved — connection context changed."
+        return self.connections.connect_service(
+            service=service,
+            company_id=company.company_id,
+            tenant_id=company.tenant_id,
+            admin_identity_ref=self.admin_identity_ref,
+            expected_account_upn=self.administrator_upn,
+            session_generation=self.session_generation,
+            auth_mode=auth_mode,
+            scopes=scopes,
+            organization=organization,
+            cancel_event=cancel_event,
+            on_event=on_event,
+        )
 
     def disconnect(self):
         self._invalidate()
@@ -185,6 +261,8 @@ class CompanyContextService:
         self.target_status = "Unresolved — entered identifiers are hints only."
 
     def resolve_synthetic(self, *, tenant_id=None, resolved_upn=None, resolved_object_id=None):
+        if self._mode == "live":
+            raise ValueError("Synthetic target fixtures are disabled in Live Pilot mode.")
         company = self.company
         self.target = None
         self.target_status = "Unresolved — no identity evidence."
@@ -206,29 +284,79 @@ class CompanyContextService:
         self.target = candidate
         self.target_status = "Synthetic resolution only — target is not verified."
 
+    def record_live_target(self, *, tenant_id, resolved_upn, resolved_object_id):
+        """Record a real Microsoft Graph-resolved user identity for the active live generation."""
+        if self._mode != "live":
+            raise ValueError("Live target recording is only valid in Live Pilot mode.")
+        company = self.company
+        self.target = None
+        self.target_status = "Unresolved — no identity evidence."
+        if company is None:
+            raise ValueError("Select a company first.")
+        candidate = SyntheticTarget(
+            guid(tenant_id),
+            upn(resolved_upn),
+            guid(resolved_object_id),
+            self.session_generation,
+        )
+        if candidate.tenant_id != company.tenant_id:
+            self.target_status = "Tenant mismatch — returned target rejected."
+            raise ValueError(self.target_status)
+        if ((self.target_input.upn and candidate.upn.casefold() != self.target_input.upn.casefold()) or
+            (self.target_input.object_id and candidate.object_id != self.target_input.object_id)):
+            self.target_status = "Target mismatch — Graph identity does not match entered target."
+            raise ValueError(self.target_status)
+        self.target = candidate
+        self.target_status = f"Live resolved — {candidate.upn} ({candidate.object_id})"
+
     def eligibility(self, required_services=SERVICES):
         company = self.company
-        reasons = ["DISPATCH_DISABLED: no approved execution integration is installed.",
-                   "CONTRACT_ENGINE_OPERATION_AUTH_GATES: individually required; synthetic state supplies no approval."]
+        if self._mode != "live":
+            reasons = ["DISPATCH_DISABLED: no approved execution integration is installed.",
+                       "CONTRACT_ENGINE_OPERATION_AUTH_GATES: individually required; synthetic state supplies no approval."]
+            if company is None:
+                reasons.append("COMPANY_REQUIRED")
+            if company is None or self.confirmed_company != (company.company_id, company.tenant_id, self.directory.revision, self.session_generation):
+                reasons.append("COMPANY_CONFIRMATION_REQUIRED")
+            for service in required_services:
+                state = self.connections.state(service)
+                reasons.append(f"{service}: CONNECTION_UNVERIFIED ({state.state}; synthetic)")
+                if company and state.tenant_id and state.tenant_id != company.tenant_id:
+                    reasons.append("TENANT_MISMATCH")
+                if state.account_upn and state.account_upn.casefold() != self.administrator_upn.casefold():
+                    reasons.append("ACCOUNT_MISMATCH")
+                if state.state != "disconnected" and state.session_generation != self.session_generation:
+                    reasons.append("STALE_CONTEXT")
+            if self.target is None:
+                reasons.append("TARGET_UNRESOLVED")
+            elif (company is None or self.target.tenant_id != company.tenant_id or self.target.session_generation != self.session_generation
+                  or self.target_input.upn and self.target.upn.casefold() != self.target_input.upn.casefold()
+                  or self.target_input.object_id and self.target.object_id != self.target_input.object_id):
+                reasons.append("TARGET_MISMATCH")
+            else:
+                reasons.append("TARGET_UNVERIFIED: synthetic resolution is not identity evidence.")
+            return Eligibility(False, tuple(reasons))
+
+        reasons = []
         if company is None:
             reasons.append("COMPANY_REQUIRED")
         if company is None or self.confirmed_company != (company.company_id, company.tenant_id, self.directory.revision, self.session_generation):
             reasons.append("COMPANY_CONFIRMATION_REQUIRED")
         for service in required_services:
             state = self.connections.state(service)
-            reasons.append(f"{service}: CONNECTION_UNVERIFIED ({state.state}; synthetic)")
-            if company and state.tenant_id and state.tenant_id != company.tenant_id:
-                reasons.append("TENANT_MISMATCH")
-            if state.account_upn and state.account_upn.casefold() != self.administrator_upn.casefold():
-                reasons.append("ACCOUNT_MISMATCH")
-            if state.state != "disconnected" and state.session_generation != self.session_generation:
-                reasons.append("STALE_CONTEXT")
+            if state.state != "verified":
+                reasons.append(f"{service}: AUTH_REQUIRED ({state.state})")
+            else:
+                if company and state.tenant_id != company.tenant_id:
+                    reasons.append(f"{service}: TENANT_MISMATCH")
+                if not state.account_upn or state.account_upn.casefold() != self.administrator_upn.casefold():
+                    reasons.append(f"{service}: ACCOUNT_MISMATCH")
+                if state.session_generation != self.session_generation:
+                    reasons.append(f"{service}: STALE_CONTEXT")
         if self.target is None:
             reasons.append("TARGET_UNRESOLVED")
         elif (company is None or self.target.tenant_id != company.tenant_id or self.target.session_generation != self.session_generation
               or self.target_input.upn and self.target.upn.casefold() != self.target_input.upn.casefold()
               or self.target_input.object_id and self.target.object_id != self.target_input.object_id):
             reasons.append("TARGET_MISMATCH")
-        else:
-            reasons.append("TARGET_UNVERIFIED: synthetic resolution is not identity evidence.")
-        return Eligibility(False, tuple(reasons))
+        return Eligibility(len(reasons) == 0, tuple(reasons))

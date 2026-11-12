@@ -48,11 +48,13 @@ class MultilineEntry(QPlainTextEdit):
 
 
 class ProfileDialog(QDialog):
-    """Edit RAM-only metadata; validation failures keep the form open."""
+    """Edit company metadata; validation failures keep the form open."""
 
     def __init__(self, directory, company=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Edit Company — session only" if company else "Add Company — session only")
+        is_persisted_store = hasattr(directory, "export_to_file") and not getattr(directory, "is_synthetic_preview", False)
+        suffix = "techpad.db" if is_persisted_store else "session only"
+        self.setWindowTitle(f"Edit Company — {suffix}" if company else f"Add Company — {suffix}")
         self.directory, self.original, self.result_company = directory, company, None
         layout = QFormLayout(self)
         self.fields = {}
@@ -105,7 +107,9 @@ class ProfileDialog(QDialog):
 class AdministratorDialog(QDialog):
     def __init__(self, directory, company_id, administrator=None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Administrator metadata — session only")
+        is_persisted_store = hasattr(directory, "export_to_file") and not getattr(directory, "is_synthetic_preview", False)
+        suffix = "techpad.db" if is_persisted_store else "session only"
+        self.setWindowTitle(f"Administrator metadata — {suffix}")
         self.directory, self.company_id, self.original = directory, company_id, administrator
         self.result_administrator = None
         layout = QFormLayout(self)
@@ -142,7 +146,14 @@ class CompanyContextPanel(QWidget):
         self.directory = context.directory
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(label(self, "Synthetic preview • changes last for this session only."))
+        is_live_store = hasattr(self.directory, "export_to_file") and not getattr(self.directory, "is_synthetic_preview", False)
+        banner_text = (
+            "Persisted company directory (techpad.db) • non-secret metadata only."
+            if is_live_store
+            else "Synthetic preview • changes last for this session only."
+        )
+        self.persistence_banner = label(self, banner_text)
+        layout.addWidget(self.persistence_banner)
         self.company_search = entry(self, "Search companies by name or domain", "Search company name or domain")
         self.company_combo = QComboBox(self)
         self.company_combo.setAccessibleName("Company selector")

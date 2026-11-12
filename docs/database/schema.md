@@ -106,6 +106,56 @@ Managed via `TemplateRepository` (`src/repositories/template_repository.py`) adh
 
 ---
 
+### 2.6 `m365_directory_meta`
+Tracks optimistic concurrency revision and update timestamp for the persistent M365 customer company directory (`id = 1` singleton).
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | `PRIMARY KEY CHECK (id = 1)` | Singleton identifier. |
+| `revision` | `INTEGER` | `NOT NULL DEFAULT 1` | Monotonic directory revision incremented on persisted changes. |
+| `updated_at` | `TEXT` | `NOT NULL` | UTC ISO-8601 timestamp of last directory commit. |
+
+---
+
+### 2.7 `m365_companies`
+Stores non-secret M365 customer tenant profile metadata (`company_id`, tenant GUID, verified domains, cloud). **Never stores credentials, passwords, or OAuth/MSAL tokens.**
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `company_id` | `TEXT` | `PRIMARY KEY` | Stable UUIDv4 identifier for the company profile. |
+| `display_name` | `TEXT` | `NOT NULL` | Customer organization name (`idx_m365_companies_name_ci` unique `COLLATE NOCASE`). |
+| `tenant_id` | `TEXT` | `NOT NULL UNIQUE` | Customer Microsoft Entra tenant GUID. |
+| `primary_domain` | `TEXT` | `NOT NULL` | Primary verified domain (synthetic `.example`/`.invalid` domains excluded from DB). |
+| `additional_verified_domains_json` | `TEXT` | `NOT NULL DEFAULT '[]'` | JSON array of secondary verified domains. |
+| `preferred_administrator_id` | `TEXT` | `NULL` | Optional default administrator record UUID. |
+| `preferred_cloud` | `TEXT` | `NOT NULL DEFAULT 'Global'` | Cloud environment name. |
+| `notes` | `TEXT` | `NOT NULL DEFAULT ''` | Non-secret operational notes. |
+| `created_at` | `TEXT` | `NOT NULL` | UTC ISO-8601 creation timestamp. |
+| `updated_at` | `TEXT` | `NOT NULL` | UTC ISO-8601 modification timestamp. |
+
+**Indexes:**
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS idx_m365_companies_name_ci
+ON m365_companies(display_name COLLATE NOCASE);
+```
+
+---
+
+### 2.8 `m365_administrators`
+Stores saved administrator UPNs and optional display labels belonging to a company (`ON DELETE CASCADE`).
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `administrator_id` | `TEXT` | `PRIMARY KEY` | Stable UUIDv4 identifier for the administrator record. |
+| `company_id` | `TEXT` | `NOT NULL`, `FOREIGN KEY REFERENCES m365_companies(company_id) ON DELETE CASCADE` | Owning company ID. |
+| `upn` | `TEXT` | `NOT NULL` | Administrator UPN (`UNIQUE(company_id, upn COLLATE NOCASE)`). |
+| `display_label` | `TEXT` | `NOT NULL DEFAULT ''` | Optional display label (informational only; grants no RBAC). |
+
+**Repository Access:**
+Managed atomically via `M365CompanyRepository` (`src/repositories/m365_company_repository.py`) and bridged cleanly into UI/services via `PersistentCompanyDirectory` (`src/services/m365_company_store.py`).
+
+---
+
 ## 3. SQLite PRAGMA Configuration
 
 Every connection initialized by `DatabaseManager` runs the following PRAGMAs:
@@ -154,6 +204,9 @@ Database migrations are managed idempotently in `src/database/migrations.py`. On
 
 4. **Settings Singleton & Defaults**:
    - Populates missing keys into `app_settings` via `INSERT OR IGNORE` (`auto_save_delay_ms=1500`, `jpeg_quality=85`, `ticket_prefix=INC-`, `close_tab_action=prompt`, `window_opacity=100`).
+
+5. **M365 Directory Metadata Singleton (`m365_directory_meta`)**:
+   - Ensures the `m365_companies`, `m365_administrators`, and `m365_directory_meta` tables exist idempotently and initializes row `id = 1` in `m365_directory_meta` via `INSERT OR IGNORE`.
 
 ---
 

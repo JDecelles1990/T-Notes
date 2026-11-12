@@ -198,7 +198,7 @@ class ManifestValidator:
 class M365CatalogService:
     """Immutable category and unavailable-operation snapshots for the GUI."""
 
-    def __init__(self, metadata_root=None, library_root=None, contract_root=None):
+    def __init__(self, metadata_root=None, library_root=None, contract_root=None, *, catalog_data=None):
         metadata_root = Path(metadata_root) if metadata_root is not None else ROOT / "assets/m365"
         library_root = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
         contract_root = Path(contract_root) if contract_root is not None else CONTRACT_ROOT
@@ -207,7 +207,10 @@ class M365CatalogService:
             _reject("Unsupported category registry.")
         self.categories = self._categories(data["categories"])
         self._by_category = {c.id: c for c in self.categories}
-        data, _ = _json(metadata_root / "catalog.json")
+        if catalog_data is None:
+            data, _ = _json(metadata_root / "catalog.json")
+        else:
+            data = catalog_data
         if (set(data) != {"format_version", "operations"} or type(data["format_version"]) is not int
                 or data["format_version"] != 1 or not isinstance(data["operations"], list) or len(data["operations"]) > 1000):
             _reject("Unsupported operation registry.")

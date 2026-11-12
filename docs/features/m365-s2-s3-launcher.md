@@ -61,3 +61,20 @@ Seventeen independent PowerShell 7 operation scripts implement diagnostics acros
 ## Pane slide transitions
 
 The left Categories pane and right Active Ticket pane slide open/closed (~220ms) when toggled from the launcher bar or the status-bar `☰ Categories` / `Active Ticket` buttons (`PanelWidthTransition`; see `docs/architecture/system-overview.md` section 7). Panes keep their `110–180px` / `220px+` width limits after each transition, and toggles are instant when the launcher page is not visible.
+
+
+---
+
+## 3. Live Pilot Mode, Preflight Readiness & Persistent Auth Worker Host
+
+Building on the validated `tnotes.m365 / 0.3.0` contract without altering pinned files under `docs/contracts/m365/`, `prototypes/m365_official_engine/`, or `assets/m365/catalog.json`, the M365 workspace now separates **Offline Synthetic Snapshot (17 scripts)** from **Live Pilot Mode (4 read-only operations)**:
+
+- **Live Preflight Readiness (`src/services/m365_preflight_service.py` & `M365PreflightDialog`)**:
+  - Dynamically inspects the 4 pilot manifests (`entra-id/user-identity`, `licensing/user-licenses`, `entra-id/user-signins`, `exchange-online/mailbox-summary`) for required PowerShell 7 version and SemVer module constraints (`Microsoft.Graph.Authentication`, `Microsoft.Graph.Users`, `Microsoft.Graph.Reports`, `ExchangeOnlineManagement`), validates the local `tnotes.m365 / 0.3.0` schema bundle, and surfaces copyable `-Scope CurrentUser` install commands without silent module auto-installation.
+- **Persistent Isolated Worker & Dual Interactive Sign-In (`src/services/m365_worker_host.py`, `scripts/m365/_host/M365WorkerHost.ps1`, `src/services/m365_connection_manager.py`)**:
+  - Spawns one persistent `pwsh` process per active `(company_id, admin_identity_ref, session_generation)` bound inside a Windows Job Object (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) and terminated synchronously on company/admin switch, Disconnect, mode switch, or app exit (`MainWindow.closeEvent`).
+  - Supports **Interactive Browser / WAM** (`browser`) and **Device Code (Chrome InPrivate)** (`device_code` with `M365DeviceCodeDialog`) without persisting tokens on disk.
+  - Hard-verifies `Get-MgContext` and `Get-ConnectionInformation` against the confirmed `Company` tenant GUID and expected administrator UPN, failing closed on `TENANT_MISMATCH` or `ACCOUNT_MISMATCH`.
+- **Hard Mode & Synthetic Isolation (`src/services/m365_execution_service.py`)**:
+  - `build_live_pilot_catalog_service()` exposes only the 4 cmdlet-backed pilot scripts (`M365.ENTRA.USER_IDENTITY`, `M365.ENTRA.USER_LICENSES`, `M365.ENTRA.USER_SIGNINS`, `M365.EXCHANGE.MAILBOX_SUMMARY`). The remaining 13 synthetic-only scripts are excluded in Live mode and rejected at execution time.
+  - `M365WorkerHost.ps1` validates module availability, live Graph/EXO session binding, and required cmdlets (`Get-MgUser`, `Get-MgUserLicenseDetail`, `Get-MgAuditLogSignIn`, `Get-EXOMailbox`, `Get-EXOMailboxStatistics`) **before** invoking any script so live executions fail closed with `MODULE_MISSING` or `AUTH_REQUIRED` instead of falling back to offline fixture branches. Live executions emit `"provenance": "runtime"`.

@@ -111,3 +111,9 @@ def init_database(db_manager: DatabaseManager) -> None:
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        # 8. Ensure M365 directory metadata singleton row exists
+        conn.execute("""
+            INSERT OR IGNORE INTO m365_directory_meta (id, revision, updated_at)
+            VALUES (1, 1, datetime('now'));
+        """)

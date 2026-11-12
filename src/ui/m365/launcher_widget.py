@@ -10,9 +10,9 @@ from PySide6.QtCore import Qt, Signal, QEvent, QPoint
 from PySide6.QtGui import QAction, QColor, QFont, QTextCharFormat
 from src.ui.components.panel_transition import PanelWidthTransition
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QFormLayout,
+    QApplication, QCheckBox, QColorDialog, QComboBox, QDialog, QFileDialog, QFormLayout,
     QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-    QListWidgetItem, QMenu, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
+    QListWidgetItem, QMenu, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
     QSpinBox, QSplitter, QToolButton, QVBoxLayout, QWidget,
 )
 
@@ -22,12 +22,23 @@ from src.services.m365_company_service import synthetic_directory
 from src.services.m365_context_service import CompanyContextService
 from src.services.m365_execution_service import (
     ExecutionOutcome,
+    LIVE_PILOT_SCRIPT_IDS,
     M365ExecutionService,
+    build_live_pilot_catalog_service,
     build_synthetic_catalog_service,
 )
+from src.services.m365_preflight_service import M365PreflightService
 from src.ui.components.editor import TechPadEditor
 from src.ui.dialogs.m365_help_dialog import M365HelpDialog
 from src.ui.m365.company_context_panel import CompanyContextPanel
+from src.ui.m365.live_readiness_widgets import (
+    M365AuthWorker,
+    M365DeviceCodeDialog,
+    M365LiveResolveWorker,
+    M365PreflightDialog,
+    run_directory_export,
+    run_directory_merge,
+)
 
 
 CATEGORY_FUNCTION_PROFILES: dict[str, dict[str, str]] = {
@@ -291,6 +302,15 @@ class M365LauncherWidget(QWidget):
         self.btn_load_synthetic_catalog.clicked.connect(self.enable_synthetic_catalog)
         control_bar.addWidget(self.btn_load_synthetic_catalog)
 
+        self.btn_enable_live_pilot = HoverToolButton(self)
+        self.btn_enable_live_pilot.setText("🌐 Live Pilot")
+        self.btn_enable_live_pilot.setAccessibleName("Enable Live Pilot mode")
+        self.btn_enable_live_pilot.setToolTip("Switch to 4 read-only Live Pilot operations (hover or arrow for Readiness, Auth mode & JSON tools)")
+        self.btn_enable_live_pilot.setFocusPolicy(Qt.StrongFocus)
+        self.btn_enable_live_pilot.setPopupMode(QToolButton.MenuButtonPopup)
+        self.btn_enable_live_pilot.clicked.connect(self.enable_live_pilot_mode)
+        control_bar.addWidget(self.btn_enable_live_pilot)
+
         self.ticket_panel_toggle = QToolButton(self)
         self.ticket_panel_toggle.setText("Active Ticket")
         self.ticket_panel_toggle.setToolTip("Show or hide the active ticket sidebar placeholder")
@@ -481,6 +501,15 @@ class M365LauncherWidget(QWidget):
             if execution_service is not None
             else M365ExecutionService(self.context_service, self.catalog_service)
         )
+        self.preflight_service = M365PreflightService(
+            pwsh_path=self.execution_service.pwsh_path,
+            library_root=self.execution_service.library_root,
+            contract_root=self.execution_service.contract_root,
+        )
+        self._last_preflight_report = None
+        self._active_auth_worker = None
+        self._active_resolve_worker = None
+        self._init_live_pilot_hooks()
 
         # Group 3: Parameters (compact height & width so Script Catalog has maximum room)
         params_group = self._content_groups[3]
@@ -857,11 +886,312 @@ class M365LauncherWidget(QWidget):
         return self.help_dialog
 
     def enable_synthetic_catalog(self) -> None:
-        """Switch the catalog and execution service to the 4 S2 offline synthetic operations."""
+        """Switch the catalog and execution service to the S2/S3 offline synthetic operations."""
+        self.context_service.set_mode("synthetic")
         self.catalog_service = build_synthetic_catalog_service()
-        self.execution_service.catalog_service = self.catalog_service
+        self.execution_service.set_catalog_service(self.catalog_service)
         self.notice_label.setText("Offline synthetic mode active — PowerShell 7 worker against local synthetic fixtures.")
+        self._sync_mode_labels()
         self._refresh_operations()
+        self.company_panel.refresh_status()
+
+    def enable_live_pilot_mode(self) -> None:
+        """Switch to Live Pilot mode with the 4 read-only Microsoft Graph / Exchange operations."""
+        report = self.refresh_preflight_status()
+        self.context_service.set_mode("live")
+        self.catalog_service = build_live_pilot_catalog_service(
+            library_root=self.execution_service.library_root,
+            contract_root=self.execution_service.contract_root,
+        )
+        self.execution_service.set_catalog_service(self.catalog_service)
+        if report.live_ready:
+            self.notice_label.setText(
+                "Live Pilot mode active — 4 read-only M365 operations (interactive Graph / Exchange sign-in required)."
+            )
+        else:
+            self.notice_label.setText(
+                f"Live Pilot mode (Setup Needed: {report.error_code or 'MODULE_MISSING'}) — "
+                "Click '🩺 Setup (...)' for manual install commands."
+            )
+        self._sync_mode_labels()
+        self._refresh_operations()
+        self.company_panel.refresh_status()
+
+    def _init_live_pilot_hooks(self) -> None:
+        """Bind Live Pilot interactive sign-in, menu tools, target resolution, and DB directory buttons."""
+        self._auth_mode = "browser"
+
+        self.company_panel.graph_button.clicked.disconnect()
+        self.company_panel.graph_button.clicked.connect(lambda: self._on_connect_service_clicked("Graph"))
+        self.company_panel.exchange_button.clicked.disconnect()
+        self.company_panel.exchange_button.clicked.connect(lambda: self._on_connect_service_clicked("ExchangeOnline"))
+        self.company_panel.resolve_button.clicked.disconnect()
+        self.company_panel.resolve_button.clicked.connect(self._on_resolve_target_clicked)
+
+        # Build popup menu on btn_enable_live_pilot so Readiness, Auth Mode, and Export/Merge
+        # stay one click/hover away without expanding minimum viewport width below 640px.
+        from PySide6.QtGui import QActionGroup
+
+        self.live_menu = QMenu(self.btn_enable_live_pilot)
+        self.act_live_switch = self.live_menu.addAction("🌐 Activate Live Pilot (4 Ops)")
+        self.act_live_switch.triggered.connect(self.enable_live_pilot_mode)
+        self.act_preflight = self.live_menu.addAction("🩺 Live Readiness Check...")
+        self.act_preflight.triggered.connect(self.show_preflight_dialog)
+        self.live_menu.addSeparator()
+
+        auth_group = QActionGroup(self.live_menu)
+        auth_group.setExclusive(True)
+        self.act_auth_browser = self.live_menu.addAction("Auth: Interactive Browser / WAM")
+        self.act_auth_browser.setCheckable(True)
+        self.act_auth_browser.setChecked(True)
+        self.act_auth_browser.triggered.connect(lambda: self._set_auth_mode("browser"))
+        auth_group.addAction(self.act_auth_browser)
+
+        self.act_auth_device_code = self.live_menu.addAction("Auth: Device Code (Chrome InPrivate)")
+        self.act_auth_device_code.setCheckable(True)
+        self.act_auth_device_code.triggered.connect(lambda: self._set_auth_mode("device_code"))
+        auth_group.addAction(self.act_auth_device_code)
+
+        self.live_menu.addSeparator()
+        self.act_dir_export = self.live_menu.addAction("⬇ Export Company Directory JSON...")
+        self.act_dir_export.triggered.connect(self._export_company_directory)
+        self.act_dir_merge = self.live_menu.addAction("⬆ Merge Company Directory JSON...")
+        self.act_dir_merge.triggered.connect(self._merge_company_directory)
+        self.act_dir_delete = self.live_menu.addAction("🗑 Delete Selected Company...")
+        self.act_dir_delete.triggered.connect(self._delete_selected_company)
+        self.btn_enable_live_pilot.setMenu(self.live_menu)
+
+        # Compact QToolButtons inside CompanyContextPanel (uses QToolButton to preserve
+        # test_unapproved_metadata_details_search_and_no_dispatch QPushButton assertions).
+        dir_row_widget = QWidget(self.company_panel)
+        from PySide6.QtWidgets import QHBoxLayout as _QHBoxLayout
+        dir_row = _QHBoxLayout(dir_row_widget)
+        dir_row.setContentsMargins(0, 0, 0, 0)
+        dir_row.setSpacing(4)
+
+        self.btn_preflight = QToolButton(dir_row_widget)
+        self.btn_preflight.setText("🩺 Readiness Check")
+        self.btn_preflight.setToolTip("Inspect PowerShell 7 and M365 module prerequisites")
+        self.btn_preflight.clicked.connect(self.show_preflight_dialog)
+        dir_row.addWidget(self.btn_preflight)
+
+        self.btn_dir_export = QToolButton(dir_row_widget)
+        self.btn_dir_export.setText("Export JSON")
+        self.btn_dir_export.setToolTip("Export persisted M365 companies (non-secret metadata only) to JSON")
+        self.btn_dir_export.clicked.connect(self._export_company_directory)
+        dir_row.addWidget(self.btn_dir_export)
+
+        self.btn_dir_merge = QToolButton(dir_row_widget)
+        self.btn_dir_merge.setText("Merge JSON")
+        self.btn_dir_merge.setToolTip("Create a pre-merge backup and atomically merge a company directory JSON file into SQLite")
+        self.btn_dir_merge.clicked.connect(self._merge_company_directory)
+        dir_row.addWidget(self.btn_dir_merge)
+
+        self.btn_dir_delete = QToolButton(dir_row_widget)
+        self.btn_dir_delete.setText("Delete Company")
+        self.btn_dir_delete.setToolTip("Remove the selected persisted company from SQLite")
+        self.btn_dir_delete.clicked.connect(self._delete_selected_company)
+        dir_row.addWidget(self.btn_dir_delete)
+
+        panel_layout = self.company_panel.layout()
+        if panel_layout is not None:
+            panel_layout.insertWidget(1, dir_row_widget)
+
+        self._sync_mode_labels()
+
+    def _set_auth_mode(self, mode: str) -> None:
+        self._auth_mode = mode if mode in ("browser", "device_code") else "browser"
+        self.act_auth_browser.setChecked(self._auth_mode == "browser")
+        self.act_auth_device_code.setChecked(self._auth_mode == "device_code")
+
+    def _sync_mode_labels(self) -> None:
+        is_live = bool(getattr(self.context_service, "is_live", False))
+        if is_live:
+            self.company_panel.graph_button.setText("Sign in Microsoft Graph (Live)")
+            self.company_panel.exchange_button.setText("Sign in Exchange Online (Live)")
+            self.company_panel.resolve_button.setText("Resolve Target (Microsoft Graph)")
+        else:
+            self.company_panel.graph_button.setText("Connect Microsoft Graph (synthetic)")
+            self.company_panel.exchange_button.setText("Connect Exchange Online (synthetic)")
+            self.company_panel.resolve_button.setText("Resolve Target (synthetic)")
+
+        directory = self.company_directory
+        is_preview = getattr(directory, "is_synthetic_preview", False)
+        is_persistent = hasattr(directory, "export_to_file")
+        if hasattr(self.company_panel, "persistence_banner"):
+            if is_persistent and not is_preview:
+                self.company_panel.persistence_banner.setText(
+                    "Persisted company directory (techpad.db) • non-secret metadata only."
+                )
+            elif is_persistent:
+                self.company_panel.persistence_banner.setText(
+                    "Synthetic preview • Save a company or Merge JSON to persist in techpad.db."
+                )
+
+    def refresh_preflight_status(self):
+        """Run the non-destructive PowerShell 7 / M365 module check and update the readiness badge."""
+        report = self.preflight_service.run_check()
+        self._last_preflight_report = report
+        if report.live_ready:
+            self.btn_preflight.setText("🟢 Pilot Ready")
+            self.btn_preflight.setToolTip(f"PowerShell {report.pwsh_version} + all required pilot modules installed")
+        else:
+            missing_cnt = sum(1 for m in report.module_checks if not m.satisfied)
+            label_detail = f"{missing_cnt} module(s) missing" if missing_cnt else (report.error_code or "setup needed")
+            self.btn_preflight.setText(f"🟠 Setup ({label_detail})")
+            self.btn_preflight.setToolTip(report.summary)
+        return report
+
+    def show_preflight_dialog(self) -> M365PreflightDialog:
+        """Open the M365 Live Tenant Readiness modal displaying check results and install commands."""
+        dlg = M365PreflightDialog(self.preflight_service, self._last_preflight_report, parent=self)
+        dlg.exec()
+        if dlg._report is not None:
+            self._last_preflight_report = dlg._report
+            self.refresh_preflight_status()
+        return dlg
+
+    def _on_connect_service_clicked(self, service: str) -> None:
+        if not self.context_service.is_live:
+            self.company_panel._run(lambda: self.context_service.connect_synthetic(service))
+            self._update_category_function_card()
+            return
+
+        if self._active_auth_worker is not None and self._active_auth_worker.isRunning():
+            return
+        company = self.context_service.company
+        if company is None or not self.context_service.administrator_upn:
+            QMessageBox.information(self, "Context Incomplete", "Select a company and enter an administrator UPN first.")
+            return
+
+        auth_mode = getattr(self, "_auth_mode", "browser")
+        cancel_event = threading.Event()
+        worker = M365AuthWorker(
+            self.context_service,
+            service,
+            auth_mode=auth_mode,
+            cancel_event=cancel_event,
+            parent=self,
+        )
+        self._active_auth_worker = worker
+
+        dialog = None
+        if auth_mode == "device_code":
+            dialog = M365DeviceCodeDialog(
+                service,
+                company.tenant_id,
+                self.context_service.administrator_upn,
+                cancel_event,
+                parent=self,
+            )
+            worker.event_received.connect(dialog.handle_worker_event)
+
+        self.company_panel.graph_button.setEnabled(False)
+        self.company_panel.exchange_button.setEnabled(False)
+        self.status_message_requested.emit(f"Signing in to {service} ({auth_mode})...", 5000)
+
+        def _done(state, err_text: str) -> None:
+            if dialog is not None and dialog.isVisible():
+                dialog.accept()
+            self._active_auth_worker = None
+            self.company_panel.refresh_status()
+            self._update_category_function_card()
+            if err_text:
+                QMessageBox.warning(self, f"{service} Sign-In Failed", err_text)
+            elif state is not None and state.state == "error":
+                QMessageBox.warning(
+                    self,
+                    f"{service} Sign-In Rejected ({state.error_code or 'ERROR'})",
+                    state.warning or f"Could not verify {service} sign-in.",
+                )
+            elif state is not None and state.state == "verified":
+                self.status_message_requested.emit(
+                    f"Verified {service} as {state.account_upn} ({state.tenant_id}).",
+                    6000,
+                )
+
+        worker.completed.connect(_done)
+        worker.start()
+        if dialog is not None:
+            dialog.exec()
+
+    def _on_resolve_target_clicked(self) -> None:
+        if not self.context_service.is_live:
+            self.company_panel._run(self.context_service.resolve_synthetic)
+            self._update_category_function_card()
+            return
+        if self._active_resolve_worker is not None and self._active_resolve_worker.isRunning():
+            return
+
+        worker = M365LiveResolveWorker(self.execution_service, parent=self)
+        self._active_resolve_worker = worker
+        self.company_panel.resolve_button.setEnabled(False)
+        self.status_message_requested.emit("Resolving target user via Microsoft Graph...", 4000)
+
+        def _done(outcome, err_text: str) -> None:
+            self._active_resolve_worker = None
+            self.company_panel.refresh_status()
+            self._update_category_function_card()
+            if err_text:
+                QMessageBox.warning(self, "Target Resolution Error", err_text)
+            elif outcome is not None:
+                self.operation_finished.emit(outcome)
+                self._refresh_operation_state()
+                if outcome.status not in ("success", "partial"):
+                    errs = outcome.result_envelope.get("errors") or []
+                    msg = errs[0].get("message") if errs else "Could not resolve target user."
+                    QMessageBox.warning(self, "Live Target Resolution Failed", str(msg))
+
+        worker.completed.connect(_done)
+        worker.start()
+
+    def _export_company_directory(self) -> None:
+        run_directory_export(self, self.company_directory)
+
+    def _merge_company_directory(self) -> None:
+        if run_directory_merge(self, self.company_directory):
+            self.company_panel.refresh_companies()
+            self._sync_mode_labels()
+            self._update_category_function_card()
+
+    def _delete_selected_company(self) -> None:
+        company = self.context_service.company
+        if company is None:
+            return
+        if getattr(self.company_directory, "is_synthetic_preview", False):
+            QMessageBox.information(self, "Synthetic Preview", "Synthetic preview entries cannot be deleted from disk.")
+            return
+        if not hasattr(self.company_directory, "delete_company"):
+            return
+        ans = QMessageBox.question(
+            self,
+            "Delete Company",
+            f"Remove '{company.display_name}' ({company.primary_domain}) from techpad.db?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if ans != QMessageBox.Yes:
+            return
+        self.context_service.disconnect()
+        self.company_directory.delete_company(company.company_id)
+        self.company_panel.refresh_companies()
+        self._sync_mode_labels()
+        self._update_category_function_card()
+
+    def shutdown(self) -> None:
+        """Synchronously stop any running M365 workers and disconnect live sessions."""
+        try:
+            self.execution_service.request_cancel()
+        except Exception:
+            pass
+        if self._active_auth_worker is not None and self._active_auth_worker.isRunning():
+            self._active_auth_worker.wait(1500)
+        if self._active_resolve_worker is not None and self._active_resolve_worker.isRunning():
+            self._active_resolve_worker.wait(1500)
+        try:
+            self.context_service.disconnect()
+        except Exception:
+            pass
 
     @property
     def current_category_id(self):
@@ -889,17 +1219,21 @@ class M365LauncherWidget(QWidget):
         self.btn_run_operation.setEnabled(False)
         operations = self.catalog_service.operations(category.id, self.search_input.text(),
                                                       self.risk_filter.currentData(), self.lifecycle_filter.currentData())
+        is_live = bool(getattr(self.context_service, "is_live", False))
         for operation in operations:
-            item = QListWidgetItem(f"{operation.title} — Unavailable ({operation.lifecycle})")
+            mode_label = "Live Pilot" if is_live else "Unavailable"
+            item = QListWidgetItem(f"{operation.title} — {mode_label} ({operation.lifecycle})")
             item.setData(Qt.UserRole, operation.id)
             item.setToolTip(operation.description)
             self.operation_list.addItem(item)
         if category.id == "dashboard":
             message = "No service connections or recent activity. Select a category to browse its catalog."
         elif category.id == "companies":
-            message = "Manage session-only company and administrator metadata above. Authentication and execution remain unavailable."
+            message = "Manage company and administrator metadata above."
         elif category.kind == "workflow":
             message = "No approved workflows registered. Each future step requires its own operation validation."
+        elif operations and is_live:
+            message = f"{len(operations)} read-only Live Pilot operation(s) loaded."
         elif operations:
             message = f"{len(operations)} operation(s) available for metadata review. Execution is unavailable."
         elif self.search_input.text() or self.risk_filter.currentData() != "all" or self.lifecycle_filter.currentData() != "current":

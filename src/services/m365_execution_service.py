@@ -130,8 +130,57 @@ class ExecutionOutcome:
     provenance: str = "synthetic"
 
 
+LIVE_PILOT_SCRIPT_IDS = frozenset(
+    {
+        "M365.ENTRA.USER_IDENTITY",
+        "M365.ENTRA.USER_LICENSES",
+        "M365.ENTRA.USER_SIGNINS",
+        "M365.EXCHANGE.MAILBOX_SUMMARY",
+    }
+)
+
+LIVE_PILOT_REQUIRED_CMDLETS: dict[str, tuple[str, ...]] = {
+    "M365.ENTRA.USER_IDENTITY": ("Get-MgUser",),
+    "M365.ENTRA.USER_LICENSES": ("Get-MgUserLicenseDetail",),
+    "M365.ENTRA.USER_SIGNINS": ("Get-MgAuditLogSignIn",),
+    "M365.EXCHANGE.MAILBOX_SUMMARY": ("Get-EXOMailbox", "Get-EXOMailboxStatistics"),
+}
+
+_LIVE_SAFE_MESSAGES: dict[str, str] = {
+    "MODULE_MISSING": "A required Microsoft 365 PowerShell module or cmdlet is missing or out of range.",
+    "CONNECTION_FAILED": "The persistent M365 worker host failed or disconnected before completing.",
+    "WORKER_CRASHED": "The persistent M365 PowerShell worker terminated unexpectedly.",
+    "PS_VERSION_UNSUPPORTED": "PowerShell 7 Core (pwsh) is required for M365 operations.",
+    "OUTPUT_LIMIT": "PowerShell output exceeded the safety limit.",
+    "AUTH_REQUIRED": "Verify live M365 service sign-in before running this operation.",
+}
+
+
+def build_live_pilot_catalog_service(
+    metadata_root: Path | None = None,
+    library_root: Path | None = None,
+    contract_root: Path | None = None,
+) -> M365CatalogService:
+    """Build an immutable M365 catalog restricted to the 4 read-only live pilot operations."""
+    from src.services.m365_preflight_service import LIVE_PILOT_MANIFEST_PATHS
+
+    meta = Path(metadata_root) if metadata_root is not None else ROOT / "assets/m365"
+    lib = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+    contract = Path(contract_root) if contract_root is not None else CONTRACT_ROOT
+    raw = json.loads((meta / "synthetic-catalog.json").read_text(encoding="utf-8"))
+    allowed = set(LIVE_PILOT_MANIFEST_PATHS)
+    filtered = {
+        "format_version": raw.get("format_version", 1),
+        "operations": [
+            entry for entry in raw.get("operations", [])
+            if entry.get("manifest_path") in allowed
+        ],
+    }
+    return M365CatalogService(meta, lib, contract, catalog_data=filtered)
+
+
 class M365ExecutionService:
-    """Manages S2/S3 offline synthetic PowerShell execution, cancellation, history, and note insertion."""
+    """Manages S2/S3 offline synthetic and verified Live Pilot PowerShell execution."""
 
     def __init__(
         self,
@@ -213,6 +262,14 @@ class M365ExecutionService:
         self._results_by_correlation.clear()
         self._previews.clear()
 
+    def set_catalog_service(self, catalog_service: M365CatalogService) -> None:
+        """Swap the active immutable catalog snapshot (e.g., Synthetic vs Live Pilot)."""
+        self.catalog_service = catalog_service
+
+    def resolve_live_target(self, *, ticket_id: str | int | None = None) -> ExecutionOutcome:
+        """Resolve the entered target UPN or object ID against Microsoft Graph in Live Pilot mode."""
+        return self.execute("M365.ENTRA.USER_IDENTITY", None, ticket_id=ticket_id)
+
     def get_outcome(self, correlation_id: str) -> ExecutionOutcome | None:
         return self._results_by_correlation.get(correlation_id)
 
@@ -287,24 +344,33 @@ class M365ExecutionService:
         return effective
 
     def check_operation_eligibility(self, script_id: str) -> tuple[bool, tuple[str, ...]]:
-        """Evaluate whether a synthetic operation can be dispatched in the current context."""
+        """Evaluate whether an operation can be dispatched in the current mode and context."""
         try:
             manifest, _, _ = self.manifest_for(script_id)
         except Exception as exc:
             return False, (f"INVALID_MANIFEST: {exc}",)
 
         ctx = self.context_service
+        is_live = bool(getattr(ctx, "is_live", False))
         company = ctx.company
         reasons: list[str] = []
+        if is_live and script_id not in LIVE_PILOT_SCRIPT_IDS:
+            reasons.append("LIVE_MODE_BLOCKED: Only read-only Live Pilot operations may run in Live Tenant mode.")
         if company is None:
             reasons.append("COMPANY_REQUIRED: Select a company first.")
         elif ctx.confirmed_company != (company.company_id, company.tenant_id, ctx.directory.revision, ctx.session_generation):
             reasons.append("COMPANY_CONFIRMATION_REQUIRED: Confirm the selected company.")
 
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        allowed_states = ("verified",) if is_live else ("simulated", "permission_warning", "verified")
         for service_name in manifest.get("connection_requirements", []):
             conn = ctx.connections.state(service_name)
-            if conn.state not in ("simulated", "permission_warning", "verified"):
+            if conn.state not in allowed_states:
                 reasons.append(f"{service_name}: AUTH_REQUIRED ({conn.state})")
+            elif conn.expires_at is not None and now >= conn.expires_at:
+                reasons.append(f"{service_name}: SESSION_EXPIRED")
             else:
                 if company and conn.tenant_id != company.tenant_id:
                     reasons.append(f"{service_name}: TENANT_MISMATCH")
@@ -312,6 +378,14 @@ class M365ExecutionService:
                     reasons.append(f"{service_name}: ACCOUNT_MISMATCH")
                 if conn.session_generation != ctx.session_generation:
                     reasons.append(f"{service_name}: STALE_CONTEXT")
+                if is_live and service_name == "ExchangeOnline":
+                    needed = [
+                        r["any_of"][0]
+                        for r in manifest.get("required_roles", [])
+                        if r["service"] == "ExchangeOnline" and r.get("any_of")
+                    ]
+                    if needed and not set(needed).issubset(set(getattr(conn, "effective_roles", ()))):
+                        reasons.append("ExchangeOnline: ACCESS_DENIED (required EXO cmdlets unavailable)")
 
         target_policy = manifest["target_policy"]
         requires_resolved = target_policy.get("requires_resolved_identity", False)
@@ -320,7 +394,8 @@ class M365ExecutionService:
         if requires_resolved:
             resolved_id = self._resolve_object_id_for_current_context()
             if not resolved_id:
-                reasons.append("TARGET_UNRESOLVED: Run Get-UserIdentity or Resolve Target (synthetic) first.")
+                hint = "Microsoft Graph" if is_live else "synthetic"
+                reasons.append(f"TARGET_UNRESOLVED: Run Get-UserIdentity or Resolve Target ({hint}) first.")
         else:
             try:
                 target = ctx.target_input.contract_target()
@@ -386,6 +461,17 @@ class M365ExecutionService:
         try:
             manifest, _, release_binding = self.manifest_for(script_id)
             ctx = self.context_service
+            is_live = bool(getattr(ctx, "is_live", False))
+            if is_live and script_id not in LIVE_PILOT_SCRIPT_IDS:
+                return self._build_rejected_outcome(
+                    script_id,
+                    "ACCESS_DENIED",
+                    "Only approved read-only Live Pilot operations may execute in Live Tenant mode.",
+                    correlation_id,
+                    release_binding,
+                    requested_at,
+                )
+
             company = ctx.company
             if company is None:
                 return self._build_rejected_outcome(script_id, "AUTH_REQUIRED", SAFE_MESSAGES["AUTH_REQUIRED"], correlation_id, release_binding, requested_at)
@@ -398,14 +484,27 @@ class M365ExecutionService:
             except ValueError:
                 return self._build_rejected_outcome(script_id, "INVALID_PARAMETER", SAFE_MESSAGES["INVALID_PARAMETER"], correlation_id, release_binding, requested_at)
 
+            from datetime import datetime, timezone
+
+            now = datetime.now(timezone.utc)
+            allowed_states = ("verified",) if is_live else ("simulated", "permission_warning", "verified")
             # Check service connections
             connections_abi: list[dict] = []
             for service_name in manifest.get("connection_requirements", []):
                 conn = ctx.connections.state(service_name)
                 if conn.state == "error":
-                    return self._build_rejected_outcome(script_id, "CONNECTION_FAILED", SAFE_MESSAGES["CONNECTION_FAILED"], correlation_id, release_binding, requested_at)
-                if conn.state not in ("simulated", "permission_warning", "verified"):
+                    return self._build_rejected_outcome(
+                        script_id,
+                        getattr(conn, "error_code", None) or "CONNECTION_FAILED",
+                        getattr(conn, "warning", None) or SAFE_MESSAGES["CONNECTION_FAILED"],
+                        correlation_id,
+                        release_binding,
+                        requested_at,
+                    )
+                if conn.state not in allowed_states:
                     return self._build_rejected_outcome(script_id, "AUTH_REQUIRED", SAFE_MESSAGES["AUTH_REQUIRED"], correlation_id, release_binding, requested_at)
+                if conn.expires_at is not None and now >= conn.expires_at:
+                    return self._build_rejected_outcome(script_id, "AUTH_REQUIRED", "Live M365 connection lease expired; sign in again.", correlation_id, release_binding, requested_at)
                 if conn.tenant_id != company.tenant_id:
                     return self._build_rejected_outcome(script_id, "TENANT_MISMATCH", SAFE_MESSAGES["TENANT_MISMATCH"], correlation_id, release_binding, requested_at)
                 if not conn.account_upn or conn.account_upn.casefold() != ctx.administrator_upn.casefold():
@@ -415,13 +514,35 @@ class M365ExecutionService:
                 if conn.state == "permission_warning":
                     return self._build_rejected_outcome(script_id, "ACCESS_DENIED", SAFE_MESSAGES["ACCESS_DENIED"], correlation_id, release_binding, requested_at)
 
-                scopes = list(manifest.get("graph_scopes", [])) if service_name == "Graph" else []
-                roles = [r["any_of"][0] for r in manifest.get("required_roles", []) if r["service"] == service_name and r.get("any_of")]
+                conn_scopes = tuple(getattr(conn, "graph_scopes", ()) or ())
+                conn_roles = tuple(getattr(conn, "effective_roles", ()) or ())
+                if is_live and service_name == "ExchangeOnline":
+                    needed = [
+                        r["any_of"][0]
+                        for r in manifest.get("required_roles", [])
+                        if r["service"] == "ExchangeOnline" and r.get("any_of")
+                    ]
+                    if needed and not set(needed).issubset(set(conn_roles)):
+                        return self._build_rejected_outcome(
+                            script_id,
+                            "ACCESS_DENIED",
+                            "Required Exchange Online RBAC cmdlets are unavailable for this account.",
+                            correlation_id,
+                            release_binding,
+                            requested_at,
+                        )
+
+                scopes = list(conn_scopes) if (service_name == "Graph" and conn_scopes) else (list(manifest.get("graph_scopes", [])) if service_name == "Graph" else [])
+                roles = (
+                    list(conn_roles)
+                    if conn_roles
+                    else [r["any_of"][0] for r in manifest.get("required_roles", []) if r["service"] == service_name and r.get("any_of")]
+                )
                 connections_abi.append(
                     {
                         "service": service_name,
-                        "connection_id": str(uuid4()),
-                        "owner_worker_id": str(uuid4()),
+                        "connection_id": getattr(conn, "connection_id", None) or str(uuid4()),
+                        "owner_worker_id": getattr(conn, "owner_worker_id", None) or str(uuid4()),
                         "company_id": company.company_id,
                         "tenant_id": company.tenant_id,
                         "admin_identity_ref": ctx.admin_identity_ref,
@@ -483,15 +604,27 @@ class M365ExecutionService:
                 return self._build_rejected_outcome(script_id, "CONTRACT_VIOLATION", SAFE_MESSAGES["CONTRACT_VIOLATION"], correlation_id, release_binding, requested_at)
 
             started_at = utc_now()
-            op_return = self._invoke_powershell_worker(
-                script_path=script_path,
-                request_envelope=request_envelope,
-                connections_abi=connections_abi,
-                verified_account_upn=ctx.administrator_upn,
-                timeout_seconds=manifest.get("timeout_seconds", 90),
-                cancel_event=self._cancel_event,
-                on_started=on_started,
-            )
+            if is_live:
+                op_return = self._invoke_live_worker(
+                    manifest=manifest,
+                    script_path=script_path,
+                    request_envelope=request_envelope,
+                    connections_abi=connections_abi,
+                    verified_account_upn=ctx.administrator_upn,
+                    timeout_seconds=manifest.get("timeout_seconds", 90),
+                    cancel_event=self._cancel_event,
+                    on_started=on_started,
+                )
+            else:
+                op_return = self._invoke_powershell_worker(
+                    script_path=script_path,
+                    request_envelope=request_envelope,
+                    connections_abi=connections_abi,
+                    verified_account_upn=ctx.administrator_upn,
+                    timeout_seconds=manifest.get("timeout_seconds", 90),
+                    cancel_event=self._cancel_event,
+                    on_started=on_started,
+                )
 
             completed_at = utc_now()
             duration_ms = max(1, int((time.monotonic() - started_monotonic) * 1000))
@@ -546,14 +679,22 @@ class M365ExecutionService:
                     key = (company.company_id, company.tenant_id, ctx.admin_identity_ref, ctx.session_generation)
                     self._resolved_identities[key] = {"object_id": resolved_uid, "upn": resolved_upn}
                     try:
-                        ctx.resolve_synthetic(
-                            tenant_id=company.tenant_id,
-                            resolved_upn=resolved_upn,
-                            resolved_object_id=resolved_uid,
-                        )
+                        if is_live:
+                            ctx.record_live_target(
+                                tenant_id=company.tenant_id,
+                                resolved_upn=resolved_upn,
+                                resolved_object_id=resolved_uid,
+                            )
+                        else:
+                            ctx.resolve_synthetic(
+                                tenant_id=company.tenant_id,
+                                resolved_upn=resolved_upn,
+                                resolved_object_id=resolved_uid,
+                            )
                     except ValueError:
                         pass
 
+            provenance = "runtime" if is_live else "synthetic"
             codes = [e["code"] for e in errors] + [w["code"] for w in warnings]
             history_record = {
                 "contract_version": VERSION,
@@ -574,11 +715,11 @@ class M365ExecutionService:
                 "completed_at": completed_at,
                 "duration_ms": duration_ms,
                 "codes": codes[:50],
-                "provenance": "synthetic",
+                "provenance": provenance,
             }
             self._validate_schema("common", history_record, fragment="/$defs/history_record")
 
-            summary_text = self._format_summary(manifest["title"], result_envelope, company.display_name)
+            summary_text = self._format_summary(manifest["title"], result_envelope, company.display_name, provenance=provenance)
             sanitized_json = json.dumps(result_envelope, indent=2, ensure_ascii=False)
 
             preview = None
@@ -607,6 +748,7 @@ class M365ExecutionService:
                 summary_text=summary_text,
                 sanitized_json=sanitized_json,
                 insertion_preview=preview,
+                provenance=provenance,
             )
             self._record_history(outcome)
             return outcome
@@ -624,6 +766,99 @@ class M365ExecutionService:
             self._active_correlation_id = None
             self._cancel_event = None
             self._lock.release()
+
+    def _invoke_live_worker(
+        self,
+        *,
+        manifest: dict,
+        script_path: Path,
+        request_envelope: dict,
+        connections_abi: list[dict],
+        verified_account_upn: str,
+        timeout_seconds: int,
+        cancel_event: threading.Event,
+        on_started=None,
+    ) -> dict:
+        invocation_ctx = {
+            "contract_version": VERSION,
+            "correlation_id": request_envelope["correlation_id"],
+            "script_id": request_envelope["script_id"],
+            "company_id": request_envelope["company_id"],
+            "tenant_id": request_envelope["tenant_id"],
+            "admin_identity_ref": request_envelope["admin_identity_ref"],
+            "session_generation": request_envelope["session_generation"],
+            "target": request_envelope["target"],
+            "ticket_context": request_envelope["ticket_context"],
+            "release_binding": request_envelope["release_binding"],
+            "verified_account_upn": verified_account_upn,
+            "connections": connections_abi,
+        }
+        self._validate_schema("common", invocation_ctx, fragment="/$defs/invocation_context")
+
+        worker_host = getattr(self.context_service.connections, "worker_host", None)
+        if worker_host is None or not worker_host.is_alive:
+            return {
+                "status": "error",
+                "operation_outcome": "failed",
+                "data": None,
+                "warnings": [],
+                "errors": [
+                    {
+                        "code": "AUTH_REQUIRED",
+                        "message": _LIVE_SAFE_MESSAGES["AUTH_REQUIRED"],
+                        "retryable": False,
+                    }
+                ],
+            }
+
+        if on_started is not None:
+            on_started()
+
+        resp = worker_host.send_command(
+            "invoke_operation",
+            {
+                "protocol_path": str(PROTOCOL_PATH),
+                "script_path": str(script_path),
+                "context": invocation_ctx,
+                "parameters": request_envelope["parameters"],
+                "required_modules": manifest.get("required_modules", []),
+                "required_cmdlets": list(LIVE_PILOT_REQUIRED_CMDLETS.get(request_envelope["script_id"], ())),
+                "connection_requirements": manifest.get("connection_requirements", []),
+                "already_cancelled": cancel_event.is_set(),
+            },
+            timeout_seconds=float(timeout_seconds),
+            cancel_event=cancel_event,
+        )
+
+        if resp.get("_host_terminal") in ("CANCELLED", "TIMEOUT"):
+            return resp
+
+        if not resp.get("ok"):
+            code = str(resp.get("code") or "CONNECTION_FAILED")
+            msg = str(
+                resp.get("message")
+                or _LIVE_SAFE_MESSAGES.get(code)
+                or SAFE_MESSAGES.get(code, SAFE_MESSAGES["CONTRACT_VIOLATION"])
+            )
+            return {
+                "status": "error",
+                "operation_outcome": "failed",
+                "data": None,
+                "warnings": [],
+                "errors": [{"code": code, "message": msg, "retryable": False}],
+            }
+
+        parsed = resp.get("data")
+        if not isinstance(parsed, dict):
+            return {
+                "status": "error",
+                "operation_outcome": "failed",
+                "data": None,
+                "warnings": [],
+                "errors": [{"code": "CONTRACT_VIOLATION", "message": SAFE_MESSAGES["CONTRACT_VIOLATION"], "retryable": False}],
+            }
+        self._validate_schema("common", parsed, fragment="/$defs/operation_return")
+        return parsed
 
     def _invoke_powershell_worker(
         self,
@@ -760,7 +995,8 @@ class M365ExecutionService:
             if not isinstance(item, dict):
                 continue
             code = str(item.get("code", "CONTRACT_VIOLATION"))
-            msg = str(item.get("message", SAFE_MESSAGES.get(code, SAFE_MESSAGES["CONTRACT_VIOLATION"])))
+            default_msg = _LIVE_SAFE_MESSAGES.get(code) or SAFE_MESSAGES.get(code, SAFE_MESSAGES["CONTRACT_VIOLATION"])
+            msg = str(item.get("message") or default_msg)
             msg = SENSITIVE_RE.sub("[REDACTED]", msg)
             entry = {"code": code, "message": msg}
             if is_error:
@@ -835,6 +1071,7 @@ class M365ExecutionService:
             "target": {"kind": "upn", "value": ctx.target_input.upn or "unresolved@example.invalid"},
             "operation_exit_code": exit_code,
         }
+        provenance = "runtime" if getattr(ctx, "is_live", False) else "synthetic"
         history_record = {
             "contract_version": VERSION,
             "correlation_id": correlation_id,
@@ -854,10 +1091,10 @@ class M365ExecutionService:
             "completed_at": now_str,
             "duration_ms": 0,
             "codes": [code],
-            "provenance": "synthetic",
+            "provenance": provenance,
         }
         self._validate_schema("common", history_record, fragment="/$defs/history_record")
-        summary_text = self._format_summary(script_id, result_envelope, company.display_name if company else "Unselected")
+        summary_text = self._format_summary(script_id, result_envelope, company.display_name if company else "Unselected", provenance=provenance)
         sanitized_json = json.dumps(result_envelope, indent=2, ensure_ascii=False)
         self._state = "failed"
         outcome = ExecutionOutcome(
@@ -870,6 +1107,7 @@ class M365ExecutionService:
             summary_text=summary_text,
             sanitized_json=sanitized_json,
             insertion_preview=None,
+            provenance=provenance,
         )
         self._record_history(outcome)
         return outcome
@@ -909,6 +1147,7 @@ class M365ExecutionService:
             "operation_exit_code": 40,
         }
         self._validate_schema("execution-result", result_envelope)
+        provenance = "runtime" if getattr(self.context_service, "is_live", False) else "synthetic"
         history_record = {
             "contract_version": VERSION,
             "correlation_id": request_envelope["correlation_id"],
@@ -928,11 +1167,11 @@ class M365ExecutionService:
             "completed_at": completed_at,
             "duration_ms": duration_ms,
             "codes": ["CANCELLED"],
-            "provenance": "synthetic",
+            "provenance": provenance,
         }
         self._validate_schema("common", history_record, fragment="/$defs/history_record")
         company = self.context_service.company
-        summary_text = self._format_summary(request_envelope["script_id"], result_envelope, company.display_name if company else "Unknown")
+        summary_text = self._format_summary(request_envelope["script_id"], result_envelope, company.display_name if company else "Unknown", provenance=provenance)
         sanitized_json = json.dumps(result_envelope, indent=2, ensure_ascii=False)
         self._state = "cancelled"
         outcome = ExecutionOutcome(
@@ -945,6 +1184,7 @@ class M365ExecutionService:
             summary_text=summary_text,
             sanitized_json=sanitized_json,
             insertion_preview=None,
+            provenance=provenance,
         )
         self._record_history(outcome)
         return outcome
@@ -981,6 +1221,7 @@ class M365ExecutionService:
             "operation_exit_code": 40,
         }
         self._validate_schema("execution-result", result_envelope)
+        provenance = "runtime" if getattr(self.context_service, "is_live", False) else "synthetic"
         history_record = {
             "contract_version": VERSION,
             "correlation_id": request_envelope["correlation_id"],
@@ -1000,11 +1241,11 @@ class M365ExecutionService:
             "completed_at": completed_at,
             "duration_ms": duration_ms,
             "codes": ["TIMEOUT"],
-            "provenance": "synthetic",
+            "provenance": provenance,
         }
         self._validate_schema("common", history_record, fragment="/$defs/history_record")
         company = self.context_service.company
-        summary_text = self._format_summary(request_envelope["script_id"], result_envelope, company.display_name if company else "Unknown")
+        summary_text = self._format_summary(request_envelope["script_id"], result_envelope, company.display_name if company else "Unknown", provenance=provenance)
         sanitized_json = json.dumps(result_envelope, indent=2, ensure_ascii=False)
         self._state = "timeout"
         outcome = ExecutionOutcome(
@@ -1017,6 +1258,7 @@ class M365ExecutionService:
             summary_text=summary_text,
             sanitized_json=sanitized_json,
             insertion_preview=None,
+            provenance=provenance,
         )
         self._record_history(outcome)
         return outcome
@@ -1029,14 +1271,21 @@ class M365ExecutionService:
         self._results_by_correlation[outcome.correlation_id] = outcome
 
     @staticmethod
-    def _format_summary(title: str, result: dict, company_name: str) -> str:
+    def _format_summary(title: str, result: dict, company_name: str, *, provenance: str = "synthetic") -> str:
+        header = (
+            f"=== M365 Live Diagnostic: {title} ({result['script_id']}) ==="
+            if provenance == "runtime"
+            else f"=== M365 Diagnostic Snapshot: {title} ({result['script_id']}) ==="
+        )
         lines = [
-            f"=== M365 Diagnostic Snapshot: {title} ({result['script_id']}) ===",
+            header,
             f"Company: {company_name} | Tenant: {result.get('tenant_id') or 'unverified'}",
             f"Target: {result['target']['kind']}={result['target']['value']}",
             f"Status: {result['status'].upper()} ({result['operation_outcome']}) | Duration: {result['duration_ms']} ms",
             f"Correlation ID: {result['correlation_id']} | Completed: {result['completed_at']}",
         ]
+        if provenance == "runtime":
+            lines.append("Source: Live Microsoft 365 Tenant (runtime)")
         data = result.get("data")
         if isinstance(data, dict):
             lines.append("Results:")

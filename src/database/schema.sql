@@ -93,3 +93,35 @@ CREATE TABLE IF NOT EXISTS custom_templates (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Non-secret M365 customer tenant profiles (zero credentials/tokens)
+CREATE TABLE IF NOT EXISTS m365_directory_meta (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    revision INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS m365_companies (
+    company_id TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    tenant_id TEXT NOT NULL UNIQUE,
+    primary_domain TEXT NOT NULL,
+    additional_verified_domains_json TEXT NOT NULL DEFAULT '[]',
+    preferred_administrator_id TEXT,
+    preferred_cloud TEXT NOT NULL DEFAULT 'Global',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_m365_companies_name_ci
+ON m365_companies(display_name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS m365_administrators (
+    administrator_id TEXT PRIMARY KEY,
+    company_id TEXT NOT NULL,
+    upn TEXT NOT NULL,
+    display_label TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY(company_id) REFERENCES m365_companies(company_id) ON DELETE CASCADE,
+    UNIQUE(company_id, upn COLLATE NOCASE)
+);

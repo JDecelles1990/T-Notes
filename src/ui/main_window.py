@@ -28,6 +28,8 @@ from src.core.constants import APP_NAME, APP_VERSION, AUTO_SAVE_DEBOUNCE_MS
 from src.core.debouncer import DebounceTimer
 from src.core.global_hotkey import GlobalHotkeyManager
 from src.services.image_service import ImageService
+from src.services.m365_company_store import PersistentCompanyDirectory
+from src.repositories.m365_company_repository import M365CompanyRepository
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
 from src.ui.components.editor import TechPadEditor
@@ -239,8 +241,15 @@ class TechPadMainWindow(QMainWindow):
         self._split_transition = PanelWidthTransition(self.secondary_tab_widget, default_width=300)
         self.workspace_stack = QStackedWidget(self)
         self.workspace_stack.addWidget(self.workspace_splitter)
+        db_manager = getattr(getattr(self.scratchpad_service, "repo", None), "db", None)
+        if db_manager is not None:
+            company_repo = M365CompanyRepository(db_manager)
+            self.m365_company_directory = PersistentCompanyDirectory(company_repo, fallback_to_synthetic=True)
+        else:
+            self.m365_company_directory = None
         self.m365_workspace = M365LauncherWidget(
             self.workspace_stack,
+            company_directory=self.m365_company_directory,
             scratchpad_service=self.scratchpad_service,
             image_service=self.image_service,
         )
@@ -2560,6 +2569,8 @@ class TechPadMainWindow(QMainWindow):
                     2500,
                 )
         else:
+            if getattr(self, "m365_workspace", None) is not None:
+                self.m365_workspace.shutdown()
             if hasattr(self, "global_hotkey") and self.global_hotkey:
                 self.global_hotkey.unregister()
             if getattr(self, "tray_icon", None):

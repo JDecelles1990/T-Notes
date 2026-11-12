@@ -152,3 +152,14 @@ the panel. F7Hub is not modified.
    tenant execution require their own authorization.
 
 See the milestone checkpoint for exact inventory, evidence and reviewer handoff.
+
+
+---
+
+## Persistent storage & atomic JSON Merge (implemented)
+
+Non-secret customer tenant and administrator metadata now persists in `techpad.db` (`m365_directory_meta`, `m365_companies`, `m365_administrators`) through:
+
+- `M365CompanyRepository` (`src/repositories/m365_company_repository.py`): owns schema queries, optimistic revision concurrency checks, FK cascading deletes, and full transactional `replace_all` commits.
+- `PersistentCompanyDirectory` (`src/services/m365_company_store.py`): preserves `CompanyDirectory`'s pure validation API for F7Hub reuse while keeping synthetic preview records (`.example` / `.invalid`) strictly in RAM when `techpad.db` contains zero real companies. Saving or merging a real company automatically clears the synthetic preview without writing synthetic IDs into SQLite.
+- **Export & Pre-Backup Atomic Merge:** Technicians can export persisted companies (`format: "m365.company-directory"`, `version: 1`) or merge incoming JSON files directly from the M365 workspace (`Export JSON` / `Merge JSON`). Every Merge creates a verified timestamped pre-merge JSON backup under `<appDataDir>/backups/company-directory` before committing via `replace_all`; validation errors or optimistic revision conflicts roll back atomically. `SettingsDialog.btn_merge` remains intentionally disabled as the earlier UI prototype guard.
