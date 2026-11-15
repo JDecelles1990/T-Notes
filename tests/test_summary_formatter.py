@@ -334,3 +334,153 @@ def test_summary_formatter_dialog_language_and_preset_switching(qapp):
 
     dlg.close()
 
+
+def test_summary_formatter_email_helpers_and_truncation():
+    import urllib.parse
+
+    sections = ParsedTicketSections(
+        ticket_number="INC-420",
+        client_name="Contoso",
+        title="Mailbox sync issue",
+        elapsed_seconds=900,
+        issue="OWA works, desktop Outlook stuck.",
+        work_performed="Cleared OST cache.",
+        resolution="Outlook synced normally.",
+        technician_name="Jonathan Decelles",
+        technician_email="Jonathan_Decelles1990@hotmail.com",
+    )
+
+    subj_en = SummaryFormatterService.build_email_subject(sections, lang="en")
+    subj_fr = SummaryFormatterService.build_email_subject(sections, lang="fr")
+    assert subj_en == "[Ticket #INC-420] Contoso — Mailbox sync issue"
+    assert subj_fr == "[Billet #INC-420] Contoso — Mailbox sync issue"
+
+    long_body = "Line\n" * 800
+    url = SummaryFormatterService.build_mailto_url(
+        "Jonathan_Decelles1990@hotmail.com",
+        subj_en,
+        long_body,
+        max_body_chars=500,
+    )
+    assert url.startswith("mailto:Jonathan_Decelles1990@hotmail.com?subject=")
+    parsed = urllib.parse.urlsplit(url)
+    qs = urllib.parse.parse_qs(parsed.query)
+    assert qs["subject"][0] == subj_en
+    assert "Full note copied to clipboard" in qs["body"][0]
+
+    subj, plain, rich_html = SummaryFormatterService.format_active_ticket_email(
+        {
+            "ticket_number": "INC-420",
+            "client_name": "Contoso",
+            "title": "Mailbox sync issue",
+            "elapsed_seconds": 900,
+            "content_html": "<p>Cleared OST cache.</p>",
+        },
+        technician_name="Jonathan Decelles",
+        technician_email="Jonathan_Decelles1990@hotmail.com",
+        lang="en",
+    )
+    assert subj == subj_en
+    assert "=== TICKET: #INC-420 | Client: Contoso ===" in plain
+    assert "0.25h billable" in plain
+    assert "<div" in rich_html
+
+
+def test_summary_formatter_dialog_send_to_default_email(qapp):
+    import urllib.parse
+    from src.ui.dialogs.summary_formatter_dialog import SummaryFormatterDialog
+
+    ticket = {
+        "ticket_number": "INC-888",
+        "client_name": "Fabrikam",
+        "title": "MFA prompt loop",
+        "elapsed_seconds": 1800,
+        "content_html": "<h1>Issue</h1><p>Stuck in MFA prompt.</p>",
+    }
+
+    dlg = SummaryFormatterDialog(ticket=ticket, default_lang="en")
+    dlg.txt_email.setText("Jonathan_Decelles1990@hotmail.com")
+
+    opened_urls = []
+    ok = dlg._send_to_default_email(open_url_fn=lambda u: opened_urls.append(u.toString()) or True)
+    assert ok is True
+    assert hasattr(dlg, "btn_send_email")
+    assert len(opened_urls) == 1
+    assert opened_urls[0].startswith("mailto:Jonathan_Decelles1990@hotmail.com?subject=")
+    parsed = urllib.parse.urlsplit(opened_urls[0])
+    qs = urllib.parse.parse_qs(parsed.query)
+    assert "INC-888" in qs["subject"][0]
+    assert "Stuck in MFA prompt." in qs["body"][0]
+    assert "Jonathan_Decelles1990@hotmail.com" in dlg.lbl_status.text()
+
+    dlg.close()
+
+
+def test_copy_menu_send_active_ticket_to_default_email_and_autostart_default(tmp_path, qapp):
+    import urllib.parse
+    from src.database.connection import DatabaseManager
+    from src.database.migrations import init_database
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.scratchpad_repository import ScratchpadRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.autostart_service import AutostartService
+    from src.services.image_service import ImageService
+    from src.services.scratchpad_service import ScratchpadService
+    from src.services.session_service import SessionService
+    from src.ui.dialogs.settings_dialog import SettingsDialog
+    from src.ui.main_window import TechPadMainWindow
+
+    db = DatabaseManager(tmp_path / "test_email_and_startup.db")
+    init_database(db)
+
+    # Verify Windows Startup defaults to enabled in migrations & SettingsDialog fallback
+    scratch_repo = ScratchpadRepository(db)
+    img_repo = ImageRepository(db)
+    session_repo = SessionRepository(db)
+    template_repo = TemplateRepository(db)
+    img_service = ImageService(img_repo)
+    scratch_service = ScratchpadService(scratch_repo, img_service, template_repo)
+    session_service = SessionService(session_repo, scratch_service)
+
+    assert session_service.get_setting("autostart_enabled") == "true"
+    assert session_service.get_setting("smart_restore_enabled") == "true"
+    dlg_settings = SettingsDialog(current_settings={})
+    assert dlg_settings.chk_autostart.isChecked() is True
+    dlg_settings.close()
+    assert "--tray" in AutostartService().get_launch_command()
+
+    # Configure Default Email and verify Copy submenu + M365 copy menu dispatch
+    session_service.save_settings({
+        "technician_name": "Jonathan Decelles",
+        "technician_email": "Jonathan_Decelles1990@hotmail.com",
+    })
+
+    win = TechPadMainWindow(scratch_service, img_service, session_service)
+    try:
+        assert hasattr(win.toolbar, "act_send_default_email")
+        m365_actions = [a.text() for a in win.m365_workspace.btn_copy_note.menu().actions()]
+        assert any("Default Email" in txt for txt in m365_actions)
+
+        editor = win._get_active_editor()
+        assert editor is not None
+        ticket = scratch_service.get_ticket(editor.scratchpad_id)
+        editor.setPlainText("Checked DNS records and restarted print spooler.")
+
+        opened_urls = []
+        ok = win._on_send_active_ticket_to_default_email(
+            open_url_fn=lambda u: opened_urls.append(u.toString()) or True
+        )
+        assert ok is True
+        assert len(opened_urls) == 1
+        assert opened_urls[0].startswith("mailto:Jonathan_Decelles1990@hotmail.com?subject=")
+        parsed = urllib.parse.urlsplit(opened_urls[0])
+        qs = urllib.parse.parse_qs(parsed.query)
+        assert ticket["ticket_number"] in qs["subject"][0]
+        assert "restarted print spooler." in qs["body"][0]
+    finally:
+        win._force_quit = True
+        win.close()
+        win.deleteLater()
+
+

@@ -2,7 +2,7 @@
 
 from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, Qt
 from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QTextDocument, QWheelEvent
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QDialog, QFrame, QHBoxLayout
 import pytest
 
 from src.database.connection import DatabaseManager
@@ -341,6 +341,29 @@ def test_resize_image_dialog_with_annotation_controls(qapp):
         dlg.btn_stroke_thick.click()
         assert dlg.canvas._stroke_width == 8
 
+        assert dlg.btn_stroke_xthick.isCheckable()
+        assert dlg.btn_stroke_xthick.text() == "12px"
+        dlg.btn_stroke_xthick.click()
+        assert dlg.canvas._stroke_width == 12
+
+        # Verify toolbar controls fit on a single horizontal row without truncation
+        assert dlg.spin_font_size.minimumWidth() >= 68
+        dlg.ensurePolished()
+        dlg.resize(1020, 680)
+        dlg.layout().activate()
+        toolbar = dlg.findChild(QFrame, "annotationToolbar")
+        assert toolbar is not None
+        assert isinstance(toolbar.layout(), QHBoxLayout)
+        toolbar.layout().activate()
+        qapp.processEvents()
+        assert dlg.spin_font_size.width() >= 68
+        base_y = dlg.btn_tool_select.y()
+        for btn in dlg._toolbar_text_buttons:
+            assert btn.minimumWidth() >= btn.sizeHint().width()
+            assert btn.sizeHint().width() <= btn.width() < 300
+            assert abs(btn.y() - base_y) <= 4
+            assert btn.x() + btn.width() <= toolbar.width()
+
         # Annotate via canvas helper
         dlg.canvas.add_text_at(QPoint(50, 50), "NOTE")
         assert dlg.was_image_annotated()
@@ -529,17 +552,17 @@ def test_image_editor_window_title_and_maximize(qapp):
 
         # Dialog pops up maximized at full screen by default
         assert dlg.isMaximized() or bool(dlg.windowState() & Qt.WindowMaximized)
-        assert dlg.btn_maximize.text() == "❐ Restore"
+        assert dlg.btn_maximize.text() == "❐"
 
         # Test toggle restore back to normal size
         dlg._toggle_maximize()
         assert not dlg.isMaximized()
-        assert dlg.btn_maximize.text() == "⛶ Maximize"
+        assert dlg.btn_maximize.text() == "⛶"
 
         # Test toggle back to full screen
         dlg._toggle_maximize()
         assert dlg.isMaximized() or bool(dlg.windowState() & Qt.WindowMaximized)
-        assert dlg.btn_maximize.text() == "❐ Restore"
+        assert dlg.btn_maximize.text() == "❐"
     finally:
         dlg.deleteLater()
 
@@ -720,9 +743,9 @@ def test_image_editor_edge_move_and_rotation(qapp):
     scale_y = disp_rect.height() / img.height()
 
     # 2. Test Edge Hit Testing:
-    # Top Edge:
+    # Top Edge (between top-left corner and top-center resize handle):
     top_edge_vp = QPoint(
-        int(disp_rect.x() + 200 * scale_x),
+        int(disp_rect.x() + 150 * scale_x),
         int(disp_rect.y() + 100 * scale_y - 4),
     )
     handle, it = canvas.get_selection_handle_at(top_edge_vp)
@@ -933,7 +956,7 @@ def test_image_editor_line_tool_and_shift_snap(qapp):
     )
     try:
         assert hasattr(dlg, "btn_tool_line")
-        assert dlg.btn_tool_line.text() == "📏 Line"
+        assert dlg.btn_tool_line.text() == "📏"
         dlg.btn_tool_line.click()
         assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_LINE
 
@@ -942,6 +965,115 @@ def test_image_editor_line_tool_and_shift_snap(qapp):
         assert dlg.btn_tool_line.isChecked()
     finally:
         dlg.deleteLater()
+
+
+def test_image_editor_resize_drawings_and_shapes_via_handles(qapp):
+    """Verifies that corner and side handles resize freehand drawings, lines, and shapes with undo/redo."""
+    img = QImage(600, 400, QImage.Format_ARGB32_Premultiplied)
+    img.fill(0xFFFFFFFF)
+
+    canvas = ImageAnnotationCanvas(img)
+    canvas.resize(600, 400)
+    disp_rect = canvas.get_image_display_rect()
+    scale_x = disp_rect.width() / img.width()
+    scale_y = disp_rect.height() / img.height()
+
+    def vp_handle_pos(item: AnnotationItem, x_factor: float, y_factor: float) -> QPoint:
+        b = item.get_bounding_rect()
+        cx = disp_rect.x() + b.center().x() * scale_x
+        cy = disp_rect.y() + b.center().y() * scale_y
+        hw = max(16.0, b.width() * scale_x) / 2.0 + 4.0
+        hh = max(16.0, b.height() * scale_y) / 2.0 + 4.0
+        return QPoint(int(round(cx + x_factor * hw)), int(round(cy + y_factor * hh)))
+
+    def drag_handle(start_vp: QPoint, delta_x: int, delta_y: int) -> None:
+        end_vp = QPoint(start_vp.x() + delta_x, start_vp.y() + delta_y)
+        canvas.mousePressEvent(
+            QMouseEvent(QEvent.MouseButtonPress, QPointF(start_vp), QPointF(start_vp), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        )
+        assert canvas._action_mode == ImageAnnotationCanvas.ACTION_RESIZE
+        canvas.mouseMoveEvent(
+            QMouseEvent(QEvent.MouseMove, QPointF(end_vp), QPointF(end_vp), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        )
+        canvas.mouseReleaseEvent(
+            QMouseEvent(QEvent.MouseButtonRelease, QPointF(end_vp), QPointF(end_vp), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+        )
+        assert canvas._action_mode == ImageAnnotationCanvas.ACTION_NONE
+
+    # 1. Freehand drawing (TYPE_PEN): resize via bottom-right corner and right side handle
+    pen_item = AnnotationItem(
+        AnnotationItem.TYPE_PEN,
+        QColor("#ff3b30"),
+        stroke_width=4,
+        points=[QPoint(50, 50), QPoint(100, 80), QPoint(150, 120)],
+    )
+    canvas.get_items().append(pen_item)
+    canvas._selected_item = pen_item
+    canvas.set_tool(ImageAnnotationCanvas.TOOL_SELECT)
+
+    orig_bounds = pen_item.get_bounding_rect()
+    br_vp = vp_handle_pos(pen_item, 1.0, 1.0)
+    h, it = canvas.get_selection_handle_at(br_vp)
+    assert it is pen_item
+    assert h == ImageAnnotationCanvas.HANDLE_CORNER_BR
+
+    drag_handle(br_vp, int(round(60 * scale_x)), int(round(40 * scale_y)))
+    enlarged_bounds = pen_item.get_bounding_rect()
+    assert enlarged_bounds.width() > orig_bounds.width() + 40
+    assert enlarged_bounds.height() > orig_bounds.height() + 25
+    assert canvas.was_annotated()
+
+    # Right side midpoint handle only changes width horizontally
+    right_vp = vp_handle_pos(pen_item, 1.0, 0.0)
+    h_right, _ = canvas.get_selection_handle_at(right_vp)
+    assert h_right == ImageAnnotationCanvas.HANDLE_SIDE_RIGHT
+    pre_right_bounds = pen_item.get_bounding_rect()
+    drag_handle(right_vp, int(round(30 * scale_x)), 0)
+    after_right_bounds = pen_item.get_bounding_rect()
+    assert after_right_bounds.width() > pre_right_bounds.width() + 20
+    assert after_right_bounds.height() == pre_right_bounds.height()
+
+    # Undo & Redo restore/reapply resized pen drawing
+    canvas.undo()
+    assert canvas.get_items()[0].get_bounding_rect() == pre_right_bounds
+    canvas.redo()
+    assert canvas.get_items()[0].get_bounding_rect() == after_right_bounds
+
+    # 2. Straight Line (TYPE_LINE): resize via top-left corner and bottom side handle
+    line_item = AnnotationItem(
+        AnnotationItem.TYPE_LINE,
+        QColor("#34c759"),
+        stroke_width=4,
+        points=[QPoint(250, 100), QPoint(350, 160)],
+    )
+    canvas.get_items().append(line_item)
+    canvas._selected_item = line_item
+
+    tl_vp = vp_handle_pos(line_item, -1.0, -1.0)
+    h_tl, _ = canvas.get_selection_handle_at(tl_vp)
+    assert h_tl == ImageAnnotationCanvas.HANDLE_CORNER_TL
+    orig_line_bounds = line_item.get_bounding_rect()
+    drag_handle(tl_vp, int(round(-40 * scale_x)), int(round(-20 * scale_y)))
+    assert line_item.get_bounding_rect().width() > orig_line_bounds.width() + 25
+    assert line_item.get_bounding_rect().height() > orig_line_bounds.height() + 10
+
+    # 3. Rectangle Shape (TYPE_RECTANGLE): resize via bottom side handle
+    rect_item = AnnotationItem(
+        AnnotationItem.TYPE_RECTANGLE,
+        QColor("#00e5ff"),
+        stroke_width=4,
+        rect=QRect(200, 220, 140, 80),
+    )
+    canvas.get_items().append(rect_item)
+    canvas._selected_item = rect_item
+
+    bot_vp = vp_handle_pos(rect_item, 0.0, 1.0)
+    h_bot, _ = canvas.get_selection_handle_at(bot_vp)
+    assert h_bot == ImageAnnotationCanvas.HANDLE_SIDE_BOTTOM
+    drag_handle(bot_vp, 0, int(round(50 * scale_y)))
+    assert rect_item.rect.width() == 140
+    assert rect_item.rect.height() >= 120
+
 
 
 

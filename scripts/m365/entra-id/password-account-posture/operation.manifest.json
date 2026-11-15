@@ -1,0 +1,69 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE",
+  "title": "Audit Password Age, Policy & Hybrid Sync Posture",
+  "description": "Inspect Entra ID password age, PasswordPolicies, hybrid AD Connect sync timestamps, and session token revocation state.",
+  "category": "entra-id",
+  "subcategory": "account-posture",
+  "tags": [
+    "entra-id",
+    "password",
+    "sync",
+    "ad-connect",
+    "tokens",
+    "graph"
+  ],
+  "script_path": "entra-id/password-account-posture/Get-PasswordAndAccountPosture.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "3f1e6a8c345ef0d86fd74c5cf436313e619eb452d77f0fce9d84d6dc8503a418",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "PasswordAgeWarningDays",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 365,
+      "default": 90,
+      "description": "Flag password ages at or above this threshold in days (1..365)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}
+

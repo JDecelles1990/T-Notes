@@ -32,6 +32,7 @@ class TechPadToolBar(QToolBar):
     export_file_requested = Signal()     # Emits when 'Export Note' to file is clicked
     copy_client_email_requested = Signal(str)  # Emits language ('en' or 'fr')
     copy_psa_note_requested = Signal(str)      # Emits language ('en' or 'fr')
+    send_default_email_requested = Signal()    # Emits to open default email client for active ticket
     summary_dialog_requested = Signal()        # Emits to open interactive summary dialog
     code_block_requested = Signal()
     checklist_requested = Signal()      # Emits when checklist button clicked
@@ -296,6 +297,14 @@ class TechPadToolBar(QToolBar):
         copy_menu.addAction(self.act_copy_psa_fr)
 
         copy_menu.addSeparator()
+
+        self.act_send_default_email = QAction("📧 Send Active Ticket to Default Email", self.secondary_toolbar)
+        self.act_send_default_email.setShortcut(QKeySequence("Ctrl+Alt+M"))
+        self.act_send_default_email.setToolTip(
+            "Open default email client addressed to your Default Email with the active ticket (also copies rich note to clipboard)"
+        )
+        self.act_send_default_email.triggered.connect(self.send_default_email_requested.emit)
+        copy_menu.addAction(self.act_send_default_email)
 
         self.act_summary_dialog = QAction("✨ Format Ticket Summary... / Résumé...", self.secondary_toolbar)
         self.act_summary_dialog.setToolTip("Open interactive bilingual summary formatter dialog")

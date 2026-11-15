@@ -1,8 +1,8 @@
 """Bilingual Summary Formatter Dialog for Ticket Resolution & PSA Export."""
 
-from typing import Any, Dict, Optional
-from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QFont, QKeySequence, QShortcut
+from typing import Any, Callable, Dict, Optional
+from PySide6.QtCore import Qt, QMimeData, QUrl
+from PySide6.QtGui import QDesktopServices, QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -256,6 +257,14 @@ class SummaryFormatterDialog(QDialog):
         self.btn_copy_rich.clicked.connect(self._copy_rich_text)
         btn_bar.addWidget(self.btn_copy_rich)
 
+        self.btn_send_email = QPushButton("📧 Send to Default Email")
+        self.btn_send_email.setObjectName("btnPrimary")
+        self.btn_send_email.setToolTip(
+            "Opens your default email client addressed to your Default Email with this summary (also copies summary to clipboard)"
+        )
+        self.btn_send_email.clicked.connect(lambda: self._send_to_default_email())
+        btn_bar.addWidget(self.btn_send_email)
+
         btn_bar.addStretch()
 
         self.btn_close = QPushButton("Close")
@@ -298,6 +307,12 @@ class SummaryFormatterDialog(QDialog):
 
         self.btn_copy_plain.setText("📋 Copier texte brut" if is_fr else "📋 Copy Plain Text")
         self.btn_copy_rich.setText("📋 Copier texte enrichi" if is_fr else "📋 Copy Rich Text")
+        self.btn_send_email.setText("📧 Envoyer au courriel par défaut" if is_fr else "📧 Send to Default Email")
+        self.btn_send_email.setToolTip(
+            "Ouvre votre client de messagerie vers votre courriel par défaut avec ce résumé (copie aussi le résumé dans le presse-papiers)"
+            if is_fr
+            else "Opens your default email client addressed to your Default Email with this summary (also copies summary to clipboard)"
+        )
         self.btn_close.setText("Fermer" if is_fr else "Close")
 
         # Update presets combo items
@@ -395,3 +410,41 @@ class SummaryFormatterDialog(QDialog):
         QApplication.clipboard().setMimeData(mime)
         msg = "✓ Texte enrichi copié !" if self.current_lang == "fr" else "✓ Copied Rich Text!"
         self.lbl_status.setText(msg)
+
+    def _send_to_default_email(self, open_url_fn: Optional[Callable[[QUrl], Any]] = None) -> bool:
+        """Copies formatted summary and launches the system default email client via mailto."""
+        is_fr = self.current_lang == "fr"
+        recipient = self.txt_email.text().strip() or self.technician_email.strip()
+        if not recipient:
+            title = "Courriel par défaut" if is_fr else "Default Email Address"
+            prompt = (
+                "Entrez votre adresse courriel par défaut (enregistrée dans les préférences) :"
+                if is_fr
+                else "Enter your Default Email address (saved in Preferences):"
+            )
+            entered, ok = QInputDialog.getText(self, title, prompt)
+            recipient = entered.strip() if ok else ""
+            if not recipient:
+                self.lbl_status.setText(
+                    "Courriel par défaut requis." if is_fr else "Default Email is required to send."
+                )
+                return False
+            self.txt_email.setText(recipient)
+
+        self._copy_rich_text()
+        subject = SummaryFormatterService.build_email_subject(self.sections, lang=self.current_lang)
+        mailto_url = SummaryFormatterService.build_mailto_url(recipient, subject, self._current_plain)
+        opener = open_url_fn or QDesktopServices.openUrl
+        opened = opener(QUrl(mailto_url))
+        if opened is False:
+            self.lbl_status.setText(
+                "Impossible d'ouvrir le client courriel (résumé copié)."
+                if is_fr
+                else "Could not launch email client (summary copied to clipboard)."
+            )
+            return False
+
+        self.lbl_status.setText(
+            f"✓ Courriel ouvert ({recipient}) !" if is_fr else f"✓ Opened Email ({recipient})!"
+        )
+        return True

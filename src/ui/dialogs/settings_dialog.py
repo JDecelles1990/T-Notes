@@ -95,7 +95,7 @@ class SettingsDialog(QDialog):
         if self.autostart_service:
             self.chk_autostart.setChecked(self.autostart_service.is_enabled())
         else:
-            self.chk_autostart.setChecked(self._settings.get("autostart_enabled", "false") == "true")
+            self.chk_autostart.setChecked(self._settings.get("autostart_enabled", "true") == "true")
         form.addRow("Windows Startup:", self.chk_autostart)
 
         # 7. Smart Restore

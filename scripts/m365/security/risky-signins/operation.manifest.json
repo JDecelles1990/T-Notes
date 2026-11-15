@@ -15,7 +15,7 @@
   ],
   "script_path": "security/risky-signins/Get-SecurityRiskySignIns.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "919aae373a87d5e7822d1483704c490bdfe182a51c161e5ea0be5f53214c0028",
+  "script_sha256": "391ba440a171d5b08abc12f24a49a5e6f0f6510e6deee8dd409692fac0ce8bec",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -31,8 +31,7 @@
     "Graph"
   ],
   "graph_scopes": [
-    "AuditLog.Read.All",
-    "Directory.Read.All"
+    "AuditLog.Read.All"
   ],
   "required_roles": [
     {

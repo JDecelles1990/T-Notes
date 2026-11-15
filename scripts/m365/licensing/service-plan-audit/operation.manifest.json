@@ -14,7 +14,7 @@
   ],
   "script_path": "licensing/service-plan-audit/Get-ServicePlanAudit.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "655aa2c14edcf94650076e9f488a38cd79a9c65469ab7b7c77f2493a9512e070",
+  "script_sha256": "18eca8064461e6358510c30aa753f37cafc5dd5dc076f83b45b71c7a0b37aa36",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

@@ -14,7 +14,7 @@
   ],
   "script_path": "sharepoint/access-diagnostic/Get-SharePointAccessDiagnostic.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "58b98ee6d0dc270def11afc1970a8c6aee3d697c9338a6f8a0275da7056a379f",
+  "script_sha256": "e69ec6c8447817c8559e7176d7453dcec999dd2b30c1c92a743c16803121fb7c",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -30,8 +30,7 @@
     "Graph"
   ],
   "graph_scopes": [
-    "AuditLog.Read.All",
-    "Directory.Read.All"
+    "AuditLog.Read.All"
   ],
   "required_roles": [
     {

@@ -10,6 +10,7 @@ import html
 import math
 import re
 from typing import Optional
+import urllib.parse
 
 
 @dataclass
@@ -546,9 +547,60 @@ class SummaryFormatterService:
         html_body = cls._text_to_rich_html(plain, title=header_title)
         return plain, html_body
 
-        plain = "\n".join(lines)
-        html_body = cls._text_to_rich_html(plain, title=header_title)
-        return plain, html_body
+    @classmethod
+    def build_email_subject(cls, sections: ParsedTicketSections, lang: str = "en") -> str:
+        """Builds a concise email subject line from parsed ticket metadata."""
+        t_ref = f"#{sections.ticket_number}" if sections.ticket_number else ""
+        client = sections.client_name.strip()
+        title = sections.title.strip()
+        prefix = f"Billet {t_ref}".strip() if lang == "fr" else f"Ticket {t_ref}".strip()
+        details = " — ".join(part for part in (client, title) if part)
+        if t_ref and details:
+            return f"[{prefix}] {details}"
+        if t_ref:
+            return f"[{prefix}]"
+        if details:
+            return details
+        return "Résumé de billet T-Notes" if lang == "fr" else "T-Notes Ticket Summary"
+
+    @classmethod
+    def build_mailto_url(
+        cls,
+        recipient: str,
+        subject: str,
+        body: str,
+        max_body_chars: int = 1800,
+    ) -> str:
+        """Builds a URL-encoded mailto URI bounded for Windows ShellExecuteW limits."""
+        clean_recipient = (recipient or "").strip()
+        norm_body = (body or "").replace("\r\n", "\n").replace("\r", "\n")
+        if max_body_chars > 0 and len(norm_body) > max_body_chars:
+            suffix = "\n\n[... Full note copied to clipboard - press Ctrl+V to paste ...]"
+            cut = max(0, max_body_chars - len(suffix))
+            norm_body = norm_body[:cut].rstrip() + suffix
+        crlf_body = norm_body.replace("\n", "\r\n")
+        enc_recipient = urllib.parse.quote(clean_recipient, safe="@._+-")
+        enc_subject = urllib.parse.quote((subject or "").strip(), safe="")
+        enc_body = urllib.parse.quote(crlf_body, safe="")
+        return f"mailto:{enc_recipient}?subject={enc_subject}&body={enc_body}"
+
+    @classmethod
+    def format_active_ticket_email(
+        cls,
+        ticket: dict,
+        technician_name: str = "",
+        technician_email: str = "",
+        lang: str = "en",
+    ) -> tuple[str, str, str]:
+        """Parses an active ticket into (subject, plain_body, rich_html) ready for email dispatch."""
+        sections = cls.parse_ticket(
+            ticket,
+            technician_name=technician_name,
+            technician_email=technician_email,
+        )
+        subject = cls.build_email_subject(sections, lang=lang)
+        plain, rich_html = cls.format_psa_note(sections, lang=lang, include_time=True)
+        return subject, plain, rich_html
 
     @classmethod
     def _text_to_rich_html(cls, plain_text: str, title: str = "") -> str:

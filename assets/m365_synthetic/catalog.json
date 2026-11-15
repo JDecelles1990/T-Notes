@@ -35,7 +35,7 @@
     },
     {
       "manifest_path": "general/tenant-user-overview/operation.manifest.json",
-      "manifest_sha256": "49cdef21712156d6ffdd167c91d951a499978f3cc2b355d0c3afe7981f3df863",
+      "manifest_sha256": "03ed815c2945f45efe87a95e0d561636632d4662fe46e540d025511867856fa9",
       "category_ids": [
         "general"
       ],
@@ -43,7 +43,7 @@
     },
     {
       "manifest_path": "general/service-readiness/operation.manifest.json",
-      "manifest_sha256": "b7c1a1de0be60a70813f671919456e865184940ae0f784c00cdd144e4f8f44ca",
+      "manifest_sha256": "29879b8bb712008395d8837efe68e5d7541f5032462d834f7dc059e40c6c7523",
       "category_ids": [
         "general"
       ],
@@ -51,7 +51,7 @@
     },
     {
       "manifest_path": "entra-id/user-mfa-audit/operation.manifest.json",
-      "manifest_sha256": "7bf511ce3073ddf7718a2c3904398b03ec3163ec9322062c90a83e0d176cb0aa",
+      "manifest_sha256": "5855b19ca201a4325af854a3ce30de3ade385e1d8c587982fd624522379ca3cc",
       "category_ids": [
         "entra-id",
         "security"
@@ -60,7 +60,7 @@
     },
     {
       "manifest_path": "exchange-online/mailbox-quota-hold/operation.manifest.json",
-      "manifest_sha256": "5d898448d5d38fa3d3e59b0f217e801592208aa4ebdea81af83426d540a1cc44",
+      "manifest_sha256": "fe19b141b550063a897b70a4fd9e0924d9b1870d65c4633371cefcc6a9bb7c26",
       "category_ids": [
         "exchange-online"
       ],
@@ -68,7 +68,7 @@
     },
     {
       "manifest_path": "licensing/service-plan-audit/operation.manifest.json",
-      "manifest_sha256": "43cf6307724bb3c1f36755d1381ab7dd1ecf40731aaeb84c6fe35de9f05210f1",
+      "manifest_sha256": "544f93b9c8b57151a662fb4b81cbd66cabd6b4807343a6ac46945d532811d7bd",
       "category_ids": [
         "licensing"
       ],
@@ -76,7 +76,7 @@
     },
     {
       "manifest_path": "teams/user-readiness/operation.manifest.json",
-      "manifest_sha256": "232118a497f536efa97858b927200ad1dcb2ff1c6a7dfa5298c8aeb805933317",
+      "manifest_sha256": "02af14b0fcca42fa0223bbc3b07778fc888899a6263b6908d5492ebeffcfd5c0",
       "category_ids": [
         "teams"
       ],
@@ -84,7 +84,7 @@
     },
     {
       "manifest_path": "teams/client-signins/operation.manifest.json",
-      "manifest_sha256": "1f98b2064eb61c656e4c3c7a477d884fcec62faa82e2d90d564d8f332f2c9ac0",
+      "manifest_sha256": "e369a24d67b9e031d4c4a7cd2ca11b865f8b1e8fb7c2d117996c72d65de84ac7",
       "category_ids": [
         "teams"
       ],
@@ -92,7 +92,7 @@
     },
     {
       "manifest_path": "sharepoint/access-diagnostic/operation.manifest.json",
-      "manifest_sha256": "a63296c034d97af508ae75df475cf4201105ad1d509cc80d3647aa7126ec728b",
+      "manifest_sha256": "3a3772fc7276c1b6877534c30022e0d6e9e3ee8b55afca85a4a738b02ff2a8b3",
       "category_ids": [
         "sharepoint"
       ],
@@ -100,7 +100,7 @@
     },
     {
       "manifest_path": "onedrive/sync-diagnostic/operation.manifest.json",
-      "manifest_sha256": "9b99dd302b52c2944b759002d715b0a7f826ee33e83aef829c30db9785f71da1",
+      "manifest_sha256": "ce1cf557a4a81a091193b1bf1c564740a92f5bac12deddf2669ccf6c98a5b8ec",
       "category_ids": [
         "onedrive"
       ],
@@ -108,7 +108,7 @@
     },
     {
       "manifest_path": "intune/compliance-enrollment/operation.manifest.json",
-      "manifest_sha256": "29232fb306dc487fbbdaab09f717874ff652433d6d0fd434c5df3c6dcec09a5f",
+      "manifest_sha256": "b90441e04e7400cbabca3dd0c47dfd529c216006678146210c8884cdc273f93d",
       "category_ids": [
         "intune"
       ],
@@ -116,7 +116,7 @@
     },
     {
       "manifest_path": "security/risky-signins/operation.manifest.json",
-      "manifest_sha256": "0a0e0963e4d6625f851c18587125aaa1ca95c5b9d1d1e003951cdfcb3ecdaf30",
+      "manifest_sha256": "4c6eb38f418b199a46b838e25633d752a5cdbb435a58fa768488e9ebc16bf1ce",
       "category_ids": [
         "security"
       ],
@@ -124,7 +124,7 @@
     },
     {
       "manifest_path": "reports/user-access-audit/operation.manifest.json",
-      "manifest_sha256": "1eaab0279b8b538e1b966da8d95cac941b7241d326ad20b2b7e7fdfb52dd8893",
+      "manifest_sha256": "552d66e36d7b3837645fc1667809dcb7fbcbe719b9e72dd18f5267e59c9b1698",
       "category_ids": [
         "reports"
       ],
@@ -132,8 +132,75 @@
     },
     {
       "manifest_path": "other/upn-smtp-alignment/operation.manifest.json",
-      "manifest_sha256": "68a4dcb7a3cf1c6fe733ea1ebd5403080bea4150aa4240a9f99346a5922d4e1f",
+      "manifest_sha256": "ee4895797ae4b537648157292dfb24498e579e58d2ad9f72c4cf4d3d44404fe4",
       "category_ids": [
+        "other"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "exchange-online/forwarding-auto-reply/operation.manifest.json",
+      "manifest_sha256": "322c0edab46c2aec95390e40e22e2cfcb7a937034e0887518fc23362e5e082d7",
+      "category_ids": [
+        "exchange-online"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "exchange-online/mailbox-permissions/operation.manifest.json",
+      "manifest_sha256": "a43d4de3231d1273d85d05734751dcf7bdf428878c7660454c60aeea1f69b00f",
+      "category_ids": [
+        "exchange-online"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "entra-id/password-account-posture/operation.manifest.json",
+      "manifest_sha256": "575d49084a3cd3ab46930a1b4a56822e715c0dc7c9e3093273f46c59ed0fff29",
+      "category_ids": [
+        "entra-id"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "entra-id/group-role-membership/operation.manifest.json",
+      "manifest_sha256": "b9d93eb7c9b3e463ad8f176f53251552d7052e26fa3609a49214ab2423d7fab8",
+      "category_ids": [
+        "entra-id",
+        "security"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "security/legacy-auth-lockout/operation.manifest.json",
+      "manifest_sha256": "d4c08e193e7abd6e3092ee86ec8fbbb415fda9ed02f96289df586dfec950c673",
+      "category_ids": [
+        "security",
+        "entra-id"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "intune/device-inventory/operation.manifest.json",
+      "manifest_sha256": "31d33c1c20842da6109254e1b7aff6a1e93621a79b51af686c126e8620983165",
+      "category_ids": [
+        "intune"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "onedrive/client-sync-signins/operation.manifest.json",
+      "manifest_sha256": "729951bbf4196dbe5921c317d4b095775bb25ec60bf5fc1dac98987818f33c9e",
+      "category_ids": [
+        "onedrive"
+      ],
+      "lifecycle": "active"
+    },
+    {
+      "manifest_path": "sharepoint/external-guest-posture/operation.manifest.json",
+      "manifest_sha256": "ba66eec96926db7ab9b0334ff5d1dea58e74d044968d8bf9682ef76568254e97",
+      "category_ids": [
+        "sharepoint",
         "other"
       ],
       "lifecycle": "active"

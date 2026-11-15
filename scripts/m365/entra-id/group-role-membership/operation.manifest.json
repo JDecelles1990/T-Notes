@@ -1,0 +1,76 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP",
+  "title": "Audit Entra Group & Directory Role Memberships",
+  "description": "Summarize direct Entra ID Security Groups, M365 Unified Groups, Mail groups, and Directory Admin Roles.",
+  "category": "entra-id",
+  "subcategory": "access-governance",
+  "tags": [
+    "entra-id",
+    "groups",
+    "roles",
+    "admin",
+    "rbac",
+    "graph"
+  ],
+  "script_path": "entra-id/group-role-membership/Get-GroupAndRoleMembership.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "8e370f45c58e45ce67045431ccab867c3c05d2bb266d6d98af8fa17d55416e1e",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "IncludeAdminRoles",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Highlight privileged Entra Directory Admin Role memberships."
+    },
+    {
+      "name": "MaxGroups",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 100,
+      "default": 25,
+      "description": "Maximum number of direct group names to include in summary warnings (1..100)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}
+

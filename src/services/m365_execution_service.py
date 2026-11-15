@@ -136,6 +136,27 @@ LIVE_PILOT_SCRIPT_IDS = frozenset(
         "M365.ENTRA.USER_LICENSES",
         "M365.ENTRA.USER_SIGNINS",
         "M365.EXCHANGE.MAILBOX_SUMMARY",
+        "M365.GENERAL.TENANT_USER_OVERVIEW",
+        "M365.GENERAL.SERVICE_READINESS_AUDIT",
+        "M365.ENTRA.USER_MFA_AUDIT",
+        "M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD",
+        "M365.LICENSING.SERVICE_PLAN_AUDIT",
+        "M365.TEAMS.USER_READINESS",
+        "M365.TEAMS.CLIENT_SIGNINS",
+        "M365.SHAREPOINT.ACCESS_DIAGNOSTIC",
+        "M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC",
+        "M365.INTUNE.COMPLIANCE_AND_ENROLLMENT",
+        "M365.SECURITY.RISKY_SIGNIN_AUDIT",
+        "M365.REPORTS.USER_ACCESS_AUDIT_REPORT",
+        "M365.OTHER.UPN_SMTP_ALIGNMENT",
+        "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY",
+        "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT",
+        "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE",
+        "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP",
+        "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT",
+        "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE",
+        "M365.ONEDRIVE.CLIENT_SYNC_SIGNINS",
+        "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE",
     }
 )
 
@@ -144,6 +165,27 @@ LIVE_PILOT_REQUIRED_CMDLETS: dict[str, tuple[str, ...]] = {
     "M365.ENTRA.USER_LICENSES": ("Get-MgUserLicenseDetail",),
     "M365.ENTRA.USER_SIGNINS": ("Get-MgAuditLogSignIn",),
     "M365.EXCHANGE.MAILBOX_SUMMARY": ("Get-EXOMailbox", "Get-EXOMailboxStatistics"),
+    "M365.GENERAL.TENANT_USER_OVERVIEW": ("Get-MgUser",),
+    "M365.GENERAL.SERVICE_READINESS_AUDIT": ("Get-MgUserLicenseDetail",),
+    "M365.ENTRA.USER_MFA_AUDIT": ("Get-MgAuditLogSignIn",),
+    "M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD": ("Get-EXOMailbox", "Get-EXOMailboxStatistics"),
+    "M365.LICENSING.SERVICE_PLAN_AUDIT": ("Get-MgUserLicenseDetail",),
+    "M365.TEAMS.USER_READINESS": ("Get-MgUserLicenseDetail",),
+    "M365.TEAMS.CLIENT_SIGNINS": ("Get-MgAuditLogSignIn",),
+    "M365.SHAREPOINT.ACCESS_DIAGNOSTIC": ("Get-MgAuditLogSignIn",),
+    "M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC": ("Get-MgUserLicenseDetail",),
+    "M365.INTUNE.COMPLIANCE_AND_ENROLLMENT": ("Get-MgAuditLogSignIn",),
+    "M365.SECURITY.RISKY_SIGNIN_AUDIT": ("Get-MgAuditLogSignIn",),
+    "M365.REPORTS.USER_ACCESS_AUDIT_REPORT": ("Get-MgAuditLogSignIn",),
+    "M365.OTHER.UPN_SMTP_ALIGNMENT": ("Get-MgUser",),
+    "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY": ("Get-EXOMailbox", "Get-EXOMailboxStatistics"),
+    "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT": ("Get-EXOMailbox", "Get-EXOMailboxStatistics"),
+    "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE": ("Get-MgUser",),
+    "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP": ("Get-MgUser",),
+    "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT": ("Get-MgAuditLogSignIn",),
+    "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE": ("Get-MgAuditLogSignIn",),
+    "M365.ONEDRIVE.CLIENT_SYNC_SIGNINS": ("Get-MgAuditLogSignIn",),
+    "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE": ("Get-MgUser",),
 }
 
 _LIVE_SAFE_MESSAGES: dict[str, str] = {
@@ -161,7 +203,7 @@ def build_live_pilot_catalog_service(
     library_root: Path | None = None,
     contract_root: Path | None = None,
 ) -> M365CatalogService:
-    """Build an immutable M365 catalog restricted to the 4 read-only live pilot operations."""
+    """Build an immutable M365 catalog containing all read-only live tenant operations."""
     from src.services.m365_preflight_service import LIVE_PILOT_MANIFEST_PATHS
 
     meta = Path(metadata_root) if metadata_root is not None else ROOT / "assets/m365"
@@ -379,12 +421,7 @@ class M365ExecutionService:
                 if conn.session_generation != ctx.session_generation:
                     reasons.append(f"{service_name}: STALE_CONTEXT")
                 if is_live and service_name == "ExchangeOnline":
-                    needed = [
-                        r["any_of"][0]
-                        for r in manifest.get("required_roles", [])
-                        if r["service"] == "ExchangeOnline" and r.get("any_of")
-                    ]
-                    if needed and not set(needed).issubset(set(getattr(conn, "effective_roles", ()))):
+                    if not self._has_satisfied_exo_roles(manifest, getattr(conn, "effective_roles", ())):
                         reasons.append("ExchangeOnline: ACCESS_DENIED (required EXO cmdlets unavailable)")
 
         target_policy = manifest["target_policy"]
@@ -517,12 +554,7 @@ class M365ExecutionService:
                 conn_scopes = tuple(getattr(conn, "graph_scopes", ()) or ())
                 conn_roles = tuple(getattr(conn, "effective_roles", ()) or ())
                 if is_live and service_name == "ExchangeOnline":
-                    needed = [
-                        r["any_of"][0]
-                        for r in manifest.get("required_roles", [])
-                        if r["service"] == "ExchangeOnline" and r.get("any_of")
-                    ]
-                    if needed and not set(needed).issubset(set(conn_roles)):
+                    if not self._has_satisfied_exo_roles(manifest, conn_roles):
                         return self._build_rejected_outcome(
                             script_id,
                             "ACCESS_DENIED",
@@ -1003,6 +1035,16 @@ class M365ExecutionService:
                 entry["retryable"] = bool(item.get("retryable", False))
             sanitized.append(entry)
         return sanitized
+
+    @staticmethod
+    def _has_satisfied_exo_roles(manifest: dict, effective_roles) -> bool:
+        """Return True if every ExchangeOnline required_roles rule has at least one satisfied role."""
+        role_set = set(effective_roles or ())
+        for rule in manifest.get("required_roles", []):
+            if rule.get("service") == "ExchangeOnline" and rule.get("any_of"):
+                if not any(role in role_set for role in rule["any_of"]):
+                    return False
+        return True
 
     @staticmethod
     def _compute_logical_exit_code(status: str, errors: list[dict]) -> int:

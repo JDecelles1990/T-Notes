@@ -89,7 +89,7 @@ Dedicated strictly to rich-text authoring, colors, and content markup:
 Dedicated to ticket-level actions, troubleshooting duration, translucency, and preferences:
 - **Ticket Stopwatch (`⏱️`):** Live Consolas monospace counter (`⏱️ HH:MM:SS`), crisp Unicode Play/Pause (`▶`/`⏸`), and Reset (`↺`).
 - **Ticket Templates (`📋 Template`):** Structured Skeleton templates (Incident Triage, Quick Fix, Maintenance) plus customizable user templates via `🔳 Add a new template`.
-- **Formatted Note Copy (`📋 Copy Note` / `Ctrl+Shift+C`):** Copies all text formatting (colors, bold, monospace code containers, checklist states) and embedded images (converted to Base64 data URIs) of the **Active Ticket note** (the pane/tab where the text cursor is currently placed, in either Split View side panel or main window) into the Windows Clipboard. Also provides dropdown actions for clean plain Markdown exports (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`) and direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`).
+- **Formatted Note Copy (`📋 Copy Note` / `Ctrl+Shift+C`):** Copies all text formatting (colors, bold, monospace code containers, checklist states) and embedded images (converted to Base64 data URIs) of the **Active Ticket note** (the pane/tab where the text cursor is currently placed, in either Split View side panel or main window) into the Windows Clipboard. Also provides dropdown actions for clean plain Markdown exports (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`), direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`), and launching the system default email client pre-addressed to your configured Default Email (`📧 Send Active Ticket to Default Email` / `Ctrl+Alt+M`).
 - **Window Opacity Slider (`👁️ 100%`):** Translucency control from 60% to 100% positioned naturally alongside workflow tools without artificial expanding voids.
 - **Split View Toggle (`◫` / `Alt+Z`):** Instant side-by-side dual ticket editing with draggable 6px divider.
 - **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.
@@ -283,14 +283,14 @@ When exporting notes via **📤 Copy Note** (`Ctrl+Alt+N`) or copying note text 
 Double-clicking any embedded screenshot or image (or choosing **🖼️ Image Editor (Resize & Markup)...** from the right-click context menu) launches the modal `Image Editor` window (`ResizeImageDialog` / `ImageEditorDialog`), which automatically pops up maximized at full-screen size by default for immediate high-resolution inspection and markup.
 
 ### 7.1 Interactive Visual Annotation Canvas (`ImageAnnotationCanvas`)
-Technicians can annotate, call out, and mark up screenshots directly within T-Notes without needing an external image editor:
+Technicians can annotate, call out, and mark up screenshots directly within T-Notes without needing an external image editor, using a single-line icon/emoji top bar designed for full-screen editing (with descriptive hover tooltips on every control):
 - **↖️ Select / Move & Rotate Tool (`TOOL_SELECT` / `V`):**
   - **Click to Select:** Click any drawn shape (rectangle, circle, straight line, freehand line) or text box to select it. The selected item displays an accent dashed border (`#007acc`) with corner grab handles, edge grab handles, and an overhead rotation handle.
   - **Edge-Drag Repositioning (Paint-Style Move):** Clicking and dragging directly on any of the 4 perimeter edges of the bounding box (or anywhere inside) immediately repositions the shape or text box in real time with `SizeAllCursor` (`✥`).
   - **Overhead Rotation Handle (Free Rotation):** Drag the cyan circular handle positioned above the top edge to rotate the shape or text box smoothly around its center. A real-time badge (`⟳ 45°`) indicates the angle. Holding `Shift` snaps rotation to 15° increments (0°, 15°, 30°, 45°, 90°, etc.).
-  - **Quick 90° Rotate Button & Shortcut (`Ctrl+R`):** Click the toolbar button `⟳ Rotate 90°` or press `Ctrl+R` to rotate the selected item 90° clockwise.
+  - **Quick 90° Rotate Button & Shortcut (`Ctrl+R`):** Click the toolbar button `⟳` or press `Ctrl+R` to rotate the selected item 90° clockwise.
   - **Keyboard Step Rotation (`[` and `]`):** Press `[` to rotate -15° (counter-clockwise) or `]` to rotate +15° (clockwise).
-  - **Corner & Edge Resize Handles:** Drag any corner handle to resize the bounding box of rectangles, circles, and text boxes.
+  - **Corner & Edge Resize Handles:** Drag any corner or side midpoint handle to resize the bounding box of rectangles, circles, text boxes, lines, and freehand drawings.
   - **Keyboard Nudging:** Press `Up`, `Down`, `Left`, `Right` arrow keys to nudge the item by 1 pixel (or by 10 pixels when holding `Shift`).
   - **Delete Item:** Press `Delete` or `Backspace` to remove the selected form, line, or text box.
   - **In-Place Re-Editing:** Double-clicking any placed text box in Select mode re-opens the `TextAnnotationDialog` to update its text content, font size, or callout border.
@@ -304,7 +304,7 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
 - **🔲 Rectangle Callout Box (`TOOL_RECTANGLE` / `R`):** Interactive click-and-drag rectangle box with real-time drag preview for bounding text blocks or IP configurations.
 - **🔤 Paint-Style Text Box Tool (`TOOL_TEXT` / `T`):**
   - **Drag Bounding Rectangle:** Click and drag directly on the image to draw a dashed bounding box defining the text boundary, identical to MS Paint.
-  - **Font Size Selection:** Adjust font size from the toolbar (`Font: [ 18 ] pt`, 8–96 pt) or customize it in the prompt dialog.
+  - **Font Size Selection:** Adjust font size from the toolbar (`[ 18 ] pt`, 8–96 pt) or customize it in the prompt dialog.
   - **Multi-Line Text & Alignment:** Prompts with `TextAnnotationDialog` allowing single-line or multi-line diagnostics. Text wraps automatically inside the bounding rectangle.
   - **Optional Callout Border Box:** Checkbox `🔲 Draw Callout Box` renders a rounded border outline and dark background behind the text for maximum emphasis.
   - **High-Contrast 8-Way Shadow:** Automated black perimeter outline ensures 100% legibility over dark terminal consoles or bright white backgrounds.
@@ -315,8 +315,8 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
   - 🔵 Cyan (`#00e5ff`)
   - ⚪ White (`#ffffff`)
   - ⚫ Black (`#000000`)
-  - Dedicated **🎨 More...** button opening `QColorDialog` for full 24-bit custom color selection.
-- **Line Stroke Width Selector:** Switch line thickness between `2px` (fine detail), `4px` (standard callout, default), and `8px` (bold highlight).
+  - Dedicated **🎨** button opening `QColorDialog` for full 24-bit custom color selection.
+- **Line Stroke Width Selector:** Switch line thickness between `2px` (fine detail), `4px` (standard callout, default), `8px` (bold highlight), and `12px` (extra-bold highlight).
 
 ### 7.2 Precision Zoom & Panning (Ctrl + Wheel & +/- Controls)
 - **Ctrl + Mouse Wheel:** Scroll up to zoom in (up to 500%), scroll down to zoom out (down to 25%).
@@ -327,7 +327,7 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
 ### 7.3 Default Full-Screen Pop-up & Maximization Controls
 - **Default Full Screen:** The Image Editor automatically pops up maximized at full-screen size upon opening, ensuring technicians have maximal visual workspace for high-DPI screenshots, callouts, and detailed inspection.
 - **Double-Click Top Bar:** Double-clicking either the OS window title bar or the in-dialog top toolbar frame immediately toggles the Image Editor between full screen and normal restored window geometry (1020 × 680 px).
-- **Dedicated Maximize / Restore Button:** Click `❐ Restore` / `⛶ Maximize` in the top-right toolbar.
+- **Dedicated Maximize / Restore Button:** Click `❐` / `⛶` in the top-right toolbar.
 - **F11 Keyboard Shortcut:** Press `F11` to toggle full screen at any time.
 
 ### 7.4 Reversible History Stack (Undo, Redo & Reset)
@@ -414,7 +414,7 @@ To support compact displays and Windows high-DPI scaling (125% and 150% scaling 
 - **Ticket Header Card:** Displays ticket identification pill (`#INC-xxx`), client name, and subject/title alongside synchronized troubleshooting stopwatch controls (`⏱️ HH:MM:SS`, `▶`/`⏸` play/pause, `↺` reset) directly wired to the ticket's active stopwatch state.
 - **Top-Right Corner Micro-Controls (`id_client_row`):** To maximize editor height, dedicated toolbar rows are eliminated in favor of three compact corner controls (26x22px) anchored at the top right of the header card:
   - `btn_template` (`"🗒️"`): Structured ticket template dropdown (`InstantPopup` mode) inserting pre-configured diagnostic skeletons or custom user templates via `🔳 Add a new template`.
-  - `btn_copy_note` (`"📋"`): Formatted note copy (`Ctrl+Shift+C`) on click, packaging rich HTML with Base64 embedded images to the Windows Clipboard; dropdown actions for clean Markdown export (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`) and direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`) to daily timestamped subfolders in `T-Notes\`.
+  - `btn_copy_note` (`"📋"`): Formatted note copy (`Ctrl+Shift+C`) on click, packaging rich HTML with Base64 embedded images to the Windows Clipboard; dropdown actions for clean Markdown export (`📤 Copy Clean Note for Ticket Tool` / `Ctrl+Alt+N`), direct plain-text file export (`💾 Export Note (T-Notes Folder)` / `Ctrl+Alt+E`) to daily timestamped subfolders in `T-Notes\`, and `📧 Send Active Ticket to Default Email`.
   - `btn_more` (`"..."`, `HoverToolButton`): Opens the comprehensive text formatting and insert menu on hover or click.
 - **Hover & Click Text Features Menu (`menu_text_features`):** Features instantaneous popup access to all text styling tools:
   - Checkable formatting toggles: `B Bold (Ctrl+B)`, `I Italic (Ctrl+I)`, `U Underline (Ctrl+U)` with real-time format state reflection.
@@ -520,6 +520,7 @@ Under the `📋 Copy Note` dropdown menu, technicians can instantly generate and
 - **`✉️ Copier le courriel client (FR)`**: Generates an equivalent client resolution email in French with standardized courteous phrasing (`Bonjour...`, `Actions effectuées et résolution...`, `Cordialement...`).
 - **`🏢 Copy PSA Note (EN)`**: Formats an internal ticketing work note (ConnectWise, ServiceNow, Jira, HaloPSA) with ticket header, billable time (rounded up to 15-minute / 0.25h increments), issue, chronological troubleshooting, root cause, and resolution.
 - **`🏢 Copier la note PSA (FR)`**: Formats an internal French PSA work note with standard French headings (`BILLET`, `PROBLÈME SIGNALÉ`, `DÉPANNAGE / TRAVAIL EFFECTUÉ`, `CAUSE RACINE`, `RÉSOLUTION`).
+- **`📧 Send Active Ticket to Default Email` (`Ctrl+Alt+M`)**: Copies the Active Ticket's rich formatted note to the clipboard and opens a `mailto:` draft in the OS default email client pre-addressed to the configured `technician_email` (prompting once if not yet set) with subject and bounded summary body.
 
 ### 12.2 Interactive Summary Formatter Dialog (`SummaryFormatterDialog`)
 Clicking **`✨ Format Ticket Summary... / Résumé...`** opens a two-column modal workspace:
@@ -529,5 +530,5 @@ Clicking **`✨ Format Ticket Summary... / Résumé...`** opens a two-column mod
   2. *Internal PSA Note / Note interne PSA*: Standardized engineering work note with logged billable time.
   3. *Escalation Handover / Transfert d'escalade*: Technical handover summary for Tier 2/3 and Engineering escalation.
 - **Smart Bilingual Section Detection**: Automatically extracts content by parsing note HTML and markdown across English and French keywords (`Issue` / `Problème`, `Troubleshooting` / `Dépannage`, `Resolution` / `Résolution`, `Root Cause` / `Cause racine`, `Next Steps` / `Prochaines étapes`) and interactive checklist items (`- [x]`).
-- **Output Formats**: Single-click buttons for copying plain text or rich HTML formatting.
+- **Output & Email Actions**: Single-click buttons for copying plain text, copying rich HTML formatting, or opening a `mailto:` email draft addressed to Default Email (`📧 Send to Default Email` / `📧 Envoyer au courriel par défaut`).
 - **Preferences Persistence**: Default Name (e.g., `Jonathan Decelles`), Default Email (e.g., `Jonathan_Decelles1990@hotmail.com`), and preferred default summary language (`en` or `fr`) are persisted in `app_settings` via `SessionService` and configurable in both `SettingsDialog` and `SummaryFormatterDialog`. These fields automatically populate the technician signature block at the end of client emails and PSA ticket notes.

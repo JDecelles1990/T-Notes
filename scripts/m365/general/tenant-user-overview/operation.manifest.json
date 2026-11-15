@@ -14,7 +14,7 @@
   ],
   "script_path": "general/tenant-user-overview/Get-TenantUserOverview.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "ea1955b22dd33d7cc7c53bf29b45b6852e6ff8d8689392d3982389c3d17f13c0",
+  "script_sha256": "341a35c190465cd7217b66a832bc2fbc3db4701c9d586ee0cd7a521e957e3727",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

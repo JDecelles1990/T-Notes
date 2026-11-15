@@ -1,0 +1,85 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE",
+  "title": "Inventory Endpoint Devices & OS Posture",
+  "description": "Catalog distinct client endpoints, OS versions, trust types, and unmanaged/non-compliant devices from Entra sign-in logs.",
+  "category": "intune",
+  "subcategory": "device-inventory",
+  "tags": [
+    "intune",
+    "devices",
+    "inventory",
+    "os",
+    "byod",
+    "graph"
+  ],
+  "script_path": "intune/device-inventory/Get-IntuneDeviceInventory.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "4eae70740d158cbf3ec2464d864c97a03faa38b43464a27a2ace0d99b6138334",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Reports",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "AuditLog.Read.All"
+  ],
+  "required_roles": [
+    {
+      "service": "Graph",
+      "any_of": [
+        "Reports.Reader",
+        "Security.Reader"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "LookbackDays",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 30,
+      "default": 14,
+      "description": "Number of days of sign-in events to analyze (1..30)."
+    },
+    {
+      "name": "MaxRecords",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 100,
+      "default": 25,
+      "description": "Maximum number of device sign-in events to return (1..100)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_signins",
+  "timeout_seconds": 45,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "restricted",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}
+

@@ -141,6 +141,24 @@ WORKFLOW_DEFINITIONS: dict[str, dict[str, object]] = {
             "M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC",
         ],
     },
+    "mailbox_delivery_triage": {
+        "title": "Mailbox & Delivery Triage (4 Steps)",
+        "steps": [
+            "M365.ENTRA.USER_IDENTITY",
+            "M365.EXCHANGE.MAILBOX_SUMMARY",
+            "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY",
+            "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT",
+        ],
+    },
+    "lockout_and_auth_triage": {
+        "title": "Account Lockout & Auth Triage (4 Steps)",
+        "steps": [
+            "M365.ENTRA.USER_IDENTITY",
+            "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE",
+            "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT",
+            "M365.ENTRA.USER_MFA_AUDIT",
+        ],
+    },
 }
 
 
@@ -162,6 +180,7 @@ class M365LauncherWidget(QWidget):
     save_requested = Signal(int)                  # Emits scratchpad_id
     status_message_requested = Signal(str, int)  # Emits (message, timeout_ms)
     operation_finished = Signal(object)          # Emits ExecutionOutcome
+    send_default_email_requested = Signal()      # Emits to open default email client for active ticket
 
     def __init__(
         self,
@@ -303,9 +322,9 @@ class M365LauncherWidget(QWidget):
         control_bar.addWidget(self.btn_load_synthetic_catalog)
 
         self.btn_enable_live_pilot = HoverToolButton(self)
-        self.btn_enable_live_pilot.setText("🌐 Live Pilot")
-        self.btn_enable_live_pilot.setAccessibleName("Enable Live Pilot mode")
-        self.btn_enable_live_pilot.setToolTip("Switch to 4 read-only Live Pilot operations (hover or arrow for Readiness, Auth mode & JSON tools)")
+        self.btn_enable_live_pilot.setText("🌐 Live Tenant")
+        self.btn_enable_live_pilot.setAccessibleName("Enable Live Tenant mode")
+        self.btn_enable_live_pilot.setToolTip("Switch to 25 read-only Live Tenant operations (hover or arrow for Readiness, Auth mode & JSON tools)")
         self.btn_enable_live_pilot.setFocusPolicy(Qt.StrongFocus)
         self.btn_enable_live_pilot.setPopupMode(QToolButton.MenuButtonPopup)
         self.btn_enable_live_pilot.clicked.connect(self.enable_live_pilot_mode)
@@ -453,6 +472,35 @@ class M365LauncherWidget(QWidget):
 
         cat_btn_row.addStretch(1)
         cat_card_layout.addLayout(cat_btn_row)
+
+        cat_btn_row_workflows = QHBoxLayout()
+        cat_btn_row_workflows.setContentsMargins(0, 0, 0, 0)
+        cat_btn_row_workflows.setSpacing(4)
+
+        self.btn_cat_quaternary_action = QToolButton(self.category_function_card)
+        self.btn_cat_quaternary_action.setText("✉ Mailbox Triage")
+        self.btn_cat_quaternary_action.setAccessibleName("Run Mailbox & Delivery Triage Workflow")
+        self.btn_cat_quaternary_action.setToolTip(
+            "Run Mailbox & Delivery Triage (Identity → Mailbox Summary → Forwarding & OOF → Permissions)"
+        )
+        self.btn_cat_quaternary_action.setStyleSheet(cat_btn_style)
+        self.btn_cat_quaternary_action.clicked.connect(lambda: self.run_guided_workflow("mailbox_delivery_triage"))
+        self.btn_cat_quaternary_action.setVisible(False)
+        cat_btn_row_workflows.addWidget(self.btn_cat_quaternary_action)
+
+        self.btn_cat_quinary_action = QToolButton(self.category_function_card)
+        self.btn_cat_quinary_action.setText("🔒 Lockout Triage")
+        self.btn_cat_quinary_action.setAccessibleName("Run Account Lockout & Auth Triage Workflow")
+        self.btn_cat_quinary_action.setToolTip(
+            "Run Account Lockout & Auth Triage (Identity → Password & Sync → Lockout & Legacy Auth → MFA Audit)"
+        )
+        self.btn_cat_quinary_action.setStyleSheet(cat_btn_style)
+        self.btn_cat_quinary_action.clicked.connect(lambda: self.run_guided_workflow("lockout_and_auth_triage"))
+        self.btn_cat_quinary_action.setVisible(False)
+        cat_btn_row_workflows.addWidget(self.btn_cat_quinary_action)
+
+        cat_btn_row_workflows.addStretch(1)
+        cat_card_layout.addLayout(cat_btn_row_workflows)
         catalog_layout.addWidget(self.category_function_card)
         self.search_input = QLineEdit(catalog_group)
         self.search_input.setPlaceholderText("Search names, descriptions, tags or services")
@@ -723,6 +771,9 @@ class M365LauncherWidget(QWidget):
         act_copy_clean.triggered.connect(self._copy_clean_note)
         act_export_file = copy_menu.addAction("💾 Export Note (T-Notes Folder)")
         act_export_file.triggered.connect(self._export_active_ticket_file)
+        copy_menu.addSeparator()
+        act_send_email = copy_menu.addAction("📧 Send Active Ticket to Default Email")
+        act_send_email.triggered.connect(self.send_default_email_requested.emit)
         self.btn_copy_note.setMenu(copy_menu)
         self.btn_copy_note.clicked.connect(self._copy_formatted_note)
         id_client_row.addWidget(self.btn_copy_note)
@@ -896,7 +947,7 @@ class M365LauncherWidget(QWidget):
         self.company_panel.refresh_status()
 
     def enable_live_pilot_mode(self) -> None:
-        """Switch to Live Pilot mode with the 4 read-only Microsoft Graph / Exchange operations."""
+        """Switch to Live Tenant mode with all 25 read-only Microsoft Graph / Exchange operations."""
         report = self.refresh_preflight_status()
         self.context_service.set_mode("live")
         self.catalog_service = build_live_pilot_catalog_service(
@@ -906,11 +957,11 @@ class M365LauncherWidget(QWidget):
         self.execution_service.set_catalog_service(self.catalog_service)
         if report.live_ready:
             self.notice_label.setText(
-                "Live Pilot mode active — 4 read-only M365 operations (interactive Graph / Exchange sign-in required)."
+                "Live Tenant mode active — 25 read-only M365 operations (interactive Graph / Exchange sign-in required)."
             )
         else:
             self.notice_label.setText(
-                f"Live Pilot mode (Setup Needed: {report.error_code or 'MODULE_MISSING'}) — "
+                f"Live Tenant mode (Setup Needed: {report.error_code or 'MODULE_MISSING'}) — "
                 "Click '🩺 Setup (...)' for manual install commands."
             )
         self._sync_mode_labels()
@@ -933,7 +984,7 @@ class M365LauncherWidget(QWidget):
         from PySide6.QtGui import QActionGroup
 
         self.live_menu = QMenu(self.btn_enable_live_pilot)
-        self.act_live_switch = self.live_menu.addAction("🌐 Activate Live Pilot (4 Ops)")
+        self.act_live_switch = self.live_menu.addAction("🌐 Activate Live Tenant (25 Ops)")
         self.act_live_switch.triggered.connect(self.enable_live_pilot_mode)
         self.act_preflight = self.live_menu.addAction("🩺 Live Readiness Check...")
         self.act_preflight.triggered.connect(self.show_preflight_dialog)
@@ -1272,6 +1323,8 @@ class M365LauncherWidget(QWidget):
 
         self.btn_cat_secondary_action.setVisible(cat_id == "workflows")
         self.btn_cat_tertiary_action.setVisible(cat_id == "workflows")
+        self.btn_cat_quaternary_action.setVisible(cat_id == "workflows")
+        self.btn_cat_quinary_action.setVisible(cat_id == "workflows")
 
         if cat_id == "dashboard":
             company_lbl = (
@@ -1302,7 +1355,9 @@ class M365LauncherWidget(QWidget):
                 f"{profile['focus']}\n"
                 "• 1. Full User Snapshot (Identity → Licenses → Sign-Ins → Mailbox Summary)\n"
                 "• 2. Security Triage (Identity → MFA Audit → Risky Sign-In Audit)\n"
-                "• 3. Collaboration Readiness (Identity → Teams → SharePoint → OneDrive)"
+                "• 3. Collaboration Readiness (Identity → Teams → SharePoint → OneDrive)\n"
+                "• 4. Mailbox & Delivery Triage (Identity → Mailbox Summary → Forwarding & OOF → Permissions)\n"
+                "• 5. Account Lockout & Auth Triage (Identity → Password & Sync → Lockout & Legacy Auth → MFA)"
             )
             self.btn_cat_primary_action.setText("⇄ Full User Snapshot")
             self.btn_cat_primary_action.setToolTip("Run the 4-step Full User Diagnostic Snapshot workflow")

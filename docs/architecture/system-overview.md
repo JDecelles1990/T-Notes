@@ -341,5 +341,6 @@ Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow ins
 
 ### 8.2 Windows Autostart & Smart Recovery (`src/services/autostart_service.py`)
 - **HKCU Run Registry Management:** Reads and writes to `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\TNotes` without requiring administrator privileges or UAC elevation.
+- **Enabled by Default with Safe Working-Directory Bootstrap:** `init_database()` sets `autostart_enabled = "true"` by default and `src/main.py` prepends the repository root to `sys.path` / sets working directory on launch so Windows login invocations starting in `System32` import `src.*` cleanly and keep the `Run` entry synchronized while respecting user opt-out in `SettingsDialog`.
 - **Silent Boot via `pythonw.exe`:** Configures GUI-mode execution passing `--tray` to prevent terminal console flashing on workstation boot.
 - **Smart Restore:** Restores either desktop window presentation or silent system tray residency based on the technician's previous session state.

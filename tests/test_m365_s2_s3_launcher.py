@@ -54,7 +54,17 @@ def test_s2_synthetic_catalog_loads_all_four_snapshot_operations():
         for op in catalog.operations(cat.id)
     }
     assert expected_core_ids <= found
-    assert len(found) == 17
+    assert {
+        "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY",
+        "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT",
+        "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE",
+        "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP",
+        "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT",
+        "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE",
+        "M365.ONEDRIVE.CLIENT_SYNC_SIGNINS",
+        "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE",
+    } <= found
+    assert len(found) == 25
     for cat in catalog.categories:
         if cat.kind == "operations":
             assert len(catalog.operations(cat.id)) >= 1, f"Category {cat.id} should have at least 1 script"
@@ -188,7 +198,7 @@ def test_s3_launcher_gui_run_results_history_and_safe_ticket_insertion(qapp):
         # Navigate to Entra ID category (index 3)
         launcher.navigation.setCurrentRow(3)
         qapp.processEvents()
-        assert launcher.operation_list.count() == 3  # Identity, Licenses, SignIns
+        assert launcher.operation_list.count() == 6  # Identity, SignIns, MFA, Password Posture, Group/Role, Lockout/Legacy
 
         # Select Get-UserIdentity and click Run
         for i in range(launcher.operation_list.count()):
@@ -470,8 +480,12 @@ def test_s3_all_categories_separated_and_executable(qapp):
             if cat_id == "workflows":
                 assert widget.btn_cat_secondary_action.isVisible()
                 assert widget.btn_cat_tertiary_action.isVisible()
+                assert widget.btn_cat_quaternary_action.isVisible()
+                assert widget.btn_cat_quinary_action.isVisible()
             else:
                 assert not widget.btn_cat_secondary_action.isVisible()
+                assert not widget.btn_cat_quaternary_action.isVisible()
+                assert not widget.btn_cat_quinary_action.isVisible()
 
         assert len(badges_seen) == 14
 
@@ -483,11 +497,21 @@ def test_s3_all_categories_separated_and_executable(qapp):
         assert len(teams_outcomes) == 2
         assert all(o.status == "success" for o in teams_outcomes)
 
-        # 4. Execute Security Triage guided workflow
+        # 4. Execute Security Triage, Mailbox & Delivery Triage, and Lockout Triage guided workflows
         sec_outcomes = widget.run_guided_workflow("security_triage")
         assert len(sec_outcomes) == 3
         assert all(o.status == "success" for o in sec_outcomes)
         assert "Security & Access Incident Triage" in widget.results_output.toPlainText()
+
+        mbx_outcomes = widget.run_guided_workflow("mailbox_delivery_triage")
+        assert len(mbx_outcomes) == 4
+        assert all(o.status == "success" for o in mbx_outcomes)
+        assert "Mailbox & Delivery Triage" in widget.results_output.toPlainText()
+
+        lock_outcomes = widget.run_guided_workflow("lockout_and_auth_triage")
+        assert len(lock_outcomes) == 4
+        assert all(o.status == "success" for o in lock_outcomes)
+        assert "Account Lockout & Auth Triage" in widget.results_output.toPlainText()
 
         # 5. Verify Script Catalog groupbox is larger than Parameters groupbox and Parameters has no wasted vertical gap
         catalog_group = widget._content_groups[2]
@@ -503,6 +527,78 @@ def test_s3_all_categories_separated_and_executable(qapp):
         widget.close()
         widget.deleteLater()
         qapp.processEvents()
+
+
+def test_technician_8_operations_synthetic_execution(exec_service, prepared_context):
+    """Verify all 8 newly added IT technician diagnostic scripts pass contract & parameter checks in synthetic mode."""
+    prepared_context.set_target("", "40000000-0000-4000-8000-000000000003")
+    prepared_context.resolve_synthetic()
+
+    fwd = exec_service.execute(
+        "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY",
+        {"IncludeAutoReplyCheck": True, "WarnOnExternalForwarding": True},
+    )
+    assert fwd.status == "success"
+    fwd_codes = {w["code"] for w in fwd.result_envelope["warnings"]}
+    assert {"EXTERNAL_FORWARDING_ACTIVE", "AUTO_REPLY_STATUS", "GAL_VISIBILITY"}.issubset(fwd_codes)
+
+    perms = exec_service.execute(
+        "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT",
+        {"IncludeSendAsCheck": True, "MaxDelegates": 10},
+    )
+    assert perms.status == "success"
+    perms_codes = {w["code"] for w in perms.result_envelope["warnings"]}
+    assert {"FULL_ACCESS_DELEGATES", "SEND_AS_DELEGATES", "SEND_ON_BEHALF_DELEGATES", "DELEGATE_AUDIT_SCOPE"}.issubset(perms_codes)
+
+    pwd = exec_service.execute(
+        "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE",
+        {"PasswordAgeWarningDays": 90},
+    )
+    assert pwd.status == "success"
+    pwd_codes = {w["code"] for w in pwd.result_envelope["warnings"]}
+    assert {"PASSWORD_AGE_SUMMARY", "PASSWORD_NEVER_EXPIRES", "HYBRID_SYNC_STATUS", "SESSION_REVOCATION_STATE"}.issubset(pwd_codes)
+
+    grp = exec_service.execute(
+        "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP",
+        {"IncludeAdminRoles": True, "MaxGroups": 15},
+    )
+    assert grp.status == "success"
+    grp_codes = {w["code"] for w in grp.result_envelope["warnings"]}
+    assert {"GROUP_MEMBERSHIP_SUMMARY", "ADMIN_ROLE_DETECTED", "MEMBERSHIP_TELEMETRY_SCOPE"}.issubset(grp_codes)
+
+    lock = exec_service.execute(
+        "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT",
+        {"LookbackDays": 14, "MaxRecords": 25},
+    )
+    assert lock.status == "success"
+    lock_codes = {w["code"] for w in lock.result_envelope["warnings"]}
+    assert {"SMART_LOCKOUT_DETECTED", "LEGACY_AUTH_DETECTED", "LOCKOUT_OR_FAILURE_SUMMARY"}.issubset(lock_codes)
+
+    dev = exec_service.execute(
+        "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE",
+        {"LookbackDays": 14, "MaxRecords": 25},
+    )
+    assert dev.status == "success"
+    dev_codes = {w["code"] for w in dev.result_envelope["warnings"]}
+    assert {"DEVICE_INVENTORY_SUMMARY", "UNMANAGED_DEVICE_DETECTED", "NONCOMPLIANT_DEVICE_SIGNIN", "TELEMETRY_SCOPE"}.issubset(dev_codes)
+
+    od = exec_service.execute(
+        "M365.ONEDRIVE.CLIENT_SYNC_SIGNINS",
+        {"LookbackDays": 14, "MaxRecords": 20},
+    )
+    assert od.status == "success"
+    assert any(w["code"] == "ONEDRIVE_SYNC_SUMMARY" for w in od.result_envelope["warnings"])
+
+    prepared_context.set_target("guest.partner_external#EXT#@alpine.example", "")
+    prepared_context.resolve_synthetic()
+    sp = exec_service.execute(
+        "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE",
+        {"WarnOnUnacceptedInvitation": True},
+    )
+    assert sp.status == "success"
+    sp_codes = {w["code"] for w in sp.result_envelope["warnings"]}
+    assert {"EXTERNAL_GUEST_POSTURE", "GUEST_INVITATION_PENDING"}.issubset(sp_codes)
+
 
 
 

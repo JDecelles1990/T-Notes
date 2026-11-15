@@ -280,6 +280,38 @@ class AnnotationItem:
                 p.setX(p.x() + dx)
                 p.setY(p.y() + dy)
 
+    def resize_to_bounding_rect(self, new_bounds: QRect, initial_item: "AnnotationItem") -> None:
+        """Resizes this item (rect-based shape/text or point-based pen/line drawing) to fit new_bounds."""
+        norm_bounds = new_bounds.normalized()
+        if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
+            self.rect = QRect(norm_bounds)
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE) and initial_item.points:
+            margin = max(6, self.stroke_width // 2 + 4)
+            init_xs = [p.x() for p in initial_item.points]
+            init_ys = [p.y() for p in initial_item.points]
+            min_x, max_x = min(init_xs), max(init_xs)
+            min_y, max_y = min(init_ys), max(init_ys)
+            old_span_x = max_x - min_x
+            old_span_y = max_y - min_y
+
+            target_left = norm_bounds.left() + margin
+            target_top = norm_bounds.top() + margin
+            target_span_x = max(2, norm_bounds.width() - 2 * margin)
+            target_span_y = max(2, norm_bounds.height() - 2 * margin)
+
+            new_points: list[QPoint] = []
+            for p in initial_item.points:
+                if old_span_x > 0:
+                    nx = int(round(target_left + (p.x() - min_x) * (target_span_x / old_span_x)))
+                else:
+                    nx = norm_bounds.center().x()
+                if old_span_y > 0:
+                    ny = int(round(target_top + (p.y() - min_y) * (target_span_y / old_span_y)))
+                else:
+                    ny = norm_bounds.center().y()
+                new_points.append(QPoint(nx, ny))
+            self.points = new_points
+
     def render(self, painter: QPainter) -> None:
         """Renders this item onto a QPainter at image coordinates."""
         painter.save()
@@ -364,6 +396,21 @@ class ImageAnnotationCanvas(QWidget):
     HANDLE_EDGE_LEFT = 8
     HANDLE_EDGE_RIGHT = 9
     HANDLE_BODY = 10
+    HANDLE_SIDE_TOP = 11
+    HANDLE_SIDE_BOTTOM = 12
+    HANDLE_SIDE_LEFT = 13
+    HANDLE_SIDE_RIGHT = 14
+
+    RESIZE_HANDLES = (
+        HANDLE_CORNER_TL,
+        HANDLE_CORNER_TR,
+        HANDLE_CORNER_BR,
+        HANDLE_CORNER_BL,
+        HANDLE_SIDE_TOP,
+        HANDLE_SIDE_BOTTOM,
+        HANDLE_SIDE_LEFT,
+        HANDLE_SIDE_RIGHT,
+    )
 
     ACTION_NONE = 0
     ACTION_PAN = 1
@@ -410,6 +457,7 @@ class ImageAnnotationCanvas(QWidget):
         self._rotate_initial_angle: float = 0.0
 
         self._resize_handle: int = self.HANDLE_NONE
+        self._resize_initial_item: Optional[AnnotationItem] = None
         self._resize_initial_rect: QRect = QRect()
         self._resize_initial_pos: QPoint = QPoint()
         self._resize_initial_center: QPointF = QPointF()
@@ -689,8 +737,31 @@ class ImageAnnotationCanvas(QWidget):
         new_dy = int(round(dist * math.sin(snapped_rad)))
         return QPoint(p1.x() + new_dx, p1.y() + new_dy)
 
+    @classmethod
+    def _cursor_for_handle(cls, handle: int):
+        """Returns the Qt cursor shape appropriate for the given selection handle."""
+        if handle == cls.HANDLE_ROTATE:
+            return Qt.PointingHandCursor
+        if handle in (cls.HANDLE_CORNER_TL, cls.HANDLE_CORNER_BR):
+            return Qt.SizeFDiagCursor
+        if handle in (cls.HANDLE_CORNER_TR, cls.HANDLE_CORNER_BL):
+            return Qt.SizeBDiagCursor
+        if handle in (cls.HANDLE_SIDE_TOP, cls.HANDLE_SIDE_BOTTOM):
+            return Qt.SizeVerCursor
+        if handle in (cls.HANDLE_SIDE_LEFT, cls.HANDLE_SIDE_RIGHT):
+            return Qt.SizeHorCursor
+        if handle in (
+            cls.HANDLE_EDGE_TOP,
+            cls.HANDLE_EDGE_BOTTOM,
+            cls.HANDLE_EDGE_LEFT,
+            cls.HANDLE_EDGE_RIGHT,
+            cls.HANDLE_BODY,
+        ):
+            return Qt.SizeAllCursor
+        return Qt.ArrowCursor
+
     def get_selection_handle_at(self, vp_pos: QPoint) -> tuple[int, Optional[AnnotationItem]]:
-        """Hit-tests the active selected item to determine if vp_pos touches rotation handle, corners, edges, or body."""
+        """Hit-tests the active selected item to determine if vp_pos touches rotation handle, corners, side resize handles, edges, or body."""
         if not self._selected_item:
             return (self.HANDLE_NONE, None)
 
@@ -734,7 +805,17 @@ class ImageAnnotationCanvas(QWidget):
         if math.hypot(local_x - local_box.left(), local_y - local_box.bottom()) <= 10.0:
             return (self.HANDLE_CORNER_BL, self._selected_item)
 
-        # 3. Edges of the rectangle (8px margin around perimeter for easy moving)
+        # 3. Side midpoint resize handles (9px hit radius)
+        if math.hypot(local_x - 0.0, local_y - local_box.top()) <= 9.0:
+            return (self.HANDLE_SIDE_TOP, self._selected_item)
+        if math.hypot(local_x - 0.0, local_y - local_box.bottom()) <= 9.0:
+            return (self.HANDLE_SIDE_BOTTOM, self._selected_item)
+        if math.hypot(local_x - local_box.left(), local_y - 0.0) <= 9.0:
+            return (self.HANDLE_SIDE_LEFT, self._selected_item)
+        if math.hypot(local_x - local_box.right(), local_y - 0.0) <= 9.0:
+            return (self.HANDLE_SIDE_RIGHT, self._selected_item)
+
+        # 4. Edges of the rectangle (8px margin around perimeter for easy moving)
         margin = 8.0
         on_top = abs(local_y - local_box.top()) <= margin and (local_box.left() - margin <= local_x <= local_box.right() + margin)
         if on_top:
@@ -749,7 +830,7 @@ class ImageAnnotationCanvas(QWidget):
         if on_right:
             return (self.HANDLE_EDGE_RIGHT, self._selected_item)
 
-        # 4. Inside the body
+        # 5. Inside the body
         if local_box.contains(local_x, local_y):
             return (self.HANDLE_BODY, self._selected_item)
 
@@ -808,7 +889,7 @@ class ImageAnnotationCanvas(QWidget):
                 # Corner grab handles
                 painter.setBrush(QColor("#ffffff"))
                 painter.setPen(QPen(QColor("#007acc"), 1.5))
-                h_size = 7.0
+                h_size = 8.0
                 for hx, hy in (
                     (local_box.left(), local_box.top()),
                     (local_box.right(), local_box.top()),
@@ -819,8 +900,8 @@ class ImageAnnotationCanvas(QWidget):
 
                 # Edge mid-handles
                 painter.setBrush(QColor("#ffffff"))
-                painter.setPen(QPen(QColor("#007acc"), 1.0))
-                m_size = 5.0
+                painter.setPen(QPen(QColor("#007acc"), 1.2))
+                m_size = 7.0
                 for hx, hy in (
                     (0.0, local_box.top()),
                     (0.0, local_box.bottom()),
@@ -831,12 +912,15 @@ class ImageAnnotationCanvas(QWidget):
 
                 painter.restore()
 
-                # Live angle badge when rotating
-                if self._is_rotating:
-                    angle_deg = int(round(self._selected_item.rotation)) % 360
-                    badge_text = f"⟳ {angle_deg}°"
-                    if self._shift_pressed:
-                        badge_text += " (Snap 15°)"
+                # Live status badge when rotating or resizing
+                if self._is_rotating or self._is_resizing:
+                    if self._is_rotating:
+                        angle_deg = int(round(self._selected_item.rotation)) % 360
+                        badge_text = f"⟳ {angle_deg}°"
+                        if self._shift_pressed:
+                            badge_text += " (Snap 15°)"
+                    else:
+                        badge_text = f"📐 {b_rect.width()} × {b_rect.height()} px"
                     painter.setFont(QFont("Arial", 9, QFont.Bold))
                     fm = QFontMetrics(painter.font())
                     tw = fm.horizontalAdvance(badge_text) + 16
@@ -919,13 +1003,11 @@ class ImageAnnotationCanvas(QWidget):
             return
 
         pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
-        img_pt = self.viewport_to_image_coords(pos)
-        if not img_pt:
-            return
+        clamped_pt = self.viewport_to_image_coords(pos, clamp=True)
 
-        # 2. Check if clicking on active handle of currently selected item
+        # 2. Check if clicking on active handle of currently selected item (works even near image borders)
         handle, item = self.get_selection_handle_at(pos)
-        if item and handle != self.HANDLE_NONE:
+        if item and handle != self.HANDLE_NONE and clamped_pt is not None:
             # Handle rotation
             if handle == self.HANDLE_ROTATE:
                 self._save_undo_state()
@@ -939,24 +1021,26 @@ class ImageAnnotationCanvas(QWidget):
                 center_y = rect.y() + b_rect.center().y() * scale_y
                 self._rotate_start_angle = math.degrees(math.atan2(pos.y() - center_y, pos.x() - center_x))
                 self._rotate_initial_angle = item.rotation
-                self.setCursor(Qt.PointingHandCursor)
+                self.setCursor(self._cursor_for_handle(handle))
                 event.accept()
                 return
 
-            # Handle corner resizing
-            elif handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_TR, self.HANDLE_CORNER_BR, self.HANDLE_CORNER_BL):
+            # Handle corner or side midpoint resizing for all item types
+            if handle in self.RESIZE_HANDLES:
                 self._save_undo_state()
                 self._action_mode = self.ACTION_RESIZE
                 self._is_resizing = True
                 self._resize_handle = handle
-                self._resize_initial_rect = QRect(item.rect)
-                self._resize_initial_pos = img_pt
-                self._resize_initial_center = QPointF(item.get_bounding_rect().center())
+                self._resize_initial_item = item.clone()
+                self._resize_initial_rect = QRect(item.get_bounding_rect())
+                self._resize_initial_pos = clamped_pt
+                self._resize_initial_center = QPointF(self._resize_initial_rect.center())
+                self.setCursor(self._cursor_for_handle(handle))
                 event.accept()
                 return
 
             # Handle edge clicking or body clicking -> MOVE!
-            elif handle in (
+            if handle in (
                 self.HANDLE_EDGE_TOP,
                 self.HANDLE_EDGE_BOTTOM,
                 self.HANDLE_EDGE_LEFT,
@@ -966,11 +1050,15 @@ class ImageAnnotationCanvas(QWidget):
                 self._save_undo_state()
                 self._action_mode = self.ACTION_MOVE
                 self._is_moving_item = True
-                self._move_item_start = img_pt
-                self._move_item_prev = img_pt
+                self._move_item_start = clamped_pt
+                self._move_item_prev = clamped_pt
                 self.setCursor(Qt.SizeAllCursor)
                 event.accept()
                 return
+
+        img_pt = self.viewport_to_image_coords(pos)
+        if not img_pt:
+            return
 
         # 3. Not touching the selected item's handles; check if clicking another item
         hit_other = self.select_item_at(img_pt)
@@ -1032,35 +1120,37 @@ class ImageAnnotationCanvas(QWidget):
             return
 
         # 3. Resizing selected item
-        if self._action_mode == self.ACTION_RESIZE and self._selected_item:
+        if self._action_mode == self.ACTION_RESIZE and self._selected_item and self._resize_initial_item:
             img_pt = self.viewport_to_image_coords(pos, clamp=True)
-            if img_pt and self._selected_item.rect.isValid():
+            if img_pt:
                 center = self._resize_initial_center
                 rot = self._selected_item.rotation
                 p_curr = self._unrotate_pt(img_pt, center, rot)
                 p_start = self._unrotate_pt(self._resize_initial_pos, center, rot)
-                dx = int(p_curr.x() - p_start.x())
-                dy = int(p_curr.y() - p_start.y())
+                dx = int(round(p_curr.x() - p_start.x()))
+                dy = int(round(p_curr.y() - p_start.y()))
 
                 init_r = self._resize_initial_rect
-                min_s = 20
-                if self._resize_handle == self.HANDLE_CORNER_BR:
-                    nw = max(min_s, init_r.width() + dx)
-                    nh = max(min_s, init_r.height() + dy)
-                    self._selected_item.rect = QRect(init_r.left(), init_r.top(), nw, nh)
-                elif self._resize_handle == self.HANDLE_CORNER_TL:
-                    nl = min(init_r.right() - min_s, init_r.left() + dx)
-                    nt = min(init_r.bottom() - min_s, init_r.top() + dy)
-                    self._selected_item.rect = QRect(nl, nt, init_r.right() - nl, init_r.bottom() - nt)
-                elif self._resize_handle == self.HANDLE_CORNER_TR:
-                    nr = max(init_r.left() + min_s, init_r.right() + dx)
-                    nt = min(init_r.bottom() - min_s, init_r.top() + dy)
-                    self._selected_item.rect = QRect(init_r.left(), nt, nr - init_r.left(), init_r.bottom() - nt)
-                elif self._resize_handle == self.HANDLE_CORNER_BL:
-                    nl = min(init_r.right() - min_s, init_r.left() + dx)
-                    nb = max(init_r.top() + min_s, init_r.bottom() + dy)
-                    self._selected_item.rect = QRect(nl, init_r.top(), init_r.right() - nl, nb - init_r.top())
+                left = init_r.left()
+                top = init_r.top()
+                right = init_r.left() + init_r.width()
+                bottom = init_r.top() + init_r.height()
+                min_s = 16
 
+                if self._resize_handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_BL, self.HANDLE_SIDE_LEFT):
+                    left = min(right - min_s, left + dx)
+                if self._resize_handle in (self.HANDLE_CORNER_TR, self.HANDLE_CORNER_BR, self.HANDLE_SIDE_RIGHT):
+                    right = max(left + min_s, right + dx)
+                if self._resize_handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_TR, self.HANDLE_SIDE_TOP):
+                    top = min(bottom - min_s, top + dy)
+                if self._resize_handle in (self.HANDLE_CORNER_BL, self.HANDLE_CORNER_BR, self.HANDLE_SIDE_BOTTOM):
+                    bottom = max(top + min_s, bottom + dy)
+
+                self._selected_item.resize_to_bounding_rect(
+                    QRect(left, top, right - left, bottom - top),
+                    self._resize_initial_item,
+                )
+                self._was_annotated = True
                 self._regenerate_current_image()
                 self.update()
             event.accept()
@@ -1107,20 +1197,7 @@ class ImageAnnotationCanvas(QWidget):
         # 6. Hover cursor update
         handle, item = self.get_selection_handle_at(pos)
         if item and handle != self.HANDLE_NONE:
-            if handle == self.HANDLE_ROTATE:
-                self.setCursor(Qt.PointingHandCursor)
-            elif handle in (self.HANDLE_CORNER_TL, self.HANDLE_CORNER_BR):
-                self.setCursor(Qt.SizeFDiagCursor)
-            elif handle in (self.HANDLE_CORNER_TR, self.HANDLE_CORNER_BL):
-                self.setCursor(Qt.SizeBDiagCursor)
-            elif handle in (
-                self.HANDLE_EDGE_TOP,
-                self.HANDLE_EDGE_BOTTOM,
-                self.HANDLE_EDGE_LEFT,
-                self.HANDLE_EDGE_RIGHT,
-                self.HANDLE_BODY,
-            ):
-                self.setCursor(Qt.SizeAllCursor)
+            self.setCursor(self._cursor_for_handle(handle))
             return
 
         # If hovering over any other item on the canvas
@@ -1153,6 +1230,9 @@ class ImageAnnotationCanvas(QWidget):
         if self._action_mode == self.ACTION_RESIZE:
             self._action_mode = self.ACTION_NONE
             self._is_resizing = False
+            if self._selected_item and self._selected_item.get_bounding_rect() == self._resize_initial_rect and self._undo_stack:
+                self._undo_stack.pop()
+            self._resize_initial_item = None
             self._regenerate_current_image()
             self._update_cursor()
             self.update()
@@ -1421,102 +1501,96 @@ class ResizeImageDialog(QDialog):
 
             tb_layout = QHBoxLayout(toolbar_box)
             tb_layout.setContentsMargins(6, 4, 6, 4)
-            tb_layout.setSpacing(6)
+            tb_layout.setSpacing(4)
 
-            # Tool Selection Buttons
+            # Drawing / Shape Tools
             self.tool_group = QButtonGroup(self)
             self.tool_group.setExclusive(True)
 
             self.btn_tool_select = QToolButton()
-            self.btn_tool_select.setText("↖️ Select / Move")
+            self.btn_tool_select.setText("↖️")
             self.btn_tool_select.setCheckable(True)
-            self.btn_tool_select.setToolTip("Select and drag to move text, shapes, or drawings (Delete to remove)")
+            self.btn_tool_select.setToolTip("Select / Move (V) — Select and drag to move text, shapes, or drawings (Delete to remove)")
             self.btn_tool_select.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_SELECT))
             self.tool_group.addButton(self.btn_tool_select)
             tb_layout.addWidget(self.btn_tool_select)
 
             self.btn_tool_pen = QToolButton()
-            self.btn_tool_pen.setText("✏️ Draw")
+            self.btn_tool_pen.setText("✏️")
             self.btn_tool_pen.setCheckable(True)
             self.btn_tool_pen.setChecked(True)
-            self.btn_tool_pen.setToolTip("Freehand drawing pen")
+            self.btn_tool_pen.setToolTip("Draw (P) — Freehand drawing pen")
             self.btn_tool_pen.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_PEN))
             self.tool_group.addButton(self.btn_tool_pen)
             tb_layout.addWidget(self.btn_tool_pen)
 
             self.btn_tool_line = QToolButton()
-            self.btn_tool_line.setText("📏 Line")
+            self.btn_tool_line.setText("📏")
             self.btn_tool_line.setCheckable(True)
-            self.btn_tool_line.setToolTip("Draw straight line (Hold Shift for straight horizontal, vertical, or 45° snap)")
+            self.btn_tool_line.setToolTip("Line (L) — Draw straight line (Hold Shift for straight horizontal, vertical, or 45° snap)")
             self.btn_tool_line.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_LINE))
             self.tool_group.addButton(self.btn_tool_line)
             tb_layout.addWidget(self.btn_tool_line)
 
             self.btn_tool_circle = QToolButton()
-            self.btn_tool_circle.setText("⭕ Circle")
+            self.btn_tool_circle.setText("⭕")
             self.btn_tool_circle.setCheckable(True)
-            self.btn_tool_circle.setToolTip("Draw circle or ellipse callout")
+            self.btn_tool_circle.setToolTip("Circle (C) — Draw circle or ellipse callout")
             self.btn_tool_circle.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_CIRCLE))
             self.tool_group.addButton(self.btn_tool_circle)
             tb_layout.addWidget(self.btn_tool_circle)
 
             self.btn_tool_rect = QToolButton()
-            self.btn_tool_rect.setText("🔲 Rectangle")
+            self.btn_tool_rect.setText("🔲")
             self.btn_tool_rect.setCheckable(True)
-            self.btn_tool_rect.setToolTip("Draw rectangle callout box")
+            self.btn_tool_rect.setToolTip("Rectangle (R) — Draw rectangle callout box")
             self.btn_tool_rect.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_RECTANGLE))
             self.tool_group.addButton(self.btn_tool_rect)
             tb_layout.addWidget(self.btn_tool_rect)
 
             self.btn_tool_text = QToolButton()
-            self.btn_tool_text.setText("🔤 Text")
+            self.btn_tool_text.setText("🔤")
             self.btn_tool_text.setCheckable(True)
-            self.btn_tool_text.setToolTip("Click and drag rectangle on image to add custom text (Paint style)")
+            self.btn_tool_text.setToolTip("Text (T) — Click and drag rectangle on image to add custom text (Paint style)")
             self.btn_tool_text.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_TEXT))
             self.tool_group.addButton(self.btn_tool_text)
             tb_layout.addWidget(self.btn_tool_text)
 
             self.btn_rotate_90 = QToolButton()
-            self.btn_rotate_90.setText("⟳ Rotate 90°")
-            self.btn_rotate_90.setToolTip("Rotate selected form or text 90° clockwise (Ctrl+R)")
+            self.btn_rotate_90.setText("⟳")
+            self.btn_rotate_90.setToolTip("Rotate 90° (Ctrl+R) — Rotate selected form or text 90° clockwise")
             self.btn_rotate_90.clicked.connect(self._on_rotate_90)
             tb_layout.addWidget(self.btn_rotate_90)
 
-            tb_layout.addSpacing(6)
+            tb_layout.addSpacing(4)
 
-            # Font Size Selector for Text
-            lbl_font = QLabel("Font:")
-            lbl_font.setStyleSheet("color: #9cdcfe; font-weight: bold;")
-            tb_layout.addWidget(lbl_font)
-
+            # Font Size SpinBox
             self.spin_font_size = QSpinBox()
             self.spin_font_size.setRange(8, 96)
             self.spin_font_size.setValue(18)
             self.spin_font_size.setSuffix(" pt")
+            self.spin_font_size.setMinimumWidth(68)
             self.spin_font_size.setToolTip("Font size for text overlay (8 to 96 pt)")
             self.spin_font_size.valueChanged.connect(self._on_font_size_changed)
             tb_layout.addWidget(self.spin_font_size)
 
-            tb_layout.addSpacing(6)
+            tb_layout.addSpacing(4)
 
-            # Color Swatches Palette
-            lbl_color = QLabel("Color:")
-            lbl_color.setStyleSheet("color: #9cdcfe; font-weight: bold;")
-            tb_layout.addWidget(lbl_color)
-
+            # Color Swatches Palette + Custom Color Picker
             self.color_group = QButtonGroup(self)
             self.color_group.setExclusive(True)
 
             for hex_color, name in ImageAnnotationCanvas.COLOR_PALETTE:
                 btn_c = QToolButton()
-                btn_c.setFixedSize(22, 22)
+                btn_c.setFixedSize(20, 20)
                 btn_c.setCheckable(True)
                 btn_c.setToolTip(f"{name} ({hex_color})")
                 btn_c.setStyleSheet(f"""
                     QToolButton {{
                         background-color: {hex_color};
                         border: 2px solid #3c3c3c;
-                        border-radius: 11px;
+                        border-radius: 10px;
+                        padding: 0px;
                     }}
                     QToolButton:checked {{
                         border: 2px solid #ffffff;
@@ -1529,26 +1603,24 @@ class ResizeImageDialog(QDialog):
                 tb_layout.addWidget(btn_c)
 
             self.btn_custom_color = QToolButton()
-            self.btn_custom_color.setText("🎨 More...")
+            self.btn_custom_color.setText("🎨")
             self.btn_custom_color.setToolTip("Choose custom color")
             self.btn_custom_color.clicked.connect(self._choose_custom_color)
             tb_layout.addWidget(self.btn_custom_color)
 
-            tb_layout.addSpacing(6)
+            tb_layout.addSpacing(4)
 
             # Stroke Width Selection
-            lbl_width = QLabel("Line:")
-            lbl_width.setStyleSheet("color: #9cdcfe; font-weight: bold;")
-            tb_layout.addWidget(lbl_width)
-
             self.btn_stroke_thin = QToolButton()
             self.btn_stroke_thin.setText("2px")
+            self.btn_stroke_thin.setToolTip("Line width: 2px")
             self.btn_stroke_thin.setCheckable(True)
             self.btn_stroke_thin.clicked.connect(lambda: self._set_stroke_width(2))
             tb_layout.addWidget(self.btn_stroke_thin)
 
             self.btn_stroke_med = QToolButton()
             self.btn_stroke_med.setText("4px")
+            self.btn_stroke_med.setToolTip("Line width: 4px")
             self.btn_stroke_med.setCheckable(True)
             self.btn_stroke_med.setChecked(True)
             self.btn_stroke_med.clicked.connect(lambda: self._set_stroke_width(4))
@@ -1556,22 +1628,27 @@ class ResizeImageDialog(QDialog):
 
             self.btn_stroke_thick = QToolButton()
             self.btn_stroke_thick.setText("8px")
+            self.btn_stroke_thick.setToolTip("Line width: 8px")
             self.btn_stroke_thick.setCheckable(True)
             self.btn_stroke_thick.clicked.connect(lambda: self._set_stroke_width(8))
             tb_layout.addWidget(self.btn_stroke_thick)
 
-            stroke_grp = QButtonGroup(self)
-            stroke_grp.addButton(self.btn_stroke_thin)
-            stroke_grp.addButton(self.btn_stroke_med)
-            stroke_grp.addButton(self.btn_stroke_thick)
+            self.btn_stroke_xthick = QToolButton()
+            self.btn_stroke_xthick.setText("12px")
+            self.btn_stroke_xthick.setToolTip("Line width: 12px")
+            self.btn_stroke_xthick.setCheckable(True)
+            self.btn_stroke_xthick.clicked.connect(lambda: self._set_stroke_width(12))
+            tb_layout.addWidget(self.btn_stroke_xthick)
 
-            tb_layout.addSpacing(6)
+            self.stroke_grp = QButtonGroup(self)
+            self.stroke_grp.addButton(self.btn_stroke_thin)
+            self.stroke_grp.addButton(self.btn_stroke_med)
+            self.stroke_grp.addButton(self.btn_stroke_thick)
+            self.stroke_grp.addButton(self.btn_stroke_xthick)
+
+            tb_layout.addSpacing(4)
 
             # Zoom In / Out / Reset Controls
-            lbl_zoom = QLabel("Zoom:")
-            lbl_zoom.setStyleSheet("color: #9cdcfe; font-weight: bold;")
-            tb_layout.addWidget(lbl_zoom)
-
             self.btn_zoom_out = QToolButton()
             self.btn_zoom_out.setText("➖")
             self.btn_zoom_out.setToolTip("Zoom out (Ctrl+- or Ctrl+Wheel Down)")
@@ -1579,6 +1656,7 @@ class ResizeImageDialog(QDialog):
             tb_layout.addWidget(self.btn_zoom_out)
 
             self.lbl_zoom_val = QLabel("100%")
+            self.lbl_zoom_val.setToolTip("Current zoom level")
             self.lbl_zoom_val.setStyleSheet("color: #cccccc; min-width: 36px; qproperty-alignment: AlignCenter;")
             tb_layout.addWidget(self.lbl_zoom_val)
 
@@ -1596,25 +1674,24 @@ class ResizeImageDialog(QDialog):
 
             tb_layout.addStretch()
 
-            # Reversal / History Buttons
-            self.btn_undo = QPushButton("↺ Undo")
+            # History & Window Controls
+            self.btn_undo = QPushButton("↺")
             self.btn_undo.setToolTip("Undo last annotation step (Ctrl+Z)")
             self.btn_undo.clicked.connect(self._on_undo)
             tb_layout.addWidget(self.btn_undo)
 
-            self.btn_redo = QPushButton("↻ Redo")
+            self.btn_redo = QPushButton("↻")
             self.btn_redo.setToolTip("Redo undone step (Ctrl+Y)")
             self.btn_redo.clicked.connect(self._on_redo)
             tb_layout.addWidget(self.btn_redo)
 
-            self.btn_reset = QPushButton("🔄 Reset Image")
-            self.btn_reset.setToolTip("Clear all annotations and restore original image")
+            self.btn_reset = QPushButton("🔄")
+            self.btn_reset.setToolTip("Reset Image — Clear all annotations and restore original image")
             self.btn_reset.clicked.connect(self._on_reset)
             tb_layout.addWidget(self.btn_reset)
 
-            # Full Screen Maximize / Restore Button
             init_max = bool(self.windowState() & Qt.WindowMaximized)
-            self.btn_maximize = QPushButton("❐ Restore" if init_max else "⛶ Maximize")
+            self.btn_maximize = QPushButton("❐" if init_max else "⛶")
             self.btn_maximize.setToolTip(
                 "Restore Image Editor to normal window size (F11 or double-click top bar)"
                 if init_max
@@ -1622,6 +1699,28 @@ class ResizeImageDialog(QDialog):
             )
             self.btn_maximize.clicked.connect(self._toggle_maximize)
             tb_layout.addWidget(self.btn_maximize)
+
+            self._toolbar_text_buttons = [
+                self.btn_tool_select,
+                self.btn_tool_pen,
+                self.btn_tool_line,
+                self.btn_tool_circle,
+                self.btn_tool_rect,
+                self.btn_tool_text,
+                self.btn_rotate_90,
+                self.btn_custom_color,
+                self.btn_stroke_thin,
+                self.btn_stroke_med,
+                self.btn_stroke_thick,
+                self.btn_stroke_xthick,
+                self.btn_zoom_out,
+                self.btn_zoom_in,
+                self.btn_zoom_reset,
+                self.btn_undo,
+                self.btn_redo,
+                self.btn_reset,
+                self.btn_maximize,
+            ]
 
             main_layout.addWidget(toolbar_box)
 
@@ -1803,17 +1902,17 @@ class ResizeImageDialog(QDialog):
             if self._image and not self._image.isNull():
                 self.setWindowState(self.windowState() | Qt.WindowMaximized)
                 if hasattr(self, "btn_maximize"):
-                    self.btn_maximize.setText("❐ Restore")
+                    self.btn_maximize.setText("❐")
                     self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
         if hasattr(self, "btn_maximize"):
             if self.isMaximized() or bool(self.windowState() & Qt.WindowMaximized):
-                self.btn_maximize.setText("❐ Restore")
+                self.btn_maximize.setText("❐")
                 self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
             else:
-                self.btn_maximize.setText("⛶ Maximize")
+                self.btn_maximize.setText("⛶")
                 self.btn_maximize.setToolTip("Maximize Image Editor to full screen (F11 or double-click top bar)")
 
     def _toggle_maximize(self) -> None:
@@ -1823,14 +1922,14 @@ class ResizeImageDialog(QDialog):
             if self.isVisible():
                 self.showNormal()
             if hasattr(self, "btn_maximize"):
-                self.btn_maximize.setText("⛶ Maximize")
+                self.btn_maximize.setText("⛶")
                 self.btn_maximize.setToolTip("Maximize Image Editor to full screen (F11 or double-click top bar)")
         else:
             self.setWindowState(self.windowState() | Qt.WindowMaximized)
             if self.isVisible():
                 self.showMaximized()
             if hasattr(self, "btn_maximize"):
-                self.btn_maximize.setText("❐ Restore")
+                self.btn_maximize.setText("❐")
                 self.btn_maximize.setToolTip("Restore Image Editor to normal window size (F11 or double-click top bar)")
 
     def _set_canvas_tool(self, tool_name: str) -> None:
@@ -1938,6 +2037,10 @@ class ResizeImageDialog(QDialog):
                 border-color: #1177bb;
                 color: #ffffff;
             }
+            QFrame#annotationToolbar QToolButton {
+                padding: 3px 6px;
+                font-size: 9pt;
+            }
             QSpinBox {
                 background-color: #1e1e1e;
                 color: #cccccc;
@@ -1948,12 +2051,20 @@ class ResizeImageDialog(QDialog):
             QSpinBox:focus {
                 border-color: #007acc;
             }
+            QFrame#annotationToolbar QSpinBox {
+                padding: 3px 6px;
+                font-size: 8.5pt;
+            }
             QPushButton {
                 background-color: #333333;
                 color: #cccccc;
                 border: 1px solid #3c3c3c;
                 border-radius: 4px;
                 padding: 4px 10px;
+                font-size: 9pt;
+            }
+            QFrame#annotationToolbar QPushButton {
+                padding: 3px 6px;
                 font-size: 9pt;
             }
             QPushButton:hover {
@@ -1965,6 +2076,8 @@ class ResizeImageDialog(QDialog):
                 background-color: #0e639c;
             }
         """)
+        for btn in getattr(self, "_toolbar_text_buttons", []):
+            btn.setMinimumWidth(btn.sizeHint().width())
 
     def _on_width_changed(self, new_w: int) -> None:
         if self._updating or not self.chk_lock_aspect.isChecked():

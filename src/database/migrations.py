@@ -88,6 +88,8 @@ def init_database(db_manager: DatabaseManager) -> None:
             ("ticket_prefix", "INC-"),
             ("close_tab_action", "prompt"),
             ("window_opacity", "100"),
+            ("autostart_enabled", "true"),
+            ("smart_restore_enabled", "true"),
         ]
         for key, val in default_settings:
             conn.execute(

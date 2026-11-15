@@ -15,7 +15,7 @@
   ],
   "script_path": "intune/compliance-enrollment/Get-IntuneComplianceDiagnostic.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "f3808bd90d89f9c2b9aac5347bdd265c420b5046cce77ea251e98ee1a281cf57",
+  "script_sha256": "b6463328f6eb6a66d567d5d1284e33317c5392e9bfc158647835959660f808ed",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -31,8 +31,7 @@
     "Graph"
   ],
   "graph_scopes": [
-    "AuditLog.Read.All",
-    "Directory.Read.All"
+    "AuditLog.Read.All"
   ],
   "required_roles": [
     {

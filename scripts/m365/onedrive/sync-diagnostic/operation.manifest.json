@@ -14,7 +14,7 @@
   ],
   "script_path": "onedrive/sync-diagnostic/Get-OneDriveSyncDiagnostic.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "555f76243cf6808aca43924a0b6ae17d657cd193deea70fd02ffbed2b7cb0978",
+  "script_sha256": "c0a69cf53feb5769c407fae27b69cc207aa2b5fa3bfa9056797e560ddf00341b",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

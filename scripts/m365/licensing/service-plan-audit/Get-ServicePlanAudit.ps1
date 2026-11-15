@@ -26,8 +26,8 @@ function New-OperationReturn {
         [Parameter(Mandatory = $true)][string]$Status,
         [Parameter(Mandatory = $true)][string]$Outcome,
         [Parameter()][object]$Data = $null,
-        [Parameter()][object[]]$Warnings = @(),
-        [Parameter()][object[]]$Errors = @()
+        [Parameter()][object[]]$Warnings = [object[]]@(),
+        [Parameter()][object[]]$Errors = [object[]]@()
     )
     return [pscustomobject]@{
         status            = $Status
@@ -38,70 +38,228 @@ function New-OperationReturn {
     }
 }
 
+function New-ErrorItem {
+    param(
+        [Parameter(Mandatory = $true)][string]$Code,
+        [Parameter(Mandatory = $true)][string]$Message,
+        [Parameter()][bool]$Retryable = $false
+    )
+    return [pscustomobject]@{
+        code      = $Code
+        message   = $Message
+        retryable = $Retryable
+    }
+}
+
+function New-WarningItem {
+    param(
+        [Parameter(Mandatory = $true)][string]$Code,
+        [Parameter(Mandatory = $true)][string]$Message
+    )
+    return [pscustomobject]@{
+        code    = $Code
+        message = $Message
+    }
+}
+
+function Get-SafeProp {
+    param([object]$Object, [string]$Name)
+    if ($null -eq $Object) { return $null }
+    $prop = $Object.PSObject.Properties[$Name]
+    if ($null -ne $prop) { return $prop.Value }
+    return $null
+}
+
 if ($CancellationToken.IsCancellationRequested) {
     return New-OperationReturn -Status 'cancelled' -Outcome 'not_started' -Errors @(
-        [pscustomobject]@{
-            code      = 'CANCELLED'
-            message   = 'Operation cancelled before execution.'
-            retryable = $true
-        }
+        New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled before execution.' -Retryable $true
     )
 }
 
-if ($null -eq $Context -or $Context.contract_version -ne '0.3.0' -or $Context.script_id -ne 'M365.LICENSING.SERVICE_PLAN_AUDIT') {
-    return New-OperationReturn -Status 'error' -Outcome 'failed' -Errors @(
-        [pscustomobject]@{
-            code      = 'CONTRACT_VIOLATION'
-            message   = 'Invalid invocation context for M365.LICENSING.SERVICE_PLAN_AUDIT.'
-            retryable = $false
-        }
+if ($null -eq $Context -or [string]$Context.contract_version -ne '0.3.0' -or [string]$Context.script_id -ne 'M365.LICENSING.SERVICE_PLAN_AUDIT') {
+    return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+        New-ErrorItem -Code 'CONTRACT_VIOLATION' -Message 'Invalid invocation context for M365.LICENSING.SERVICE_PLAN_AUDIT.'
     )
 }
 
 $allowedParams = @('OnlyProvisionedPlans')
-foreach ($key in $Parameters.Keys) {
-    if ($allowedParams -notcontains [string]$key) {
-        return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
-            [pscustomobject]@{
-                code      = 'INVALID_PARAMETER'
-                message   = "Unexpected parameter '$key'."
-                retryable = $false
-            }
-        )
+if ($null -ne $Parameters) {
+    foreach ($key in $Parameters.Keys) {
+        if ($allowedParams -notcontains [string]$key) {
+            return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+                New-ErrorItem -Code 'INVALID_PARAMETER' -Message "Unexpected parameter '$key'."
+            )
+        }
     }
 }
 
-$graphConnected = $false
+$onlyProvisioned = $true
+if ($null -ne $Parameters -and $Parameters.ContainsKey('OnlyProvisionedPlans')) {
+    if ($Parameters['OnlyProvisionedPlans'] -isnot [bool]) {
+        return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+            New-ErrorItem -Code 'INVALID_PARAMETER' -Message 'OnlyProvisionedPlans must be a boolean.'
+        )
+    }
+    $onlyProvisioned = [bool]$Parameters['OnlyProvisionedPlans']
+}
+
+$graphConn = $null
 if ($null -ne $Context.connections) {
-    foreach ($conn in $Context.connections) {
-        if ($conn.service -eq 'Graph' -and $conn.state -eq 'verified' -and $conn.tenant_id -eq $Context.tenant_id) {
-            $graphConnected = $true
+    foreach ($conn in @($Context.connections)) {
+        if ($null -ne $conn -and [string]$conn.service -eq 'Graph') {
+            $graphConn = $conn
             break
         }
     }
 }
-
-if (-not $graphConnected) {
+if ($null -eq $graphConn -or [string]$graphConn.state -ne 'verified') {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
-        [pscustomobject]@{
-            code      = 'AUTH_REQUIRED'
-            message   = 'Verified Microsoft Graph connection is required.'
-            retryable = $false
-        }
+        New-ErrorItem -Code 'AUTH_REQUIRED' -Message 'Verified Microsoft Graph connection is required.'
+    )
+}
+if ([string]$graphConn.tenant_id -ne [string]$Context.tenant_id) {
+    return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+        New-ErrorItem -Code 'TENANT_MISMATCH' -Message 'Graph connection tenant does not match invocation tenant.'
+    )
+}
+if ([string]$graphConn.verified_account_upn -ne [string]$Context.verified_account_upn) {
+    return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+        New-ErrorItem -Code 'ACCOUNT_MISMATCH' -Message 'Graph connection account does not match invocation administrator.'
     )
 }
 
-if ($Context.target.kind -ne 'object_id') {
+if ($null -eq $Context.target -or [string]$Context.target.kind -ne 'object_id') {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
-        [pscustomobject]@{
-            code      = 'INVALID_PARAMETER'
-            message   = 'M365.LICENSING.SERVICE_PLAN_AUDIT requires a resolved Entra object_id target.'
-            retryable = $false
-        }
+        New-ErrorItem -Code 'INVALID_PARAMETER' -Message 'M365.LICENSING.SERVICE_PLAN_AUDIT requires a resolved Entra object_id target.'
     )
 }
 
 $targetId = ([string]$Context.target.value).Trim().ToLowerInvariant()
+$parsedGuid = [guid]::Empty
+if (-not [guid]::TryParseExact($targetId, 'D', [ref]$parsedGuid)) {
+    return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+        New-ErrorItem -Code 'INVALID_PARAMETER' -Message 'Target object_id must be a canonical UUID.'
+    )
+}
+
+$scopes = @($graphConn.graph_scopes | ForEach-Object { [string]$_ })
+$roles = @($graphConn.effective_roles | ForEach-Object { [string]$_ })
+if ('LicenseAssignment.Read.All' -notin $scopes -or ('Directory.Readers' -notin $roles -and 'License.Administrator' -notin $roles)) {
+    return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+        New-ErrorItem -Code 'ACCESS_DENIED' -Message 'Required Graph scope LicenseAssignment.Read.All and role Directory.Readers or License.Administrator are not present.'
+    )
+}
+
+$mgLicenseCmd = Get-Command -Name 'Get-MgUserLicenseDetail' -ErrorAction SilentlyContinue
+if ($null -ne $mgLicenseCmd) {
+    try {
+        $rawLicenses = @(Get-MgUserLicenseDetail -UserId $targetId -Property @('Id', 'SkuId', 'SkuPartNumber', 'ServicePlans') -ErrorAction Stop)
+    }
+    catch {
+        $errMsg = $_.Exception.Message
+        if ($CancellationToken.IsCancellationRequested) {
+            return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during service plan lookup.' -Retryable $true
+            )
+        }
+        if ($errMsg -match '(?i)Request_ResourceNotFound|404|not\s+found') {
+            return New-OperationReturn -Status 'error' -Outcome 'failed' -Errors @(
+                New-ErrorItem -Code 'TARGET_NOT_FOUND' -Message 'The requested Entra user was not found during service plan lookup.'
+            )
+        }
+        if ($errMsg -match '(?i)Authorization_RequestDenied|403|Forbidden|Insufficient\s+privileges') {
+            return New-OperationReturn -Status 'error' -Outcome 'failed' -Errors @(
+                New-ErrorItem -Code 'ACCESS_DENIED' -Message 'Access denied while reading user service plans (LicenseAssignment.Read.All required).'
+            )
+        }
+        if ($errMsg -match '(?i)429|TooManyRequests|throttl') {
+            return New-OperationReturn -Status 'error' -Outcome 'failed' -Errors @(
+                New-ErrorItem -Code 'API_THROTTLED' -Message 'Microsoft Graph throttled the service plan lookup request.' -Retryable $true
+            )
+        }
+        return New-OperationReturn -Status 'error' -Outcome 'failed' -Errors @(
+            New-ErrorItem -Code 'SERVICE_UNAVAILABLE' -Message 'Microsoft Graph service plan lookup failed.' -Retryable $true
+        )
+    }
+
+    if ($CancellationToken.IsCancellationRequested) {
+        return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+            New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled after Graph service plan lookup.' -Retryable $true
+        )
+    }
+
+    $normalizedLicenses = [System.Collections.Generic.List[object]]::new()
+    $truncated = $false
+    $totalPlansReturned = 0
+
+    foreach ($lic in $rawLicenses) {
+        if ($null -eq $lic) { continue }
+        if ($normalizedLicenses.Count -ge 100) {
+            $truncated = $true
+            break
+        }
+        $skuId = ([string](Get-SafeProp $lic 'SkuId')).Trim().ToLowerInvariant()
+        if ([string]::IsNullOrWhiteSpace($skuId)) { continue }
+        $skuPart = [string](Get-SafeProp $lic 'SkuPartNumber')
+        if ([string]::IsNullOrWhiteSpace($skuPart)) { $skuPart = $skuId }
+        if ($skuPart.Length -gt 128) { $skuPart = $skuPart.Substring(0, 128) }
+
+        $plans = [System.Collections.Generic.List[object]]::new()
+        $rawPlans = Get-SafeProp $lic 'ServicePlans'
+        if ($null -ne $rawPlans) {
+            foreach ($sp in @($rawPlans)) {
+                if ($null -eq $sp) { continue }
+                $prov = [string](Get-SafeProp $sp 'ProvisioningStatus')
+                if ([string]::IsNullOrWhiteSpace($prov)) { $prov = 'Unknown' }
+                if ($onlyProvisioned -and $prov -ne 'Success') { continue }
+                if ($plans.Count -ge 100) {
+                    $truncated = $true
+                    break
+                }
+                $spId = ([string](Get-SafeProp $sp 'ServicePlanId')).Trim().ToLowerInvariant()
+                $spName = [string](Get-SafeProp $sp 'ServicePlanName')
+                if ([string]::IsNullOrWhiteSpace($spId)) { continue }
+                if ([string]::IsNullOrWhiteSpace($spName)) { $spName = $spId }
+                $plans.Add([pscustomobject]@{
+                    service_plan_id     = $spId
+                    service_plan_name   = $spName
+                    provisioning_status = $prov
+                })
+                $totalPlansReturned++
+            }
+        }
+
+        $normalizedLicenses.Add([pscustomobject]@{
+            sku_id          = $skuId
+            sku_part_number = $skuPart
+            service_plans   = [object[]]$plans.ToArray()
+        })
+    }
+
+    $warnings = [System.Collections.Generic.List[object]]::new()
+    if ($truncated) {
+        $warnings.Add((New-WarningItem -Code 'OUTPUT_LIMIT' -Message 'Service plan audit results were truncated at 100 items.'))
+    }
+    if ($normalizedLicenses.Count -eq 0) {
+        $warnings.Add((New-WarningItem -Code 'NO_ACTIVE_LICENSES' -Message 'No assigned license SKUs were found for this user.'))
+    } elseif ($onlyProvisioned -and $totalPlansReturned -eq 0) {
+        $warnings.Add((New-WarningItem -Code 'NO_PROVISIONED_PLANS' -Message 'Assigned SKUs were found, but no service plans have ProvisioningStatus=Success.'))
+    }
+
+    $payload = [pscustomobject]@{
+        target_user_id = $targetId
+        licenses       = [object[]]$normalizedLicenses.ToArray()
+        returned_count = [int]$normalizedLicenses.Count
+        truncated      = [bool]$truncated
+    }
+
+    if ($truncated) {
+        return New-OperationReturn -Status 'partial' -Outcome 'partially_succeeded' -Data $payload -Warnings $warnings.ToArray()
+    }
+    return New-OperationReturn -Status 'success' -Outcome 'succeeded' -Data $payload -Warnings $warnings.ToArray()
+}
+
+# Offline synthetic fixture evaluation
 [object[]]$licenses = @(
     [pscustomobject]@{
         sku_id          = '06ebc4ee-1bb5-47dd-8120-11324bc54e06'

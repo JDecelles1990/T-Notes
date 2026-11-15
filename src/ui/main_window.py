@@ -5,13 +5,14 @@ import json
 from pathlib import Path
 import re
 import sys
-from typing import Optional
-from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
+from typing import Any, Callable, Optional
+from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
     QFileDialog,
+    QInputDialog,
     QLabel,
     QMainWindow,
     QMenu,
@@ -260,6 +261,7 @@ class TechPadMainWindow(QMainWindow):
         self.m365_workspace.back_requested.connect(self.switch_workspace)
         self.m365_workspace.note_modified.connect(self._on_editor_modified)
         self.m365_workspace.save_requested.connect(self._execute_save)
+        self.m365_workspace.send_default_email_requested.connect(self._on_send_active_ticket_to_default_email)
         self.setCentralWidget(self.workspace_stack)
 
         # Formatting & System Toolbars (Two-Row Header)
@@ -273,6 +275,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.export_file_requested.connect(self._on_export_active_ticket_file)
         self.toolbar.copy_client_email_requested.connect(self._on_copy_client_email)
         self.toolbar.copy_psa_note_requested.connect(self._on_copy_psa_note)
+        self.toolbar.send_default_email_requested.connect(self._on_send_active_ticket_to_default_email)
         self.toolbar.summary_dialog_requested.connect(self._open_summary_formatter_dialog)
         self.toolbar.split_view_requested.connect(self._toggle_split_view)
         self.toolbar.mini_hud_requested.connect(self.toggle_mini_hud_mode)
@@ -1676,6 +1679,69 @@ class TechPadMainWindow(QMainWindow):
         else:
             msg = f"✓ Copied internal PSA note ({t_label}) to clipboard!" if t_label != "#" else "✓ Copied internal PSA note to clipboard!"
         self.status_bar.showMessage(msg, 3500)
+
+    def _on_send_active_ticket_to_default_email(
+        self, open_url_fn: Optional[Callable[[QUrl], Any]] = None
+    ) -> bool:
+        """Copies active ticket rich note and launches the default email client addressed to Default Email."""
+        editor = None
+        if self.is_m365_workspace and getattr(self.m365_workspace, "_active_editor", None):
+            editor = self.m365_workspace._active_editor
+        if not editor:
+            editor = self._get_active_editor()
+        if not editor:
+            return False
+
+        self._execute_save(editor.scratchpad_id)
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+
+        tech_email = (
+            self.session_service.get_setting("technician_email", "") if self.session_service else ""
+        ).strip()
+        if not tech_email:
+            entered, ok = QInputDialog.getText(
+                self,
+                "Default Email Address",
+                "Enter your Default Email address (saved in Preferences):",
+            )
+            tech_email = entered.strip() if ok else ""
+            if not tech_email:
+                self.status_bar.showMessage("Default Email is required to open email composer.", 3500)
+                return False
+            if self.session_service:
+                self.session_service.save_settings({"technician_email": tech_email})
+
+        editor.copy_formatted_note()
+        tech_name = (
+            self.session_service.get_setting("technician_name", "") if self.session_service else ""
+        ).strip()
+        lang = (
+            self.session_service.get_setting("summary_default_language", "en")
+            if self.session_service
+            else "en"
+        )
+        subject, plain, _ = SummaryFormatterService.format_active_ticket_email(
+            ticket,
+            technician_name=tech_name,
+            technician_email=tech_email,
+            lang=lang,
+        )
+        mailto_url = SummaryFormatterService.build_mailto_url(tech_email, subject, plain)
+        opener = open_url_fn or QDesktopServices.openUrl
+        opened = opener(QUrl(mailto_url))
+        if opened is False:
+            self.status_bar.showMessage(
+                "Could not launch default email client (rich note copied to clipboard).", 4000
+            )
+            return False
+
+        t_num = ticket.get("ticket_number", "")
+        t_label = f"#{t_num}" if t_num else "active ticket"
+        self.status_bar.showMessage(
+            f"✓ Opened email to {tech_email} for {t_label} (rich note also copied to clipboard)!",
+            4500,
+        )
+        return True
 
     def _open_summary_formatter_dialog(self) -> None:
         """Opens interactive bilingual ticket summary formatter dialog."""

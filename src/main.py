@@ -1,7 +1,18 @@
 """Main application entry point for TechPad."""
 
 import os
+from pathlib import Path
 import sys
+
+# Ensure project root is importable and active CWD when launched by Windows Startup from System32
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+try:
+    os.chdir(_PROJECT_ROOT)
+except OSError:
+    pass
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import QApplication
@@ -58,6 +69,14 @@ def main() -> int:
     session_service = SessionService(session_repo, scratchpad_service)
     autostart_service = AutostartService()
     backup_service = BackupService(db_manager, scratchpad_repo, image_repo)
+
+    # Ensure Windows Startup registry entry matches user preference (enabled by default)
+    autostart_pref = session_service.get_setting("autostart_enabled", "true").lower() == "true"
+    if autostart_pref:
+        try:
+            autostart_service.set_enabled(True)
+        except Exception as e:
+            print(f"Warning: Windows startup could not be registered: {e}", file=sys.stderr)
 
     # Automatic Daily Database Snapshot (rolling 7-day retention)
     try:

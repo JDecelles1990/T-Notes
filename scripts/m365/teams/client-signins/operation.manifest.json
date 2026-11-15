@@ -14,7 +14,7 @@
   ],
   "script_path": "teams/client-signins/Get-TeamsClientSignIns.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "3245f77b8a7659194cff483045a4929e482e8a79024d4b2fef5f93380f52546a",
+  "script_sha256": "a0f5cae4e237e8c8a21939a078e125e96660ae4f204dc8a6979ef991ef211254",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -30,8 +30,7 @@
     "Graph"
   ],
   "graph_scopes": [
-    "AuditLog.Read.All",
-    "Directory.Read.All"
+    "AuditLog.Read.All"
   ],
   "required_roles": [
     {

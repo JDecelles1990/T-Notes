@@ -1,0 +1,87 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT",
+  "title": "Audit Mailbox Delegation & Permissions",
+  "description": "Inspect Exchange Online Full Access, Send As, and Send on Behalf mailbox delegates excluding NT AUTHORITY\\SELF.",
+  "category": "exchange-online",
+  "subcategory": "delegation",
+  "tags": [
+    "exchange",
+    "permissions",
+    "delegates",
+    "full-access",
+    "send-as",
+    "shared-mailbox"
+  ],
+  "script_path": "exchange-online/mailbox-permissions/Get-MailboxPermissionsAudit.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "6a89c7f4a17fc06628c1269a0f3e4ac03bfab338e1552d315bffc82839b5938a",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "ExchangeOnlineManagement",
+      "minimum_version": "3.4.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "ExchangeOnline"
+  ],
+  "graph_scopes": [],
+  "required_roles": [
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailbox",
+        "View-Only.Recipients"
+      ]
+    },
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailboxStatistics",
+        "View-Only.Recipients"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "IncludeSendAsCheck",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Query Get-EXORecipientPermission for Send As trustees when available."
+    },
+    {
+      "name": "MaxDelegates",
+      "type": "integer",
+      "required": false,
+      "minimum": 1,
+      "maximum": 50,
+      "default": 20,
+      "description": "Maximum number of trustees to display per permission category (1..50)."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/mailbox_summary",
+  "timeout_seconds": 60,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

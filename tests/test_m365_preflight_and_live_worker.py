@@ -497,8 +497,9 @@ def test_main_window_wires_persistent_directory_and_shuts_down_m365(qapp, tmp_pa
         assert hasattr(win.m365_company_directory, "export_to_file")
         win.m365_workspace.enable_live_pilot_mode()
         assert win.m365_workspace.context_service.is_live is True
-        assert "Live Pilot" in win.m365_workspace.notice_label.text()
-        assert win.m365_workspace.operation_list.count() >= 0
+        assert "Live Tenant" in win.m365_workspace.notice_label.text()
+        assert win.m365_workspace.catalog_service.validation_errors == ()
+        assert len(win.m365_workspace.catalog_service._operations) == 25
     finally:
         win.m365_workspace.shutdown()
         win.quit_application()
@@ -506,3 +507,482 @@ def test_main_window_wires_persistent_directory_and_shuts_down_m365(qapp, tmp_pa
         win.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
         db.close()
+
+
+def test_live_tenant_25_catalog_unapproved_op_rejection_and_exo_view_only_role():
+    """Verify all 25 read-only ops are live-enabled, unapproved ops fail closed, and EXO View-Only Recipients passes."""
+    live_cat = build_live_pilot_catalog_service()
+    assert live_cat.validation_errors == ()
+    live_ids = set(live_cat._operations.keys())
+    assert len(live_ids) == 25
+    assert live_ids == set(LIVE_PILOT_SCRIPT_IDS)
+
+    created_hosts: list[_FakeWorkerHost] = []
+
+    def _make_host(identity: WorkerIdentity) -> _FakeWorkerHost:
+        h = _FakeWorkerHost(
+            identity,
+            script_behaviors={
+                "connect_exchange": lambda _p, **_k: {
+                    "ok": True,
+                    "data": {
+                        "service": "ExchangeOnline",
+                        "tenant_id": TENANT_ID,
+                        "account_upn": ADMIN_UPN,
+                        "effective_roles": ["View-Only.Recipients"],
+                        "verified": True,
+                    },
+                },
+                "invoke_operation": lambda p, **_k: {
+                    "ok": True,
+                    "data": {
+                        "status": "success",
+                        "operation_outcome": "succeeded",
+                        "data": {
+                            "target_user_id": TARGET_OID,
+                            "mailbox_exists": True,
+                            "recipient_type_details": "UserMailbox",
+                            "primary_smtp_address": TARGET_UPN,
+                            "total_item_size_bytes": 1000,
+                            "prohibit_send_quota_bytes": 2000,
+                        },
+                        "warnings": [],
+                        "errors": [],
+                    },
+                },
+            },
+        )
+        created_hosts.append(h)
+        return h
+
+    ctx = CompanyContextService(_live_directory())
+    ctx._live_connections = LiveConnectionManager(worker_factory=_make_host)
+    ctx.set_mode("live")
+    ctx.select_company(COMPANY_ID)
+    ctx.confirm_company()
+
+    svc = M365ExecutionService(ctx, catalog_service=live_cat)
+    rejected = svc.execute("M365.INTUNE.UNAPPROVED_WRITE")
+    assert rejected.status == "error"
+
+    exo_state = ctx.connect_live("ExchangeOnline")
+    assert exo_state.state == "verified"
+    ctx.set_target(TARGET_UPN)
+    ctx.record_live_target(tenant_id=TENANT_ID, resolved_upn=TARGET_UPN, resolved_object_id=TARGET_OID)
+
+    eligible, reasons = svc.check_operation_eligibility("M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD")
+    assert eligible, reasons
+    outcome = svc.execute("M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD", {"IncludeArchiveCheck": True})
+    assert outcome.status == "success"
+    assert outcome.provenance == "runtime"
+    assert outcome.result_envelope["data"]["primary_smtp_address"] == TARGET_UPN
+    ctx.connections.clear()
+
+
+def test_live_mocked_cmdlets_for_all_13_upgraded_scripts():
+    """Execute all 13 newly upgraded .ps1 scripts against mocked Graph/EXO cmdlets and validate 0.3.0 schemas."""
+    import subprocess
+
+    exec_service = M365ExecutionService(CompanyContextService(_live_directory()))
+    ps_script = r"""
+$ErrorActionPreference = 'Stop'
+. 'C:\Dev\T-Notes\prototypes\m365_official_engine\protocol.ps1'
+Initialize-NativeReturnValidation
+$cts = [System.Threading.CancellationTokenSource]::new()
+
+$graphConn = [pscustomobject]@{
+    service = 'Graph'
+    state = 'verified'
+    tenant_id = '20000000-0000-4000-8000-000000000202'
+    verified_account_upn = 'alex@contoso.com'
+    graph_scopes = @('User.Read.All', 'LicenseAssignment.Read.All', 'AuditLog.Read.All')
+    effective_roles = @('Directory.Readers', 'Reports.Reader', 'Security.Reader')
+}
+$exoConn = [pscustomobject]@{
+    service = 'ExchangeOnline'
+    state = 'verified'
+    tenant_id = '20000000-0000-4000-8000-000000000202'
+    verified_account_upn = 'alex@contoso.com'
+    graph_scopes = @()
+    effective_roles = @('View-Only.Recipients')
+}
+
+function New-Ctx([string]$ScriptId, [string]$Kind, [string]$Val, $Conn) {
+    return [pscustomobject]@{
+        contract_version = '0.3.0'
+        script_id = $ScriptId
+        tenant_id = '20000000-0000-4000-8000-000000000202'
+        verified_account_upn = 'alex@contoso.com'
+        target = [pscustomobject]@{ kind = $Kind; value = $Val }
+        connections = @($Conn)
+    }
+}
+
+$oid = '40000000-0000-4000-8000-000000000404'
+$upn = 'user@contoso.com'
+
+function Get-MgUser {
+    param([string]$UserId, [string[]]$Property, $ErrorAction)
+    $now = [datetime]::UtcNow
+    if ($UserId -match 'guest') {
+        return [pscustomobject]@{
+            Id = '40000000-0000-4000-8000-000000000499'
+            DisplayName = 'Guest Partner'
+            UserPrincipalName = $UserId
+            AccountEnabled = $true
+            UserType = 'Guest'
+            ExternalUserState = 'PendingAcceptance'
+            ExternalUserStateChangeDateTime = $now.AddDays(-5)
+            CreationType = 'Invitation'
+            Mail = 'guest.partner@external.example'
+            OtherMails = @('guest.partner@external.example')
+            ProxyAddresses = @()
+        }
+    }
+    return [pscustomobject]@{
+        Id = $oid
+        DisplayName = 'Live User'
+        UserPrincipalName = $upn
+        AccountEnabled = $true
+        UserType = 'Member'
+        Mail = 'user@mailmismatch.com'
+        ProxyAddresses = @('SMTP:user@mailmismatch.com', 'smtp:alias@contoso.com')
+        LastPasswordChangeDateTime = $now.AddDays(-120)
+        PasswordPolicies = 'DisablePasswordExpiration'
+        OnPremisesSyncEnabled = $true
+        OnPremisesLastSyncDateTime = $now.AddMinutes(-15)
+        SignInSessionsValidFromDateTime = $now.AddDays(-10)
+        ExternalUserState = $null
+        CreationType = 'Local'
+    }
+}
+
+function Get-MgUserMemberOf {
+    param([string]$UserId, [switch]$All, $ErrorAction)
+    return @(
+        [pscustomobject]@{
+            Id = 'grp-m365-1'
+            DisplayName = 'Engineering Collab'
+            GroupTypes = @('Unified')
+            SecurityEnabled = $true
+            MailEnabled = $true
+            AdditionalProperties = @{ '@odata.type' = '#microsoft.graph.group' }
+        },
+        [pscustomobject]@{
+            Id = 'grp-sec-1'
+            DisplayName = 'VPN-Users'
+            GroupTypes = @()
+            SecurityEnabled = $true
+            MailEnabled = $false
+            AdditionalProperties = @{ '@odata.type' = '#microsoft.graph.group' }
+        },
+        [pscustomobject]@{
+            Id = 'role-helpdesk-1'
+            DisplayName = 'Helpdesk Administrator'
+            RoleTemplateId = '729827e3-9c14-49f7-bb1b-9608f156bbb8'
+            AdditionalProperties = @{ '@odata.type' = '#microsoft.graph.directoryRole' }
+        }
+    )
+}
+
+function Get-MgUserLicenseDetail {
+    param([string]$UserId, $ErrorAction)
+    return @(
+        [pscustomobject]@{
+            Id = 'lic-1'
+            SkuId = '6fd2c87f-b296-42f0-b197-1e91e994b900'
+            SkuPartNumber = 'SPE_E5'
+            ServicePlans = @(
+                [pscustomobject]@{ ServicePlanId = '11111111-1111-4111-8111-111111111111'; ServicePlanName = 'EXCHANGE_S_ENTERPRISE'; ProvisioningStatus = 'Success' },
+                [pscustomobject]@{ ServicePlanId = '22222222-2222-4222-8222-222222222222'; ServicePlanName = 'SHAREPOINTENTERPRISE'; ProvisioningStatus = 'Success' },
+                [pscustomobject]@{ ServicePlanId = '33333333-3333-4333-8333-333333333333'; ServicePlanName = 'TEAMS1'; ProvisioningStatus = 'Success' },
+                [pscustomobject]@{ ServicePlanId = '44444444-4444-4444-8444-444444444444'; ServicePlanName = 'ONEDRIVE_BASIC'; ProvisioningStatus = 'PendingInput' }
+            )
+        }
+    )
+}
+
+function Get-MgAuditLogSignIn {
+    param([string]$Filter, [int]$Top, [string[]]$Property, $ErrorAction)
+    $now = [datetime]::UtcNow
+    return @(
+        [pscustomobject]@{
+            Id = 's1'; UserId = $oid; CreatedDateTime = $now.AddMinutes(-10)
+            AppDisplayName = 'Microsoft Teams'; ResourceDisplayName = 'Microsoft Teams Services'
+            ClientAppUsed = 'Mobile Apps and Desktop clients'; AuthenticationRequirement = 'multiFactorAuthentication'
+            ConditionalAccessStatus = 'failure'; IsInteractive = $true; RiskLevelDuringSignIn = 'medium'; RiskState = 'atRisk'
+            MfaDetail = [pscustomobject]@{ AuthMethod = 'PhoneAppNotification' }
+            DeviceDetail = [pscustomobject]@{ OperatingSystem = 'Windows 11'; IsCompliant = $false; IsManaged = $true; TrustType = 'AzureAdJoined' }
+            Status = [pscustomobject]@{ ErrorCode = 50074 }
+        },
+        [pscustomobject]@{
+            Id = 's2'; UserId = $oid; CreatedDateTime = $now.AddMinutes(-20)
+            AppDisplayName = 'Office 365 SharePoint Online'; ResourceDisplayName = 'Office 365 SharePoint Online'
+            ClientAppUsed = 'Browser'; AuthenticationRequirement = 'singleFactorAuthentication'
+            ConditionalAccessStatus = 'success'; IsInteractive = $true; RiskLevelDuringSignIn = 'none'; RiskState = 'none'
+            DeviceDetail = [pscustomobject]@{ OperatingSystem = 'Windows 11'; IsCompliant = $true; IsManaged = $true }
+            Status = [pscustomobject]@{ ErrorCode = 0 }
+        },
+        [pscustomobject]@{
+            Id = 's3'; UserId = $oid; CreatedDateTime = $now.AddMinutes(-30)
+            AppDisplayName = 'Microsoft Intune Company Portal'; ResourceDisplayName = 'Microsoft Intune'
+            ClientAppUsed = 'Mobile Apps and Desktop clients'; AuthenticationRequirement = 'multiFactorAuthentication'
+            ConditionalAccessStatus = 'success'; IsInteractive = $true; RiskLevelDuringSignIn = 'none'; RiskState = 'none'
+            DeviceDetail = [pscustomobject]@{ DeviceId = 'dev-corp-1'; DisplayName = 'WS-CORP-01'; OperatingSystem = 'Windows 11'; Browser = 'Edge'; IsCompliant = $false; IsManaged = $true; TrustType = 'AzureAdJoined' }
+            Status = [pscustomobject]@{ ErrorCode = 0 }
+        },
+        [pscustomobject]@{
+            Id = 's4'; UserId = $oid; CreatedDateTime = $now.AddMinutes(-40)
+            AppDisplayName = 'Microsoft OneDrive Sync Engine'; ResourceDisplayName = 'Microsoft OneDrive'
+            ClientAppUsed = 'Mobile Apps and Desktop clients'; AuthenticationRequirement = 'multiFactorAuthentication'
+            ConditionalAccessStatus = 'failure'; IsInteractive = $false; RiskLevelDuringSignIn = 'none'; RiskState = 'none'
+            DeviceDetail = [pscustomobject]@{ DeviceId = 'dev-corp-1'; DisplayName = 'WS-CORP-01'; OperatingSystem = 'Windows 11'; IsCompliant = $true; IsManaged = $true; TrustType = 'AzureAdJoined' }
+            Status = [pscustomobject]@{ ErrorCode = 50076; FailureReason = 'MFA challenge required for OneDrive sync.' }
+        },
+        [pscustomobject]@{
+            Id = 's5'; UserId = $oid; CreatedDateTime = $now.AddMinutes(-50)
+            AppDisplayName = 'Exchange Online'; ResourceDisplayName = 'Exchange Online'
+            ClientAppUsed = 'IMAP4'; IpAddress = '198.51.100.77'; AuthenticationRequirement = 'singleFactorAuthentication'
+            ConditionalAccessStatus = 'notApplied'; IsInteractive = $false; RiskLevelDuringSignIn = 'none'; RiskState = 'none'
+            DeviceDetail = [pscustomobject]@{ DeviceId = 'dev-byod-2'; DisplayName = 'iPhone-BYOD'; OperatingSystem = 'iOS 17'; Browser = 'Mobile Safari'; IsCompliant = $false; IsManaged = $false; TrustType = 'Workplace' }
+            Status = [pscustomobject]@{ ErrorCode = 50053; FailureReason = 'Smart Lockout triggered.' }
+        }
+    )
+}
+
+function Get-EXOMailbox {
+    param([guid]$ExternalDirectoryObjectId, [string[]]$Properties, $ErrorAction)
+    return [pscustomobject]@{
+        ExternalDirectoryObjectId = $ExternalDirectoryObjectId.ToString()
+        RecipientTypeDetails = 'UserMailbox'
+        PrimarySmtpAddress = $upn
+        ProhibitSendQuota = '50 GB (53,687,091,200 bytes)'
+        LitigationHoldEnabled = $true
+        RetentionHoldEnabled = $false
+        InPlaceHolds = @('hold-1')
+        ArchiveStatus = 'Active'
+        ForwardingSmtpAddress = 'smtp:forward@external.invalid'
+        ForwardingAddress = $null
+        DeliverToMailboxAndForward = $true
+        HiddenFromAddressListsEnabled = $true
+        GrantSendOnBehalfTo = @('manager@contoso.com')
+    }
+}
+
+function Get-MailboxAutoReplyConfiguration {
+    param([string]$Identity, $ErrorAction)
+    return [pscustomobject]@{
+        AutoReplyState = 'Scheduled'
+        StartTime = '2026-11-15T00:00:00Z'
+        EndTime = '2026-11-20T00:00:00Z'
+        ExternalAudience = 'All'
+    }
+}
+
+function Get-EXOMailboxPermission {
+    param([string]$Identity, $ErrorAction)
+    return @(
+        [pscustomobject]@{ User = 'NT AUTHORITY\SELF'; AccessRights = @('FullAccess'); Deny = $false },
+        [pscustomobject]@{ User = 'delegate.one@contoso.com'; AccessRights = @('FullAccess'); Deny = $false }
+    )
+}
+
+function Get-EXORecipientPermission {
+    param([string]$Identity, $ErrorAction)
+    return @(
+        [pscustomobject]@{ Trustee = 'NT AUTHORITY\SELF'; AccessRights = @('SendAs') },
+        [pscustomobject]@{ Trustee = 'shared.sender@contoso.com'; AccessRights = @('SendAs') }
+    )
+}
+
+function Get-EXOMailboxStatistics {
+    param([string]$Identity, [switch]$Archive, $ErrorAction)
+    if ($Archive) {
+        return [pscustomobject]@{ TotalItemSize = '4 GB (4,294,967,296 bytes)' }
+    }
+    return [pscustomobject]@{ TotalItemSize = '46 GB (49,392,123,904 bytes)' }
+}
+
+$results = @{}
+
+$r1 = & 'C:\Dev\T-Notes\scripts\m365\general\tenant-user-overview\Get-TenantUserOverview.ps1' -Context (New-Ctx 'M365.GENERAL.TENANT_USER_OVERVIEW' 'upn' $upn $graphConn) -Parameters @{ VerifyDomainMatch = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r1; $results['M365.GENERAL.TENANT_USER_OVERVIEW'] = $r1
+
+$r2 = & 'C:\Dev\T-Notes\scripts\m365\other\upn-smtp-alignment\Get-UpnSmtpAlignment.ps1' -Context (New-Ctx 'M365.OTHER.UPN_SMTP_ALIGNMENT' 'upn' $upn $graphConn) -Parameters @{ StrictDomainCheck = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r2; $results['M365.OTHER.UPN_SMTP_ALIGNMENT'] = $r2
+
+$r3 = & 'C:\Dev\T-Notes\scripts\m365\general\service-readiness\Get-ServiceReadinessAudit.ps1' -Context (New-Ctx 'M365.GENERAL.SERVICE_READINESS_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ IncludeCollaborationPlans = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r3; $results['M365.GENERAL.SERVICE_READINESS_AUDIT'] = $r3
+
+$r4 = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ OnlyProvisionedPlans = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r4; $results['M365.LICENSING.SERVICE_PLAN_AUDIT'] = $r4
+
+$r5 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\sync-diagnostic\Get-OneDriveSyncDiagnostic.ps1' -Context (New-Ctx 'M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters @{ IncludeSharePointPlan = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r5; $results['M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC'] = $r5
+
+$r6 = & 'C:\Dev\T-Notes\scripts\m365\teams\user-readiness\Get-TeamsUserReadiness.ps1' -Context (New-Ctx 'M365.TEAMS.USER_READINESS' 'object_id' $oid $graphConn) -Parameters @{ IncludeVoicePlans = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r6; $results['M365.TEAMS.USER_READINESS'] = $r6
+
+$r7 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-mfa-audit\Get-UserMfaAudit.ps1' -Context (New-Ctx 'M365.ENTRA.USER_MFA_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 7; MaxRecords = 10 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r7; $results['M365.ENTRA.USER_MFA_AUDIT'] = $r7
+
+$r8 = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r8; $results['M365.SECURITY.RISKY_SIGNIN_AUDIT'] = $r8
+
+$r9 = & 'C:\Dev\T-Notes\scripts\m365\teams\client-signins\Get-TeamsClientSignIns.ps1' -Context (New-Ctx 'M365.TEAMS.CLIENT_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r9; $results['M365.TEAMS.CLIENT_SIGNINS'] = $r9
+
+$r10 = & 'C:\Dev\T-Notes\scripts\m365\intune\compliance-enrollment\Get-IntuneComplianceDiagnostic.ps1' -Context (New-Ctx 'M365.INTUNE.COMPLIANCE_AND_ENROLLMENT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r10; $results['M365.INTUNE.COMPLIANCE_AND_ENROLLMENT'] = $r10
+
+$r11 = & 'C:\Dev\T-Notes\scripts\m365\reports\user-access-audit\Get-UserAccessAuditReport.ps1' -Context (New-Ctx 'M365.REPORTS.USER_ACCESS_AUDIT_REPORT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r11; $results['M365.REPORTS.USER_ACCESS_AUDIT_REPORT'] = $r11
+
+$r12 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\access-diagnostic\Get-SharePointAccessDiagnostic.ps1' -Context (New-Ctx 'M365.SHAREPOINT.ACCESS_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r12; $results['M365.SHAREPOINT.ACCESS_DIAGNOSTIC'] = $r12
+
+$r13 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-quota-hold\Get-MailboxQuotaAndHold.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD' 'object_id' $oid $exoConn) -Parameters @{ IncludeArchiveCheck = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r13; $results['M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD'] = $r13
+
+$r14 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\forwarding-auto-reply\Get-MailboxForwardingAndAutoReply.ps1' -Context (New-Ctx 'M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY' 'object_id' $oid $exoConn) -Parameters @{ IncludeAutoReplyCheck = $true; WarnOnExternalForwarding = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r14; $results['M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY'] = $r14
+
+$r15 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-permissions\Get-MailboxPermissionsAudit.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT' 'object_id' $oid $exoConn) -Parameters @{ IncludeSendAsCheck = $true; MaxDelegates = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r15; $results['M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT'] = $r15
+
+$r16 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\password-account-posture\Get-PasswordAndAccountPosture.ps1' -Context (New-Ctx 'M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE' 'upn' $upn $graphConn) -Parameters @{ PasswordAgeWarningDays = 90 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r16; $results['M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE'] = $r16
+
+$r17 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\group-role-membership\Get-GroupAndRoleMembership.ps1' -Context (New-Ctx 'M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP' 'upn' $upn $graphConn) -Parameters @{ IncludeAdminRoles = $true; MaxGroups = 25 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r17; $results['M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP'] = $r17
+
+$r18 = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 25 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r18; $results['M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT'] = $r18
+
+$r19 = & 'C:\Dev\T-Notes\scripts\m365\intune\device-inventory\Get-IntuneDeviceInventory.ps1' -Context (New-Ctx 'M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 25 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r19; $results['M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE'] = $r19
+
+$r20 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r20; $results['M365.ONEDRIVE.CLIENT_SYNC_SIGNINS'] = $r20
+
+$r21 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\external-guest-posture\Get-ExternalSharingAndGuestPosture.ps1' -Context (New-Ctx 'M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE' 'upn' 'guest.partner_external.example#EXT#@contoso.onmicrosoft.com' $graphConn) -Parameters @{ WarnOnUnacceptedInvitation = $true } -CancellationToken $cts.Token
+Assert-NativeOperationReturn $r21; $results['M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE'] = $r21
+
+# Empty-result live verification (no synthetic fallback)
+function Get-MgUserLicenseDetail { param([string]$UserId, $ErrorAction) return @() }
+function Get-MgAuditLogSignIn { param([string]$Filter, [int]$Top, [string[]]$Property, $ErrorAction) return @() }
+
+$emptyLic = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+Assert-NativeOperationReturn $emptyLic; $results['EMPTY_LIC'] = $emptyLic
+
+$emptyRisk = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+Assert-NativeOperationReturn $emptyRisk; $results['EMPTY_RISK'] = $emptyRisk
+
+$emptyLockout = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+Assert-NativeOperationReturn $emptyLockout; $results['EMPTY_LOCKOUT'] = $emptyLockout
+
+$emptyOneDrive = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+Assert-NativeOperationReturn $emptyOneDrive; $results['EMPTY_ONEDRIVE'] = $emptyOneDrive
+
+ConvertTo-Json -InputObject $results -Depth 15 -Compress
+"""
+    proc = subprocess.run(
+        [str(exec_service.pwsh_path), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).resolve().parent.parent),
+        timeout=45,
+    )
+    assert proc.returncode == 0, f"stderr: {proc.stderr}"
+    parsed = json.loads(proc.stdout.strip())
+    assert len(parsed) == 25
+
+    schema_map = {
+        "M365.GENERAL.TENANT_USER_OVERVIEW": "/$defs/user_identity",
+        "M365.OTHER.UPN_SMTP_ALIGNMENT": "/$defs/user_identity",
+        "M365.GENERAL.SERVICE_READINESS_AUDIT": "/$defs/user_licenses",
+        "M365.LICENSING.SERVICE_PLAN_AUDIT": "/$defs/user_licenses",
+        "M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC": "/$defs/user_licenses",
+        "M365.TEAMS.USER_READINESS": "/$defs/user_licenses",
+        "M365.ENTRA.USER_MFA_AUDIT": "/$defs/user_signins",
+        "M365.SECURITY.RISKY_SIGNIN_AUDIT": "/$defs/user_signins",
+        "M365.TEAMS.CLIENT_SIGNINS": "/$defs/user_signins",
+        "M365.INTUNE.COMPLIANCE_AND_ENROLLMENT": "/$defs/user_signins",
+        "M365.REPORTS.USER_ACCESS_AUDIT_REPORT": "/$defs/user_signins",
+        "M365.SHAREPOINT.ACCESS_DIAGNOSTIC": "/$defs/user_signins",
+        "M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD": "/$defs/mailbox_summary",
+        "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY": "/$defs/mailbox_summary",
+        "M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT": "/$defs/mailbox_summary",
+        "M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE": "/$defs/user_identity",
+        "M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP": "/$defs/user_identity",
+        "M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT": "/$defs/user_signins",
+        "M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE": "/$defs/user_signins",
+        "M365.ONEDRIVE.CLIENT_SYNC_SIGNINS": "/$defs/user_signins",
+        "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE": "/$defs/user_identity",
+    }
+
+    for sid, frag in schema_map.items():
+        ret = parsed[sid]
+        exec_service._validate_schema("common", ret, fragment="/$defs/operation_return")
+        assert ret["status"] == "success", f"{sid} failed: {ret}"
+        exec_service._validate_schema("operation-data", ret["data"], fragment=frag)
+
+    assert any(w["code"] == "UPN_SMTP_DOMAIN_MISMATCH" for w in parsed["M365.OTHER.UPN_SMTP_ALIGNMENT"]["warnings"])
+    assert any(w["code"] == "TELEMETRY_SCOPE" for w in parsed["M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC"]["warnings"])
+    assert any(w["code"] == "CONDITIONAL_ACCESS_FAILURE" for w in parsed["M365.ENTRA.USER_MFA_AUDIT"]["warnings"])
+    assert any(w["code"] == "RISK_DETECTED" for w in parsed["M365.SECURITY.RISKY_SIGNIN_AUDIT"]["warnings"])
+    assert parsed["M365.TEAMS.CLIENT_SIGNINS"]["data"]["returned_count"] == 1
+
+    intune_warnings = {w["code"] for w in parsed["M365.INTUNE.COMPLIANCE_AND_ENROLLMENT"]["warnings"]}
+    assert {"TELEMETRY_SCOPE", "NONCOMPLIANT_DEVICE_SIGNIN"}.issubset(intune_warnings)
+    assert any(w["code"] == "AUDIT_SUMMARY" for w in parsed["M365.REPORTS.USER_ACCESS_AUDIT_REPORT"]["warnings"])
+    assert parsed["M365.SHAREPOINT.ACCESS_DIAGNOSTIC"]["data"]["returned_count"] == 2
+
+    exo_warnings = {w["code"] for w in parsed["M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD"]["warnings"]}
+    assert {"HOLD_STATUS", "QUOTA_HIGH", "ARCHIVE_SUMMARY"}.issubset(exo_warnings)
+    assert parsed["M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD"]["data"]["total_item_size_bytes"] == 49392123904
+    assert parsed["M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD"]["data"]["prohibit_send_quota_bytes"] == 53687091200
+
+    # Empty live tenant sets succeed with informational warnings and never fall back to synthetic data
+    assert parsed["EMPTY_LIC"]["status"] == "success"
+    assert parsed["EMPTY_LIC"]["data"]["returned_count"] == 0
+    assert any(w["code"] == "NO_ACTIVE_LICENSES" for w in parsed["EMPTY_LIC"]["warnings"])
+
+    assert parsed["EMPTY_RISK"]["status"] == "success"
+    assert parsed["EMPTY_RISK"]["data"]["returned_count"] == 0
+    assert any(w["code"] == "NO_RISKY_SIGNINS" for w in parsed["EMPTY_RISK"]["warnings"])
+
+    assert parsed["EMPTY_LOCKOUT"]["status"] == "success"
+    assert parsed["EMPTY_LOCKOUT"]["data"]["returned_count"] == 0
+    assert any(w["code"] == "NO_LOCKOUT_OR_LEGACY_EVENTS" for w in parsed["EMPTY_LOCKOUT"]["warnings"])
+
+    assert parsed["EMPTY_ONEDRIVE"]["status"] == "success"
+    assert parsed["EMPTY_ONEDRIVE"]["data"]["returned_count"] == 0
+    assert any(w["code"] == "NO_ONEDRIVE_SYNC_EVENTS" for w in parsed["EMPTY_ONEDRIVE"]["warnings"])
+
+    # Structured warning checks for the 8 technician diagnostic scripts
+    fwd_warnings = {w["code"] for w in parsed["M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY"]["warnings"]}
+    assert {"EXTERNAL_FORWARDING_ACTIVE", "AUTO_REPLY_STATUS", "GAL_VISIBILITY"}.issubset(fwd_warnings)
+
+    perm_warnings = {w["code"] for w in parsed["M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT"]["warnings"]}
+    assert {"FULL_ACCESS_DELEGATES", "SEND_AS_DELEGATES", "SEND_ON_BEHALF_DELEGATES", "DELEGATE_AUDIT_SCOPE"}.issubset(perm_warnings)
+
+    pwd_warnings = {w["code"] for w in parsed["M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE"]["warnings"]}
+    assert {"PASSWORD_AGE_SUMMARY", "PASSWORD_NEVER_EXPIRES", "HYBRID_SYNC_STATUS", "SESSION_REVOCATION_STATE"}.issubset(pwd_warnings)
+
+    grp_warnings = {w["code"] for w in parsed["M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP"]["warnings"]}
+    assert {"GROUP_MEMBERSHIP_SUMMARY", "ADMIN_ROLE_DETECTED", "MEMBERSHIP_TELEMETRY_SCOPE"}.issubset(grp_warnings)
+
+    lock_warnings = {w["code"] for w in parsed["M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT"]["warnings"]}
+    assert {"SMART_LOCKOUT_DETECTED", "LEGACY_AUTH_DETECTED", "LOCKOUT_OR_FAILURE_SUMMARY"}.issubset(lock_warnings)
+
+    dev_warnings = {w["code"] for w in parsed["M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE"]["warnings"]}
+    assert {"DEVICE_INVENTORY_SUMMARY", "UNMANAGED_DEVICE_DETECTED", "NONCOMPLIANT_DEVICE_SIGNIN", "TELEMETRY_SCOPE"}.issubset(dev_warnings)
+
+    od_warnings = {w["code"] for w in parsed["M365.ONEDRIVE.CLIENT_SYNC_SIGNINS"]["warnings"]}
+    assert {"ONEDRIVE_SYNC_SUMMARY", "SYNC_AUTH_FAILURE"}.issubset(od_warnings)
+
+    sp_warnings = {w["code"] for w in parsed["M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE"]["warnings"]}
+    assert {"EXTERNAL_GUEST_POSTURE", "GUEST_INVITATION_PENDING"}.issubset(sp_warnings)
+    assert parsed["M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE"]["data"]["user_type"] == "Guest"
+

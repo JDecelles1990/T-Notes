@@ -1,0 +1,67 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE",
+  "title": "Audit External Sharing & Guest B2B Posture",
+  "description": "Inspect Entra ID UserType (Member vs Guest), B2B ExternalUserState, CreationType, and contact email readiness.",
+  "category": "sharepoint",
+  "subcategory": "external-sharing",
+  "tags": [
+    "sharepoint",
+    "guest",
+    "b2b",
+    "external-sharing",
+    "invitation",
+    "graph"
+  ],
+  "script_path": "sharepoint/external-guest-posture/Get-ExternalSharingAndGuestPosture.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "3ef95fc809fc52f87ce72d944828cea61acff25d70d93dfe303cf136b294feba",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "Microsoft.Graph.Users",
+      "minimum_version": "2.0.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "Graph"
+  ],
+  "graph_scopes": [
+    "User.Read.All"
+  ],
+  "required_roles": [],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "WarnOnUnacceptedInvitation",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Emit GUEST_INVITATION_PENDING warning when a Guest B2B user has not accepted their invitation."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/user_identity",
+  "timeout_seconds": 30,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "upn",
+      "object_id"
+    ],
+    "requires_resolved_identity": false,
+    "output_binding": {
+      "object_id_field": "id",
+      "upn_field": "user_principal_name"
+    }
+  }
+}
+

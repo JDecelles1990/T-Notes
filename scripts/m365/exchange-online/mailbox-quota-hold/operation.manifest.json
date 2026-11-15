@@ -14,7 +14,7 @@
   ],
   "script_path": "exchange-online/mailbox-quota-hold/Get-MailboxQuotaAndHold.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "7670bc476f13b5d79badcbbe83ff94046e04392a91cfb6d7bd70556035ed9a78",
+  "script_sha256": "103a0dadb62d915b5c94e5396ef69b51cf09bbb90983b4f3cd782c2632e42d3b",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -35,6 +35,12 @@
       "service": "ExchangeOnline",
       "any_of": [
         "cmdlet.Get-EXOMailbox",
+        "View-Only.Recipients"
+      ]
+    },
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
         "cmdlet.Get-EXOMailboxStatistics",
         "View-Only.Recipients"
       ]

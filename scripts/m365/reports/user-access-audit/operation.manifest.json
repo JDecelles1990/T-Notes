@@ -15,7 +15,7 @@
   ],
   "script_path": "reports/user-access-audit/Get-UserAccessAuditReport.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "5d8a13301a298773231e104e31b3024e002b7d4522f8670517866c1ef2cf666b",
+  "script_sha256": "3a5a8372afc439b242936798bd07a917057c56ed883179d27f091b168381f0e4",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -31,8 +31,7 @@
     "Graph"
   ],
   "graph_scopes": [
-    "AuditLog.Read.All",
-    "Directory.Read.All"
+    "AuditLog.Read.All"
   ],
   "required_roles": [
     {

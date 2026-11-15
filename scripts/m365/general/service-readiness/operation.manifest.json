@@ -14,7 +14,7 @@
   ],
   "script_path": "general/service-readiness/Get-ServiceReadinessAudit.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "4788fd3a52e752d8ffc0a580142e1b4caf74764a672945fd765ed33856344ac2",
+  "script_sha256": "e1e8b558c42dbc6ca50479f0a4f56882687ac2ae815591a74b0ef699621438bf",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

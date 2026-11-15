@@ -1,0 +1,85 @@
+{
+  "contract_version": "0.3.0",
+  "script_id": "M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY",
+  "title": "Audit Mailbox Forwarding & Auto-Reply Posture",
+  "description": "Inspect Exchange Online external/internal SMTP forwarding rules, automatic replies (OOF), and GAL visibility.",
+  "category": "exchange-online",
+  "subcategory": "mail-flow",
+  "tags": [
+    "exchange",
+    "forwarding",
+    "auto-reply",
+    "oof",
+    "gal",
+    "mail-flow"
+  ],
+  "script_path": "exchange-online/forwarding-auto-reply/Get-MailboxForwardingAndAutoReply.ps1",
+  "script_version": "0.3.0",
+  "script_sha256": "4cea155ca18d3d57f62676c399f773ebd6cc2b42522fb7e7e7874597b92167d9",
+  "supported_powershell": {
+    "edition": "Core",
+    "minimum_version": "7.4.0"
+  },
+  "required_modules": [
+    {
+      "name": "ExchangeOnlineManagement",
+      "minimum_version": "3.4.0"
+    }
+  ],
+  "execution_mode": "isolated_worker",
+  "connection_requirements": [
+    "ExchangeOnline"
+  ],
+  "graph_scopes": [],
+  "required_roles": [
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailbox",
+        "View-Only.Recipients"
+      ]
+    },
+    {
+      "service": "ExchangeOnline",
+      "any_of": [
+        "cmdlet.Get-EXOMailboxStatistics",
+        "View-Only.Recipients"
+      ]
+    }
+  ],
+  "risk": "read_only",
+  "parameters": [
+    {
+      "name": "IncludeAutoReplyCheck",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Query Get-MailboxAutoReplyConfiguration (OOF) when available in the Exchange session."
+    },
+    {
+      "name": "WarnOnExternalForwarding",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Emit EXTERNAL_FORWARDING_ACTIVE warning when ForwardingSmtpAddress is configured."
+    }
+  ],
+  "expected_output_schema": "schemas/operation-data.schema.json#/$defs/mailbox_summary",
+  "timeout_seconds": 60,
+  "cancellation_support": "cooperative_then_terminate",
+  "data_sensitivity": "customer_personal",
+  "approval_requirements": {
+    "explicit_run": true,
+    "confirmation_required": false
+  },
+  "target_policy": {
+    "accepted_kinds": [
+      "object_id"
+    ],
+    "requires_resolved_identity": true,
+    "output_binding": {
+      "object_id_field": "target_user_id",
+      "upn_field": null
+    }
+  }
+}

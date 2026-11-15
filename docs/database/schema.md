@@ -87,6 +87,8 @@ Stores persistent user preferences as key-value pairs.
 - `jpeg_quality`: Screenshot JPEG compression factor (default: `85`).
 - `close_tab_action`: Close button workflow (`prompt` vs `archive`).
 - `window_opacity`: Saved default opacity level (default: `100`).
+- `autostart_enabled`: Whether T-Notes registers in Windows HKCU Startup (default: `true`).
+- `smart_restore_enabled`: Whether Smart Restore restores previous window/tray state on boot (default: `true`).
 
 ---
 

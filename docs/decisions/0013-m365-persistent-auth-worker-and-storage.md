@@ -11,7 +11,7 @@
 
 T-Notes S2/S3 established offline synthetic execution of PowerShell 7 M365 operations against pinned `tnotes.m365 / 0.3.0` contracts using ephemeral per-call `pwsh` processes and an in-memory `CompanyDirectory` preloaded with `.example` fixtures. Transitioning to live read-only Microsoft 365 tenant diagnostics for MSP technicians introduced three constraints:
 1. Interactive `Connect-MgGraph` and `Connect-ExchangeOnline` sessions (including isolated Chrome/Edge InPrivate sign-ins) cannot survive across ephemeral one-shot `pwsh` invocations without writing token caches to disk.
-2. All 4 cmdlet-capable scripts contain `# Offline synthetic fixture evaluation` fallback paths when Microsoft Graph / EXO cmdlets are not loaded; live mode must never silently return synthetic fixture data.
+2. All 17 cmdlet-capable scripts contain `# Offline synthetic fixture evaluation` fallback paths when Microsoft Graph / EXO cmdlets are not loaded; live mode must never silently return synthetic fixture data.
 3. Customer company profiles and admin UPNs must persist across restarts in `techpad.db` without polluting the database with `.example` synthetic records or breaking `CompanyDirectory`'s Qt/SQLite-free portability for F7Hub reuse.
 
 ---
@@ -20,14 +20,15 @@ T-Notes S2/S3 established offline synthetic execution of PowerShell 7 M365 opera
 - **Zero Disk Token Persistence:** Keep M365 authentication sessions strictly in process RAM via `Connect-MgGraph -ContextScope Process` and `Connect-ExchangeOnline` in one owned persistent worker, torn down via a Windows Job Object (`KILL_ON_JOB_CLOSE`).
 - **Dual Auth Workflows:** Support both default WAM/System Browser interactive login and `-UseDeviceCode` / `-Device` with real-time device-code UI modals so MSP technicians can sign into isolated InPrivate browser profiles per client tenant.
 - **Immutable Contract Integrity:** Preserve byte-for-byte SHA-256 parity across `docs/contracts/m365/`, `prototypes/m365_official_engine/`, `assets/m365/catalog.json`, and existing S2 scripts.
-- **Strict Synthetic vs Live Separation:** Exclude the 13 synthetic-only scripts from Live Pilot Mode (`4` read-only cmdlet-backed pilot operations only), enforce `"verified"` connection leases (`"runtime"` provenance), and fail closed if required modules/cmdlets are absent.
+- **Strict Synthetic vs Live Separation:** Restrict Live Tenant Mode exclusively to the 17 allowlisted read-only cmdlet-backed operations (`LIVE_PILOT_SCRIPT_IDS`), reject unapproved or write operations at execution time, enforce `"verified"` connection leases (`"runtime"` provenance), and fail closed if required modules/cmdlets are absent.
 
 ---
 
 ## 3. Considered Options
 1. **MSAL Token Cache on Disk + One-Shot `pwsh`:** Store refresh tokens in DPAPI/keyring and invoke `pwsh` per operation. Rejected due to expanded secret-at-rest surface and cross-tenant session contamination risk.
-2. **Modify All 17 `.ps1` Scripts In-Place:** Rewrite scripts to drop synthetic fallback branches and inject new parameters. Rejected because it breaks pinned SHA-256 S1/S2 parity and mixes pilot readiness with unported workloads.
-3. **Persistent Owned `pwsh` Worker Host + SQLite Company Repository + Host-Side Pre-Invocation Guard (Chosen):** Keep all pinned scripts/contracts unmodified; add `scripts/m365/_host/M365WorkerHost.ps1` + `LiveConnectionManager` + `M365PreflightService` + `M365CompanyRepository`/`PersistentCompanyDirectory`.
+2. **Modify All 17 `.ps1` Scripts In-Place Without Staging:** Rejected initially to preserve pinned S1/S2 parity while standing up the worker host.
+3. **Persistent Owned `pwsh` Worker Host + SQLite Company Repository + Host-Side Pre-Invocation Guard (Chosen):** Keep pinned contracts/prototypes unmodified; add `scripts/m365/_host/M365WorkerHost.ps1` + `LiveConnectionManager` + `M365PreflightService` + `M365CompanyRepository`/`PersistentCompanyDirectory`.
+4. **Upgrade Remaining 13 Scripts Within Pinned Contract (Applied in Follow-Up):** Extended live Microsoft Graph (`Get-MgUser`, `Get-MgUserLicenseDetail`, `Get-MgAuditLogSignIn`) and Exchange Online (`Get-EXOMailbox`, `Get-EXOMailboxStatistics`) implementations to all remaining 13 operations under `tnotes.m365 / 0.3.0` schema bounds without adding extra modules or modifying pinned files under `docs/contracts/m365/` or `prototypes/m365_official_engine/`.
 
 ---
 
@@ -51,7 +52,7 @@ T-Notes S2/S3 established offline synthetic execution of PowerShell 7 M365 opera
 
 ### Negative Consequences / Trade-offs
 - Exchange Online live sessions hold an interactive session open until Disconnect or window close; mitigated cleanly via idle expiration checks and synchronous Job Object termination.
-- The other 13 workload scripts remain accessible exclusively in Offline Synthetic Snapshot mode until their PowerShell implementations gain live Microsoft cmdlets and pilot promotion.
+- All 17 read-only M365 operations operate in both Offline Synthetic Snapshot mode and Live Tenant mode (`provenance: "runtime"`), within existing 3-module and 4-schema boundaries (`AuditLog.Read.All` operations require Entra ID P1/P2 licensing on the target tenant, and Intune/OneDrive diagnostics emit `TELEMETRY_SCOPE` warnings noting Entra sign-in / license scope limits).
 
 ---
 

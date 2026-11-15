@@ -30,7 +30,7 @@ M365_HELP_GUIDE_HTML = """
     <h3 style="color: #79c0ff; margin-bottom: 6px;">1. Load the Script Catalog &amp; Quick Context Setup</h3>
     <ul style="margin-top: 2px; margin-bottom: 10px;">
         <li>By default, the production catalog opens in a safe empty state (<b>Catalog preview</b>).</li>
-        <li>Click <b>🧪 Load Synthetic Snapshot</b> in the top control bar to load all 17 offline synthetic Microsoft 365 PowerShell 7 operations across all 11 service categories.</li>
+        <li>Click <b>🧪 Load Synthetic Snapshot</b> in the top control bar to load all 25 offline synthetic Microsoft 365 PowerShell 7 operations across all 11 service categories.</li>
         <li>Or click <b>⚡ Quick Setup</b> inside any category card to load the synthetic catalog, select <code>Alpine Ski House</code>, connect <code>Graph</code> + <code>ExchangeOnline</code>, confirm the tenant, and bind <code>client@alpine.example</code> in one click.</li>
     </ul>
 
