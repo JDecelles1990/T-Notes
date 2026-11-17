@@ -13,7 +13,7 @@
   ],
   "script_path": "entra-id/user-identity/Get-UserIdentity.ps1",
   "script_version": "0.3.0-synthetic.1",
-  "script_sha256": "243409de4f9e7e0af28b50da4bbe0981a63fe66cf1a9902d1ff08ceab108b6c7",
+  "script_sha256": "4ec83dd3e5a20b77b5bdae5020f988487f50b445f0eb389d1e4b65b1a905291a",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.0.0"

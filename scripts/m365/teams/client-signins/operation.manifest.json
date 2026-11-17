@@ -14,7 +14,7 @@
   ],
   "script_path": "teams/client-signins/Get-TeamsClientSignIns.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "a0f5cae4e237e8c8a21939a078e125e96660ae4f204dc8a6979ef991ef211254",
+  "script_sha256": "31201666d921b2a9bebaa75ff5d5a1a3ee2ecf5880dc59f0f242d168cd081448",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

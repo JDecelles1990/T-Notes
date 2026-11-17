@@ -15,7 +15,7 @@
   ],
   "script_path": "exchange-online/mailbox-permissions/Get-MailboxPermissionsAudit.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "6a89c7f4a17fc06628c1269a0f3e4ac03bfab338e1552d315bffc82839b5938a",
+  "script_sha256": "df0a98d08af24d0fcdc8dac890b5dbe5e4d7d63e1623e9425a628cfd0c18ec91",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

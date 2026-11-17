@@ -14,7 +14,7 @@
   ],
   "script_path": "entra-id/user-signins/Get-UserSignIns.ps1",
   "script_version": "0.3.0-synthetic.1",
-  "script_sha256": "48635d4211a832a77021b676db6430a327be18f1b470f2e5506509f9efcb67a3",
+  "script_sha256": "b52afb726d3999eb3e3c99dd5c54dfcd0b00a505b9c78180aa63c863a9ee1fd0",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.0.0"

@@ -15,7 +15,7 @@
   ],
   "script_path": "entra-id/group-role-membership/Get-GroupAndRoleMembership.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "8e370f45c58e45ce67045431ccab867c3c05d2bb266d6d98af8fa17d55416e1e",
+  "script_sha256": "983a1d1ca578143d33bc31f8ad835884e45d10ac31f2abc72d1296a51bb98672",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -73,4 +73,3 @@
     }
   }
 }
-

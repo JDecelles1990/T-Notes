@@ -14,7 +14,7 @@
   ],
   "script_path": "other/upn-smtp-alignment/Get-UpnSmtpAlignment.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "030dc4698e86bba462743e31aaa87b5b46d8dba96575fcc36d7412ab944b358e",
+  "script_sha256": "9fc8b8495cb8a0b607e8e991f27b2c7de8d4b2263d9728d40855bc108fde78c0",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

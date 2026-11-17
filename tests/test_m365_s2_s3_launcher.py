@@ -278,21 +278,30 @@ $ErrorActionPreference = 'Stop'
 Initialize-NativeReturnValidation
 
 $cts = [System.Threading.CancellationTokenSource]::new()
-$baseConnGraph = [pscustomobject]@{
+$emptyParams = Freeze-Value @{}
+$baseConnGraph = @{
+    connection_id = 'conn-graph-mock-1'
     service = 'Graph'
     state = 'verified'
     tenant_id = '20000000-0000-4000-8000-000000000001'
     verified_account_upn = 'admin@alpine.example'
     graph_scopes = @('User.Read.All', 'LicenseAssignment.Read.All', 'AuditLog.Read.All')
     effective_roles = @('Directory.Readers', 'Reports.Reader')
+    owner_worker_id = 'test-worker-1'
+    verified_at = '2026-11-17T00:00:00Z'
+    expires_at = $null
 }
-$baseConnExo = [pscustomobject]@{
+$baseConnExo = @{
+    connection_id = 'conn-exo-mock-1'
     service = 'ExchangeOnline'
     state = 'verified'
     tenant_id = '20000000-0000-4000-8000-000000000001'
     verified_account_upn = 'admin@alpine.example'
     graph_scopes = @()
     effective_roles = @('cmdlet.Get-EXOMailbox', 'cmdlet.Get-EXOMailboxStatistics')
+    owner_worker_id = 'test-worker-1'
+    verified_at = '2026-11-17T00:00:00Z'
+    expires_at = $null
 }
 
 # 1. Mock Get-MgUser
@@ -306,15 +315,20 @@ function Get-MgUser {
         UserType = 'Member'
     }
 }
-$ctx1 = [pscustomobject]@{
+$ctx1 = Freeze-Value @{
     contract_version = '0.3.0'
     script_id = 'M365.ENTRA.USER_IDENTITY'
+    company_id = 'alpine-ski-house'
+    correlation_id = 'corr-s2-1'
     tenant_id = '20000000-0000-4000-8000-000000000001'
+    admin_identity_ref = 'admin@alpine.example'
     verified_account_upn = 'admin@alpine.example'
-    target = [pscustomobject]@{ kind = 'upn'; value = 'client@alpine.example' }
+    session_generation = [long]1
+    ticket_context = $null
+    target = @{ kind = 'upn'; value = 'client@alpine.example' }
     connections = @($baseConnGraph)
 }
-$res1 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-identity\Get-UserIdentity.ps1' -Context $ctx1 -Parameters @{} -CancellationToken $cts.Token
+$res1 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-identity\Get-UserIdentity.ps1' -Context $ctx1 -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $res1
 if ($res1.status -ne 'success' -or $res1.data.display_name -ne 'Mocked Graph User') { throw 'Identity mock failed' }
 
@@ -336,15 +350,20 @@ function Get-MgUserLicenseDetail {
         }
     )
 }
-$ctx2 = [pscustomobject]@{
+$ctx2 = Freeze-Value @{
     contract_version = '0.3.0'
     script_id = 'M365.ENTRA.USER_LICENSES'
+    company_id = 'alpine-ski-house'
+    correlation_id = 'corr-s2-2'
     tenant_id = '20000000-0000-4000-8000-000000000001'
+    admin_identity_ref = 'admin@alpine.example'
     verified_account_upn = 'admin@alpine.example'
-    target = [pscustomobject]@{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
+    session_generation = [long]1
+    ticket_context = $null
+    target = @{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
     connections = @($baseConnGraph)
 }
-$res2 = & 'C:\Dev\T-Notes\scripts\m365\licensing\user-licenses\Get-UserLicenses.ps1' -Context $ctx2 -Parameters @{} -CancellationToken $cts.Token
+$res2 = & 'C:\Dev\T-Notes\scripts\m365\licensing\user-licenses\Get-UserLicenses.ps1' -Context $ctx2 -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $res2
 if ($res2.status -ne 'success' -or $res2.data.licenses[0].sku_part_number -ne 'SPE_E5') { throw 'Licenses mock failed' }
 
@@ -361,15 +380,20 @@ function Get-MgAuditLogSignIn {
         }
     )
 }
-$ctx3 = [pscustomobject]@{
+$ctx3 = Freeze-Value @{
     contract_version = '0.3.0'
     script_id = 'M365.ENTRA.USER_SIGNINS'
+    company_id = 'alpine-ski-house'
+    correlation_id = 'corr-s2-3'
     tenant_id = '20000000-0000-4000-8000-000000000001'
+    admin_identity_ref = 'admin@alpine.example'
     verified_account_upn = 'admin@alpine.example'
-    target = [pscustomobject]@{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
+    session_generation = [long]1
+    ticket_context = $null
+    target = @{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
     connections = @($baseConnGraph)
 }
-$res3 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-signins\Get-UserSignIns.ps1' -Context $ctx3 -Parameters @{ LookbackDays = 7; MaxRecords = 10 } -CancellationToken $cts.Token
+$res3 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-signins\Get-UserSignIns.ps1' -Context $ctx3 -Parameters (Freeze-Value @{ LookbackDays = 7; MaxRecords = 10 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $res3
 if ($res3.status -ne 'success' -or $res3.data.events[0].app_display_name -ne 'Azure Portal') { throw 'SignIns mock failed' }
 
@@ -394,15 +418,20 @@ function Get-EXOMailboxStatistics {
         }
     }
 }
-$ctx4 = [pscustomobject]@{
+$ctx4 = Freeze-Value @{
     contract_version = '0.3.0'
     script_id = 'M365.EXCHANGE.MAILBOX_SUMMARY'
+    company_id = 'alpine-ski-house'
+    correlation_id = 'corr-s2-4'
     tenant_id = '20000000-0000-4000-8000-000000000001'
+    admin_identity_ref = 'admin@alpine.example'
     verified_account_upn = 'admin@alpine.example'
-    target = [pscustomobject]@{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
+    session_generation = [long]1
+    ticket_context = $null
+    target = @{ kind = 'object_id'; value = '40000000-0000-4000-8000-000000000001' }
     connections = @($baseConnExo)
 }
-$res4 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-summary\Get-MailboxSummary.ps1' -Context $ctx4 -Parameters @{} -CancellationToken $cts.Token
+$res4 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-summary\Get-MailboxSummary.ps1' -Context $ctx4 -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $res4
 if ($res4.status -ne 'success' -or $res4.data.total_item_size_bytes -ne 2048 -or $res4.data.prohibit_send_quota_bytes -ne 4096) { throw 'Mailbox mock failed' }
 Write-Output 'ALL_MOCKS_PASSED'

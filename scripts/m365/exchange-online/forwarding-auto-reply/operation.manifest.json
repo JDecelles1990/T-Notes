@@ -15,7 +15,7 @@
   ],
   "script_path": "exchange-online/forwarding-auto-reply/Get-MailboxForwardingAndAutoReply.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "4cea155ca18d3d57f62676c399f773ebd6cc2b42522fb7e7e7874597b92167d9",
+  "script_sha256": "81b1d294769c213d30e23765539f2c3b631fc598e184db1184b1171a4e62607c",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

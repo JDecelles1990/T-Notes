@@ -14,7 +14,7 @@
   ],
   "script_path": "exchange-online/mailbox-summary/Get-MailboxSummary.ps1",
   "script_version": "0.3.0-synthetic.1",
-  "script_sha256": "29dc37e7935f1d1b41e80b5adf418258d22b4d913780e4da2370a5f28c7374b5",
+  "script_sha256": "db3b5b4a40a9462b78a19ff4d041051fa1cc6baf50c5f6ce238283a1e775104e",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.0.0"

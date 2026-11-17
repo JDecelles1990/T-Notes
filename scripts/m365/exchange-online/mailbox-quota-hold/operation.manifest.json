@@ -14,7 +14,7 @@
   ],
   "script_path": "exchange-online/mailbox-quota-hold/Get-MailboxQuotaAndHold.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "103a0dadb62d915b5c94e5396ef69b51cf09bbb90983b4f3cd782c2632e42d3b",
+  "script_sha256": "efb444d18d65ded5b9c423c306d43f5ac759804f2a2f042d3ade4ba941c8f9da",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

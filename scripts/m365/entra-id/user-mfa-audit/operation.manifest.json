@@ -15,7 +15,7 @@
   ],
   "script_path": "entra-id/user-mfa-audit/Get-UserMfaAudit.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "4ad6dad2cb0339ba73ea5874b4d22704e9a4d44e8f3d0e5d7bc08e8e68389c30",
+  "script_sha256": "da7d27cebc122a987cfed5b8f8ff25e0a85c8364fa89ad0b9a46dccad4dc509c",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

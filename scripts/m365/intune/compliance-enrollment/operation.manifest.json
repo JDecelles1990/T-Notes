@@ -15,7 +15,7 @@
   ],
   "script_path": "intune/compliance-enrollment/Get-IntuneComplianceDiagnostic.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "b6463328f6eb6a66d567d5d1284e33317c5392e9bfc158647835959660f808ed",
+  "script_sha256": "e7dd8e599a4616174f839329c7ca3f56679c9069532169f069573dcb68d6b918",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

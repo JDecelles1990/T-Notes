@@ -15,7 +15,7 @@
   ],
   "script_path": "onedrive/client-sync-signins/Get-OneDriveClientSyncSignIns.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "4886074d33dd45650b8ba135539db6de2dc63c1d2d366498ba70a2ad47f65447",
+  "script_sha256": "8dc49ebe8054a40c8d2a1cd007420c43262b2b501449d0d2164ea926d33345f4",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -82,4 +82,3 @@
     }
   }
 }
-

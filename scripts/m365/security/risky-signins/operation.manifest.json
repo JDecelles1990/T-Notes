@@ -15,7 +15,7 @@
   ],
   "script_path": "security/risky-signins/Get-SecurityRiskySignIns.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "391ba440a171d5b08abc12f24a49a5e6f0f6510e6deee8dd409692fac0ce8bec",
+  "script_sha256": "08f916c2802608d291cf0b9e57886bd4c9516172131f080c20011a2e11a6c68f",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

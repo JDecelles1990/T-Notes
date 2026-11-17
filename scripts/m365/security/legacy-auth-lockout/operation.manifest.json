@@ -16,7 +16,7 @@
   ],
   "script_path": "security/legacy-auth-lockout/Get-LegacyAuthAndLockoutAudit.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "5d7366e04bfb20e43e8a3b5ee9d6ab9ebded4bf2911aaa24597e5b0d5240eddd",
+  "script_sha256": "e8fbc646af03093dd35ef41626a60c42f63b39b0d938985377705003b9364eb7",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -83,4 +83,3 @@
     }
   }
 }
-

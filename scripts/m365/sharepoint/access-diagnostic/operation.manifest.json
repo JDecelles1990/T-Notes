@@ -14,7 +14,7 @@
   ],
   "script_path": "sharepoint/access-diagnostic/Get-SharePointAccessDiagnostic.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "e69ec6c8447817c8559e7176d7453dcec999dd2b30c1c92a743c16803121fb7c",
+  "script_sha256": "f2c904274ac7b59ec523fbd63849dbbb7e6baf48647c69a5b78c1b7b5713a616",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

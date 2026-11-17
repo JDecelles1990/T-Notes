@@ -15,7 +15,7 @@
   ],
   "script_path": "reports/user-access-audit/Get-UserAccessAuditReport.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "3a5a8372afc439b242936798bd07a917057c56ed883179d27f091b168381f0e4",
+  "script_sha256": "70e009fe21857e2cfe13b27bc7fb25961f95a991ae4d107c8b87480fe7c8b27b",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

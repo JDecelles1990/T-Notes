@@ -15,7 +15,7 @@
   ],
   "script_path": "teams/user-readiness/Get-TeamsUserReadiness.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "aa5c1dea189b90d499e61f84b28ac8d038dbc0f319ce3692e23a255237c65941",
+  "script_sha256": "e7ba377151a4e82f1b62589f2c88dd95cf721c193a252ec8a599af7c0ed58003",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"

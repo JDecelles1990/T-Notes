@@ -14,7 +14,7 @@
   ],
   "script_path": "licensing/user-licenses/Get-UserLicenses.ps1",
   "script_version": "0.3.0-synthetic.1",
-  "script_sha256": "cf08ef3f8710f3f0eecad688a95ad09366ce79239bcfaf4832bb4237e107ad75",
+  "script_sha256": "776240d9ea3090f78b84796bb3fda261564200e2868e4011f3220fab8bc829b9",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.0.0"

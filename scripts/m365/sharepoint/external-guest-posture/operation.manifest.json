@@ -15,7 +15,7 @@
   ],
   "script_path": "sharepoint/external-guest-posture/Get-ExternalSharingAndGuestPosture.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "3ef95fc809fc52f87ce72d944828cea61acff25d70d93dfe303cf136b294feba",
+  "script_sha256": "fab656cc3f23121f20da05bc9eb60368f81a7af1abeb7e1e056567ae09f1e570",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -64,4 +64,3 @@
     }
   }
 }
-

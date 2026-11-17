@@ -514,12 +514,36 @@ function Invoke-OperationCommand {
         }
     }
 
-    $params = @{}
-    if ($null -ne $Req.parameters) {
-        foreach ($prop in $Req.parameters.PSObject.Properties) {
-            $params[$prop.Name] = $prop.Value
+    $convertToNativeTree = {
+        param($Node)
+        if ($null -eq $Node) { return $null }
+        if ($Node -is [System.Collections.IDictionary]) {
+            $ht = @{}
+            foreach ($k in $Node.Keys) {
+                $ht[[string]$k] = & $convertToNativeTree $Node[$k]
+            }
+            return $ht
         }
+        if ($Node -is [System.Management.Automation.PSCustomObject]) {
+            $ht = @{}
+            foreach ($prop in $Node.PSObject.Properties) {
+                $ht[$prop.Name] = & $convertToNativeTree $prop.Value
+            }
+            return $ht
+        }
+        if (($Node -is [System.Collections.IEnumerable]) -and -not ($Node -is [string])) {
+            $arr = [System.Collections.Generic.List[object]]::new()
+            foreach ($item in $Node) {
+                $arr.Add((& $convertToNativeTree $item))
+            }
+            return ,($arr.ToArray())
+        }
+        return $Node
     }
+
+    $frozenContext = Freeze-Value (& $convertToNativeTree $ctx)
+    $rawParams = if ($null -ne $Req.parameters) { & $convertToNativeTree $Req.parameters } else { @{} }
+    $frozenParams = Freeze-Value $rawParams
 
     $cts = [System.Threading.CancellationTokenSource]::new()
     $null = $script:CancellationMap.TryAdd($RequestId, $cts)
@@ -527,7 +551,7 @@ function Invoke-OperationCommand {
         if ([bool]$Req.already_cancelled) {
             $cts.Cancel()
         }
-        $ret = & $scriptPath -Context $ctx -Parameters $params -CancellationToken $cts.Token
+        $ret = & $scriptPath -Context $frozenContext -Parameters $frozenParams -CancellationToken $cts.Token
         Assert-NativeOperationReturn $ret
         return @{ ok = $true; data = $ret }
     }

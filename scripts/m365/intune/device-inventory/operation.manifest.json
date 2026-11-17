@@ -15,7 +15,7 @@
   ],
   "script_path": "intune/device-inventory/Get-IntuneDeviceInventory.ps1",
   "script_version": "0.3.0",
-  "script_sha256": "4eae70740d158cbf3ec2464d864c97a03faa38b43464a27a2ace0d99b6138334",
+  "script_sha256": "c66477bed05385ab57ef565005241e0fdb83ee08e4f102554f58f296621d17ba",
   "supported_powershell": {
     "edition": "Core",
     "minimum_version": "7.4.0"
@@ -82,4 +82,3 @@
     }
   }
 }
-

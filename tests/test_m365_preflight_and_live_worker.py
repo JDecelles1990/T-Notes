@@ -590,30 +590,43 @@ $ErrorActionPreference = 'Stop'
 Initialize-NativeReturnValidation
 $cts = [System.Threading.CancellationTokenSource]::new()
 
-$graphConn = [pscustomobject]@{
+$graphConn = @{
+    connection_id = 'conn-graph-live-1'
     service = 'Graph'
     state = 'verified'
     tenant_id = '20000000-0000-4000-8000-000000000202'
     verified_account_upn = 'alex@contoso.com'
     graph_scopes = @('User.Read.All', 'LicenseAssignment.Read.All', 'AuditLog.Read.All')
     effective_roles = @('Directory.Readers', 'Reports.Reader', 'Security.Reader')
+    owner_worker_id = 'test-worker-live'
+    verified_at = '2026-11-17T00:00:00Z'
+    expires_at = $null
 }
-$exoConn = [pscustomobject]@{
+$exoConn = @{
+    connection_id = 'conn-exo-live-1'
     service = 'ExchangeOnline'
     state = 'verified'
     tenant_id = '20000000-0000-4000-8000-000000000202'
     verified_account_upn = 'alex@contoso.com'
     graph_scopes = @()
     effective_roles = @('View-Only.Recipients')
+    owner_worker_id = 'test-worker-live'
+    verified_at = '2026-11-17T00:00:00Z'
+    expires_at = $null
 }
 
 function New-Ctx([string]$ScriptId, [string]$Kind, [string]$Val, $Conn) {
-    return [pscustomobject]@{
+    return Freeze-Value @{
         contract_version = '0.3.0'
         script_id = $ScriptId
+        company_id = 'contoso-live'
+        correlation_id = "corr-$ScriptId"
         tenant_id = '20000000-0000-4000-8000-000000000202'
+        admin_identity_ref = 'alex@contoso.com'
         verified_account_upn = 'alex@contoso.com'
-        target = [pscustomobject]@{ kind = $Kind; value = $Val }
+        session_generation = [long]1
+        ticket_context = $null
+        target = @{ kind = $Kind; value = $Val }
         connections = @($Conn)
     }
 }
@@ -804,84 +817,85 @@ function Get-EXOMailboxStatistics {
 }
 
 $results = @{}
+$emptyParams = Freeze-Value @{}
 
-$r1 = & 'C:\Dev\T-Notes\scripts\m365\general\tenant-user-overview\Get-TenantUserOverview.ps1' -Context (New-Ctx 'M365.GENERAL.TENANT_USER_OVERVIEW' 'upn' $upn $graphConn) -Parameters @{ VerifyDomainMatch = $true } -CancellationToken $cts.Token
+$r1 = & 'C:\Dev\T-Notes\scripts\m365\general\tenant-user-overview\Get-TenantUserOverview.ps1' -Context (New-Ctx 'M365.GENERAL.TENANT_USER_OVERVIEW' 'upn' $upn $graphConn) -Parameters (Freeze-Value @{ VerifyDomainMatch = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r1; $results['M365.GENERAL.TENANT_USER_OVERVIEW'] = $r1
 
-$r2 = & 'C:\Dev\T-Notes\scripts\m365\other\upn-smtp-alignment\Get-UpnSmtpAlignment.ps1' -Context (New-Ctx 'M365.OTHER.UPN_SMTP_ALIGNMENT' 'upn' $upn $graphConn) -Parameters @{ StrictDomainCheck = $true } -CancellationToken $cts.Token
+$r2 = & 'C:\Dev\T-Notes\scripts\m365\other\upn-smtp-alignment\Get-UpnSmtpAlignment.ps1' -Context (New-Ctx 'M365.OTHER.UPN_SMTP_ALIGNMENT' 'upn' $upn $graphConn) -Parameters (Freeze-Value @{ StrictDomainCheck = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r2; $results['M365.OTHER.UPN_SMTP_ALIGNMENT'] = $r2
 
-$r3 = & 'C:\Dev\T-Notes\scripts\m365\general\service-readiness\Get-ServiceReadinessAudit.ps1' -Context (New-Ctx 'M365.GENERAL.SERVICE_READINESS_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ IncludeCollaborationPlans = $true } -CancellationToken $cts.Token
+$r3 = & 'C:\Dev\T-Notes\scripts\m365\general\service-readiness\Get-ServiceReadinessAudit.ps1' -Context (New-Ctx 'M365.GENERAL.SERVICE_READINESS_AUDIT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ IncludeCollaborationPlans = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r3; $results['M365.GENERAL.SERVICE_READINESS_AUDIT'] = $r3
 
-$r4 = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ OnlyProvisionedPlans = $true } -CancellationToken $cts.Token
+$r4 = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ OnlyProvisionedPlans = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r4; $results['M365.LICENSING.SERVICE_PLAN_AUDIT'] = $r4
 
-$r5 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\sync-diagnostic\Get-OneDriveSyncDiagnostic.ps1' -Context (New-Ctx 'M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters @{ IncludeSharePointPlan = $true } -CancellationToken $cts.Token
+$r5 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\sync-diagnostic\Get-OneDriveSyncDiagnostic.ps1' -Context (New-Ctx 'M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ IncludeSharePointPlan = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r5; $results['M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC'] = $r5
 
-$r6 = & 'C:\Dev\T-Notes\scripts\m365\teams\user-readiness\Get-TeamsUserReadiness.ps1' -Context (New-Ctx 'M365.TEAMS.USER_READINESS' 'object_id' $oid $graphConn) -Parameters @{ IncludeVoicePlans = $true } -CancellationToken $cts.Token
+$r6 = & 'C:\Dev\T-Notes\scripts\m365\teams\user-readiness\Get-TeamsUserReadiness.ps1' -Context (New-Ctx 'M365.TEAMS.USER_READINESS' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ IncludeVoicePlans = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r6; $results['M365.TEAMS.USER_READINESS'] = $r6
 
-$r7 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-mfa-audit\Get-UserMfaAudit.ps1' -Context (New-Ctx 'M365.ENTRA.USER_MFA_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 7; MaxRecords = 10 } -CancellationToken $cts.Token
+$r7 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\user-mfa-audit\Get-UserMfaAudit.ps1' -Context (New-Ctx 'M365.ENTRA.USER_MFA_AUDIT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 7; MaxRecords = 10 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r7; $results['M365.ENTRA.USER_MFA_AUDIT'] = $r7
 
-$r8 = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r8 = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r8; $results['M365.SECURITY.RISKY_SIGNIN_AUDIT'] = $r8
 
-$r9 = & 'C:\Dev\T-Notes\scripts\m365\teams\client-signins\Get-TeamsClientSignIns.ps1' -Context (New-Ctx 'M365.TEAMS.CLIENT_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r9 = & 'C:\Dev\T-Notes\scripts\m365\teams\client-signins\Get-TeamsClientSignIns.ps1' -Context (New-Ctx 'M365.TEAMS.CLIENT_SIGNINS' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r9; $results['M365.TEAMS.CLIENT_SIGNINS'] = $r9
 
-$r10 = & 'C:\Dev\T-Notes\scripts\m365\intune\compliance-enrollment\Get-IntuneComplianceDiagnostic.ps1' -Context (New-Ctx 'M365.INTUNE.COMPLIANCE_AND_ENROLLMENT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r10 = & 'C:\Dev\T-Notes\scripts\m365\intune\compliance-enrollment\Get-IntuneComplianceDiagnostic.ps1' -Context (New-Ctx 'M365.INTUNE.COMPLIANCE_AND_ENROLLMENT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r10; $results['M365.INTUNE.COMPLIANCE_AND_ENROLLMENT'] = $r10
 
-$r11 = & 'C:\Dev\T-Notes\scripts\m365\reports\user-access-audit\Get-UserAccessAuditReport.ps1' -Context (New-Ctx 'M365.REPORTS.USER_ACCESS_AUDIT_REPORT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r11 = & 'C:\Dev\T-Notes\scripts\m365\reports\user-access-audit\Get-UserAccessAuditReport.ps1' -Context (New-Ctx 'M365.REPORTS.USER_ACCESS_AUDIT_REPORT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r11; $results['M365.REPORTS.USER_ACCESS_AUDIT_REPORT'] = $r11
 
-$r12 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\access-diagnostic\Get-SharePointAccessDiagnostic.ps1' -Context (New-Ctx 'M365.SHAREPOINT.ACCESS_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r12 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\access-diagnostic\Get-SharePointAccessDiagnostic.ps1' -Context (New-Ctx 'M365.SHAREPOINT.ACCESS_DIAGNOSTIC' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r12; $results['M365.SHAREPOINT.ACCESS_DIAGNOSTIC'] = $r12
 
-$r13 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-quota-hold\Get-MailboxQuotaAndHold.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD' 'object_id' $oid $exoConn) -Parameters @{ IncludeArchiveCheck = $true } -CancellationToken $cts.Token
+$r13 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-quota-hold\Get-MailboxQuotaAndHold.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD' 'object_id' $oid $exoConn) -Parameters (Freeze-Value @{ IncludeArchiveCheck = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r13; $results['M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD'] = $r13
 
-$r14 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\forwarding-auto-reply\Get-MailboxForwardingAndAutoReply.ps1' -Context (New-Ctx 'M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY' 'object_id' $oid $exoConn) -Parameters @{ IncludeAutoReplyCheck = $true; WarnOnExternalForwarding = $true } -CancellationToken $cts.Token
+$r14 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\forwarding-auto-reply\Get-MailboxForwardingAndAutoReply.ps1' -Context (New-Ctx 'M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY' 'object_id' $oid $exoConn) -Parameters (Freeze-Value @{ IncludeAutoReplyCheck = $true; WarnOnExternalForwarding = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r14; $results['M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY'] = $r14
 
-$r15 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-permissions\Get-MailboxPermissionsAudit.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT' 'object_id' $oid $exoConn) -Parameters @{ IncludeSendAsCheck = $true; MaxDelegates = 20 } -CancellationToken $cts.Token
+$r15 = & 'C:\Dev\T-Notes\scripts\m365\exchange-online\mailbox-permissions\Get-MailboxPermissionsAudit.ps1' -Context (New-Ctx 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT' 'object_id' $oid $exoConn) -Parameters (Freeze-Value @{ IncludeSendAsCheck = $true; MaxDelegates = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r15; $results['M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT'] = $r15
 
-$r16 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\password-account-posture\Get-PasswordAndAccountPosture.ps1' -Context (New-Ctx 'M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE' 'upn' $upn $graphConn) -Parameters @{ PasswordAgeWarningDays = 90 } -CancellationToken $cts.Token
+$r16 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\password-account-posture\Get-PasswordAndAccountPosture.ps1' -Context (New-Ctx 'M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE' 'upn' $upn $graphConn) -Parameters (Freeze-Value @{ PasswordAgeWarningDays = 90 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r16; $results['M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE'] = $r16
 
-$r17 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\group-role-membership\Get-GroupAndRoleMembership.ps1' -Context (New-Ctx 'M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP' 'upn' $upn $graphConn) -Parameters @{ IncludeAdminRoles = $true; MaxGroups = 25 } -CancellationToken $cts.Token
+$r17 = & 'C:\Dev\T-Notes\scripts\m365\entra-id\group-role-membership\Get-GroupAndRoleMembership.ps1' -Context (New-Ctx 'M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP' 'upn' $upn $graphConn) -Parameters (Freeze-Value @{ IncludeAdminRoles = $true; MaxGroups = 25 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r17; $results['M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP'] = $r17
 
-$r18 = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 25 } -CancellationToken $cts.Token
+$r18 = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 25 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r18; $results['M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT'] = $r18
 
-$r19 = & 'C:\Dev\T-Notes\scripts\m365\intune\device-inventory\Get-IntuneDeviceInventory.ps1' -Context (New-Ctx 'M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 25 } -CancellationToken $cts.Token
+$r19 = & 'C:\Dev\T-Notes\scripts\m365\intune\device-inventory\Get-IntuneDeviceInventory.ps1' -Context (New-Ctx 'M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 25 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r19; $results['M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE'] = $r19
 
-$r20 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{ LookbackDays = 14; MaxRecords = 20 } -CancellationToken $cts.Token
+$r20 = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters (Freeze-Value @{ LookbackDays = 14; MaxRecords = 20 }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r20; $results['M365.ONEDRIVE.CLIENT_SYNC_SIGNINS'] = $r20
 
-$r21 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\external-guest-posture\Get-ExternalSharingAndGuestPosture.ps1' -Context (New-Ctx 'M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE' 'upn' 'guest.partner_external.example#EXT#@contoso.onmicrosoft.com' $graphConn) -Parameters @{ WarnOnUnacceptedInvitation = $true } -CancellationToken $cts.Token
+$r21 = & 'C:\Dev\T-Notes\scripts\m365\sharepoint\external-guest-posture\Get-ExternalSharingAndGuestPosture.ps1' -Context (New-Ctx 'M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE' 'upn' 'guest.partner_external.example#EXT#@contoso.onmicrosoft.com' $graphConn) -Parameters (Freeze-Value @{ WarnOnUnacceptedInvitation = $true }) -CancellationToken $cts.Token
 Assert-NativeOperationReturn $r21; $results['M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE'] = $r21
 
 # Empty-result live verification (no synthetic fallback)
 function Get-MgUserLicenseDetail { param([string]$UserId, $ErrorAction) return @() }
 function Get-MgAuditLogSignIn { param([string]$Filter, [int]$Top, [string[]]$Property, $ErrorAction) return @() }
 
-$emptyLic = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+$emptyLic = & 'C:\Dev\T-Notes\scripts\m365\licensing\service-plan-audit\Get-ServicePlanAudit.ps1' -Context (New-Ctx 'M365.LICENSING.SERVICE_PLAN_AUDIT' 'object_id' $oid $graphConn) -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $emptyLic; $results['EMPTY_LIC'] = $emptyLic
 
-$emptyRisk = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+$emptyRisk = & 'C:\Dev\T-Notes\scripts\m365\security\risky-signins\Get-SecurityRiskySignIns.ps1' -Context (New-Ctx 'M365.SECURITY.RISKY_SIGNIN_AUDIT' 'object_id' $oid $graphConn) -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $emptyRisk; $results['EMPTY_RISK'] = $emptyRisk
 
-$emptyLockout = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+$emptyLockout = & 'C:\Dev\T-Notes\scripts\m365\security\legacy-auth-lockout\Get-LegacyAuthAndLockoutAudit.ps1' -Context (New-Ctx 'M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT' 'object_id' $oid $graphConn) -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $emptyLockout; $results['EMPTY_LOCKOUT'] = $emptyLockout
 
-$emptyOneDrive = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters @{} -CancellationToken $cts.Token
+$emptyOneDrive = & 'C:\Dev\T-Notes\scripts\m365\onedrive\client-sync-signins\Get-OneDriveClientSyncSignIns.ps1' -Context (New-Ctx 'M365.ONEDRIVE.CLIENT_SYNC_SIGNINS' 'object_id' $oid $graphConn) -Parameters $emptyParams -CancellationToken $cts.Token
 Assert-NativeOperationReturn $emptyOneDrive; $results['EMPTY_ONEDRIVE'] = $emptyOneDrive
 
 ConvertTo-Json -InputObject $results -Depth 15 -Compress

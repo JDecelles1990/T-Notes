@@ -11,10 +11,10 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [psobject]$Context,
+    [System.Collections.Generic.IReadOnlyDictionary[string, object]]$Context,
 
     [Parameter(Mandatory = $true)]
-    [hashtable]$Parameters,
+    [System.Collections.Generic.IReadOnlyDictionary[string, object]]$Parameters,
 
     [Parameter(Mandatory = $true)]
     [System.Threading.CancellationToken]$CancellationToken
@@ -68,9 +68,40 @@ function New-WarningItem {
 
 function Get-SafeProp {
     param([object]$Object, [string]$Name)
-    if ($null -eq $Object) { return $null }
+    if ($null -eq $Object -or [string]::IsNullOrEmpty($Name)) { return $null }
+    if ($Object -is [System.Collections.Generic.IReadOnlyDictionary[string, object]]) {
+        $val = $null
+        if ($Object.TryGetValue($Name, [ref]$val)) { return $val }
+        return $null
+    }
+    if ($Object -is [System.Collections.IDictionary]) {
+        if ($Object.Contains($Name)) { return $Object[$Name] }
+        return $null
+    }
     $prop = $Object.PSObject.Properties[$Name]
     if ($null -ne $prop) { return $prop.Value }
+    return $null
+}
+
+function Test-SafeKey {
+    param([object]$Object, [string]$Name)
+    if ($null -eq $Object -or [string]::IsNullOrEmpty($Name)) { return $false }
+    if ($Object -is [System.Collections.Generic.IReadOnlyDictionary[string, object]]) { return $Object.ContainsKey($Name) }
+    if ($Object -is [System.Collections.IDictionary]) { return $Object.Contains($Name) }
+    return ($null -ne $Object.PSObject.Properties[$Name])
+}
+
+function ConvertTo-UtcTimestamp {
+    param([object]$RawValue)
+    if ($null -eq $RawValue) { return $null }
+    if ($RawValue -is [datetime]) { return $RawValue.ToUniversalTime() }
+    if ($RawValue -is [datetimeoffset]) { return $RawValue.UtcDateTime }
+    $text = ([string]$RawValue).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+    $parsedDto = [datetimeoffset]::MinValue
+    if ([datetimeoffset]::TryParse($text, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AssumeUniversal, [ref]$parsedDto)) {
+        return $parsedDto.UtcDateTime
+    }
     return $null
 }
 
@@ -117,10 +148,29 @@ if ($CancellationToken.IsCancellationRequested) {
     )
 }
 
-if ($null -eq $Context -or [string]$Context.contract_version -ne '0.3.0' -or [string]$Context.script_id -ne 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT') {
+$ctxContract = [string](Get-SafeProp $Context 'contract_version')
+$ctxScriptId = [string](Get-SafeProp $Context 'script_id')
+$ctxTenantId = [string](Get-SafeProp $Context 'tenant_id')
+$ctxAdminUpn = [string](Get-SafeProp $Context 'verified_account_upn')
+if ($ctxContract -cne '0.3.0' -or $ctxScriptId -cne 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT' -or [string]::IsNullOrWhiteSpace($ctxTenantId) -or [string]::IsNullOrWhiteSpace($ctxAdminUpn)) {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'CONTRACT_VIOLATION' -Message 'Invalid invocation context for M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT.'
     )
+}
+if (Test-SafeKey $Context 'company_id') {
+    if ([string]::IsNullOrWhiteSpace([string](Get-SafeProp $Context 'company_id'))) {
+        return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+            New-ErrorItem -Code 'CONTRACT_VIOLATION' -Message 'Invalid company_id in invocation context.'
+        )
+    }
+}
+if (Test-SafeKey $Context 'session_generation') {
+    $rawGen = Get-SafeProp $Context 'session_generation'
+    if ($null -eq $rawGen -or $rawGen -is [bool] -or -not ($rawGen -is [int] -or $rawGen -is [long]) -or [long]$rawGen -lt 1) {
+        return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+            New-ErrorItem -Code 'CONTRACT_VIOLATION' -Message 'Invalid session_generation in invocation context.'
+        )
+    }
 }
 
 $allowedParams = @('IncludeSendAsCheck', 'MaxDelegates')
@@ -162,37 +212,50 @@ if ($null -ne $Parameters -and $Parameters.ContainsKey('MaxDelegates')) {
 }
 
 $exoConn = $null
-if ($null -ne $Context.connections) {
-    foreach ($conn in @($Context.connections)) {
-        if ($null -ne $conn -and [string]$conn.service -eq 'ExchangeOnline') {
+$conns = Get-SafeProp $Context 'connections'
+if ($null -ne $conns) {
+    foreach ($conn in @($conns)) {
+        if ($null -ne $conn -and [string](Get-SafeProp $conn 'service') -eq 'ExchangeOnline') {
             $exoConn = $conn
             break
         }
     }
 }
-if ($null -eq $exoConn -or [string]$exoConn.state -ne 'verified') {
+if ($null -eq $exoConn -or [string](Get-SafeProp $exoConn 'state') -cne 'verified') {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'AUTH_REQUIRED' -Message 'Verified Exchange Online connection is required.'
     )
 }
-if ([string]$exoConn.tenant_id -ne [string]$Context.tenant_id) {
+$connExpiresRaw = Get-SafeProp $exoConn 'expires_at'
+if ($null -ne $connExpiresRaw -and -not [string]::IsNullOrWhiteSpace([string]$connExpiresRaw)) {
+    $connExpiresUtc = ConvertTo-UtcTimestamp $connExpiresRaw
+    if ($null -eq $connExpiresUtc -or $connExpiresUtc -le [datetime]::UtcNow) {
+        return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
+            New-ErrorItem -Code 'AUTH_REQUIRED' -Message 'Exchange Online connection lease has expired.'
+        )
+    }
+}
+if ([string](Get-SafeProp $exoConn 'tenant_id') -cne $ctxTenantId) {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'TENANT_MISMATCH' -Message 'Exchange Online connection tenant does not match invocation tenant.'
     )
 }
-if ([string]$exoConn.verified_account_upn -ne [string]$Context.verified_account_upn) {
+if ([string](Get-SafeProp $exoConn 'verified_account_upn') -ne $ctxAdminUpn) {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'ACCOUNT_MISMATCH' -Message 'Exchange Online connection account does not match invocation administrator.'
     )
 }
 
-if ($null -eq $Context.target -or [string]$Context.target.kind -ne 'object_id') {
+$targetObj = Get-SafeProp $Context 'target'
+$targetKindRaw = [string](Get-SafeProp $targetObj 'kind')
+$targetValRaw = [string](Get-SafeProp $targetObj 'value')
+if ($null -eq $targetObj -or $targetKindRaw -ne 'object_id') {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'INVALID_PARAMETER' -Message 'M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT requires a resolved Entra object_id target.'
     )
 }
 
-$targetId = ([string]$Context.target.value).Trim().ToLowerInvariant()
+$targetId = $targetValRaw.Trim().ToLowerInvariant()
 $parsedGuid = [guid]::Empty
 if (-not [guid]::TryParseExact($targetId, 'D', [ref]$parsedGuid)) {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
@@ -200,7 +263,7 @@ if (-not [guid]::TryParseExact($targetId, 'D', [ref]$parsedGuid)) {
     )
 }
 
-$roles = @($exoConn.effective_roles | ForEach-Object { [string]$_ })
+$roles = @((Get-SafeProp $exoConn 'effective_roles') | ForEach-Object { [string]$_ })
 if (-not (('cmdlet.Get-EXOMailbox' -in $roles -and 'cmdlet.Get-EXOMailboxStatistics' -in $roles) -or ('View-Only Recipients' -in $roles) -or ('View-Only.Recipients' -in $roles) -or ('Organization Management' -in $roles))) {
     return New-OperationReturn -Status 'error' -Outcome 'not_started' -Errors @(
         New-ErrorItem -Code 'ACCESS_DENIED' -Message 'Required Exchange Online cmdlet roles (Get-EXOMailbox, Get-EXOMailboxStatistics or View-Only Recipients) are not present.'
@@ -229,9 +292,14 @@ if ($null -ne $exoMailboxCmd) {
         }
         $mbx = Get-EXOMailbox @mbxSplat
     }
+    catch [System.OperationCanceledException] {
+        return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+            New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Exchange mailbox permissions lookup.' -Retryable $true
+        )
+    }
     catch {
         $errMsg = $_.Exception.Message
-        if ($CancellationToken.IsCancellationRequested) {
+        if ($CancellationToken.IsCancellationRequested -or $_.Exception -is [System.OperationCanceledException]) {
             return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
                 New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Exchange mailbox permissions lookup.' -Retryable $true
             )
@@ -298,13 +366,28 @@ if ($null -ne $exoMailboxCmd) {
                 $statsSplat['Properties'] = @('TotalItemSize')
             }
             $stats = Get-EXOMailboxStatistics @statsSplat
+            if ($CancellationToken.IsCancellationRequested) {
+                return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                    New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled after Exchange mailbox statistics lookup.' -Retryable $true
+                )
+            }
             $totalSizeBytes = ConvertTo-QuotaBytes (Get-SafeProp $stats 'TotalItemSize')
             if ($null -eq $totalSizeBytes) {
                 $hasPartialProp = $true
                 $warnings.Add((New-WarningItem -Code 'PROPERTY_UNAVAILABLE' -Message 'Mailbox TotalItemSize statistics were unavailable.'))
             }
         }
+        catch [System.OperationCanceledException] {
+            return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Exchange mailbox statistics lookup.' -Retryable $true
+            )
+        }
         catch {
+            if ($CancellationToken.IsCancellationRequested -or $_.Exception -is [System.OperationCanceledException]) {
+                return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                    New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Exchange mailbox statistics lookup.' -Retryable $true
+                )
+            }
             $hasPartialProp = $true
             $warnings.Add((New-WarningItem -Code 'PROPERTY_UNAVAILABLE' -Message 'Mailbox statistics could not be retrieved.'))
         }
@@ -323,6 +406,11 @@ if ($null -ne $exoMailboxCmd) {
     if ($null -ne $fullAccessCmd) {
         try {
             $permRows = @(Get-EXOMailboxPermission -Identity $statsIdentity -ErrorAction Stop)
+            if ($CancellationToken.IsCancellationRequested) {
+                return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                    New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled after Full Access delegate lookup.' -Retryable $true
+                )
+            }
             $fullAccessUsers = [System.Collections.Generic.List[string]]::new()
             foreach ($row in $permRows) {
                 if ($null -eq $row) { continue }
@@ -345,7 +433,17 @@ if ($null -ne $exoMailboxCmd) {
                 $warnings.Add((New-WarningItem -Code 'FULL_ACCESS_DELEGATES' -Message "Full Access delegates ($($fullAccessUsers.Count)): $($shown -join ', ')$suffix"))
             }
         }
+        catch [System.OperationCanceledException] {
+            return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Full Access delegate lookup.' -Retryable $true
+            )
+        }
         catch {
+            if ($CancellationToken.IsCancellationRequested -or $_.Exception -is [System.OperationCanceledException]) {
+                return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                    New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Full Access delegate lookup.' -Retryable $true
+                )
+            }
             $warnings.Add((New-WarningItem -Code 'FULL_ACCESS_DELEGATES' -Message 'Full Access delegate lookup failed or lacks RBAC permission for Get-EXOMailboxPermission.'))
         }
     } else {
@@ -377,7 +475,17 @@ if ($null -ne $exoMailboxCmd) {
                     $warnings.Add((New-WarningItem -Code 'SEND_AS_DELEGATES' -Message "Send As trustees ($($sendAsTrustees.Count)): $($shown -join ', ')$suffix"))
                 }
             }
+            catch [System.OperationCanceledException] {
+                return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                    New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Send As delegate lookup.' -Retryable $true
+                )
+            }
             catch {
+                if ($CancellationToken.IsCancellationRequested -or $_.Exception -is [System.OperationCanceledException]) {
+                    return New-OperationReturn -Status 'cancelled' -Outcome 'unknown' -Errors @(
+                        New-ErrorItem -Code 'CANCELLED' -Message 'Operation cancelled during Send As delegate lookup.' -Retryable $true
+                    )
+                }
                 $warnings.Add((New-WarningItem -Code 'SEND_AS_DELEGATES' -Message 'Send As delegate lookup failed or lacks RBAC permission for Get-EXORecipientPermission.'))
             }
         } else {
