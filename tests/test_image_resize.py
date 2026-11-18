@@ -1075,6 +1075,107 @@ def test_image_editor_resize_drawings_and_shapes_via_handles(qapp):
     assert rect_item.rect.height() >= 120
 
 
+def test_image_editor_cyber_neon_theme_effects_and_clean_export(qapp):
+    """Verifies Cyber Neon Studio gradients, click-shine sweep, rainbow input halos, neon lines, and clean export."""
+    from PySide6.QtTest import QTest
+    from src.ui.dialogs.image_editor_cyber_fx import (
+        CyberClickShineEffect,
+        CyberNeonInputHalo,
+        CyberNeonLine,
+        CyberNeonSplitter,
+        CyberRainbowBorderFrame,
+    )
+
+    img = QImage(320, 200, QImage.Format_ARGB32_Premultiplied)
+    img.fill(QColor("#112233"))
+
+    dlg = ResizeImageDialog(
+        current_width=320,
+        current_height=200,
+        original_width=320,
+        original_height=200,
+        image=img,
+    )
+    try:
+        dlg.showNormal()
+        dlg.resize(1100, 700)
+        qapp.processEvents()
+
+        # 1. Shared cyber clock runs while visible and advances rainbow phase
+        assert dlg._cyber_clock.is_running is True
+        p0 = dlg._cyber_clock.phase
+        dlg._cyber_clock.advance(0.2)
+        assert dlg._cyber_clock.phase != p0
+
+        # 2. Colorful gradient buttons have both GlowAnimator and CyberClickShineEffect
+        assert dlg.btn_tool_pen.property("cyberTheme") == "magenta"
+        assert dlg.btn_custom_color.property("cyberTheme") == "prism"
+        assert dlg.btn_fit_pane.property("cyberTheme") == "aurora"
+
+        shine = getattr(dlg.btn_tool_rect, "_cyber_click_shine", None)
+        assert isinstance(shine, CyberClickShineEffect)
+        orig_effect = dlg.btn_tool_rect.graphicsEffect()
+        dlg.btn_tool_rect.click()
+        assert shine.is_shining is True
+        # Click shine overlay must NOT clobber GlowAnimator's QGraphicsEffect
+        assert dlg.btn_tool_rect.graphicsEffect() is orig_effect
+
+        # 3. Live Cyber Studio HUD badge tracks tool & zoom changes
+        assert "CYBER RECT" in dlg.lbl_cyber_hud_status.text()
+        dlg.btn_zoom_in.click()
+        assert "125%" in dlg.lbl_cyber_hud_status.text()
+
+        # 4. Rainbow neon input halos installed on all spinboxes without duplicating internal QLineEdit
+        for spin in (dlg.spin_font_size, dlg.spin_width, dlg.spin_height):
+            assert isinstance(getattr(spin, "_cyber_input_halo", None), CyberNeonInputHalo)
+            assert getattr(spin.lineEdit(), "_cyber_input_halo", None) is None
+
+        # 5. Animated CyberNeonLine dividers, CyberRainbowBorderFrame cards, and CyberNeonSplitter exist & paint cleanly
+        assert len(dlg.findChildren(CyberNeonLine)) >= 6
+        assert len(dlg.findChildren(CyberRainbowBorderFrame)) >= 4
+        assert len(dlg.findChildren(CyberNeonSplitter)) == 1
+        dlg.repaint()
+
+        # 6. Viewport cyber grid / rainbow image border must NEVER alter exported QImage pixels
+        exported = dlg.get_annotated_image()
+        assert exported is not None
+        assert exported.pixelColor(0, 0) == QColor("#112233")
+        assert exported.pixelColor(160, 100) == QColor("#112233")
+
+        # 7. Closing/hiding dialog stops shared clock (zero idle CPU)
+        dlg.hide()
+        qapp.processEvents()
+        assert dlg._cyber_clock.is_running is False
+    finally:
+        dlg.deleteLater()
+
+    # 8. TextAnnotationDialog also receives Cyber Neon rainbow halos, neon lines, and click shine
+    tdlg = TextAnnotationDialog(QRect(10, 10, 200, 60), font_size=20, color=QColor("#00f0ff"))
+    try:
+        assert isinstance(getattr(tdlg.text_edit, "_cyber_input_halo", None), CyberNeonInputHalo)
+        assert isinstance(getattr(tdlg.spin_size, "_cyber_input_halo", None), CyberNeonInputHalo)
+        assert len(tdlg.findChildren(CyberNeonLine)) >= 1
+        tdlg.show()
+        tdlg._cyber_clock.advance(0.15)
+        tdlg.repaint()
+        tdlg.hide()
+        assert tdlg._cyber_clock.is_running is False
+    finally:
+        tdlg.deleteLater()
+
+    # 9. Standalone (no-image) ResizeImageDialog fallback also constructs & repaints cleanly
+    nodlg = ResizeImageDialog(320, 200, 320, 200, image=None)
+    try:
+        assert isinstance(getattr(nodlg.spin_width, "_cyber_input_halo", None), CyberNeonInputHalo)
+        assert isinstance(getattr(nodlg.spin_height, "_cyber_input_halo", None), CyberNeonInputHalo)
+        nodlg.show()
+        nodlg.repaint()
+        nodlg.hide()
+    finally:
+        nodlg.deleteLater()
+        QTest.qWait(10)
+
+
 
 
 

@@ -354,6 +354,13 @@ When the dialog is accepted (`OK`):
 3. The `QTextDocument` resource cache is refreshed (`addResource`) so the document repaints instantaneously.
 4. Auto-save signal `content_modified(scratchpad_id)` is emitted, scheduling SQLite persistence to the `scratchpad_images` table during the debounced write cycle.
 
+### 7.7 Cyber Neon Studio Theme (`src/ui/dialogs/image_editor_cyber_fx.py`)
+Scoped exclusively to the Image Editor window (`ResizeImageDialog` and its child `TextAnnotationDialog`) without affecting the rest of T-Notes:
+- **Shared Rainbow Clock (`CyberNeonClock`):** One lightweight per-dialog timer (`45ms`, auto-stopped when hidden) synchronizes all color-changing rainbow borders, laser divider lines, canvas reticles, and splitter glow without idle overhead.
+- **Colorful Gradient Buttons + Shiny Click-Sweep (`style_cyber_button`, `CyberClickShineEffect`):** Every tool, stroke-width pill, zoom button, history button, scale preset, and dialog action carries a distinct multi-stop cyber-neon gradient (`cyan`, `magenta`, `solar`, `violet`, `emerald`, `sunset`, `prism`, `indigo`, `crimson`, `aurora`). Clicking any button fires a diagonal glossy prism sweep and expanding neon ripple starburst layered seamlessly over `GlowAnimator`'s hover/press rainbow halo.
+- **Colorful Gradient Inputs & Animated Rainbow Borders (`CyberNeonInputHalo`):** Spinboxes (`spin_font_size`, `spin_width`, `spin_height`, `TextAnnotationDialog.spin_size`) and the multi-line text box (`TextAnnotationDialog.text_edit`) feature multi-stop gradient interiors, vector `▲`/`▼` spinbox arrows, and continuously shifting rainbow perimeter borders that intensify on hover and focus.
+- **Neon Lines, Cards & Holographic Canvas:** Vertical and horizontal `CyberNeonLine` laser dividers, `CyberRainbowBorderFrame` cards with HUD corner reticles, `CyberNeonSplitter` plasma handle, live `⚡ CYBER NEON STUDIO` active-tool/zoom readout, and a viewport-only holographic grid & rainbow image frame (never baked into exported `QImage` pixels).
+
 ### 7.7 Image Context Menu: Copy & Save As...
 
 When right-clicking on any embedded screenshot or image in `TechPadEditor`:
