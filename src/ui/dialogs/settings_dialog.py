@@ -181,6 +181,15 @@ class SettingsDialog(QDialog):
         layout.addLayout(btn_layout)
 
         apply_glow_to_buttons([self])
+        from src.ui.components.glow_effect import apply_glow_to_inputs
+        apply_glow_to_inputs([self])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not getattr(self, "_shown_once", False):
+            self._shown_once = True
+            from src.ui.components.panel_transition import animate_dialog_show
+            animate_dialog_show(self)
 
     def _on_backup_now_clicked(self) -> None:
         """Triggers manual database backup snapshot."""

@@ -190,3 +190,402 @@ def apply_glow_to_buttons(roots: Iterable[QWidget]) -> int:
             count += 1
     return count
 
+
+
+# =============================================================================
+# Enhanced Neon Aurora Input Glows, Gradient Shimmer Bars & Status Pulses
+# =============================================================================
+
+from typing import Union as _Union
+
+from PySide6.QtCore import QPointF as _QPointF, QTimer, Qt as _Qt
+from PySide6.QtGui import QBrush as _QBrush, QLinearGradient as _QLinearGradient, QPainter as _QPainter
+from PySide6.QtWidgets import (
+    QAbstractSpinBox as _QAbstractSpinBox,
+    QComboBox as _QComboBox,
+    QLineEdit as _QLineEdit,
+    QPlainTextEdit as _QPlainTextEdit,
+)
+
+INPUT_HOVER_LEVEL = 0.85
+INPUT_FOCUS_LEVEL = 1.45
+INPUT_BASE_BLUR = 18.0
+INPUT_MAX_BLUR = 28.0
+INPUT_HOVER_MS = 180
+INPUT_BLUR_MS = 220
+
+
+class InputGlowAnimator(QObject):
+    """Animated outer neon glow + rainbow hue cycle for input fields.
+
+    Activates on pointer hover and stays illuminated with a subtle cyan/aurora
+    halo while the input widget has keyboard focus. When idle, the underlying
+    ``QGraphicsDropShadowEffect`` is disabled so resting rendering stays fast.
+    """
+
+    def __init__(self, widget: QWidget) -> None:
+        super().__init__(widget)
+        self._widget = widget
+        self._hovered = False
+        self._focused = widget.hasFocus()
+        self._level = INPUT_FOCUS_LEVEL if self._focused else 0.0
+        self._phase = 0.0
+        self._last_paint_phase = -1.0
+
+        self._effect = QGraphicsDropShadowEffect(widget)
+        self._effect.setOffset(0.0, 0.0)
+        self._effect.setBlurRadius(INPUT_BASE_BLUR)
+        self._effect.setColor(QColor(0, 0, 0, 0))
+        self._effect.setEnabled(self._level > 0.0)
+        widget.setGraphicsEffect(self._effect)
+
+        self._fade_anim = QVariantAnimation(self)
+        self._fade_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._fade_anim.valueChanged.connect(self._on_fade_step)
+        self._fade_anim.finished.connect(self._on_fade_finished)
+
+        self._hue_timer = QTimer(self)
+        self._hue_timer.setInterval(45)
+        self._hue_timer.timeout.connect(self._on_hue_tick)
+
+        widget.installEventFilter(self)
+        if isinstance(widget, _QComboBox) and widget.isEditable() and widget.lineEdit():
+            widget.lineEdit().installEventFilter(self)
+        elif isinstance(widget, _QAbstractSpinBox) and widget.lineEdit():
+            widget.lineEdit().installEventFilter(self)
+
+        if self._focused:
+            self._apply_effect()
+            self._hue_timer.start()
+
+    @property
+    def level(self) -> float:
+        return self._level
+
+    @property
+    def is_glowing(self) -> bool:
+        return self._level > 0.01
+
+    @property
+    def is_hovered(self) -> bool:
+        return self._hovered
+
+    @property
+    def is_focused(self) -> bool:
+        return self._focused
+
+    def _target_level(self) -> float:
+        if self._focused:
+            return INPUT_FOCUS_LEVEL
+        if self._hovered:
+            return INPUT_HOVER_LEVEL
+        return 0.0
+
+    def _animate_to_target(self) -> None:
+        target = self._target_level()
+        if abs(target - self._level) < 0.005:
+            return
+        if target > 0.0 and not self._hue_timer.isActive():
+            self._hue_timer.start()
+        self._fade_anim.stop()
+        self._fade_anim.setStartValue(self._level)
+        self._fade_anim.setEndValue(target)
+        self._fade_anim.setDuration(INPUT_HOVER_MS if target > self._level else INPUT_BLUR_MS)
+        self._fade_anim.start()
+
+    def _on_fade_step(self, value) -> None:
+        self._level = float(value)
+        self._apply_effect()
+
+    def _on_fade_finished(self) -> None:
+        if self._level <= 0.01 and not self._hovered and not self._focused:
+            self._level = 0.0
+            self._hue_timer.stop()
+            self._apply_effect()
+
+    def _on_hue_tick(self) -> None:
+        if not self._widget.isVisible():
+            self._hue_timer.stop()
+            return
+        self._phase = (self._phase + 45.0 / HUE_CYCLE_MS) % 1.0
+        if self._level > 0.01:
+            self._apply_effect()
+        else:
+            self._hue_timer.stop()
+
+    def _sample_color(self) -> QColor:
+        n = len(GLOW_PALETTE)
+        pos = (self._phase * n) % n
+        idx = int(pos)
+        frac = pos - idx
+        c1 = QColor(GLOW_PALETTE[idx])
+        c2 = QColor(GLOW_PALETTE[(idx + 1) % n])
+        r = int(c1.red() + (c2.red() - c1.red()) * frac)
+        g = int(c1.green() + (c2.green() - c1.green()) * frac)
+        b = int(c1.blue() + (c2.blue() - c1.blue()) * frac)
+        return QColor(r, g, b)
+
+    def _apply_effect(self) -> None:
+        try:
+            active = self._level > 0.01 and self._widget.isEnabled()
+        except RuntimeError:
+            self._hue_timer.stop()
+            return
+
+        if not active:
+            self._effect.setEnabled(False)
+            self._effect.setColor(QColor(0, 0, 0, 0))
+            return
+
+        color = self._sample_color()
+        alpha = min(225, int(130 + 65 * self._level))
+        color.setAlpha(alpha)
+        blur = min(INPUT_MAX_BLUR, INPUT_BASE_BLUR + 6.0 * self._level)
+        if not self._effect.isEnabled():
+            self._effect.setEnabled(True)
+        self._effect.setBlurRadius(blur)
+        self._effect.setColor(color)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        etype = event.type()
+        if etype in (QEvent.Enter, QEvent.HoverEnter):
+            self._hovered = True
+            self._animate_to_target()
+        elif etype in (QEvent.Leave, QEvent.HoverLeave):
+            if watched is self._widget:
+                self._hovered = False
+                self._animate_to_target()
+        elif etype == QEvent.FocusIn:
+            self._focused = True
+            self._animate_to_target()
+        elif etype == QEvent.FocusOut:
+            # Stay glowing if focus moved between outer wrapper and inner lineEdit
+            try:
+                still_focused = self._widget.hasFocus()
+                if not still_focused and hasattr(self._widget, "lineEdit") and self._widget.lineEdit():
+                    still_focused = self._widget.lineEdit().hasFocus()
+            except RuntimeError:
+                still_focused = False
+            self._focused = bool(still_focused)
+            self._animate_to_target()
+        elif etype == QEvent.EnabledChange:
+            self._apply_effect()
+        elif etype == QEvent.Hide:
+            self._hovered = False
+            self._hue_timer.stop()
+        return super().eventFilter(watched, event)
+
+
+def install_input_glow(widget: QWidget) -> InputGlowAnimator:
+    """Attach an :class:`InputGlowAnimator` to *widget* idempotently."""
+    existing = getattr(widget, "_input_glow_animator", None)
+    if existing is not None:
+        return existing
+    animator = InputGlowAnimator(widget)
+    widget._input_glow_animator = animator  # type: ignore[attr-defined]
+    return animator
+
+
+def apply_glow_to_inputs(roots: Iterable[QWidget]) -> int:
+    """Install neon input glow on text/combo/spin inputs under *roots*.
+
+    Internal child line-edits inside spin boxes and combo boxes are skipped
+    so double drop-shadow effects are never attached.
+    """
+    seen: set[int] = set()
+    count = 0
+    target_types = (_QLineEdit, _QComboBox, _QAbstractSpinBox, _QPlainTextEdit)
+    for root in roots:
+        if root is None:
+            continue
+        candidates = list(root.findChildren(QWidget))
+        if isinstance(root, QWidget):
+            candidates.insert(0, root)
+        for widget in candidates:
+            if not isinstance(widget, target_types):
+                continue
+            parent = widget.parentWidget()
+            if isinstance(widget, _QLineEdit) and isinstance(parent, (_QComboBox, _QAbstractSpinBox)):
+                continue
+            wid = id(widget)
+            if wid in seen:
+                continue
+            seen.add(wid)
+            if getattr(widget, "_input_glow_animator", None) is None:
+                install_input_glow(widget)
+                count += 1
+    return count
+
+
+class AuroraAccentBar(QWidget):
+    """Thin 2-3px animated multi-color neon aurora gradient shimmer strip.
+
+    Can be placed standalone or attached via :meth:`attach_to` along the top
+    or bottom edge of a target bar without disturbing the bar's action layout.
+    """
+
+    def __init__(
+        self,
+        parent: _Union[QWidget, None] = None,
+        height: int = 2,
+        edge: str = "bottom",
+        interval_ms: int = 50,
+    ) -> None:
+        super().__init__(parent)
+        self._height = max(1, int(height))
+        self._edge = edge
+        self._phase = 0.0
+        self._step = interval_ms / float(HUE_CYCLE_MS * 1.4)
+        self._attached_target: _Union[QWidget, None] = None
+
+        self.setFixedHeight(self._height)
+        self.setAttribute(_Qt.WA_TransparentForMouseEvents, True)
+        self.setAttribute(_Qt.WA_NoSystemBackground, True)
+
+        self._timer = QTimer(self)
+        self._timer.setInterval(interval_ms)
+        self._timer.timeout.connect(self._tick)
+        if parent is None or parent.isVisible():
+            self._timer.start()
+
+    @property
+    def phase(self) -> float:
+        return self._phase
+
+    def attach_to(self, target: QWidget, edge: str = "bottom") -> "AuroraAccentBar":
+        """Pin this bar along the *edge* ('top' or 'bottom') of *target*."""
+        self._edge = edge
+        self._attached_target = target
+        self.setParent(target)
+        target.installEventFilter(self)
+        self._sync_geometry()
+        self.show()
+        self.raise_()
+        if target.isVisible():
+            self._timer.start()
+        return self
+
+    def _sync_geometry(self) -> None:
+        if self._attached_target is None:
+            return
+        w = max(1, self._attached_target.width())
+        y = 0 if self._edge == "top" else max(0, self._attached_target.height() - self._height)
+        self.setGeometry(0, y, w, self._height)
+
+    def _tick(self) -> None:
+        if not self.isVisible():
+            self._timer.stop()
+            return
+        self._phase = (self._phase + self._step) % 1.0
+        self.update()
+
+    def showEvent(self, event) -> None:  # type: ignore[override]
+        super().showEvent(event)
+        if not self._timer.isActive():
+            self._timer.start()
+
+    def hideEvent(self, event) -> None:  # type: ignore[override]
+        super().hideEvent(event)
+        self._timer.stop()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self._attached_target:
+            etype = event.type()
+            if etype in (QEvent.Resize, QEvent.Show, QEvent.LayoutRequest):
+                self._sync_geometry()
+                self.raise_()
+            elif etype == QEvent.Hide:
+                self._timer.stop()
+        return super().eventFilter(watched, event)
+
+    def paintEvent(self, event) -> None:  # type: ignore[override]
+        w = self.width()
+        h = self.height()
+        if w <= 0 or h <= 0:
+            return
+        painter = _QPainter(self)
+        painter.setRenderHint(_QPainter.Antialiasing, False)
+
+        grad = _QLinearGradient(_QPointF(0.0, 0.0), _QPointF(float(w), 0.0))
+        stops = 5
+        n = len(GLOW_PALETTE)
+        for i in range(stops + 1):
+            t = i / float(stops)
+            palette_pos = ((self._phase + t * 0.65) * n) % n
+            idx = int(palette_pos)
+            frac = palette_pos - idx
+            c1 = QColor(GLOW_PALETTE[idx])
+            c2 = QColor(GLOW_PALETTE[(idx + 1) % n])
+            col = QColor(
+                int(c1.red() + (c2.red() - c1.red()) * frac),
+                int(c1.green() + (c2.green() - c1.green()) * frac),
+                int(c1.blue() + (c2.blue() - c1.blue()) * frac),
+                215,
+            )
+            grad.setColorAt(t, col)
+        painter.fillRect(0, 0, w, h, _QBrush(grad))
+        painter.end()
+
+
+def pulse_widget_glow(
+    widget: _Union[QWidget, None],
+    color: _Union[str, QColor] = "#38bdf8",
+    duration_ms: int = 750,
+) -> None:
+    """Briefly flash a glowing halo around *widget* (e.g. saved/copied pill).
+
+    Safely no-ops if *widget* already owns a dedicated glow animator so we
+    never overwrite a button or input's persistent effect.
+    """
+    if widget is None:
+        return
+    if getattr(widget, "_glow_animator", None) is not None or getattr(
+        widget, "_input_glow_animator", None
+    ) is not None:
+        return
+
+    existing_anim = getattr(widget, "_pulse_glow_anim", None)
+    if existing_anim is not None:
+        existing_anim.stop()
+
+    effect = widget.graphicsEffect()
+    if not isinstance(effect, QGraphicsDropShadowEffect) or not getattr(
+        widget, "_owns_pulse_effect", False
+    ):
+        effect = QGraphicsDropShadowEffect(widget)
+        effect.setOffset(0.0, 0.0)
+        widget._owns_pulse_effect = True  # type: ignore[attr-defined]
+        widget.setGraphicsEffect(effect)
+
+    base_color = QColor(color) if isinstance(color, str) else QColor(color)
+    effect.setColor(base_color)
+    effect.setBlurRadius(22.0)
+    effect.setEnabled(True)
+
+    anim = QVariantAnimation(widget)
+    anim.setStartValue(1.0)
+    anim.setEndValue(0.0)
+    anim.setDuration(max(120, int(duration_ms)))
+    anim.setEasingCurve(QEasingCurve.OutCubic)
+
+    def _on_step(val) -> None:
+        try:
+            factor = float(val)
+            c = QColor(base_color)
+            c.setAlpha(int(220 * factor))
+            effect.setColor(c)
+            effect.setBlurRadius(22.0 * factor)
+        except RuntimeError:
+            anim.stop()
+
+    def _on_done() -> None:
+        try:
+            effect.setEnabled(False)
+            effect.setColor(QColor(0, 0, 0, 0))
+        except RuntimeError:
+            pass
+
+    anim.valueChanged.connect(_on_step)
+    anim.finished.connect(_on_done)
+    widget._pulse_glow_anim = anim  # type: ignore[attr-defined]
+    anim.start()

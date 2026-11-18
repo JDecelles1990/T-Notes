@@ -583,6 +583,15 @@ class AddTemplateDialog(QDialog):
 
         # Apply colorful glowing hover and click animations to all dialog buttons
         apply_glow_to_buttons([self])
+        from src.ui.components.glow_effect import apply_glow_to_inputs
+        apply_glow_to_inputs([self])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not getattr(self, "_shown_once", False):
+            self._shown_once = True
+            from src.ui.components.panel_transition import animate_dialog_show
+            animate_dialog_show(self)
 
     def reload_templates(self, select_id: Optional[int] = None) -> None:
         """Populates the template dropdown with available custom templates."""

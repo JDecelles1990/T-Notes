@@ -45,6 +45,36 @@ LOG_BADGES = {
         "text_color": "#60a5fa",
         "border_color": "#3b82f6",
     },
+    "RESOLVED": {
+        "label": "✅ RESOLVED",
+        "bg_color": "#064e3b",
+        "text_color": "#34d399",
+        "border_color": "#10b981",
+    },
+    "BLOCKED": {
+        "label": "⛔ BLOCKED",
+        "bg_color": "#500724",
+        "text_color": "#fb7185",
+        "border_color": "#f43f5e",
+    },
+    "WAITING": {
+        "label": "⏳ WAITING",
+        "bg_color": "#451a03",
+        "text_color": "#fbbf24",
+        "border_color": "#f59e0b",
+    },
+    "P1": {
+        "label": "🔥 P1",
+        "bg_color": "#7f1d1d",
+        "text_color": "#fca5a5",
+        "border_color": "#ef4444",
+    },
+    "VIP": {
+        "label": "⭐ VIP",
+        "bg_color": "#3b0764",
+        "text_color": "#d8b4fe",
+        "border_color": "#a855f7",
+    },
 }
 
 # Technician Note Skeletons (HTML)

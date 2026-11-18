@@ -83,6 +83,17 @@ class EditTicketDialog(QDialog):
         btn_layout.addWidget(self.btn_save)
         layout.addLayout(btn_layout)
 
+        from src.ui.components.glow_effect import apply_glow_to_buttons, apply_glow_to_inputs
+        apply_glow_to_buttons([self])
+        apply_glow_to_inputs([self])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not getattr(self, "_shown_once", False):
+            self._shown_once = True
+            from src.ui.components.panel_transition import animate_dialog_show
+            animate_dialog_show(self)
+
     def _update_preview(self) -> None:
         ticket = self.txt_ticket.text().strip() or "Untitled"
         client = self.txt_client.text().strip()

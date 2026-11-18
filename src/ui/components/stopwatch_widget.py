@@ -42,8 +42,9 @@ class TicketStopwatchWidget(QWidget):
         self.lbl_time = QLabel("⏱️ 00:00:00")
         self.lbl_time.setStyleSheet(
             "font-family: Consolas, 'Courier New', monospace; font-size: 13px; "
-            "font-weight: bold; color: #58a6ff; padding: 2px 4px; "
-            "background-color: #21262d; border: 1px solid #30363d; border-radius: 4px;"
+            "font-weight: bold; color: #7dd3fc; padding: 2px 7px; "
+            "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #17233a, stop:1 #0e1628); "
+            "border: 1px solid rgba(56, 189, 248, 0.55); border-radius: 5px;"
         )
         self.lbl_time.setToolTip("Active ticket troubleshooting stopwatch")
 
@@ -53,18 +54,18 @@ class TicketStopwatchWidget(QWidget):
         self.btn_toggle.setToolTip("Start / Pause Stopwatch")
         self.btn_toggle.setStyleSheet("""
             QPushButton {
-                background-color: #21262d;
-                border: 1px solid #30363d;
-                border-radius: 4px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1d2c46, stop:1 #111a2d);
+                border: 1px solid rgba(56, 189, 248, 0.45);
+                border-radius: 5px;
                 font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', sans-serif;
                 font-size: 12px;
-                color: #58a6ff;
+                color: #7dd3fc;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #30363d;
-                border-color: #58a6ff;
-                color: #79c0ff;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #1e3a5f, stop:1 #312e81);
+                border-color: #38bdf8;
+                color: #ffffff;
             }
         """)
         self.btn_toggle.clicked.connect(self.toggle_timer)
@@ -75,18 +76,18 @@ class TicketStopwatchWidget(QWidget):
         self.btn_reset.setToolTip("Reset Timer to 00:00:00")
         self.btn_reset.setStyleSheet("""
             QPushButton {
-                background-color: #21262d;
-                border: 1px solid #30363d;
-                border-radius: 4px;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1d283d, stop:1 #111828);
+                border: 1px solid rgba(100, 116, 139, 0.45);
+                border-radius: 5px;
                 font-family: 'Segoe UI Symbol', 'Segoe UI Emoji', sans-serif;
                 font-size: 14px;
-                color: #8b949e;
+                color: #94a3b8;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #30363d;
-                border-color: #f85149;
-                color: #f85149;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4c1d2b, stop:1 #2b1321);
+                border-color: #fb7185;
+                color: #fecdd3;
             }
         """)
         self.btn_reset.clicked.connect(self.reset_timer)

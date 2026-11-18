@@ -35,9 +35,13 @@ class FindReplaceBar(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
         self.setStyleSheet("""
             #findReplaceBar {
-                background-color: #252526;
-                border: 1px solid #3c3c3c;
-                border-radius: 6px;
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 rgba(21, 31, 52, 0.96),
+                    stop: 1 rgba(13, 19, 34, 0.96)
+                );
+                border: 1px solid #38bdf8;
+                border-radius: 8px;
             }
             QLineEdit {
                 background-color: #1e1e1e;
@@ -166,7 +170,9 @@ class FindReplaceBar(QFrame):
         self.replace_container.setVisible(False)
         self.main_layout.addWidget(self.replace_container)
 
+        from src.ui.components.glow_effect import apply_glow_to_inputs
         apply_glow_to_buttons([self])
+        apply_glow_to_inputs([self])
 
     def show_bar(self, replace_mode: bool = False, initial_query: str = "") -> None:
         """Opens the find/replace bar, prefilling query if provided."""
@@ -178,6 +184,8 @@ class FindReplaceBar(QFrame):
         self.show()
         self.raise_()
         self.reposition()
+        from src.ui.components.panel_transition import animate_bar_show
+        animate_bar_show(self, self.pos())
         self.txt_find.setFocus()
         self._on_find_text_changed(self.txt_find.text())
 

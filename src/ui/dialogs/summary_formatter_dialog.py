@@ -278,6 +278,15 @@ class SummaryFormatterDialog(QDialog):
         QShortcut(QKeySequence("Escape"), self, self.reject)
 
         apply_glow_to_buttons([self])
+        from src.ui.components.glow_effect import apply_glow_to_inputs
+        apply_glow_to_inputs([self])
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not getattr(self, "_shown_once", False):
+            self._shown_once = True
+            from src.ui.components.panel_transition import animate_dialog_show
+            animate_dialog_show(self)
 
     def _populate_fields(self) -> None:
         """Fills input text areas from parsed sections."""

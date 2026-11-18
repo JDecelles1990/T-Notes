@@ -221,6 +221,22 @@ class TechPadEditor(QTextEdit):
         completed, total = self.get_checklist_stats()
         self.checklist_stats_changed.emit(self.scratchpad_id, completed, total)
 
+    def get_document_telemetry(self) -> dict:
+        """Returns compact live document metrics for the glowing status bar."""
+        plain = self.toPlainText()
+        image_count = plain.count("\ufffc")
+        clean_text = plain.replace("\ufffc", " ")
+        words = len(clean_text.split()) if clean_text.strip() else 0
+        lines = self.document().blockCount()
+        completed, total = self.get_checklist_stats()
+        return {
+            "words": words,
+            "lines": lines,
+            "images": image_count,
+            "checklist_done": completed,
+            "checklist_total": total,
+        }
+
     def insert_checklist_item(self) -> None:
         """Inserts a new interactive checklist item at current cursor position."""
         cursor = self.textCursor()
@@ -275,7 +291,7 @@ class TechPadEditor(QTextEdit):
             cursor.setPosition(start)
             cursor.setPosition(end, QTextCursor.KeepAnchor)
             btn_fmt = QTextCharFormat()
-            btn_fmt.setForeground(QColor("#007acc"))
+            btn_fmt.setForeground(QColor("#38bdf8"))
             btn_fmt.setFontWeight(QFont.Bold)
             btn_fmt.setFontFamilies(["Consolas"])
             btn_fmt.setAnchor(True)

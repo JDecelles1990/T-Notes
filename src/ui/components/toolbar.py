@@ -42,6 +42,8 @@ class TechPadToolBar(QToolBar):
     history_requested = Signal()        # Emits when history button clicked
     settings_requested = Signal()       # Emits when gear icon clicked
     m365_requested = Signal()           # Workspace navigation only
+    command_palette_requested = Signal() # Emits when 🔍 palette button clicked
+    quick_tools_requested = Signal()     # Emits when ⚡ quick-tools button clicked
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__("Formatting", parent)
@@ -220,6 +222,11 @@ class TechPadToolBar(QToolBar):
         self.menu_more.addSeparator()
         self.menu_more.addAction(self.act_timestamp)
         self.menu_more.addAction(self.act_image)
+        self.menu_more.addSeparator()
+        act_more_palette = self.menu_more.addAction("🔍 Command Palette (Ctrl+K)")
+        act_more_palette.triggered.connect(self.command_palette_requested.emit)
+        act_more_tools = self.menu_more.addAction("⚡ Tech Quick-Tools (Ctrl+Alt+Q)")
+        act_more_tools.triggered.connect(self.quick_tools_requested.emit)
         self.btn_more.setMenu(self.menu_more)
         self.act_more = self.addWidget(self.btn_more)
         self.act_more.setVisible(False)
@@ -327,7 +334,7 @@ class TechPadToolBar(QToolBar):
         self.slider_opacity = QSlider(Qt.Horizontal, self.secondary_toolbar)
         self.slider_opacity.setRange(60, 100)
         self.slider_opacity.setValue(100)
-        self.slider_opacity.setFixedWidth(85)
+        self.slider_opacity.setFixedWidth(64)
         self.slider_opacity.setToolTip("Window Opacity (60% – 100%)")
         self.slider_opacity.setStyleSheet("""
             QSlider::groove:horizontal {
@@ -390,6 +397,22 @@ class TechPadToolBar(QToolBar):
         self.btn_settings.clicked.connect(self.settings_requested.emit)
         self.secondary_toolbar.addWidget(self.btn_settings)
 
+        # 8. Quick Command Palette Button (🔍 / Ctrl+K)
+        self.btn_palette = QToolButton(self.secondary_toolbar)
+        self.btn_palette.setText("🔍")
+        self.btn_palette.setToolTip("Quick Command Palette (Ctrl+K)")
+        self.btn_palette.setStyleSheet("font-size: 14px; padding: 2px 5px;")
+        self.btn_palette.clicked.connect(self.command_palette_requested.emit)
+        self.secondary_toolbar.addWidget(self.btn_palette)
+
+        # 9. Smart Tech Quick-Tools & Extractor Button (⚡ / Ctrl+Alt+Q)
+        self.btn_quick_tools = QToolButton(self.secondary_toolbar)
+        self.btn_quick_tools.setText("⚡")
+        self.btn_quick_tools.setToolTip("Tech Quick-Tools & Smart Extractor (Ctrl+Alt+Q)")
+        self.btn_quick_tools.setStyleSheet("font-size: 14px; padding: 2px 5px;")
+        self.btn_quick_tools.clicked.connect(self.quick_tools_requested.emit)
+        self.secondary_toolbar.addWidget(self.btn_quick_tools)
+
     @property
     def is_compact(self) -> bool:
         """Returns True if the toolbar is currently displayed in compact mode."""
@@ -419,20 +442,29 @@ class TechPadToolBar(QToolBar):
         if compact:
             self.btn_copy_note.setText("📋 Copy")
             self.btn_skeleton.setText("Template")
-            self.slider_opacity.setFixedWidth(50)
+            self.slider_opacity.setFixedWidth(40)
             self.lbl_opacity.setText(f"{self.slider_opacity.value()}%")
-            for btn in (self.btn_split, self.btn_pin, self.btn_history, self.btn_settings):
-                btn.setStyleSheet("font-size: 12px; padding: 2px 3px;")
+            for btn in (
+                self.btn_split,
+                self.btn_pin,
+                self.btn_history,
+                self.btn_settings,
+                self.btn_palette,
+                self.btn_quick_tools,
+            ):
+                btn.setStyleSheet("font-size: 12px; padding: 2px 2px;")
 
         else:
             self.btn_copy_note.setText("📋 Copy Note")
             self.btn_skeleton.setText("📋 Template")
-            self.slider_opacity.setFixedWidth(85)
+            self.slider_opacity.setFixedWidth(64)
             self.lbl_opacity.setText(f"👁️ {self.slider_opacity.value()}%")
             self.btn_split.setStyleSheet("font-size: 14px; padding: 2px 6px;")
             self.btn_pin.setStyleSheet("font-size: 13px; padding: 2px 6px;")
             self.btn_history.setStyleSheet("font-size: 14px; padding: 2px 6px;")
             self.btn_settings.setStyleSheet("font-size: 14px; padding: 2px 6px;")
+            self.btn_palette.setStyleSheet("font-size: 14px; padding: 2px 5px;")
+            self.btn_quick_tools.setStyleSheet("font-size: 14px; padding: 2px 5px;")
 
 
     def check_responsive_mode(self, available_width: int) -> None:
@@ -528,7 +560,11 @@ class TechPadToolBar(QToolBar):
         info = LOG_BADGES.get(tag_key)
         if not info:
             return
-        badge_html = f'&nbsp;<span style="background-color: {info["bg_color"]}; color: {info["text_color"]}; border: 1px solid {info["border_color"]}; border-radius: 3px; padding: 2px 6px; font-weight: bold; font-size: 11px;">{info["label"]}</span>&nbsp;'
+        badge_html = (
+            f'&nbsp;<span style="background-color: {info["bg_color"]}; color: {info["text_color"]}; '
+            f'border: 1px solid {info["border_color"]}; border-radius: 5px; padding: 2px 8px; '
+            f'font-weight: bold; font-size: 11px; letter-spacing: 0.3px;">{info["label"]}</span>&nbsp;'
+        )
         cursor = self._current_editor.textCursor()
         cursor.insertHtml(badge_html)
         self._current_editor.setFocus()

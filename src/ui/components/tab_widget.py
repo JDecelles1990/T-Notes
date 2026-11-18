@@ -315,9 +315,16 @@ class TechPadTabBar(QTabBar):
             is_selected = (i == self.currentIndex())
 
             # 1. Subtle background ambient tint with tab's own color
-            tint_alpha = 32 if is_selected else 14
+            tint_alpha = 42 if is_selected else 16
             tint = QColor(color.red(), color.green(), color.blue(), tint_alpha)
             painter.fillRect(rect.adjusted(1, 2, -1, 0), tint)
+
+            # 1b. Glossy top-half glass sheen gradient
+            from PySide6.QtGui import QLinearGradient
+            sheen = QLinearGradient(rect.left(), rect.top(), rect.left(), rect.center().y())
+            sheen.setColorAt(0.0, QColor(255, 255, 255, 30 if is_selected else 14))
+            sheen.setColorAt(1.0, QColor(255, 255, 255, 0))
+            painter.fillRect(rect.adjusted(1, 2, -1, -(rect.height() // 2)), sheen)
 
             # 2. Distinct top accent stripe (3px if selected, 2px if unselected)
             stripe_height = 3 if is_selected else 2
@@ -614,10 +621,13 @@ class TechPadTabWidget(QTabWidget):
         self.setCornerWidget(self.right_corner_widget, Qt.TopRightCorner)
 
         self.currentChanged.connect(lambda _: self._update_nav_arrows_state())
+        self.currentChanged.connect(lambda _: self._update_active_pane_glow())
+        self._update_active_pane_glow()
 
     def tabInserted(self, index: int) -> None:
         super().tabInserted(index)
         self._update_nav_arrows_state()
+        self._update_active_pane_glow()
 
     def tabRemoved(self, index: int) -> None:
         super().tabRemoved(index)
@@ -820,3 +830,14 @@ class TechPadTabWidget(QTabWidget):
         """Explicitly sets or overrides the owned color for a scratchpad."""
         self._tab_colors[scratchpad_id] = hex_color
         self._tab_bar.update()
+        self._update_active_pane_glow()
+
+    def _update_active_pane_glow(self) -> None:
+        """Aligns the editor pane top aura accent border with the active tab color."""
+        idx = self.currentIndex()
+        accent = self.get_tab_color(idx).name() if idx >= 0 else "#38bdf8"
+        self.setStyleSheet(
+            "QTabWidget::pane { "
+            f"border: 1px solid #24324d; border-top: 2px solid {accent}; background-color: #0e1422; "
+            "}"
+        )

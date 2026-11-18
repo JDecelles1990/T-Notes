@@ -55,6 +55,8 @@ The note-taking canvas in T-Notes is built upon `TechPadEditor`, a customized `Q
 | **Badge: 🔴 FAIL** | `Alt+2` | Injects inline red FAIL tag. |
 | **Badge: 🟡 WARN** | `Alt+3` | Injects inline amber WARN tag. |
 | **Badge: ℹ️ INFO** | `Alt+4` | Injects inline blue INFO tag. |
+| **Quick Command Palette** | `Ctrl+K` | Opens searchable command palette across tabs, archive, templates, badges, and M365. |
+| **Tech Quick-Tools & Extractor** | `Ctrl+Alt+Q` | Extracts UPNs, GUIDs, IPs, tickets & URLs and generates temp passwords / UUIDs. |
 | **Open Preferences** | `Ctrl+,` | Launches the Preferences / Settings modal dialog. |
 | **Toggle Split View** | `Alt+Z` | Toggles side-by-side dual ticket editing panes (50/50 draggable split). |
 | **Slide Tab Left / Right** | `Ctrl+Shift+PgUp` / `PgDown` | Reorders current tab horizontally while typing (modifier-masked). |
@@ -81,7 +83,7 @@ The top header is structured into two dedicated rows to prevent button truncatio
 Dedicated strictly to rich-text authoring, colors, and content markup:
 - **Text Styling:** Bold (`B`), Italic (`I`), Underline (`U`)
 - **Colors:** Text Color picker (`🎨`), Text Highlight background picker (`🖍️`)
-- **Developer Markup:** Monospace CLI container (`</>`), Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`)
+- **Developer Markup:** Monospace CLI container (`</>`), Log Badges dropdown (`🏷️ Tag` for `PASS`, `FAIL`, `WARN`, `INFO`, `RESOLVED`, `BLOCKED`, `WAITING`, `P1`, `VIP`)
 - **Checklists:** Dedicated Interactive Checkbox button (`☑ Checkbox` / `Ctrl+Alt+L`)
 - **Injections:** Current timestamp injection (`🕒`), Screenshot/Image file insertion (`🖼️`)
 
@@ -94,6 +96,7 @@ Dedicated to ticket-level actions, troubleshooting duration, translucency, and p
 - **Split View Toggle (`◫` / `Alt+Z`):** Instant side-by-side dual ticket editing with draggable 6px divider.
 - **History Drawer Toggle (`🕰️`):** Quick 1-click toggle for the History & Archival drawer.
 - **Settings Gear (`⚙️`):** Launches preferences modal for defaults, delays, and compression.
+- **Command Palette (`🔍` / `Ctrl+K`) & Tech Quick-Tools (`⚡` / `Ctrl+Alt+Q`):** Compact micro-controls opening the keyboard-first Command Palette and Smart Entity Extractor / Quick Generators dialog.
 - **Zero Whitespace & Zero Overflow:** Both rows feature balanced, compact grouping without artificial `QSizePolicy.Expanding` gaps, keeping all tools within easy reach while completely eliminating the 3-dots overflow button.
 - **Auto-Pause on Lock or 5-Minute Inactivity:**
   - Uses Windows system APIs (`user32.dll:GetLastInputInfo` and `user32.dll:OpenInputDesktop`).
@@ -458,7 +461,7 @@ To support portrait monitors (e.g. 1050x1680 at 150% scaling yielding a 700-logi
   - **M365 PowerShell Launcher Module:** When viewing M365 Launcher, `Split` and `History` are removed from the bottom bar and replaced with `Categories` (which toggles the left navigation sidebar) and `Active Ticket` (which toggles the right active ticket sidebar): `HUD` -> `T-Notes` -> `Categories` -> `Active Ticket`. Both buttons feature bidirectional synchronization with the launcher's sidebar toggles (`nav_toggle` and `ticket_panel_toggle`).
 - **Tabs Bar Navigation Arrows (`◀` and `▶`):** In HUD mode, left (`btn_prev` at `Qt.TopLeftCorner`) and right (`btn_next` at `Qt.TopRightCorner`) arrow buttons are displayed on the tabs bar, allowing technicians to quickly cycle through open ticket tabs in the narrow sidebar with automatic wrap-around, active editor focus, and title updates.
 - **Persistent Visibility During Status Messages:** Connected to `status_bar.messageChanged` to ensure the left-side bottom bar buttons (`HUD`, `M365 Launcher`, `Split`, `History`) remain persistently visible even when temporary notification messages are posted to the status bar.
-- **Clean Sidebar Layout:** Top formatting toolbars are automatically hidden in HUD mode to eliminate crowding and keep focus on the active ticket note, while core window controls remain accessible along the bottom bar.
+- **Compact Sidebar Layout:** Both top formatting/workflow toolbars remain visible in compact mode in T-Notes during both Normal and HUD mode (hidden only when viewing the M365 Launcher workspace), while the history drawer is collapsed in HUD mode and core window controls remain accessible along the bottom bar.
 
 
 ## Revision-bound save acknowledgement
@@ -532,3 +535,11 @@ Clicking **`✨ Format Ticket Summary... / Résumé...`** opens a two-column mod
 - **Smart Bilingual Section Detection**: Automatically extracts content by parsing note HTML and markdown across English and French keywords (`Issue` / `Problème`, `Troubleshooting` / `Dépannage`, `Resolution` / `Résolution`, `Root Cause` / `Cause racine`, `Next Steps` / `Prochaines étapes`) and interactive checklist items (`- [x]`).
 - **Output & Email Actions**: Single-click buttons for copying plain text, copying rich HTML formatting, or opening a `mailto:` email draft addressed to Default Email (`📧 Send to Default Email` / `📧 Envoyer au courriel par défaut`).
 - **Preferences Persistence**: Default Name (e.g., `Jonathan Decelles`), Default Email (e.g., `Jonathan_Decelles1990@hotmail.com`), and preferred default summary language (`en` or `fr`) are persisted in `app_settings` via `SessionService` and configurable in both `SettingsDialog` and `SummaryFormatterDialog`. These fields automatically populate the technician signature block at the end of client emails and PSA ticket notes.
+
+---
+
+## 13. Command Palette, Smart Extractor & Live Status Telemetry
+
+- **Quick Command Palette (`Ctrl+K` / `🔍`):** Modal search overlay (`CommandPaletteDialog`) built with `PaletteEntry` items populated exclusively through existing services (`scratchpad_service`, `m365_workspace.catalog_service`). Supports real-time multi-token filtering, arrow-key navigation, and instant jump/execution across open tabs, layout toggles, all 9 triage badges (`LOG_BADGES`), built-in/custom templates, archived tickets, and M365 operations.
+- **Smart Entity Extractor & Quick Generators (`Ctrl+Alt+Q` / `⚡`):** `TechToolsService` extracts deduplicated Emails/UPNs, Entra GUIDs, valid IPv4 addresses, ticket IDs (`INC-`/`SR-`/`CHG-`), and URLs from active note text. `QuickToolsDialog` allows 1-click copy, cursor insertion, or routing a detected UPN/GUID directly into `M365LauncherWorkspace`'s target identity fields (`target_upn` / `target_object_id`), alongside cryptographically random temporary password (`secrets`), UUID v4, and Local+UTC timestamp generators.
+- **Live Telemetry & Save Status Pills:** `TechPadEditor.get_document_telemetry()` supplies live word count, block/line count, checklist completion ratio, and image count to the status bar's glowing `lbl_telemetry` pill (`📝 <w>w • <L>L`), complemented by glow pulses on `lbl_save_status` and clipboard export actions.

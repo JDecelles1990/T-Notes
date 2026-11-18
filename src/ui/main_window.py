@@ -25,7 +25,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import APP_NAME, APP_VERSION, AUTO_SAVE_DEBOUNCE_MS
+from src.core.constants import (
+    APP_NAME,
+    APP_VERSION,
+    AUTO_SAVE_DEBOUNCE_MS,
+    LOG_BADGES,
+    TICKET_SKELETONS,
+)
 from src.core.debouncer import DebounceTimer
 from src.core.global_hotkey import GlobalHotkeyManager
 from src.services.image_service import ImageService
@@ -34,8 +40,15 @@ from src.repositories.m365_company_repository import M365CompanyRepository
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
 from src.ui.components.editor import TechPadEditor
-from src.ui.components.glow_effect import apply_glow_to_buttons
-from src.ui.components.panel_transition import PanelWidthTransition
+from src.ui.components.glow_effect import (
+    AuroraAccentBar,
+    apply_glow_to_buttons,
+    apply_glow_to_inputs,
+    pulse_widget_glow,
+)
+from src.ui.components.panel_transition import PanelWidthTransition, fade_in_widget
+from src.ui.dialogs.command_palette_dialog import CommandPaletteDialog, PaletteEntry
+from src.ui.dialogs.quick_tools_dialog import QuickToolsDialog
 from src.ui.components.history_drawer import HistoryDrawer
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
@@ -283,6 +296,8 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.history_requested.connect(self._toggle_history_drawer)
         self.toolbar.settings_requested.connect(self._open_settings_dialog)
         self.toolbar.m365_requested.connect(self.switch_workspace)
+        self.toolbar.command_palette_requested.connect(self._open_command_palette)
+        self.toolbar.quick_tools_requested.connect(self._open_quick_tools)
         self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
 
         # Row 1: Formatting Actions
@@ -291,6 +306,12 @@ class TechPadMainWindow(QMainWindow):
         self.addToolBarBreak(Qt.TopToolBarArea)
         # Row 2: Ticket Workflow, Stopwatch, Opacity & Preferences
         self.addToolBar(Qt.TopToolBarArea, self.toolbar.secondary_toolbar)
+        # Prevent Qt's dock/toolbar context menu from toggling toolbars off
+        self.setContextMenuPolicy(Qt.NoContextMenu)
+        for tb in (self.toolbar, self.toolbar.secondary_toolbar):
+            toggle_act = tb.toggleViewAction()
+            toggle_act.setVisible(False)
+            toggle_act.setEnabled(False)
 
         # History / Archive Side Drawer
         self.history_drawer = HistoryDrawer(self.scratchpad_service, self)
@@ -383,27 +404,48 @@ class TechPadMainWindow(QMainWindow):
         # Ensure HUD, M365 Launcher / T-Notes, and module-specific buttons remain visible on the left even during status messages
         self.status_bar.messageChanged.connect(self._keep_status_buttons_visible)
 
-        # 6. Save status indicator and active ticket details
+        # 6. Save status indicator, glowing telemetry pill, and active ticket details
         self.lbl_save_status = QLabel("● Saved")
-        self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
+        self.lbl_save_status.setStyleSheet(
+            "color: #4ade80; font-weight: bold; padding: 2px 9px; margin-left: 6px; "
+            "background-color: rgba(16, 185, 129, 0.12); "
+            "border: 1px solid rgba(74, 222, 128, 0.45); border-radius: 9px;"
+        )
         self.status_bar.addWidget(self.lbl_save_status)
 
+        self.lbl_telemetry = QLabel("📝 0w • 1L")
+        self.lbl_telemetry.setToolTip("Live active note word, line, checklist, and embedded image metrics")
+        self.lbl_telemetry.setStyleSheet(
+            "color: #7dd3fc; font-weight: 600; padding: 2px 9px; margin-left: 6px; "
+            "background-color: rgba(56, 189, 248, 0.12); "
+            "border: 1px solid rgba(56, 189, 248, 0.40); border-radius: 9px;"
+        )
+        self.status_bar.addWidget(self.lbl_telemetry)
+
         self.lbl_active_info = CompactLabel("")
-        self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 16px;")
+        self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 14px;")
         self.status_bar.addWidget(self.lbl_active_info)
 
-        # 7. Colorful hover / click glow animations on T-Notes and M365 Launcher buttons
-        apply_glow_to_buttons(
-            [
-                self.toolbar,
-                self.toolbar.secondary_toolbar,
-                self.status_bar,
-                self.history_drawer,
-                self.tab_widget,
-                self.secondary_tab_widget,
-                self.m365_workspace,
-            ]
+        # 6b. Neon Aurora gradient shimmer accent strips (layout-non-intrusive overlays)
+        self._toolbar_aurora_bar = AuroraAccentBar(height=2).attach_to(
+            self.toolbar.secondary_toolbar, edge="bottom"
         )
+        self._statusbar_aurora_bar = AuroraAccentBar(height=2).attach_to(
+            self.status_bar, edge="top"
+        )
+
+        # 7. Colorful hover / click glow animations on T-Notes and M365 Launcher buttons & inputs
+        glow_roots = [
+            self.toolbar,
+            self.toolbar.secondary_toolbar,
+            self.status_bar,
+            self.history_drawer,
+            self.tab_widget,
+            self.secondary_tab_widget,
+            self.m365_workspace,
+        ]
+        apply_glow_to_buttons(glow_roots)
+        apply_glow_to_inputs([self.history_drawer, self.m365_workspace])
 
     def _toggle_m365_categories(self) -> None:
         """Toggles the M365 category navigation sidebar."""
@@ -469,6 +511,8 @@ class TechPadMainWindow(QMainWindow):
         ]
         QShortcut(QKeySequence("Alt+T"), self, self.toggle_mini_hud_mode, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+K"), self, self._open_command_palette, context=Qt.ApplicationShortcut)
+        QShortcut(QKeySequence("Ctrl+Alt+Q"), self, self._open_quick_tools, context=Qt.ApplicationShortcut)
         # One Qt shortcut owns Alt+F8; do not also handle it in eventFilter.
         self.workspace_shortcut = QShortcut(
             QKeySequence("Alt+F8"), self, self.switch_workspace
@@ -567,9 +611,10 @@ class TechPadMainWindow(QMainWindow):
             stopwatch=self.toolbar.stopwatch,
         )
         self._notes_split_active = getattr(self, "_saved_split_active", False) if self.is_mini_hud else self.is_split_view_active
-        for widget in (self.toolbar, self.toolbar.secondary_toolbar, self.history_drawer):
-            self._notes_visibility[widget] = not widget.isHidden()
-            widget.hide()
+        self._notes_visibility[self.history_drawer] = not self.history_drawer.isHidden()
+        self.toolbar.hide()
+        self.toolbar.secondary_toolbar.hide()
+        self.history_drawer.hide()
         self._notes_visibility[self.secondary_tab_widget] = (
             getattr(self, "_saved_split_visible", False) if self.is_mini_hud else (self._user_split_view_active and not self.secondary_tab_widget.isHidden())
         )
@@ -602,6 +647,7 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_status_hud.setVisible(True)
 
         self.workspace_stack.setCurrentWidget(self.m365_workspace)
+        fade_in_widget(self.workspace_stack)
         self._update_module_status_bar_buttons(is_m365=True)
         self._activate_and_focus(self.m365_workspace.back_button)
         return True
@@ -645,11 +691,16 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_status_hud.setVisible(True)
 
         self.workspace_stack.setCurrentWidget(self.workspace_splitter)
+        fade_in_widget(self.workspace_stack)
         self._update_module_status_bar_buttons(is_m365=False)
+        self.toolbar.show()
+        self.toolbar.secondary_toolbar.show()
+        self.toolbar.check_responsive_mode(self.width())
         split_was_visible = self._notes_visibility.get(self.secondary_tab_widget, False)
         if not self.is_mini_hud:
             for widget, visible in self._notes_visibility.items():
-                widget.setVisible(visible)
+                if widget not in (self.toolbar, self.toolbar.secondary_toolbar):
+                    widget.setVisible(visible)
             if split_was_visible:
                 self._user_split_view_active = True
                 if hasattr(self, "toolbar") and hasattr(self.toolbar, "btn_split"):
@@ -1064,6 +1115,9 @@ class TechPadMainWindow(QMainWindow):
         self._dirty_scratchpad_ids.add(scratchpad_id)
         self._note_revisions[scratchpad_id] = self._note_revisions.get(scratchpad_id, 0) + 1
         self.set_save_status("Saving...", is_saved=False)
+        active = self._get_active_editor()
+        if active and active.scratchpad_id == scratchpad_id:
+            self._update_telemetry(active)
         debouncer = self._debounce_timers.get(scratchpad_id)
         if debouncer:
             debouncer.trigger()
@@ -1124,20 +1178,36 @@ class TechPadMainWindow(QMainWindow):
         return True
 
     def set_save_status(self, text: str, is_saved: bool = True) -> None:
-        """Updates the status bar indicator."""
+        """Updates the status bar indicator with a glowing pill badge."""
         if is_saved and self._dirty_scratchpad_ids:
             is_saved = False
             text = "Saving..." if any(t.is_active() for t in self._debounce_timers.values()) else "Save Failed"
+        prev_text = self.lbl_save_status.text()
         if is_saved:
             self.lbl_save_status.setText("● Saved")
-            self.lbl_save_status.setStyleSheet("color: #4ade80; font-weight: bold; padding-left: 8px;")
+            self.lbl_save_status.setStyleSheet(
+                "color: #4ade80; font-weight: bold; padding: 2px 9px; margin-left: 6px; "
+                "background-color: rgba(16, 185, 129, 0.12); "
+                "border: 1px solid rgba(74, 222, 128, 0.45); border-radius: 9px;"
+            )
+            if prev_text != "● Saved":
+                pulse_widget_glow(self.lbl_save_status, "#22c55e", 650)
         else:
             if "fail" in text.lower():
                 self.lbl_save_status.setText(f"● {text}")
-                self.lbl_save_status.setStyleSheet("color: #ef4444; font-weight: bold; padding-left: 8px;")
+                self.lbl_save_status.setStyleSheet(
+                    "color: #fca5a5; font-weight: bold; padding: 2px 9px; margin-left: 6px; "
+                    "background-color: rgba(239, 68, 68, 0.16); "
+                    "border: 1px solid rgba(239, 68, 68, 0.65); border-radius: 9px;"
+                )
+                pulse_widget_glow(self.lbl_save_status, "#ef4444", 750)
             else:
                 self.lbl_save_status.setText("↻ Saving...")
-                self.lbl_save_status.setStyleSheet("color: #facc15; font-weight: bold; padding-left: 8px;")
+                self.lbl_save_status.setStyleSheet(
+                    "color: #fde047; font-weight: bold; padding: 2px 9px; margin-left: 6px; "
+                    "background-color: rgba(234, 179, 8, 0.14); "
+                    "border: 1px solid rgba(250, 204, 21, 0.55); border-radius: 9px;"
+                )
 
     def _on_stopwatch_time_updated(self, scratchpad_id: int, elapsed_seconds: int) -> None:
         """Persists stopwatch elapsed seconds and updates the active tab's running minutes display."""
@@ -1173,6 +1243,9 @@ class TechPadMainWindow(QMainWindow):
                     elapsed_seconds=elapsed,
                     checklist_progress=(completed, total),
                 )
+        active = self._get_active_editor()
+        if active and active.scratchpad_id == scratchpad_id:
+            self._update_telemetry(active)
 
     def _on_editor_focused(self, scratchpad_id: int) -> None:
         """Updates active editor in toolbar, synchronizes stopwatch, and updates status info when focus enters editor."""
@@ -1184,6 +1257,7 @@ class TechPadMainWindow(QMainWindow):
             return
         self._logical_active_scratchpad_id = scratchpad_id
         self.toolbar.set_active_editor(editor)
+        self._update_telemetry(editor)
         restore_ticket = self._workspace_restore_ticket
         self._workspace_restore_ticket = None
         if restore_ticket == scratchpad_id and self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
@@ -1209,10 +1283,13 @@ class TechPadMainWindow(QMainWindow):
         editor = self.tab_widget.get_editor_at(index)
         if editor:
             editor.setFocus()
+            fade_in_widget(editor)
             self._on_editor_focused(editor.scratchpad_id)
+            self._update_telemetry(editor)
         else:
             self.toolbar.set_active_editor(None)
             self.lbl_active_info.setText("")
+            self._update_telemetry(None)
             self.toolbar.stopwatch.pause_timer()
 
         if getattr(self, "is_mini_hud", False):
@@ -1581,6 +1658,7 @@ class TechPadMainWindow(QMainWindow):
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
         t_label = f"#{ticket.get('ticket_number', '')}".strip()
         msg = f"✓ Copied formatted note ({t_label}) with rich text & images to clipboard!" if t_label != "#" else "✓ Copied formatted note with rich text & images to clipboard!"
+        pulse_widget_glow(self.lbl_telemetry, "#38bdf8", 700)
         self.status_bar.showMessage(msg, 3500)
 
     def _on_export_note(self) -> None:
@@ -1597,6 +1675,7 @@ class TechPadMainWindow(QMainWindow):
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
         t_label = f"#{ticket.get('ticket_number', '')}".strip()
         msg = f"✓ Copied clean note ({t_label}) for ticketing system to clipboard!" if t_label != "#" else "✓ Copied clean note for ticketing system to clipboard!"
+        pulse_widget_glow(self.lbl_telemetry, "#38bdf8", 700)
         self.status_bar.showMessage(msg, 3500)
 
     def _on_export_active_ticket_file(self) -> None:
@@ -1650,6 +1729,7 @@ class TechPadMainWindow(QMainWindow):
             msg = f"✓ Courriel de résolution client copié ({t_label}) !" if t_label != "#" else "✓ Courriel de résolution client copié !"
         else:
             msg = f"✓ Copied client resolution email ({t_label}) to clipboard!" if t_label != "#" else "✓ Copied client resolution email to clipboard!"
+        pulse_widget_glow(self.lbl_telemetry, "#a78bfa", 700)
         self.status_bar.showMessage(msg, 3500)
 
     def _on_copy_psa_note(self, lang: str = "en") -> None:
@@ -1678,6 +1758,7 @@ class TechPadMainWindow(QMainWindow):
             msg = f"✓ Note interne PSA copiée ({t_label}) !" if t_label != "#" else "✓ Note interne PSA copiée !"
         else:
             msg = f"✓ Copied internal PSA note ({t_label}) to clipboard!" if t_label != "#" else "✓ Copied internal PSA note to clipboard!"
+        pulse_widget_glow(self.lbl_telemetry, "#a78bfa", 700)
         self.status_bar.showMessage(msg, 3500)
 
     def _on_send_active_ticket_to_default_email(
@@ -1756,6 +1837,232 @@ class TechPadMainWindow(QMainWindow):
             parent=self,
         )
         dlg.exec()
+
+    def _update_telemetry(self, editor: Optional[TechPadEditor] = None) -> None:
+        """Refreshes the glowing status-bar word, line, checklist, and image pill."""
+        target = editor or self._get_active_editor()
+        if target is None:
+            self.lbl_telemetry.setText("📝 0w • 1L")
+            return
+        stats = target.get_document_telemetry()
+        parts = [f"📝 {stats['words']}w • {stats['lines']}L"]
+        if stats["checklist_total"] > 0:
+            parts.append(f"☑ {stats['checklist_done']}/{stats['checklist_total']}")
+        if stats["images"] > 0:
+            parts.append(f"🖼️ {stats['images']}")
+        self.lbl_telemetry.setText(" • ".join(parts))
+
+    def _open_quick_tools(self) -> QuickToolsDialog:
+        """Opens Smart Entity Extractor & Tech Quick-Tools modal (Ctrl+Alt+Q)."""
+        editor = self._get_active_editor()
+        text = editor.toPlainText() if editor else ""
+
+        def _insert_into_note(value: str) -> None:
+            active = self._get_active_editor()
+            if active is None:
+                return
+            active.textCursor().insertText(value)
+            active.setFocus()
+
+        dlg = QuickToolsDialog(
+            note_text=text,
+            on_insert_text=_insert_into_note if editor is not None else None,
+            on_send_to_m365=self._send_extracted_entity_to_m365,
+            parent=self,
+        )
+        dlg.exec()
+        return dlg
+
+    def _send_extracted_entity_to_m365(self, upn: str = "", object_id: str = "") -> None:
+        """Populates M365 Workspace target UPN/GUID from extracted note entities."""
+        if not self.is_m365_workspace:
+            self.show_m365_workspace()
+        panel = self.m365_workspace.company_panel
+        if upn:
+            panel.target_upn.setText(upn)
+        if object_id:
+            panel.target_object_id.setText(object_id)
+        self.m365_workspace.context_service.set_target(
+            panel.target_upn.text(),
+            panel.target_object_id.text(),
+        )
+        summary = upn or object_id
+        if summary:
+            self.status_bar.showMessage(f"☁️ Sent M365 target '{summary}' to workspace.", 3500)
+
+    def _activate_tab_in_pane(self, tw: TechPadTabWidget, idx: int) -> None:
+        if self.is_m365_workspace:
+            self.show_notes_workspace()
+        if tw is self.secondary_tab_widget and not self.is_split_view_active:
+            self._toggle_split_view()
+        if 0 <= idx < tw.count():
+            tw.setCurrentIndex(idx)
+            ed = tw.get_editor_at(idx)
+            if ed:
+                ed.setFocus()
+
+    def _select_m365_operation(self, category_id: str, operation_id: str) -> None:
+        if not self.is_m365_workspace:
+            self.show_m365_workspace()
+        nav = getattr(self.m365_workspace, "navigation", None)
+        if nav is not None:
+            for row in range(nav.count()):
+                item = nav.item(row)
+                if item and item.data(Qt.UserRole) == category_id:
+                    nav.setCurrentRow(row)
+                    break
+        op_list = getattr(self.m365_workspace, "operation_list", None)
+        if op_list is not None:
+            for row in range(op_list.count()):
+                item = op_list.item(row)
+                if item and item.data(Qt.UserRole) == operation_id:
+                    op_list.setCurrentRow(row)
+                    break
+
+    def _build_command_palette_entries(self) -> list[PaletteEntry]:
+        """Collects unified Command Palette entries via services and workspaces (no raw SQL)."""
+        entries: list[PaletteEntry] = []
+
+        # 1. Open Tabs
+        for pane_label, tw in (("Primary", self.tab_widget), ("Split", self.secondary_tab_widget)):
+            for i in range(tw.count()):
+                ed = tw.get_editor_at(i)
+                tab_title = tw.tabText(i)
+                detail = f"{pane_label} Pane"
+                if ed:
+                    ticket = self.scratchpad_service.get_ticket(ed.scratchpad_id)
+                    if ticket and ticket.get("title"):
+                        detail = f"{pane_label} — {ticket.get('title', '')}"
+                entries.append(
+                    PaletteEntry(
+                        category="Open Tab",
+                        label=tab_title,
+                        detail=detail,
+                        keywords=f"tab focus {tab_title} {detail}",
+                        callback=lambda _tw=tw, _idx=i: self._activate_tab_in_pane(_tw, _idx),
+                    )
+                )
+
+        # 2. Quick Actions & Layout
+        actions = [
+            ("New Ticket Tab", "Create a new scratchpad tab (Ctrl+T)", self.create_new_tab),
+            ("Toggle Split View", "Show or hide dual-pane split workspace (Alt+Z)", self._toggle_split_view),
+            ("Toggle Always-on-Top Mini-HUD", "Switch compact HUD window mode (Alt+T)", self.toggle_mini_hud_mode),
+            ("Toggle History & Archive Drawer", "Open or close archive drawer (Alt+H)", self._toggle_history_drawer),
+            ("Switch Notes / M365 Workspace", "Toggle between T-Notes and M365 Launcher (Alt+F8)", self.switch_workspace),
+            ("Tech Quick-Tools & Extractor", "Extract UPNs/GUIDs/IPs & generate passwords/UUIDs (Ctrl+Alt+Q)", self._open_quick_tools),
+            ("Ticket Summary Formatter", "Open bilingual client/PSA summary formatter", self._open_summary_formatter_dialog),
+            ("Insert Interactive Checklist", "Insert [ ] checkbox line (Ctrl+Shift+C)", self._on_insert_checklist),
+            ("Insert Current Timestamp", "Stamp YYYY-MM-DD HH:MM:SS (F5)", self.toolbar._insert_timestamp),
+            ("Copy Formatted Note", "Copy active note with rich HTML & images", self._on_copy_formatted_note),
+            ("Copy Clean Ticket Note", "Copy plain/Markdown ticket note", self._on_export_note),
+            ("Preferences & Settings", "Open settings and backup tools (Ctrl+,)", self._open_settings_dialog),
+        ]
+        for label, detail, cb in actions:
+            entries.append(
+                PaletteEntry(
+                    category="Action",
+                    label=label,
+                    detail=detail,
+                    keywords=f"action command {label} {detail}",
+                    callback=cb,
+                )
+            )
+
+        # 3. Status Badges
+        def _insert_badge_in_notes(key: str) -> None:
+            if self.is_m365_workspace:
+                self.show_notes_workspace()
+            self.toolbar._insert_badge(key)
+
+        for tag_key, info in LOG_BADGES.items():
+            entries.append(
+                PaletteEntry(
+                    category="Badge",
+                    label=f"Insert Badge {info['label']}",
+                    detail=f"Triage status pill ({tag_key})",
+                    keywords=f"badge pill status {tag_key} {info['label']}",
+                    callback=lambda k=tag_key: _insert_badge_in_notes(k),
+                )
+            )
+
+        # 4. Templates (built-in + custom)
+        def _insert_template_in_notes(name: str) -> None:
+            if self.is_m365_workspace:
+                self.show_notes_workspace()
+            self._on_skeleton_selected(name)
+
+        for skel_name in TICKET_SKELETONS:
+            entries.append(
+                PaletteEntry(
+                    category="Template",
+                    label=skel_name,
+                    detail="Built-in ticket structure skeleton",
+                    keywords=f"template skeleton {skel_name}",
+                    callback=lambda n=skel_name: _insert_template_in_notes(n),
+                )
+            )
+        for tmpl in self.scratchpad_service.get_custom_templates():
+            title = tmpl.get("title", "")
+            if title:
+                entries.append(
+                    PaletteEntry(
+                        category="Template",
+                        label=title,
+                        detail="Custom saved technician template",
+                        keywords=f"template custom {title}",
+                        callback=lambda n=title: _insert_template_in_notes(n),
+                    )
+                )
+
+        # 5. Archived Tickets
+        for arch in self.scratchpad_service.get_archived_tickets(limit=30):
+            tid = arch.get("id")
+            if tid is None:
+                continue
+            t_num = arch.get("ticket_number", "")
+            client = arch.get("client_name", "")
+            subj = arch.get("title", "")
+            label = f"#{t_num}" + (f" — {client}" if client else "")
+            detail = subj or "Restore archived ticket"
+            entries.append(
+                PaletteEntry(
+                    category="Archive",
+                    label=label,
+                    detail=detail,
+                    keywords=f"archive restore ticket {t_num} {client} {subj}",
+                    callback=lambda _tid=tid: (
+                        self.show_notes_workspace() if self.is_m365_workspace else None,
+                        self._on_restore_ticket(_tid),
+                    ),
+                )
+            )
+
+        # 6. M365 Catalog Operations
+        catalog = getattr(self.m365_workspace, "catalog_service", None)
+        if catalog is not None:
+            for category in getattr(catalog, "categories", []):
+                if getattr(category, "kind", "") != "operations":
+                    continue
+                for op in catalog.operations(category.id):
+                    entries.append(
+                        PaletteEntry(
+                            category="M365",
+                            label=op.title,
+                            detail=f"{category.label} — {op.description}",
+                            keywords=f"m365 powershell {category.label} {op.id} {op.title} {op.description}",
+                            callback=lambda cid=category.id, oid=op.id: self._select_m365_operation(cid, oid),
+                        )
+                    )
+
+        return entries
+
+    def _open_command_palette(self) -> CommandPaletteDialog:
+        """Opens the Neon Aurora Quick Command Palette (Ctrl+K)."""
+        entries = self._build_command_palette_entries()
+        dlg = CommandPaletteDialog(entries, parent=self)
+        dlg.exec()
+        return dlg
 
     def _on_tab_context_menu(self, index: int, global_pos: QPoint) -> None:
         """Displays rich context menu on right-clicking a tab or the primary tab bar."""
@@ -2269,8 +2576,6 @@ class TechPadMainWindow(QMainWindow):
         # 1. Preserve normal workspace state
         self._saved_normal_geometry = self.saveGeometry()
         self._saved_was_maximized = self.isMaximized()
-        self._saved_row1_visible = self.toolbar.isVisible()
-        self._saved_row2_visible = self.toolbar.secondary_toolbar.isVisible()
         self._saved_drawer_visible = self.history_drawer.isVisible()
         self._saved_split_visible = not self.secondary_tab_widget.isHidden()
 
@@ -2279,9 +2584,13 @@ class TechPadMainWindow(QMainWindow):
 
         self._is_mini_hud = True
 
-        # 2. Hide bulky UI elements to maximize note space
-        self.toolbar.hide()
-        self.toolbar.secondary_toolbar.hide()
+        # 2. Keep both T-Notes toolbars visible in HUD mode; hide drawer/M365-only clutter
+        if self.is_m365_workspace:
+            self.toolbar.hide()
+            self.toolbar.secondary_toolbar.hide()
+        else:
+            self.toolbar.show()
+            self.toolbar.secondary_toolbar.show()
         if self._saved_drawer_visible:
             self.history_drawer.hide()
 
@@ -2342,6 +2651,9 @@ class TechPadMainWindow(QMainWindow):
         else:
             self.resize(440, 700)
 
+        if not self.is_m365_workspace:
+            self.toolbar.check_responsive_mode(self.width())
+
         # 7. Update HUD window title with active ticket info or M365
         if self.is_m365_workspace:
             self.setWindowTitle(f"📌 [HUD] {APP_NAME} — M365 Launcher")
@@ -2391,10 +2703,8 @@ class TechPadMainWindow(QMainWindow):
 
         # 3. Restore visibility of toolbar, drawer, and split view
         if not self.is_m365_workspace:
-            if getattr(self, "_saved_row1_visible", True):
-                self.toolbar.show()
-            if getattr(self, "_saved_row2_visible", True):
-                self.toolbar.secondary_toolbar.show()
+            self.toolbar.show()
+            self.toolbar.secondary_toolbar.show()
             if getattr(self, "_saved_drawer_visible", False):
                 if not self.history_auto_collapsed:
                     self.history_drawer.show()
@@ -2752,10 +3062,12 @@ class TechPadMainWindow(QMainWindow):
 
     def _check_responsive_layout(self, current_width: int) -> None:
         """Coordinates responsive toolbar, history drawer, and split view layout."""
-        if self.is_m365_workspace or self.is_mini_hud:
+        if self.is_m365_workspace:
             return
         if hasattr(self, "toolbar"):
             self.toolbar.check_responsive_mode(current_width)
+        if self.is_mini_hud:
+            return
         self._check_responsive_history(current_width)
         self._check_responsive_split(current_width)
 

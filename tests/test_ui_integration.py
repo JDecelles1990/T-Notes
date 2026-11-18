@@ -860,8 +860,8 @@ def test_ui_mini_hud_toggle_geometry_and_flags(main_window):
 
     assert main_window.is_mini_hud is True
     assert bool(main_window.windowFlags() & Qt.WindowStaysOnTopHint) is True
-    assert main_window.toolbar.isVisible() is False
-    assert main_window.toolbar.secondary_toolbar.isVisible() is False
+    assert main_window.toolbar.isVisible() is True
+    assert main_window.toolbar.secondary_toolbar.isVisible() is True
     assert main_window.width() <= 480
     assert main_window.height() >= 400
     assert "[HUD]" in main_window.windowTitle()
