@@ -1176,6 +1176,103 @@ def test_image_editor_cyber_neon_theme_effects_and_clean_export(qapp):
         QTest.qWait(10)
 
 
+def test_image_editor_highlighter_tool_and_button(qapp):
+    """Verifies the Cyber-Neon Highlighter button style, single-line fit, translucent stroke, move, and undo/redo."""
+    from PySide6.QtWidgets import QFrame, QHBoxLayout
+    from src.ui.dialogs.image_editor_cyber_fx import CyberClickShineEffect
+
+    # Draw bright green left half and dark navy right half to verify translucent blending
+    img = QImage(400, 240, QImage.Format_ARGB32_Premultiplied)
+    img.fill(QColor("#0a192f"))
+    for y in range(240):
+        for x in range(200):
+            img.setPixelColor(x, y, QColor("#22c55e"))
+
+    dlg = ResizeImageDialog(
+        current_width=400,
+        current_height=240,
+        original_width=400,
+        original_height=240,
+        image=img,
+    )
+    try:
+        dlg.showNormal()
+        dlg.resize(1020, 680)
+        dlg.layout().activate()
+        toolbar = dlg.findChild(QFrame, "annotationToolbar")
+        assert toolbar is not None
+        assert isinstance(toolbar.layout(), QHBoxLayout)
+        toolbar.layout().activate()
+        qapp.processEvents()
+
+        # 1. Button styling, Cyber Click Shine, and single-line fit
+        assert hasattr(dlg, "btn_tool_highlighter")
+        assert dlg.btn_tool_highlighter.text() == "🖍️"
+        assert dlg.btn_tool_highlighter.property("cyberTheme") == "solar"
+        assert isinstance(getattr(dlg.btn_tool_highlighter, "_cyber_click_shine", None), CyberClickShineEffect)
+        assert dlg.btn_tool_highlighter.geometry().right() <= toolbar.width()
+        assert abs(dlg.btn_tool_highlighter.y() - dlg.btn_tool_pen.y()) <= 4
+
+        # 2. Clicking activates TOOL_HIGHLIGHTER & updates live Cyber HUD status
+        dlg.btn_tool_highlighter.click()
+        assert dlg.btn_tool_highlighter.isChecked()
+        assert dlg.canvas._active_tool == ImageAnnotationCanvas.TOOL_HIGHLIGHTER
+        assert "HIGHLIGHTER" in dlg.lbl_cyber_hud_status.text()
+
+        # 3. Draw yellow highlighter across x=100..300 at y=120 using mouse events
+        dlg.canvas.set_color(QColor("#ffcc00"))
+        disp = dlg.canvas.get_image_display_rect()
+        sx = disp.width() / img.width()
+        sy = disp.height() / img.height()
+        vp_start = QPoint(int(disp.x() + 100 * sx), int(disp.y() + 120 * sy))
+        vp_mid = QPoint(int(disp.x() + 200 * sx), int(disp.y() + 120 * sy))
+        vp_end = QPoint(int(disp.x() + 300 * sx), int(disp.y() + 120 * sy))
+
+        dlg.canvas.mousePressEvent(
+            QMouseEvent(QEvent.MouseButtonPress, QPointF(vp_start), QPointF(vp_start), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        )
+        dlg.canvas.mouseMoveEvent(
+            QMouseEvent(QEvent.MouseMove, QPointF(vp_mid), QPointF(vp_mid), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        )
+        dlg.canvas.mouseMoveEvent(
+            QMouseEvent(QEvent.MouseMove, QPointF(vp_end), QPointF(vp_end), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
+        )
+        dlg.canvas.mouseReleaseEvent(
+            QMouseEvent(QEvent.MouseButtonRelease, QPointF(vp_end), QPointF(vp_end), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+        )
+
+        items = dlg.canvas.get_items()
+        assert len(items) == 1
+        hl_item = items[0]
+        assert hl_item.item_type == AnnotationItem.TYPE_HIGHLIGHTER
+        assert dlg.canvas.was_annotated() is True
+
+        # Verify translucent blending over both distinct background halves
+        baked = dlg.canvas.get_annotated_image()
+        left_px = baked.pixelColor(120, 120)
+        right_px = baked.pixelColor(280, 120)
+        # Underlying green stays partially intact & underlying navy stays distinct from yellow opaque replacement
+        assert left_px != QColor("#22c55e")
+        assert left_px != QColor("#ffcc00")
+        assert right_px != QColor("#0a192f")
+        assert right_px != QColor("#ffcc00")
+        assert left_px != right_px
+
+        # 4. Supports Select/Move and Undo/Redo
+        dlg.canvas.select_item_at(QPoint(150, 120))
+        assert dlg.canvas.get_selected_item() is hl_item
+        orig_y = hl_item.points[0].y()
+        dlg.canvas.move_selected_item(0, -30)
+        assert hl_item.points[0].y() == orig_y - 30
+
+        dlg.btn_undo.click()
+        assert dlg.canvas.get_items()[0].points[0].y() == orig_y
+        dlg.btn_redo.click()
+        assert dlg.canvas.get_items()[0].points[0].y() == orig_y - 30
+    finally:
+        dlg.deleteLater()
+
+
 
 
 

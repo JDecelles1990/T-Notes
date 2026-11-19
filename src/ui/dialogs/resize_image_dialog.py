@@ -288,6 +288,7 @@ class AnnotationItem:
     """Represents a movable, rotatable, re-editable vector annotation object on the canvas."""
 
     TYPE_PEN = "pen"
+    TYPE_HIGHLIGHTER = "highlighter"
     TYPE_LINE = "line"
     TYPE_CIRCLE = "circle"
     TYPE_RECTANGLE = "rectangle"
@@ -332,14 +333,20 @@ class AnnotationItem:
         """Rotates this item clockwise by angle_degrees."""
         self.rotation = (self.rotation + angle_degrees) % 360.0
 
+    def _effective_stroke_width(self) -> int:
+        """Returns visual stroke width (wide marker band for highlighters)."""
+        if self.item_type == self.TYPE_HIGHLIGHTER:
+            return max(14, self.stroke_width * 4)
+        return self.stroke_width
+
     def get_bounding_rect(self) -> QRect:
         """Returns the bounding box of this shape or text box in image pixel coordinates."""
         if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
             return self.rect.normalized()
-        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE) and self.points:
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_HIGHLIGHTER, self.TYPE_LINE) and self.points:
             xs = [p.x() for p in self.points]
             ys = [p.y() for p in self.points]
-            margin = max(6, self.stroke_width // 2 + 4)
+            margin = max(6, self._effective_stroke_width() // 2 + 4)
             return QRect(
                 min(xs) - margin,
                 min(ys) - margin,
@@ -373,8 +380,8 @@ class AnnotationItem:
         if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
             return b_rect.adjusted(-4, -4, 4, 4).contains(check_pt)
 
-        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE):
-            margin = max(6, self.stroke_width + 4)
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_HIGHLIGHTER, self.TYPE_LINE):
+            margin = max(6, self._effective_stroke_width() + 4)
             for p in self.points:
                 if (p.x() - check_pt.x()) ** 2 + (p.y() - check_pt.y()) ** 2 <= margin ** 2:
                     return True
@@ -410,8 +417,8 @@ class AnnotationItem:
         norm_bounds = new_bounds.normalized()
         if self.item_type in (self.TYPE_RECTANGLE, self.TYPE_CIRCLE, self.TYPE_TEXT):
             self.rect = QRect(norm_bounds)
-        elif self.item_type in (self.TYPE_PEN, self.TYPE_LINE) and initial_item.points:
-            margin = max(6, self.stroke_width // 2 + 4)
+        elif self.item_type in (self.TYPE_PEN, self.TYPE_HIGHLIGHTER, self.TYPE_LINE) and initial_item.points:
+            margin = max(6, self._effective_stroke_width() // 2 + 4)
             init_xs = [p.x() for p in initial_item.points]
             init_ys = [p.y() for p in initial_item.points]
             min_x, max_x = min(init_xs), max(init_xs)
@@ -461,6 +468,21 @@ class AnnotationItem:
                 for i in range(len(self.points) - 1):
                     painter.drawLine(self.points[i], self.points[i + 1])
 
+        elif self.item_type == self.TYPE_HIGHLIGHTER and len(self.points) > 0:
+            hl_color = QColor(self.color)
+            hl_color.setAlpha(95)
+            hl_width = self._effective_stroke_width()
+            painter.setBrush(Qt.NoBrush)
+            painter.setPen(QPen(hl_color, hl_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            hl_path = QPainterPath()
+            hl_path.moveTo(QPointF(self.points[0]))
+            if len(self.points) == 1:
+                hl_path.lineTo(QPointF(self.points[0].x() + 0.1, float(self.points[0].y())))
+            else:
+                for pt in self.points[1:]:
+                    hl_path.lineTo(QPointF(pt))
+            painter.drawPath(hl_path)
+
         elif self.item_type == self.TYPE_LINE and len(self.points) >= 2:
             painter.setPen(QPen(self.color, self.stroke_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             painter.drawLine(self.points[0], self.points[1])
@@ -505,6 +527,7 @@ class ImageAnnotationCanvas(QWidget):
 
     TOOL_SELECT = "select"
     TOOL_PEN = "pen"
+    TOOL_HIGHLIGHTER = "highlighter"
     TOOL_LINE = "line"
     TOOL_CIRCLE = "circle"
     TOOL_RECTANGLE = "rectangle"
@@ -1154,7 +1177,22 @@ class ImageAnnotationCanvas(QWidget):
                 glow_col.setAlpha(95)
                 stroke_px = max(1, int(self._stroke_width * scale_x))
 
-                if self._active_tool == self.TOOL_LINE:
+                if self._active_tool == self.TOOL_HIGHLIGHTER and self._freehand_points:
+                    hl_col = QColor(self._current_color)
+                    hl_col.setAlpha(95)
+                    hl_w = max(6, int(max(14, self._stroke_width * 4) * scale_x))
+                    vp_path = QPainterPath()
+                    p0 = self._freehand_points[0]
+                    vp_path.moveTo(rect.x() + p0.x() * scale_x, rect.y() + p0.y() * scale_y)
+                    if len(self._freehand_points) == 1:
+                        vp_path.lineTo(rect.x() + p0.x() * scale_x + 0.1, rect.y() + p0.y() * scale_y)
+                    else:
+                        for pt in self._freehand_points[1:]:
+                            vp_path.lineTo(rect.x() + pt.x() * scale_x, rect.y() + pt.y() * scale_y)
+                    painter.setBrush(Qt.NoBrush)
+                    painter.setPen(QPen(hl_col, hl_w, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                    painter.drawPath(vp_path)
+                elif self._active_tool == self.TOOL_LINE:
                     painter.setPen(QPen(glow_col, stroke_px + 5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
                     painter.drawLine(vp_start, vp_curr)
                     line_pen = QPen(self._current_color, stroke_px, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
@@ -1409,6 +1447,13 @@ class ImageAnnotationCanvas(QWidget):
                     painter.end()
                     self._freehand_points.append(img_pt)
                     self._was_annotated = True
+                elif self._active_tool == self.TOOL_HIGHLIGHTER:
+                    if (event.modifiers() & Qt.ShiftModifier) and self._drag_start:
+                        snapped = self.snap_to_straight_line(self._drag_start, img_pt)
+                        self._freehand_points = [self._drag_start, snapped]
+                    else:
+                        self._freehand_points.append(img_pt)
+                    self._was_annotated = True
                 self.update()
             return
 
@@ -1484,6 +1529,18 @@ class ImageAnnotationCanvas(QWidget):
             elif self._active_tool == self.TOOL_PEN and len(self._freehand_points) >= 1:
                 item = AnnotationItem(
                     AnnotationItem.TYPE_PEN,
+                    self._current_color,
+                    self._stroke_width,
+                    points=self._freehand_points,
+                )
+                self._items.append(item)
+                self._selected_item = item
+                self._was_annotated = True
+                self._regenerate_current_image()
+
+            elif self._active_tool == self.TOOL_HIGHLIGHTER and len(self._freehand_points) >= 1:
+                item = AnnotationItem(
+                    AnnotationItem.TYPE_HIGHLIGHTER,
                     self._current_color,
                     self._stroke_width,
                     points=self._freehand_points,
@@ -1669,6 +1726,7 @@ class ResizeImageDialog(QDialog):
     _TOOL_HUD_LABELS: dict[str, tuple[str, str]] = {
         ImageAnnotationCanvas.TOOL_SELECT: ("↖️ SELECT / MOVE", "#00f0ff"),
         ImageAnnotationCanvas.TOOL_PEN: ("✏️ NEON PEN", "#ff007f"),
+        ImageAnnotationCanvas.TOOL_HIGHLIGHTER: ("🖍️ HIGHLIGHTER", "#ffe600"),
         ImageAnnotationCanvas.TOOL_LINE: ("📏 LASER LINE", "#ffbe0b"),
         ImageAnnotationCanvas.TOOL_CIRCLE: ("⭕ PLASMA CIRCLE", "#c77dff"),
         ImageAnnotationCanvas.TOOL_RECTANGLE: ("🔲 CYBER RECT", "#00ff9d"),
@@ -1762,8 +1820,8 @@ class ResizeImageDialog(QDialog):
             toolbar_box.setToolTip("Double-click top bar to toggle full screen")
 
             tb_layout = QHBoxLayout(toolbar_box)
-            tb_layout.setContentsMargins(6, 5, 6, 5)
-            tb_layout.setSpacing(3)
+            tb_layout.setContentsMargins(5, 5, 5, 5)
+            tb_layout.setSpacing(2)
 
             # Drawing / Shape Tools (each styled with its own colorful cyber gradient)
             self.tool_group = QButtonGroup(self)
@@ -1787,6 +1845,15 @@ class ResizeImageDialog(QDialog):
             style_cyber_button(self.btn_tool_pen, "magenta", compact=True, radius=6)
             self.tool_group.addButton(self.btn_tool_pen)
             tb_layout.addWidget(self.btn_tool_pen)
+
+            self.btn_tool_highlighter = QToolButton()
+            self.btn_tool_highlighter.setText("🖍️")
+            self.btn_tool_highlighter.setCheckable(True)
+            self.btn_tool_highlighter.setToolTip("Highlighter (H) — Translucent neon marker (Hold Shift for straight highlight)")
+            self.btn_tool_highlighter.clicked.connect(lambda: self._set_canvas_tool(ImageAnnotationCanvas.TOOL_HIGHLIGHTER))
+            style_cyber_button(self.btn_tool_highlighter, "solar", compact=True, radius=6)
+            self.tool_group.addButton(self.btn_tool_highlighter)
+            tb_layout.addWidget(self.btn_tool_highlighter)
 
             self.btn_tool_line = QToolButton()
             self.btn_tool_line.setText("📏")
@@ -1998,6 +2065,7 @@ class ResizeImageDialog(QDialog):
             self._toolbar_text_buttons = [
                 self.btn_tool_select,
                 self.btn_tool_pen,
+                self.btn_tool_highlighter,
                 self.btn_tool_line,
                 self.btn_tool_circle,
                 self.btn_tool_rect,
@@ -2022,6 +2090,7 @@ class ResizeImageDialog(QDialog):
             # Keyboard shortcuts for tools, undo/redo, zoom, and maximize
             QShortcut(QKeySequence("V"), self, lambda: self.btn_tool_select.click())
             QShortcut(QKeySequence("P"), self, lambda: self.btn_tool_pen.click())
+            QShortcut(QKeySequence("H"), self, lambda: self.btn_tool_highlighter.click())
             QShortcut(QKeySequence("L"), self, lambda: self.btn_tool_line.click())
             QShortcut(QKeySequence("C"), self, lambda: self.btn_tool_circle.click())
             QShortcut(QKeySequence("R"), self, lambda: self.btn_tool_rect.click())
@@ -2170,10 +2239,11 @@ class ResizeImageDialog(QDialog):
             lbl_keys_body = QLabel(
                 "<span style='color:#00f0ff'><b>V</b></span> Select • "
                 "<span style='color:#ff4da6'><b>P</b></span> Pen • "
-                "<span style='color:#ffbe0b'><b>L</b></span> Line<br>"
+                "<span style='color:#ffe600'><b>H</b></span> Highlight<br>"
+                "<span style='color:#ffbe0b'><b>L</b></span> Line • "
                 "<span style='color:#c77dff'><b>C</b></span> Circle • "
-                "<span style='color:#00ff9d'><b>R</b></span> Rect • "
-                "<span style='color:#ff7b00'><b>T</b></span> Text<br>"
+                "<span style='color:#00ff9d'><b>R</b></span> Rect<br>"
+                "<span style='color:#ff7b00'><b>T</b></span> Text • "
                 "<span style='color:#38bdf8'><b>Ctrl+R</b></span> Rotate • "
                 "<span style='color:#f472b6'><b>F11</b></span> Fullscreen"
             )
@@ -2425,6 +2495,8 @@ class ResizeImageDialog(QDialog):
             self.btn_tool_select.setChecked(True)
         elif tool_name == ImageAnnotationCanvas.TOOL_PEN:
             self.btn_tool_pen.setChecked(True)
+        elif tool_name == ImageAnnotationCanvas.TOOL_HIGHLIGHTER:
+            self.btn_tool_highlighter.setChecked(True)
         elif tool_name == ImageAnnotationCanvas.TOOL_LINE:
             self.btn_tool_line.setChecked(True)
         elif tool_name == ImageAnnotationCanvas.TOOL_CIRCLE:

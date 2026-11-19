@@ -299,6 +299,7 @@ Technicians can annotate, call out, and mark up screenshots directly within T-No
   - **In-Place Re-Editing:** Double-clicking any placed text box in Select mode re-opens the `TextAnnotationDialog` to update its text content, font size, or callout border.
   - **Escape:** Press `Esc` to deselect the active item.
 - **✏️ Freehand Pen (`TOOL_PEN` / `P`):** Freeform pen drawing with anti-aliasing and smooth joint caps for circling anomalous log lines or diagram components.
+- **🖍️ Highlighter (`TOOL_HIGHLIGHTER` / `H`):** Translucent wide-band neon marker (`TYPE_HIGHLIGHTER`) for highlighting log lines, screenshots, and UI fields without obscuring underlying text (hold `Shift` while dragging to snap a straight horizontal, vertical, or 45° highlight). Fully selectable, movable, resizable, rotatable, and undoable.
 - **📏 Straight Line Tool (`TOOL_LINE` / `L`):**
   - **Vector Line Drawing:** Click and drag to create crisp two-point callout lines and pointers with anti-aliasing, rounded end caps, and custom stroke thickness.
   - **Paint-Style Shift Straight-Snapping:** Holding `Shift` while dragging automatically snaps the line angle to perfectly straight horizontal ($0^\circ, 180^\circ$), vertical ($90^\circ, 270^\circ$), or $45^\circ$ diagonal angles ($45^\circ, 135^\circ, 225^\circ, 315^\circ$), exactly replicating Microsoft Paint.
