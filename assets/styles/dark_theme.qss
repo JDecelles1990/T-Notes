@@ -490,11 +490,16 @@ QMenu::separator {
 }
 
 QToolTip {
-    background-color: #0f172a;
-    color: #f8fafc;
-    border: 1px solid #38bdf8;
-    border-radius: 5px;
-    padding: 5px 8px;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 1,
+        stop: 0 #090d24,
+        stop: 0.45 #180d34,
+        stop: 1 #082131
+    );
+    color: #e0f2fe;
+    border: 1.5px solid #38bdf8;
+    border-radius: 9px;
+    padding: 6px 10px;
 }
 
 /* Neon Slider & CheckBoxes */

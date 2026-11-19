@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import LOCAL_IMAGE_URL_PREFIX
 from src.services.image_service import ImageService
+from src.ui.components.aurora_tooltip import hide_aurora_tooltip, show_aurora_tooltip
 from src.ui.dialogs.resize_image_dialog import ResizeImageDialog
 from src.ui.components.find_replace_bar import FindReplaceBar
 
@@ -888,7 +889,12 @@ class TechPadEditor(QTextEdit):
             self._resize_current_height = new_h
             self.viewport().setCursor(Qt.SizeFDiagCursor)
             self.viewport().update()
-            QToolTip.showText(self.mapToGlobal(event.pos()), f"{new_w} × {new_h} px (Hold Shift to unconstrain)", self)
+            show_aurora_tooltip(
+                self.mapToGlobal(event.pos()),
+                f"{new_w} × {new_h} px (Hold Shift to unconstrain)",
+                owner=self,
+                sticky=True,
+            )
             event.accept()
             return
 
@@ -993,6 +999,7 @@ class TechPadEditor(QTextEdit):
                         parent_win.status_bar.showMessage(f"✓ Resized image to {new_w} × {new_h} px", 3000)
             self.viewport().setCursor(Qt.IBeamCursor)
             self.viewport().update()
+            hide_aurora_tooltip()
             event.accept()
             return
 

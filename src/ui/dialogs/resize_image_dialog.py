@@ -2611,11 +2611,16 @@ class ResizeImageDialog(QDialog):
                 border-color: #ffffff;
             }
             QToolTip {
-                background-color: #0e0826;
-                color: #ffffff;
-                border: 1.5px solid #00f0ff;
-                border-radius: 6px;
-                padding: 5px 8px;
+                background: qlineargradient(
+                    x1: 0, y1: 0, x2: 1, y2: 1,
+                    stop: 0 #090d24,
+                    stop: 0.45 #180d34,
+                    stop: 1 #082131
+                );
+                color: #e0f2fe;
+                border: 1.5px solid #00f5ff;
+                border-radius: 9px;
+                padding: 6px 10px;
             }
         """)
         for btn in getattr(self, "_toolbar_text_buttons", []):

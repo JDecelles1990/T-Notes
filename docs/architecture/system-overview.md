@@ -320,6 +320,17 @@ Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow ins
 - **Shimmer strips (`AuroraAccentBar`):** Pin-attached 2px gradient accent strips mounted along the bottom edge of `secondary_toolbar` and top edge of `status_bar` (`WA_TransparentForMouseEvents`), tracking resize/show/hide events without perturbing toolbar layout geometry.
 - **Feedback pulse (`pulse_widget_glow`):** Flashes a fading glow halo around status-bar telemetry/save pills on save completion or clipboard exports.
 
+### 6.4 Global Neon Aurora Hover Tooltips (`src/ui/components/aurora_tooltip.py`)
+
+- `install_aurora_tooltips(app)` (idempotently invoked in `src/main.py` and `TechPadMainWindow.__init__`) registers `AuroraToolTipManager` as a single application-level event filter on `QApplication` without modifying any buttons, button stylesheets, or `GlowAnimator` instances.
+- **Universal Tooltip Resolution:** Intercepts `QEvent.ToolTip` (`QHelpEvent`) across standard widgets (`QPushButton`, `QToolButton` + `defaultAction`, `QLineEdit`, `QSlider`, `QSpinBox`, etc.), `QTabBar` per-tab tooltips (`TechPadTabBar`), `QAbstractItemView` viewports (`Qt.ToolTipRole` in `HistoryDrawer` and M365 lists), `QMenu` actions, and `QAbstractScrollArea` viewports (`TechPadEditor`). Live inline image drag-resize feedback in `TechPadEditor` also routes through `show_aurora_tooltip(..., sticky=True)` and `hide_aurora_tooltip()`.
+- **Custom Translucent Rendering (`AuroraToolTipWidget`):** Frameless `Qt.ToolTip` overlay (`WA_TranslucentBackground`, `WA_ShowWithoutActivating`, `WindowTransparentForInput`) painting:
+  - Multi-layer outer iridescent neon glow halo inside a `11px` transparent perimeter margin (`GLOW_MARGIN`) so outer glow never clips.
+  - Deep jewel-tone aurora glass background (midnight sapphire, royal amethyst, emerald-teal) with drifting radial aurora light pools, a glossy top reflection, and an animated diagonal sheen sweep.
+  - Rotating iridescent rainbow `QConicalGradient` neon perimeter border with an inner specular chrome rim and orbiting starlight border glints.
+  - Dynamic flowing rainbow text rendered via DPR-aware alpha masking (`QTextLayout` + `CompositionMode_SourceIn`) over a crisp dark contrast drop-shadow, supporting multi-line wrapping and basic rich-text normalization.
+- **Transitions & CPU Hygiene:** Smoothly animates `windowOpacity` + subtle vertical glide on appear (`175ms`, `OutCubic`) and disappear (`135ms`, `InCubic`), honoring `panel_transition.TRANSITIONS_ENABLED` for deterministic synchronous unit tests. Clamps strictly within the active monitor's `availableGeometry()` across multi-monitor layouts. Its `~33ms` effect timer runs strictly while visible and stops immediately upon hiding (0% idle CPU).
+
 ## 7. Side-Pane Slide Transitions (`src/ui/components/panel_transition.py`)
 
 `PanelWidthTransition` animates a pane's width (220ms, InOutCubic `QVariantAnimation` driving `setFixedWidth`) when it is toggled. It is used by:

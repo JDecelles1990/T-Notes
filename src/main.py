@@ -29,6 +29,7 @@ from src.services.backup_service import BackupService
 from src.services.image_service import ImageService
 from src.services.scratchpad_service import ScratchpadService
 from src.services.session_service import SessionService
+from src.ui.components.aurora_tooltip import install_aurora_tooltips
 from src.ui.components.system_tray import get_or_create_app_icon
 from src.ui.main_window import TechPadMainWindow
 
@@ -52,6 +53,9 @@ def main() -> int:
     if DEFAULT_QSS_PATH.exists():
         with open(DEFAULT_QSS_PATH, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
+
+    # Install global Neon Aurora hover tooltips (does not modify any buttons)
+    install_aurora_tooltips(app)
 
     # Initialize Database & Run Migrations
     db_manager = DatabaseManager(DEFAULT_DB_PATH)

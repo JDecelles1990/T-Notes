@@ -119,9 +119,11 @@ class TechPadMainWindow(QMainWindow):
         self._restore_workspace()
         self._refresh_template_menus()
 
-        # Install application-level event filter for reliable global shortcut interception
+        # Install application-level event filters for global shortcuts and Aurora tooltips
         if app := QApplication.instance():
             app.installEventFilter(self)
+            from src.ui.components.aurora_tooltip import install_aurora_tooltips
+            install_aurora_tooltips(app)
 
     def eventFilter(self, watched, event) -> bool:
         """Application-level event filter intercepting tab shortcuts across all widgets.
