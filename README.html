@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.14" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    em, em em em, em em em em em {
+      font-style: italic;
+    }
+    em em, em em em em {
+      font-style: normal;
+    }
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }  </style>
+</head>
+<body>
+<h1 id="t-notes">T-Notes</h1>
+<blockquote>
+<p>Desktop IT technician scratchpad, screenshot annotation studio, and
+read-only <strong>Microsoft 365 / PowerShell 7</strong> diagnostic
+workspace built with <strong>PySide6</strong>, <strong>SQLite (WAL +
+FTS5)</strong>, and <strong>JPEG</strong> media storage.</p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#overview">Overview</a></li>
+<li><a href="#how-t-notes-works-features--daily-workflow">How T-Notes
+Works (Features &amp; Daily Workflow)</a></li>
+<li><a href="#how-to-use-the-m365-powershell-launcher-altf8">How to Use
+the M365 PowerShell Launcher (<code>Alt+F8</code>)</a></li>
+<li><a href="#m365-powershell-scripts-audit-all-25-scripts">M365
+PowerShell Scripts Audit (All 25 Scripts)</a></li>
+<li><a href="#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#installation--running">Installation &amp; Running</a></li>
+<li><a href="#local-data-locations">Local Data Locations</a></li>
+<li><a href="#testing--verification">Testing &amp; Verification</a></li>
+<li><a href="#architecture--project-structure">Architecture &amp;
+Project Structure</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><strong>T-Notes</strong> (TechPad) is designed for IT helpdesk
+technicians, systems administrators, and MSP engineers handling multiple
+concurrent troubleshooting tickets. Rather than juggling scattered plain
+text files, external paint apps, browser consoles, and standalone
+PowerShell windows, T-Notes unifies:</p>
+<ul>
+<li>A <strong>Neon Aurora Glass Dark</strong> rich-text multi-tab
+scratchpad with live telemetry, SQLite WAL + FTS5 persistence, auto-save
+debouncing, and Windows System Tray quick-summon (<code>F8</code>).</li>
+<li>Built-in technician workflow helpers including <strong>Split
+View</strong> (<code>Alt+Z</code>), an always-on-top
+<strong>Mini-HUD</strong> (<code>Alt+T</code>), a <strong>Quick Command
+Palette</strong> (<code>Ctrl+K</code>), a <strong>Smart Entity Extractor
+&amp; Tech Quick-Tools</strong> (<code>Ctrl+Alt+Q</code>), a billable
+<strong>Ticket Stopwatch</strong>, and <strong>Bilingual (EN/FR) Client
+&amp; PSA Summary Formatters</strong>.</li>
+<li>A full-screen <strong>Cyber Neon Studio Image Editor</strong> with
+non-destructive vector callouts, a translucent neon
+<strong>Highlighter</strong> (<code>H</code>), Paint-style text boxes,
+rotation/resize handles, zoom/pan, and undo/redo.</li>
+<li>An isolated <strong>M365 PowerShell Launcher</strong>
+(<code>Alt+F8</code>) running <strong>25 contract-validated, read-only
+PowerShell 7 operations</strong> across 11 Microsoft 365 workloads plus
+<strong>5 guided multi-step triage workflows</strong> against either
+<strong>Offline Synthetic</strong> fixtures or <strong>Live
+Tenants</strong>.</li>
+</ul>
+<hr />
+<h2 id="how-t-notes-works-features-daily-workflow">How T-Notes Works
+(Features &amp; Daily Workflow)</h2>
+<h3 id="t-notes-scratchpad-workspace-visual-motion">1. T-Notes
+Scratchpad Workspace &amp; Visual Motion</h3>
+<ul>
+<li><strong>Multi-Tab Ticket Scratchpads:</strong> Open multiple
+concurrent tickets across reorderable colored tabs with rainbow
+hover/press tab glows and matching top-border accents
+(<code>Ctrl+T</code> new tab, double-click tab header to edit ticket
+number/client/summary). Tab order, active selection, and closed-tab undo
+(<code>Ctrl+Shift+T</code>) are preserved across restarts in
+SQLite.</li>
+<li><strong>Side-by-Side Split View (<code>Alt+Z</code>):</strong> Edit
+two ticket scratchpads simultaneously across a draggable horizontal
+splitter (<code>Alt+Shift+Z</code> flips active panes when compressed
+into compact single-pane mode below 750 px). Drag a tab to the
+left/right edges to cross-move tickets between panes.</li>
+<li><strong>Always-on-Top Mini-HUD (<code>Alt+T</code>):</strong> Docks
+T-Notes as a compact <code>440 px</code>-wide right-hand overlay pinned
+above other windows while keeping both top formatting/workflow toolbars
+visible in responsive compact mode.</li>
+<li><strong>Background System Tray &amp; Instant Summon
+(<code>F8</code>):</strong> Closing to the tray keeps T-Notes running
+silently in the background; press <code>F8</code> system-wide on Windows
+to pop it immediately to focus or hide it back.</li>
+<li><strong>Live Status Bar &amp; Telemetry:</strong> Displays glowing
+status pills for save state (<code>● Saved</code> /
+<code>↻ Saving...</code>), active ticket word/line/checklist/image
+counts (<code>lbl_telemetry</code>), and quick module toggles
+(<code>HUD</code>, <code>M365 Launcher</code>/<code>T-Notes</code>,
+<code>Split</code>/<code>Categories</code>,
+<code>History</code>/<code>Active Ticket</code>).</li>
+<li><strong>Neon Aurora Glass Dark UI:</strong> Glossy multi-stop dark
+glass toolbars and inputs, preserved rainbow glow around buttons and
+tabs, animated <code>2 px</code> aurora shimmer accent bars, input
+hover/focus halos, smooth workspace/tab fades, and animated modal
+entrances.</li>
+</ul>
+<h3 id="rich-text-editor-checklists-triage-badges-ticket-stopwatch">2.
+Rich-Text Editor, Checklists, Triage Badges &amp; Ticket Stopwatch</h3>
+<ul>
+<li><strong>Formatting &amp; Code Blocks:</strong> Apply
+Bold/Italic/Underline, text/highlight colors, interactive bullet
+checklists (<code>[]</code> + <code>Space</code>,
+<code>Ctrl+Alt+L</code>, auto-continuing on <code>Enter</code>), URL
+auto-linking (clickable hyperlinks on
+<code>Space</code>/<code>Enter</code>), and monospaced dark
+CLI/PowerShell containers (<code>Ctrl+Alt+C</code>).</li>
+<li><strong>9 Triage Status Pills:</strong> Inject color-coded inline
+badges via <strong>🏷️ Tag</strong> or
+<code>Alt+1</code>–<code>Alt+4</code> (<code>PASS</code>,
+<code>FAIL</code>, <code>WARN</code>, <code>INFO</code>), plus extended
+workflow pills (<code>RESOLVED</code>, <code>BLOCKED</code>,
+<code>WAITING</code>, <code>P1</code>, <code>VIP</code>) searchable via
+the toolbar menu or Command Palette.</li>
+<li><strong>In-Note Find &amp; Replace (<code>Ctrl+F</code> /
+<code>Ctrl+H</code>):</strong> Floating glass overlay bar with match
+counter, whole-word/case options, and single/bulk replacement.</li>
+<li><strong>Built-In Skeletons &amp; Custom Rich Templates:</strong>
+Insert standard triage structures (<strong>📋 Template</strong>) or
+create portable rich-text templates with embedded images using
+<code>AddTemplateDialog</code>.</li>
+<li><strong>Billable Ticket Stopwatch (<code>⏱️</code>):</strong> Tracks
+per-ticket troubleshooting duration in SQLite and displays live minutes
+right in the tab title (<code>#INC-101 (14m)</code>). Uses Win32
+<code>GetLastInputInfo</code> / <code>OpenInputDesktop</code> to
+auto-pause after workstation lock or 5 minutes of inactivity.</li>
+</ul>
+<h3 id="technician-productivity-tools-ctrlk-ctrlaltq">3. Technician
+Productivity Tools (<code>Ctrl+K</code> &amp;
+<code>Ctrl+Alt+Q</code>)</h3>
+<ul>
+<li><strong>Quick Command Palette (<code>Ctrl+K</code> or
+<code>🔍</code>):</strong> Opens a keyboard-first fuzzy search modal
+indexing:
+<ul>
+<li>All open tabs (Primary &amp; Split panes)</li>
+<li>Core layout &amp; editor actions (New Tab, Split View, HUD, History
+Drawer, Workspace switch, Summary Formatter)</li>
+<li>All 9 triage badges and all built-in + custom templates</li>
+<li>Archived tickets (instant non-destructive restore)</li>
+<li>Registered M365 operations (switches directly to M365 Launcher and
+selects the target category &amp; script)</li>
+</ul></li>
+<li><strong>Tech Quick-Tools &amp; Smart Entity Extractor
+(<code>Ctrl+Alt+Q</code> or <code>⚡</code>):</strong>
+<ul>
+<li>Automatically scans the active ticket note for deduplicated
+<strong>Emails / UPNs</strong>, <strong>GUIDs / Entra Object
+IDs</strong>, <strong>IPv4 addresses</strong>, <strong>Ticket
+IDs</strong> (<code>INC-</code>, <code>SR-</code>, <code>CHG-</code>,
+<code>PRB-</code>, <code>TASK-</code>, <code>RITM-</code>,
+<code>TKT-</code>, <code>CASE-</code>), and <strong>URLs</strong>.</li>
+<li>Provides 1-click <strong>Copy</strong>, <strong>Insert into
+Note</strong>, and
+<strong><code>☁️ Send UPN/GUID to M365 Target</code></strong> (populates
+the M365 target fields and opens the M365 workspace).</li>
+<li>Includes instant generators for <strong>cryptographically random
+Temp Passwords</strong> (<code>8–64</code> chars via
+<code>secrets</code>), <strong>UUID v4</strong> strings, and
+<strong>Local + UTC ISO Timestamps</strong>.</li>
+</ul></li>
+</ul>
+<h3 id="image-pipeline-cyber-neon-studio-image-editor">4. Image Pipeline
+&amp; Cyber Neon Studio Image Editor</h3>
+<ul>
+<li><strong>Efficient JPEG Storage
+(<code>image://local/&lt;uuid&gt;</code>):</strong> Pasting screenshots
+(<code>Win+Shift+S</code> / <code>Ctrl+V</code>) or dropping image files
+automatically compresses media to JPEG (quality <code>85</code>) stored
+in SQLite <code>scratchpad_images</code> BLOBs—never raw BMP/PNG
+bloat.</li>
+<li><strong>Inline Image Manipulation:</strong> Click an image in the
+note editor to resize via bottom-right corner drag handle or press
+<code>Delete</code>/<code>Backspace</code> to remove it; double-click
+(or right-click → <strong>🖼️ Image Editor</strong>) to launch the full
+editor.</li>
+<li><strong>Cyber Neon Studio Image Editor
+(<code>ResizeImageDialog</code> &amp;
+<code>TextAnnotationDialog</code>):</strong>
+<ul>
+<li>Pops up maximized full-screen by default (double-click top bar or
+<code>F11</code> toggles normal <code>1020×680</code> mode) with a
+dedicated futuristic cyber-neon visual theme: colorful multi-stop
+gradient buttons with diagonal prism click-shine sweeps, continuously
+color-shifting rainbow borders and laser divider lines, holographic
+blueprint canvas grid, animated spinboxes/textboxes, and a live
+tool/zoom HUD readout.</li>
+<li>Single-line top bar provides:
+<ul>
+<li><strong>↖️ Select / Move (<code>V</code>):</strong> Move, resize
+(corner &amp; side handles), edge-drag reposition, nudge
+(<code>Arrow Keys</code>), and free-rotate (<code>[</code>,
+<code>]</code>, <code>Ctrl+R</code>, or overhead plasma handle with
+optional <code>Shift</code> 15° snap).</li>
+<li><strong>✏️ Neon Pen (<code>P</code>):</strong> Smooth anti-aliased
+freehand drawing.</li>
+<li><strong>🖍️ Highlighter (<code>H</code>):</strong> Wide translucent
+fluorescent marker (<code>alpha = 95</code>) in a single path pass so
+overlapping strokes stay crisp and underlying text remains readable
+(<code>Shift+Drag</code> snaps straight horizontal/vertical/45°
+highlight).</li>
+<li><strong>📏 Laser Line (<code>L</code>), ⭕ Circle (<code>C</code>),
+🔲 Rectangle (<code>R</code>):</strong> Vector shapes
+(<code>Shift+Drag</code> straight snapping for lines).</li>
+<li><strong>🔤 Paint-Style Text Box (<code>T</code>):</strong> Drag a
+bounding rectangle to enter multi-line high-contrast shadowed text
+(<code>8–96 pt</code>) with optional dark callout border; double-click
+placed text in Select mode to re-edit.</li>
+<li><strong>Palette &amp; Precision Controls:</strong> 6 color swatches
++ custom 24-bit picker (<code>🎨</code>), 4 stroke widths
+(<code>2px</code>, <code>4px</code>, <code>8px</code>,
+<code>12px</code>), zoom (<code>25%–500%</code>,
+<code>Ctrl+Wheel</code>, right/middle-drag pan), 40-step
+Undo/Redo/Reset, and proportional dimension presets (<code>25%</code>,
+<code>50%</code>, <code>75%</code>, <code>100%</code>,
+<code>Fit to Pane Width</code>).</li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="export-bilingual-summary-formatter-email">5. Export, Bilingual
+Summary Formatter &amp; Email</h3>
+<ul>
+<li><strong>Copy Formatted Note (<code>Ctrl+Shift+C</code>):</strong>
+Copies rich HTML with Base64-inlined images and preserved
+formatting/checklists to the clipboard.</li>
+<li><strong>Clean PSA / Ticket Export (<code>Ctrl+Alt+N</code> &amp;
+<code>Ctrl+Alt+E</code>):</strong> Exports stripped clean Markdown/plain
+text to the clipboard (<code>Ctrl+Alt+N</code>) or writes dated
+<code>.txt</code> notes into <code>T-Notes/&lt;YYYY-MM-DD&gt;/</code>
+(<code>Ctrl+Alt+E</code>).</li>
+<li><strong>Bilingual EN/FR Summary Formatter &amp; Email
+(<code>Ctrl+Alt+M</code>):</strong> Automatically extracts
+<em>Issue</em>, <em>Troubleshooting</em>, <em>Resolution</em>, <em>Root
+Cause</em>, and <em>Next Steps</em> sections in English or French
+(<code>SummaryFormatterDialog</code>) for Client Resolution Emails,
+Internal PSA Work Notes (with rounded 15-minute billable time), or
+Escalation Handovers, or launches a pre-filled <code>mailto:</code>
+draft (<code>Ctrl+Alt+M</code>).</li>
+</ul>
+<h3 id="history-fts5-search-automated-backups-startup">6. History, FTS5
+Search, Automated Backups &amp; Startup</h3>
+<ul>
+<li><strong>Full-Text History Drawer (<code>Alt+H</code>):</strong>
+Instant SQLite FTS5 prefix/token search across active and archived
+tickets, with non-destructive restore to Primary or Split panes.</li>
+<li><strong>Rolling Online SQLite Backups &amp; ZIP Export:</strong>
+Daily automated <code>sqlite3.Connection.backup()</code> snapshots
+(7-day retention) under <code>%LOCALAPPDATA%\TechPad\backups\</code> and
+bulk portable ZIP exports (<code>tickets/*.md</code> +
+<code>images/</code> + <code>manifest.json</code>) via <strong>Settings
+(<code>Ctrl+,</code>)</strong>.</li>
+<li><strong>Windows Startup (<code>HKCU</code>):</strong> Optional
+silent <code>--tray</code> boot configurable in Preferences.</li>
+</ul>
+<hr />
+<h2 id="how-to-use-the-m365-powershell-launcher-altf8">How to Use the
+M365 PowerShell Launcher (<code>Alt+F8</code>)</h2>
+<p>Switch between <strong>T-Notes</strong> and the <strong>M365
+PowerShell Launcher</strong> at any time by clicking
+<strong><code>M365 Launcher</code></strong> /
+<strong><code>T-Notes</code></strong> in the bottom status bar or
+pressing <strong><code>Alt+F8</code></strong>. Switching automatically
+saves dirty notes and keeps the current focus ticket open in the
+right-hand <strong>Active Ticket Sidebar</strong> (using the same live
+<code>QTextDocument</code>, formatting bar, and stopwatch—zero sync
+lag).</p>
+<h3 id="workspace-layout-3-panes">Workspace Layout (3 Panes)</h3>
+<ol type="1">
+<li><strong>Left Pane — Category Navigation:</strong> Switch between
+<strong>📊 Dashboard</strong>, <strong>🏢 Companies &amp;
+Context</strong>, <strong>11 M365 Operation Categories</strong>, and
+<strong>⇄ Guided Workflows</strong>.</li>
+<li><strong>Center Pane — Operations Workbench:</strong> Contains
+<strong>Company Selection</strong>, <strong>Authentication &amp; Tenant
+Context</strong>, <strong>Script Catalog</strong> (with search, risk,
+and lifecycle filters), typed <strong>Parameters</strong>,
+<strong>Execution Workspace</strong>, and <strong>Parsed
+Results</strong>.</li>
+<li><strong>Right Pane — Active Ticket Sidebar:</strong> Full live view
+of the currently focused ticket note where you can click <strong>Insert
+Result into Ticket</strong> to document diagnostic output
+immediately.</li>
+</ol>
+<h3
+id="mode-a-offline-synthetic-mode-safe-local-testing-no-live-tenant-needed">Mode
+A: Offline Synthetic Mode (Safe Local Testing — No Live Tenant
+Needed)</h3>
+<ol type="1">
+<li>Open the M365 workspace (<code>Alt+F8</code>).</li>
+<li>Click <strong><code>🧪 Load Synthetic Snapshot</code></strong> (or
+use <strong>Quick Setup Context</strong> in the Dashboard/Companies
+card) to load all 25 operations bound to deterministic synthetic
+fixtures for <em>Alpine Ski House</em>
+(<code>client@alpine.example</code>).</li>
+<li>Browse any category, adjust parameters (e.g., <code>DaysBack</code>,
+<code>RiskLevel</code>), click <strong>Run Selected Operation</strong>
+or <strong>Run Workflow</strong>, and inspect structured JSON/Summary
+output in <strong>Parsed Results</strong>.</li>
+</ol>
+<h3
+id="mode-b-live-tenant-read-only-diagnostics-host-owned-authentication">Mode
+B: Live Tenant Read-Only Diagnostics (Host-Owned Authentication)</h3>
+<ol type="1">
+<li><strong>Check Environment Prerequisites:</strong> Ensure
+<strong>PowerShell 7</strong> (<code>pwsh</code> 7.4+) and the read-only
+Graph/Exchange modules are installed, then switch the top toggle to
+<strong>Live Pilot</strong> and run <strong>Preflight</strong> to verify
+module availability.</li>
+<li><strong>Select Company &amp; Administrator Profile:</strong> Choose
+or add a tenant profile (domain, tenant ID, admin UPN) and click
+<strong>Confirm Company</strong>.</li>
+<li><strong>Connect Services via Host-Owned Auth:</strong> Click
+<strong>Connect Graph</strong> and/or <strong>Connect Exchange
+Online</strong>. Authentication is owned strictly by the persistent host
+worker (<code>pwsh</code>); individual script files never contain login
+prompts, credentials, or token storage.</li>
+<li><strong>Bind Target User / Object ID:</strong> Type the client
+email/UPN or Entra Object GUID directly—or while reading a ticket note
+in T-Notes, press <strong><code>Ctrl+Alt+Q</code></strong>
+(<code>⚡ Tech Quick-Tools</code>) and click
+<strong><code>☁️ Send UPN/GUID to M365 Target</code></strong> to
+transfer the user’s UPN/GUID automatically. Click <strong>Resolve
+Target</strong> to verify canonical tenant/user identity.</li>
+<li><strong>Run Scripts or Guided Workflows:</strong> Execute any
+individual operation or launch one of the <strong>5 Guided
+Workflows</strong>; cancel long runs cleanly via
+<strong>Cancel</strong>, or click <strong>Insert Result into
+Ticket</strong> to paste formatted findings directly into your active
+note.</li>
+</ol>
+<h3 id="guided-multi-step-workflows-workflow_definitions">Guided
+Multi-Step Workflows (<code>WORKFLOW_DEFINITIONS</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Workflow</th>
+<th style="text-align: left;">Steps Executed in Sequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Full User Diagnostic Snapshot (4
+Steps)</strong></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code> →
+<code>M365.ENTRA.USER_LICENSES</code> →
+<code>M365.ENTRA.USER_SIGNINS</code> →
+<code>M365.EXCHANGE.MAILBOX_SUMMARY</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Security &amp; Access Incident
+Triage (3 Steps)</strong></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code> →
+<code>M365.ENTRA.USER_MFA_AUDIT</code> →
+<code>M365.SECURITY.RISKY_SIGNIN_AUDIT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Collaboration &amp; Storage
+Readiness (4 Steps)</strong></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code> →
+<code>M365.TEAMS.USER_READINESS</code> →
+<code>M365.SHAREPOINT.ACCESS_DIAGNOSTIC</code> →
+<code>M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Mailbox &amp; Delivery Triage (4
+Steps)</strong></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code> →
+<code>M365.EXCHANGE.MAILBOX_SUMMARY</code> →
+<code>M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY</code> →
+<code>M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Account Lockout &amp; Auth Triage
+(4 Steps)</strong></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code> →
+<code>M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE</code> →
+<code>M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT</code> →
+<code>M365.ENTRA.USER_MFA_AUDIT</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="m365-powershell-scripts-audit-all-25-scripts">M365 PowerShell
+Scripts Audit (All 25 Scripts)</h2>
+<p>Every script under <code>scripts/m365/</code> conforms to contract
+baseline <strong><code>tnotes.m365 / 0.3.0</code></strong>
+(<code>APPROVED — IMPLEMENTATION CONTRACT</code>), uses typed parameters
+and host-owned authentication boundaries, enforces Win32 Job Object
+worker isolation, passes SHA-256 manifest verification
+(<code>25 / 25</code> hashes matched), and runs strictly
+<strong><code>read_only</code></strong>:</p>
+<ul>
+<li><strong>Total Standalone Operations:</strong> <code>25</code> across
+<code>11</code> categories (<code>21</code> Microsoft Graph,
+<code>4</code> Exchange Online)</li>
+<li><strong>Risk Profile:</strong> <code>25 / 25</code> strictly
+<code>read_only</code> (zero tenant write/mutation scripts)</li>
+<li><strong>Contract Validation:</strong> <code>450 / 450</code>
+contract package checks pass
+(<code>python -B docs/contracts/m365/validation/validate_contract.py</code>)</li>
+<li><strong>Manifest Integrity:</strong> <code>25 / 25</code>
+<code>script_sha256</code> manifest digests match on-disk
+<code>.ps1</code> files</li>
+</ul>
+<table style="width:99%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Category</th>
+<th style="text-align: left;">Script ID</th>
+<th style="text-align: left;">Title</th>
+<th style="text-align: left;">Service</th>
+<th style="text-align: left;">Graph Scopes / Auth</th>
+<th style="text-align: left;">Risk</th>
+<th style="text-align: left;">Script Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>entra-id</code></td>
+<td
+style="text-align: left;"><code>M365.ENTRA.GROUP_AND_ROLE_MEMBERSHIP</code></td>
+<td style="text-align: left;">Audit Entra Group &amp; Directory Role
+Memberships</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/entra-id/group-role-membership/Get-GroupAndRoleMembership.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entra-id</code></td>
+<td
+style="text-align: left;"><code>M365.ENTRA.PASSWORD_AND_ACCOUNT_POSTURE</code></td>
+<td style="text-align: left;">Audit Password Age, Policy &amp; Hybrid
+Sync Posture</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/entra-id/password-account-posture/Get-PasswordAndAccountPosture.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entra-id</code></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_IDENTITY</code></td>
+<td style="text-align: left;">Get-UserIdentity</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/entra-id/user-identity/Get-UserIdentity.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entra-id</code></td>
+<td
+style="text-align: left;"><code>M365.ENTRA.USER_MFA_AUDIT</code></td>
+<td style="text-align: left;">Inspect User MFA &amp; Conditional Access
+Sign-Ins</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/entra-id/user-mfa-audit/Get-UserMfaAudit.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entra-id</code></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_SIGNINS</code></td>
+<td style="text-align: left;">Get-UserSignIns</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/entra-id/user-signins/Get-UserSignIns.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>exchange-online</code></td>
+<td
+style="text-align: left;"><code>M365.EXCHANGE.FORWARDING_AND_AUTO_REPLY</code></td>
+<td style="text-align: left;">Audit Mailbox Forwarding &amp; Auto-Reply
+Posture</td>
+<td style="text-align: left;"><code>ExchangeOnline</code></td>
+<td style="text-align: left;">EXO Read-Only RBAC</td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/exchange-online/forwarding-auto-reply/Get-MailboxForwardingAndAutoReply.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>exchange-online</code></td>
+<td
+style="text-align: left;"><code>M365.EXCHANGE.MAILBOX_PERMISSIONS_AUDIT</code></td>
+<td style="text-align: left;">Audit Mailbox Delegation &amp;
+Permissions</td>
+<td style="text-align: left;"><code>ExchangeOnline</code></td>
+<td style="text-align: left;">EXO Read-Only RBAC</td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/exchange-online/mailbox-permissions/Get-MailboxPermissionsAudit.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>exchange-online</code></td>
+<td
+style="text-align: left;"><code>M365.EXCHANGE.MAILBOX_QUOTA_AND_HOLD</code></td>
+<td style="text-align: left;">Inspect Mailbox Quota, Archive &amp;
+Litigation Hold</td>
+<td style="text-align: left;"><code>ExchangeOnline</code></td>
+<td style="text-align: left;">EXO Read-Only RBAC</td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/exchange-online/mailbox-quota-hold/Get-MailboxQuotaAndHold.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>exchange-online</code></td>
+<td
+style="text-align: left;"><code>M365.EXCHANGE.MAILBOX_SUMMARY</code></td>
+<td style="text-align: left;">Get-MailboxSummary</td>
+<td style="text-align: left;"><code>ExchangeOnline</code></td>
+<td style="text-align: left;">EXO Read-Only RBAC</td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/exchange-online/mailbox-summary/Get-MailboxSummary.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>general</code></td>
+<td
+style="text-align: left;"><code>M365.GENERAL.SERVICE_READINESS_AUDIT</code></td>
+<td style="text-align: left;">Cross-Service Provisioning &amp; Readiness
+Audit</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>LicenseAssignment.Read.All</code>,
+<code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/general/service-readiness/Get-ServiceReadinessAudit.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>general</code></td>
+<td
+style="text-align: left;"><code>M365.GENERAL.TENANT_USER_OVERVIEW</code></td>
+<td style="text-align: left;">Cross-Service User &amp; Tenant Health
+Overview</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/general/tenant-user-overview/Get-TenantUserOverview.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>intune</code></td>
+<td
+style="text-align: left;"><code>M365.INTUNE.COMPLIANCE_AND_ENROLLMENT</code></td>
+<td style="text-align: left;">Inspect Intune Device Management &amp;
+Compliance Sign-Ins</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/intune/compliance-enrollment/Get-IntuneComplianceDiagnostic.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>intune</code></td>
+<td
+style="text-align: left;"><code>M365.INTUNE.DEVICE_INVENTORY_AND_OS_POSTURE</code></td>
+<td style="text-align: left;">Inventory Endpoint Devices &amp; OS
+Posture</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/intune/device-inventory/Get-IntuneDeviceInventory.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>licensing</code></td>
+<td
+style="text-align: left;"><code>M365.LICENSING.SERVICE_PLAN_AUDIT</code></td>
+<td style="text-align: left;">Audit Assigned SKUs &amp; Provisioning
+Service Plans</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>LicenseAssignment.Read.All</code>,
+<code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/licensing/service-plan-audit/Get-ServicePlanAudit.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>licensing</code></td>
+<td style="text-align: left;"><code>M365.ENTRA.USER_LICENSES</code></td>
+<td style="text-align: left;">Get-UserLicenses</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td
+style="text-align: left;"><code>LicenseAssignment.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/licensing/user-licenses/Get-UserLicenses.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>onedrive</code></td>
+<td
+style="text-align: left;"><code>M365.ONEDRIVE.CLIENT_SYNC_SIGNINS</code></td>
+<td style="text-align: left;">Audit OneDrive Client Sync Sign-Ins</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/onedrive/client-sync-signins/Get-OneDriveClientSyncSignIns.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>onedrive</code></td>
+<td
+style="text-align: left;"><code>M365.ONEDRIVE.SYNC_AND_STORAGE_DIAGNOSTIC</code></td>
+<td style="text-align: left;">Inspect OneDrive Service Plans &amp; Sync
+Readiness</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>LicenseAssignment.Read.All</code>,
+<code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/onedrive/sync-diagnostic/Get-OneDriveSyncDiagnostic.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>other</code></td>
+<td
+style="text-align: left;"><code>M365.OTHER.UPN_SMTP_ALIGNMENT</code></td>
+<td style="text-align: left;">Verify User UPN &amp; Directory Profile
+Alignment</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/other/upn-smtp-alignment/Get-UpnSmtpAlignment.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>reports</code></td>
+<td
+style="text-align: left;"><code>M365.REPORTS.USER_ACCESS_AUDIT_REPORT</code></td>
+<td style="text-align: left;">Generate Read-Only User Access &amp;
+Sign-In Audit Report</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/reports/user-access-audit/Get-UserAccessAuditReport.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>security</code></td>
+<td
+style="text-align: left;"><code>M365.SECURITY.LEGACY_AUTH_AND_LOCKOUT_AUDIT</code></td>
+<td style="text-align: left;">Audit Account Lockouts &amp; Legacy Auth
+Sign-Ins</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/security/legacy-auth-lockout/Get-LegacyAuthAndLockoutAudit.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>security</code></td>
+<td
+style="text-align: left;"><code>M365.SECURITY.RISKY_SIGNIN_AUDIT</code></td>
+<td style="text-align: left;">Audit Risky Sign-Ins &amp; Authentication
+Failures</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/security/risky-signins/Get-SecurityRiskySignIns.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sharepoint</code></td>
+<td
+style="text-align: left;"><code>M365.SHAREPOINT.ACCESS_DIAGNOSTIC</code></td>
+<td style="text-align: left;">Inspect SharePoint Online Access &amp;
+Sign-In Events</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/sharepoint/access-diagnostic/Get-SharePointAccessDiagnostic.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sharepoint</code></td>
+<td
+style="text-align: left;"><code>M365.SHAREPOINT.EXTERNAL_SHARING_AND_GUEST_POSTURE</code></td>
+<td style="text-align: left;">Audit External Sharing &amp; Guest B2B
+Posture</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/sharepoint/external-guest-posture/Get-ExternalSharingAndGuestPosture.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>teams</code></td>
+<td
+style="text-align: left;"><code>M365.TEAMS.CLIENT_SIGNINS</code></td>
+<td style="text-align: left;">Inspect Microsoft Teams Client Sign-In
+Activity</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>AuditLog.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/teams/client-signins/Get-TeamsClientSignIns.ps1</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>teams</code></td>
+<td
+style="text-align: left;"><code>M365.TEAMS.USER_READINESS</code></td>
+<td style="text-align: left;">Inspect Teams Licensing &amp; Voice
+Service Plans</td>
+<td style="text-align: left;"><code>Graph</code></td>
+<td style="text-align: left;"><code>LicenseAssignment.Read.All</code>,
+<code>User.Read.All</code></td>
+<td style="text-align: left;"><code>read_only</code></td>
+<td
+style="text-align: left;"><code>scripts/m365/teams/user-readiness/Get-TeamsUserReadiness.ps1</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="keyboard-shortcuts">Keyboard Shortcuts</h2>
+<p>All keyboard shortcuts implemented across <strong>T-Notes</strong>,
+<strong>M365 Launcher</strong>, <strong>Find &amp; Replace</strong>,
+<strong>Image Editor</strong>, <strong>Command Palette</strong>,
+<strong>Quick-Tools</strong>, and <strong>Dialogs</strong> are cataloged
+below. <em>(Per <a href="GEMINI.md"><code>GEMINI.md</code></a>, every
+newly assigned or changed shortcut must be kept synchronized
+here.)</em></p>
+<h3 id="global-workspace-window-management">Global, Workspace &amp;
+Window Management</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>F8</code></td>
+<td style="text-align: left;">System-Wide (Win32) &amp; App</td>
+<td style="text-align: left;">Summon T-Notes to foreground / toggle
+window visibility to tray</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+F8</code></td>
+<td style="text-align: left;">Application-Wide</td>
+<td style="text-align: left;">Toggle between <strong>T-Notes</strong>
+scratchpad and <strong>M365 Launcher</strong> workspace</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+T</code></td>
+<td style="text-align: left;">Application-Wide</td>
+<td style="text-align: left;">Toggle Always-on-Top
+<strong>Mini-HUD</strong> docked right-sidebar mode</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+Z</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Toggle side-by-side <strong>Split
+View</strong> (or compact single-pane switch below 750 px)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+Shift+Z</code></td>
+<td style="text-align: left;">T-Notes (Compact Split)</td>
+<td style="text-align: left;">Switch active editor pane
+(<code>Pane 1/2</code> ↔︎ <code>Pane 2/2</code>) when Split View is
+narrow</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+H</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Toggle History &amp; FTS5 Archive Side
+Drawer</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+K</code></td>
+<td style="text-align: left;">Application-Wide</td>
+<td style="text-align: left;">Open <strong>Quick Command
+Palette</strong> (tabs, archive, templates, badges, M365)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+Q</code></td>
+<td style="text-align: left;">Application-Wide</td>
+<td style="text-align: left;">Open <strong>Tech Quick-Tools &amp; Smart
+Entity Extractor</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+S</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Force immediate SQLite flush/save of all
+pending and dirty notes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+,</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Open Preferences &amp; Backup Settings
+dialog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tab-navigation-management">Tab Navigation &amp; Management</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Ctrl+T</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Create a new ticket scratchpad tab</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+T</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Re-open / restore the most recently closed
+(archived) ticket tab</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+W</code> /
+<code>Ctrl+F4</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Close (archive) the active ticket tab in
+the focused pane</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Tab</code> /
+<code>Ctrl+PageDown</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Switch to the next tab in the active pane
+(wraps around)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+Tab</code> /
+<code>Ctrl+PageUp</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Switch to the previous tab in the active
+pane (wraps around)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+PageDown</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Reorder / slide active tab one slot
+right</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+PageUp</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Reorder / slide active tab one slot
+left</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+1</code> –
+<code>Ctrl+8</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Jump directly to tab
+<code>1</code>–<code>8</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+9</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Jump to the last tab in the primary
+pane</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Esc</code></td>
+<td style="text-align: left;">Tab Bar Drag</td>
+<td style="text-align: left;">Cancel active tab drag/cross-pane
+move</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rich-text-editor-formatting-checklists-badges">Rich-Text Editor,
+Formatting, Checklists &amp; Badges</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Ctrl+B</code></td>
+<td style="text-align: left;">Note &amp; Template Editors</td>
+<td style="text-align: left;">Toggle <strong>Bold</strong>
+formatting</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+I</code></td>
+<td style="text-align: left;">Note &amp; Template Editors</td>
+<td style="text-align: left;">Toggle <em>Italic</em> formatting</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+U</code></td>
+<td style="text-align: left;">Note &amp; Template Editors</td>
+<td style="text-align: left;">Toggle <u>Underline</u> formatting</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+X</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Pick foreground text color</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+H</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Pick text highlight background color</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+C</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Insert or format dark monospace CLI /
+PowerShell code block</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+L</code></td>
+<td style="text-align: left;">Editor &amp; Toolbar</td>
+<td style="text-align: left;">Insert interactive checklist item
+(<code>[ ]</code>) at cursor</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>[]</code> or <code>- [ ]</code> +
+<code>Space</code></td>
+<td style="text-align: left;">Editor Typing</td>
+<td style="text-align: left;">Auto-convert typed bracket prefix into
+interactive clickable checkbox</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Enter</code> (on checklist
+line)</td>
+<td style="text-align: left;">Editor Typing</td>
+<td style="text-align: left;">Continue checklist on next line (or exit
+checklist when line is empty)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>F5</code></td>
+<td style="text-align: left;">T-Notes Workspace</td>
+<td style="text-align: left;">Insert <code>[YYYY-MM-DD HH:MM:SS]</code>
+current timestamp</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+I</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Open file picker to insert JPEG-compressed
+image</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+1</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Insert <strong>🟢 PASS</strong> badge</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+2</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Insert <strong>🔴 FAIL</strong> badge</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+3</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Insert <strong>🟡 WARN</strong> badge</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Alt+4</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Insert <strong>ℹ️ INFO</strong> badge</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl++</code> / <code>Ctrl+=</code>
+/ <code>Shift+Wheel Up</code></td>
+<td style="text-align: left;">Editor</td>
+<td style="text-align: left;">Zoom editor text/viewport in</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+-</code> /
+<code>Shift+Wheel Down</code></td>
+<td style="text-align: left;">Editor</td>
+<td style="text-align: left;">Zoom editor text/viewport out</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+0</code></td>
+<td style="text-align: left;">Editor</td>
+<td style="text-align: left;">Reset editor zoom to default</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+Wheel</code></td>
+<td style="text-align: left;">Editor</td>
+<td style="text-align: left;">Horizontal scrollbar scroll</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Delete</code> /
+<code>Backspace</code> (selected image)</td>
+<td style="text-align: left;">Editor</td>
+<td style="text-align: left;">Remove currently selected embedded
+image</td>
+</tr>
+</tbody>
+</table>
+<h3 id="in-note-find-replace">In-Note Find &amp; Replace</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Ctrl+F</code></td>
+<td style="text-align: left;">Editor / Main Window</td>
+<td style="text-align: left;">Open Find bar (or toggle Replace row if
+already open)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+H</code></td>
+<td style="text-align: left;">Editor / Main Window</td>
+<td style="text-align: left;">Open Find &amp; Replace bar</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Enter</code> (in Find field)</td>
+<td style="text-align: left;">Find &amp; Replace Bar</td>
+<td style="text-align: left;">Jump to next match</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Shift+Enter</code> (in Find
+field)</td>
+<td style="text-align: left;">Find &amp; Replace Bar</td>
+<td style="text-align: left;">Jump to previous match</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Enter</code> (in Replace field)</td>
+<td style="text-align: left;">Find &amp; Replace Bar</td>
+<td style="text-align: left;">Replace current match and advance</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Esc</code></td>
+<td style="text-align: left;">Find &amp; Replace Bar</td>
+<td style="text-align: left;">Close Find &amp; Replace bar and return
+focus to editor</td>
+</tr>
+</tbody>
+</table>
+<h3 id="copy-export-email">Copy, Export &amp; Email</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Shift+C</code></td>
+<td style="text-align: left;">Toolbar / Editor</td>
+<td style="text-align: left;">Copy formatted rich note + Base64 images
+of the active note to clipboard</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+N</code></td>
+<td style="text-align: left;">Toolbar</td>
+<td style="text-align: left;">Copy clean plain-text / Markdown PSA
+ticket note to clipboard</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+E</code></td>
+<td style="text-align: left;">Toolbar</td>
+<td style="text-align: left;">Export plain-text active ticket note to
+<code>T-Notes/&lt;YYYY-MM-DD&gt;/</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Alt+M</code></td>
+<td style="text-align: left;">Toolbar</td>
+<td style="text-align: left;">Launch OS default email client draft
+pre-addressed to your configured Default Email</td>
+</tr>
+</tbody>
+</table>
+<h3 id="image-editor-cyber-neon-studio">Image Editor (Cyber Neon
+Studio)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>V</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Select / Move &amp;
+Rotate</strong> tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>P</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Neon Pen</strong>
+freehand tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>H</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Highlighter</strong>
+translucent marker tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>L</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Laser Straight
+Line</strong> tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>C</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Circle / Ellipse</strong>
+tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>R</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Rectangle</strong>
+tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>T</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Activate <strong>Paint-Style Text
+Box</strong> tool</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Shift+Drag</code></td>
+<td style="text-align: left;">Line &amp; Highlighter Tools</td>
+<td style="text-align: left;">Snap stroke to horizontal, vertical, or
+45° diagonal angle</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+R</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Rotate selected annotation (or last item)
+90° clockwise</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>[</code> / <code>]</code></td>
+<td style="text-align: left;">Image Editor (Selected Item)</td>
+<td style="text-align: left;">Rotate selected item <code>-15°</code>
+counter-clockwise / <code>+15°</code> clockwise</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Shift+Drag</code> (Rotation
+Handle)</td>
+<td style="text-align: left;">Image Editor (Selected Item)</td>
+<td style="text-align: left;">Snap rotation to 15° increments</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Arrow Keys</code></td>
+<td style="text-align: left;">Image Editor (Selected Item)</td>
+<td style="text-align: left;">Nudge selected annotation by
+<code>1 px</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Shift+Arrow Keys</code></td>
+<td style="text-align: left;">Image Editor (Selected Item)</td>
+<td style="text-align: left;">Nudge selected annotation by
+<code>10 px</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Delete</code> /
+<code>Backspace</code></td>
+<td style="text-align: left;">Image Editor (Selected Item)</td>
+<td style="text-align: left;">Remove selected annotation item</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Esc</code></td>
+<td style="text-align: left;">Image Editor Canvas</td>
+<td style="text-align: left;">Clear current item selection</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Z</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Undo last annotation step (up to 40
+steps)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+Y</code> /
+<code>Ctrl+Shift+Z</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Redo undone annotation step</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl++</code> / <code>Ctrl+=</code>
+/ <code>Ctrl+Wheel Up</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Zoom canvas in (+25%, up to 500%)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+-</code> /
+<code>Ctrl+Wheel Down</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Zoom canvas out (-20%, down to 25%)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Ctrl+0</code></td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Reset canvas zoom to <code>100%</code>
+(1:1 fit) and recenter pan</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>F11</code> (or Double-Click Top
+Bar)</td>
+<td style="text-align: left;">Image Editor</td>
+<td style="text-align: left;">Toggle maximized full-screen
+vs. <code>1020×680</code> window</td>
+</tr>
+</tbody>
+</table>
+<h3 id="command-palette-modal-dialogs">Command Palette &amp; Modal
+Dialogs</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Shortcut</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>↑</code> / <code>↓</code></td>
+<td style="text-align: left;">Command Palette Search Box</td>
+<td style="text-align: left;">Navigate matching results without leaving
+search input</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Enter</code></td>
+<td style="text-align: left;">Command Palette Search Box</td>
+<td style="text-align: left;">Execute highlighted result and close
+palette</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Esc</code></td>
+<td style="text-align: left;">Command Palette, Quick-Tools, Summary
+Formatter</td>
+<td style="text-align: left;">Dismiss / cancel dialog</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Python:</strong> <code>&gt;= 3.10</code> (developed and
+tested on Python 3.14 on Windows)</li>
+<li><strong>Python Packages:</strong> See <a
+href="requirements.txt"><code>requirements.txt</code></a>
+<ul>
+<li><code>PySide6&gt;=6.6.0</code></li>
+<li><code>Pillow&gt;=10.0.0</code></li>
+<li><code>jsonschema&gt;=4.23,&lt;5</code></li>
+<li><code>referencing&gt;=0.35.0</code></li>
+<li><code>pytest&gt;=8.0.0</code> (test suite)</li>
+</ul></li>
+<li><strong>Optional — Microsoft 365 Live Tenant Execution:</strong>
+<ul>
+<li><strong>PowerShell 7</strong> (<code>pwsh</code> 7.4+)</li>
+<li>Modules (read-only scopes only):
+<ul>
+<li><code>Microsoft.Graph.Authentication &gt;= 2.0.0</code></li>
+<li><code>Microsoft.Graph.Users &gt;= 2.0.0</code></li>
+<li><code>Microsoft.Graph.Reports &gt;= 2.0.0</code></li>
+<li><code>ExchangeOnlineManagement &gt;= 3.4.0</code></li>
+</ul></li>
+</ul></li>
+</ul>
+<hr />
+<h2 id="installation-running">Installation &amp; Running</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/JDecelles1990/T-Notes.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> T-Notes</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> pip install <span class="at">-r</span> requirements.txt</span></code></pre></div>
+<p>Launch the desktop application:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> src.main</span></code></pre></div>
+<p>Alternative launch options:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> src/main.py          <span class="co"># Direct script launch</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> src.main <span class="at">--tray</span>   <span class="co"># Start silently / evaluate tray smart-restore</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pythonw</span> src/main.py <span class="at">--tray</span>  <span class="co"># Windows GUI-only tray launch (no console window)</span></span></code></pre></div>
+<hr />
+<h2 id="local-data-locations">Local Data Locations</h2>
+<ul>
+<li><strong>SQLite Database &amp; Daily Backups:</strong>
+<ul>
+<li>Windows: <code>%LOCALAPPDATA%\TechPad\techpad.db</code> (snapshots
+in <code>backups\</code>)</li>
+<li>macOS / Linux: <code>~/.techpad/techpad.db</code></li>
+</ul></li>
+<li><strong>Plain-Text Ticket Exports:</strong>
+<code>T-Notes/&lt;YYYY-MM-DD&gt;/</code> inside the repository folder
+(git-ignored)</li>
+</ul>
+<hr />
+<h2 id="testing-verification">Testing &amp; Verification</h2>
+<p>Run the Python unit, contract, and UI integration test suite:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> pytest <span class="at">-q</span></span></code></pre></div>
+<p>Validate the M365 PowerShell contract package:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-B</span> docs/contracts/m365/validation/validate_contract.py</span></code></pre></div>
+<hr />
+<h2 id="architecture-project-structure">Architecture &amp; Project
+Structure</h2>
+<p>T-Notes enforces strict separation of concerns across UI
+(<code>src/ui/</code>), Services (<code>src/services/</code>),
+Repositories (<code>src/repositories/</code>), and Database
+(<code>src/database/</code>): UI components never issue raw SQL queries,
+SQLite always runs in WAL mode with foreign keys enforced, and M365
+PowerShell operations remain decoupled from PySide6 and SQLite.</p>
+<pre class="text"><code>T-Notes/
+├── assets/
+│   ├── icons/                # Application icons
+│   ├── m365/                 # Contract pins, empty production catalog, synthetic catalog (25 ops)
+│   └── styles/               # Neon Aurora Glass Dark theme QSS stylesheet
+├── docs/                     # Architecture specs, DB schema, feature docs, ADRs, M365 contracts
+├── prototypes/               # Official M365 PowerShell protocol engine helpers
+├── scripts/
+│   └── m365/                 # 25 read-only PowerShell 7 operations &amp; persistent worker host
+├── src/
+│   ├── config.py             # Application data &amp; export paths
+│   ├── main.py               # Entry point, DB init, autostart, daily backup, GUI launch
+│   ├── core/                 # Constants (triage badges/skeletons), debouncers, Win32 global hotkey
+│   ├── database/             # SQLite WAL connection manager, schema, migrations
+│   ├── repositories/         # Data access &amp; atomic SQL transactions
+│   ├── services/             # Scratchpad, images, sessions, summary formatter, M365, TechToolsService
+│   └── ui/
+│       ├── main_window.py    # Main shell, workspace switcher, HUD, split view, telemetry bar
+│       ├── components/       # Editor, Toolbars, TabWidget, Glow/Aurora effects, Transitions, Find bar
+│       ├── dialogs/          # Image Editor + CyberNeonFX, Command Palette, Quick-Tools, Settings, Summary
+│       └── m365/             # M365 Launcher workspace, Company/Auth context panel, results viewer
+├── tests/                    # Pytest unit, service, contract, Image Editor, and UI integration suites
+├── AGENTS.md                 # Architectural boundaries &amp; documentation maintenance rules
+├── ARCHITECTURE.md           # High-level layered architecture overview
+├── GEMINI.md                 # Agent instructions (contract loading &amp; README shortcut sync rules)
+├── pyproject.toml            # Project metadata &amp; pytest configuration
+├── README.md                 # App guide, M365 launcher manual, script audit &amp; shortcuts reference
+└── requirements.txt          # Python runtime &amp; test dependencies</code></pre>
+<p>For detailed architecture specifications, database schemas, and ADRs,
+see <a href="docs/index.md"><code>docs/index.md</code></a> and <a
+href="ARCHITECTURE.md"><code>ARCHITECTURE.md</code></a>.</p>
+</body>
+</html>

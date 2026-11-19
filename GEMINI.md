@@ -1,7 +1,7 @@
 # T-Notes — Gemini PowerShell Development Instructions
 
 Instruction ID: TNOTES-GEMINI-PS
-Instruction revision: 2
+Instruction revision: 3
 
 ## Authority
 
@@ -131,6 +131,20 @@ or validation tooling must independently verify file hashes and approval
 applicability; an agent acknowledgement alone is insufficient. Missing,
 truncated, conflicting, or unverifiable inputs are BLOCKED. Successful
 context loading does not itself authorize implementation.
+
+## Keyboard shortcuts documentation
+
+Whenever a keyboard shortcut is assigned, changed, or removed for any
+function, action, tool, button, or dialog in T-Notes (`QShortcut`,
+`setShortcut`, `QKeySequence`, `keyPressEvent`, `eventFilter`, or global
+hotkey registration), you MUST add, update, or remove that shortcut in the
+**Keyboard Shortcuts** section of root `README.md` within the same task.
+
+- Record the exact key combination, UI context/scope, and concise behavior
+  matching the actual code implementation.
+- Never document unassigned, placeholder, or speculative shortcuts.
+- Check both `README.md` and relevant `docs/` files to prevent drift when
+  modifying shortcuts.
 
 ## Verification and reporting
 
