@@ -1,0 +1,16 @@
+name: Release T-Notes
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    uses: JDecelles1990/.github/.github/workflows/build-windows-desktop.yml@CLI
+    with:
+      app_name: "T-Notes"
+      spec_file: "T-Notes.spec"
