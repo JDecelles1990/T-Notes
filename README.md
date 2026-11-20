@@ -309,9 +309,25 @@ pythonw src/main.py --tray  # Windows GUI-only tray launch (no console window)
 ## Local Data Locations
 
 - **SQLite Database & Daily Backups:**
-  - Windows: `%LOCALAPPDATA%\TechPad\techpad.db` (snapshots in `backups\`)
-  - macOS / Linux: `~/.techpad/techpad.db`
-- **Plain-Text Ticket Exports:** `T-Notes/<YYYY-MM-DD>/` inside the repository folder (git-ignored)
+  - Windows: `%APPDATA%\T-Notes\techpad.db` (snapshots in `%APPDATA%\T-Notes\backups\`; existing `%LOCALAPPDATA%\TechPad\techpad.db` databases are automatically migrated non-destructively on first launch)
+  - macOS / Linux: `~/.t-notes/techpad.db`
+- **Plain-Text Ticket Exports (`Ctrl+Alt+E`):** `%APPDATA%\T-Notes\exports\<YYYY-MM-DD>\` in packaged builds, or `T-Notes/<YYYY-MM-DD>/` inside the repository folder when run from source
+
+---
+
+## Building a Standalone Windows Executable
+
+Package T-Notes into a clean `--onedir` windowed bundle (`dist\T-Notes\T-Notes.exe`) with bundled QSS/icon assets, Qt JPEG/PNG plugins, and PowerShell 7 host/operation scripts:
+
+```powershell
+.\build.ps1 -InstallPyInstaller
+```
+
+Subsequent builds (once PyInstaller is installed):
+
+```powershell
+.\build.ps1
+```
 
 ---
 

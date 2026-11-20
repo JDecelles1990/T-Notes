@@ -11,12 +11,12 @@ class DatabaseManager:
 
     def __init__(self, db_path: Optional[Union[str, Path]] = None):
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._connection: Optional[sqlite3.Connection] = None
 
     def get_connection(self) -> sqlite3.Connection:
         """Returns the active SQLite connection, creating and configuring it if necessary."""
         if self._connection is None:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
             self._connection = sqlite3.connect(
                 str(self.db_path),
                 timeout=5.0,
@@ -38,13 +38,16 @@ class DatabaseManager:
                 self._connection = None
 
 
-# Default global instance
-_default_db_manager = DatabaseManager()
+# Default global instance (initialized lazily in get_db() to avoid import-time disk writes)
+_default_db_manager: Optional[DatabaseManager] = None
 
 
 def get_db(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
     """Convenience function returning the default SQLite connection."""
+    global _default_db_manager
     if db_path:
         return DatabaseManager(db_path).get_connection()
+    if _default_db_manager is None:
+        _default_db_manager = DatabaseManager()
     return _default_db_manager.get_connection()
 

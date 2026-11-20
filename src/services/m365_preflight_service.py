@@ -11,12 +11,16 @@ import shutil
 import subprocess
 from typing import Callable, Iterable, Optional
 
+from src.core.paths import resource_path
+from src.core.powershell_utils import build_powershell_file_command, hidden_subprocess_kwargs
 from src.services.m365_catalog_service import (
     CONTRACT_ROOT,
     CatalogError,
     ManifestValidator,
     ROOT,
 )
+
+PREFLIGHT_PROBE_SCRIPT = resource_path("scripts", "m365", "_host", "M365PreflightProbe.ps1")
 
 
 LIVE_PILOT_MANIFEST_PATHS: tuple[str, ...] = (
@@ -122,8 +126,8 @@ class M365PreflightService:
         pilot_manifests: Optional[Iterable[str]] = None,
         probe_runner: Optional[Callable[[Path, tuple[str, ...]], dict]] = None,
     ):
-        self.library_root = Path(library_root) if library_root else ROOT / "scripts/m365"
-        self.metadata_root = Path(metadata_root) if metadata_root else ROOT / "assets/m365"
+        self.library_root = Path(library_root) if library_root else resource_path("scripts", "m365")
+        self.metadata_root = Path(metadata_root) if metadata_root else resource_path("assets", "m365")
         self.contract_root = Path(contract_root) if contract_root else CONTRACT_ROOT
         self.pilot_manifests = tuple(pilot_manifests) if pilot_manifests is not None else LIVE_PILOT_MANIFEST_PATHS
         self.pwsh_path = self._discover_pwsh(pwsh_path)
@@ -136,7 +140,7 @@ class M365PreflightService:
         found = shutil.which("pwsh")
         if found:
             return Path(found)
-        anchor_path = ROOT / "prototypes/m365_official_engine/trust-anchor.json"
+        anchor_path = resource_path("prototypes", "m365_official_engine", "trust-anchor.json")
         if anchor_path.is_file():
             try:
                 anchor = json.loads(anchor_path.read_text(encoding="utf-8"))
@@ -182,31 +186,18 @@ class M365PreflightService:
         if not pwsh_path.is_file():
             return {"pwsh_found": False}
 
-        names_json = json.dumps(list(module_names))
-        probe_ps = (
-            "$ErrorActionPreference = 'Stop'; "
-            f"$names = ConvertFrom-Json -InputObject '{names_json}'; "
-            "$mods = @{}; "
-            "foreach ($n in $names) { "
-            "  $best = Get-Module -ListAvailable -Name $n | Sort-Object Version -Descending | Select-Object -First 1; "
-            "  $mods[$n] = if ($null -ne $best) { $best.Version.ToString() } else { $null } "
-            "}; "
-            "$out = [pscustomobject]@{ "
-            "  pwsh_found = $true; "
-            "  version = $PSVersionTable.PSVersion.ToString(); "
-            "  edition = [string]$PSVersionTable.PSEdition; "
-            "  modules = $mods "
-            "}; "
-            "[Console]::Out.WriteLine((ConvertTo-Json -InputObject $out -Depth 5 -Compress))"
-        )
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        probe_script = PREFLIGHT_PROBE_SCRIPT
+        if not probe_script.is_file():
+            raise RuntimeError(f"PowerShell preflight probe script missing: {probe_script}")
+
         proc = subprocess.run(
-            [str(pwsh_path), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", probe_ps],
+            build_powershell_file_command(pwsh_path, probe_script),
+            input=json.dumps(list(module_names)),
             capture_output=True,
             text=True,
             encoding="utf-8",
             timeout=20,
-            creationflags=creationflags,
+            **hidden_subprocess_kwargs(),
         )
         if proc.returncode != 0 or not proc.stdout.strip():
             raise RuntimeError(proc.stderr.strip() or "PowerShell preflight probe failed.")

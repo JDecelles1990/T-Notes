@@ -6,11 +6,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon, QWidget
 from src.core.constants import APP_NAME, APP_VERSION
+from src.core.paths import is_frozen, resource_path
 
 
 def get_or_create_app_icon() -> QIcon:
-    """Returns the application icon, creating assets/icons/app_icon.png if missing."""
-    icon_path = Path(__file__).resolve().parent.parent.parent.parent / "assets" / "icons" / "app_icon.png"
+    """Returns the application icon, creating assets/icons/app_icon.png in source mode if missing."""
+    icon_path = resource_path("assets", "icons", "app_icon.png")
     if icon_path.exists():
         return QIcon(str(icon_path))
 
@@ -28,11 +29,12 @@ def get_or_create_app_icon() -> QIcon:
     p.drawText(pm.rect(), Qt.AlignCenter, "T")
     p.end()
 
-    try:
-        icon_path.parent.mkdir(parents=True, exist_ok=True)
-        pm.save(str(icon_path))
-    except Exception:
-        pass
+    if not is_frozen():
+        try:
+            icon_path.parent.mkdir(parents=True, exist_ok=True)
+            pm.save(str(icon_path))
+        except Exception:
+            pass
 
     return QIcon(pm)
 

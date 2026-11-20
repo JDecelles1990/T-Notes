@@ -1,28 +1,40 @@
 """Application configuration and filesystem paths."""
 
 from pathlib import Path
-import os
 import sys
 
-# Base directories
-BASE_DIR = Path(__file__).resolve().parent.parent
+from src.core.paths import (
+    get_app_data_dir,
+    get_bundle_root,
+    get_legacy_app_data_dir,
+    is_frozen,
+    migrate_legacy_user_data,
+    resource_path,
+)
 
-# User data directory (AppData on Windows or ~/.techpad on Unix)
-if sys.platform == "win32":
-    APP_DATA_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "TechPad"
-else:
-    APP_DATA_DIR = Path.home() / ".techpad"
+# Bundle / repository root (_MEIPASS when frozen, repository root in source mode)
+BASE_DIR = get_bundle_root()
 
-APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+# Persistent writable user data directory (%APPDATA%\T-Notes on Windows)
+APP_DATA_DIR = get_app_data_dir()
+try:
+    APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
-# Database path
+# Database path (always outside _MEIPASS so notes & tabs survive app updates)
 DEFAULT_DB_PATH = APP_DATA_DIR / "techpad.db"
 
-# Stylesheet path
-STYLES_DIR = BASE_DIR / "assets" / "styles"
-DEFAULT_QSS_PATH = STYLES_DIR / "dark_theme.qss"
+# Read-only bundled UI asset paths
+STYLES_DIR = resource_path("assets", "styles")
+DEFAULT_QSS_PATH = resource_path("assets", "styles", "dark_theme.qss")
+DEFAULT_ICON_PATH = resource_path("assets", "icons", "app_icon.png")
 
-# Default ticket plain-text export directory
-DEFAULT_EXPORT_DIR = BASE_DIR / "T-Notes"
-DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+# Default ticket plain-text export directory (writable in both source and frozen modes)
+DEFAULT_EXPORT_DIR = (APP_DATA_DIR / "exports") if is_frozen() else (BASE_DIR / "T-Notes")
+try:
+    DEFAULT_EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
+
 

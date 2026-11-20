@@ -4,19 +4,32 @@ import os
 from pathlib import Path
 import sys
 
-# Ensure project root is importable and active CWD when launched by Windows Startup from System32
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(_PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT_ROOT))
-try:
-    os.chdir(_PROJECT_ROOT)
-except OSError:
-    pass
+# When frozen via PyInstaller, stay beside the executable (never chdir into _MEIPASS).
+# When running from source (including Windows Startup from System32), add repo root to sys.path.
+if getattr(sys, "frozen", False):
+    try:
+        os.chdir(Path(sys.executable).resolve().parent)
+    except OSError:
+        pass
+else:
+    _PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    if str(_PROJECT_ROOT) not in sys.path:
+        sys.path.insert(0, str(_PROJECT_ROOT))
+    try:
+        os.chdir(_PROJECT_ROOT)
+    except OSError:
+        pass
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import QApplication
-from src.config import DEFAULT_DB_PATH, DEFAULT_QSS_PATH
+from src.config import (
+    DEFAULT_DB_PATH,
+    DEFAULT_QSS_PATH,
+    is_frozen,
+    migrate_legacy_user_data,
+    resource_path,
+)
 from src.core.constants import APP_NAME
 from src.database.connection import DatabaseManager
 from src.database.migrations import init_database
@@ -39,6 +52,12 @@ def main() -> int:
     # Enable High DPI scaling
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
+    # Ensure Qt discovers bundled imageformat plugins (qjpeg, qico, etc.) when frozen
+    if is_frozen():
+        qt_plugins = resource_path("PySide6", "plugins")
+        if qt_plugins.is_dir():
+            QCoreApplication.addLibraryPath(str(qt_plugins))
+
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName(APP_NAME)
@@ -56,6 +75,12 @@ def main() -> int:
 
     # Install global Neon Aurora hover tooltips (does not modify any buttons)
     install_aurora_tooltips(app)
+
+    # Migrate legacy TechPad SQLite data & backups into %APPDATA%\T-Notes if needed
+    try:
+        migrate_legacy_user_data()
+    except Exception as e:
+        print(f"Warning: Legacy user data migration skipped: {e}", file=sys.stderr)
 
     # Initialize Database & Run Migrations
     db_manager = DatabaseManager(DEFAULT_DB_PATH)

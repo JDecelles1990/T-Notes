@@ -25,6 +25,8 @@ from uuid import uuid4
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
+from src.core.paths import get_app_data_dir, is_frozen, resource_path
+from src.core.powershell_utils import build_powershell_file_command, hidden_subprocess_kwargs
 from src.services.m365_catalog_service import (
     CONTRACT_ROOT,
     M365CatalogService,
@@ -34,10 +36,11 @@ from src.services.m365_catalog_service import (
 )
 
 
-SYNTHETIC_CATALOG_PATH = ROOT / "assets/m365/synthetic-catalog.json"
-SYNTHETIC_METADATA_DIR = ROOT / "assets/m365_synthetic"
-LIBRARY_ROOT = ROOT / "scripts/m365"
-PROTOCOL_PATH = ROOT / "prototypes/m365_official_engine/protocol.ps1"
+SYNTHETIC_CATALOG_PATH = resource_path("assets", "m365", "synthetic-catalog.json")
+SYNTHETIC_METADATA_DIR = resource_path("assets", "m365_synthetic")
+LIBRARY_ROOT = resource_path("scripts", "m365")
+PROTOCOL_PATH = resource_path("prototypes", "m365_official_engine", "protocol.ps1")
+SYNTHETIC_RUNNER_PATH = resource_path("scripts", "m365", "_host", "M365SyntheticRunner.ps1")
 
 MAX_INPUT = 65536
 MAX_OUTPUT = 1048576
@@ -75,20 +78,42 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def ensure_synthetic_metadata_dir() -> Path:
-    """Ensure assets/m365_synthetic has synchronized categories, pins, and synthetic catalog."""
-    SYNTHETIC_METADATA_DIR.mkdir(parents=True, exist_ok=True)
-    base_assets = ROOT / "assets/m365"
+def _is_synthetic_metadata_synced(target_dir: Path, base_assets: Path, catalog_src: Path) -> bool:
     for name in ("categories.json", "contract-review-pins.json"):
         src = base_assets / name
-        dst = SYNTHETIC_METADATA_DIR / name
+        dst = target_dir / name
+        if not src.is_file() or not dst.is_file() or dst.read_bytes() != src.read_bytes():
+            return False
+    if catalog_src.is_file():
+        dst_cat = target_dir / "catalog.json"
+        if not dst_cat.is_file() or dst_cat.read_bytes() != catalog_src.read_bytes():
+            return False
+    return True
+
+
+def ensure_synthetic_metadata_dir() -> Path:
+    """Returns a synchronized synthetic metadata directory without mutating read-only _MEIPASS."""
+    base_assets = resource_path("assets", "m365")
+    catalog_src = SYNTHETIC_CATALOG_PATH
+    if _is_synthetic_metadata_synced(SYNTHETIC_METADATA_DIR, base_assets, catalog_src):
+        return SYNTHETIC_METADATA_DIR
+
+    target_dir = (
+        get_app_data_dir() / "cache" / "m365_synthetic"
+        if is_frozen()
+        else SYNTHETIC_METADATA_DIR
+    )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for name in ("categories.json", "contract-review-pins.json"):
+        src = base_assets / name
+        dst = target_dir / name
         if not dst.exists() or dst.read_bytes() != src.read_bytes():
             shutil.copyfile(src, dst)
-    catalog_dst = SYNTHETIC_METADATA_DIR / "catalog.json"
-    if SYNTHETIC_CATALOG_PATH.exists():
-        if not catalog_dst.exists() or catalog_dst.read_bytes() != SYNTHETIC_CATALOG_PATH.read_bytes():
-            shutil.copyfile(SYNTHETIC_CATALOG_PATH, catalog_dst)
-    return SYNTHETIC_METADATA_DIR
+    catalog_dst = target_dir / "catalog.json"
+    if catalog_src.exists():
+        if not catalog_dst.exists() or catalog_dst.read_bytes() != catalog_src.read_bytes():
+            shutil.copyfile(catalog_src, catalog_dst)
+    return target_dir
 
 
 def build_synthetic_catalog_service(
@@ -206,8 +231,8 @@ def build_live_pilot_catalog_service(
     """Build an immutable M365 catalog containing all read-only live tenant operations."""
     from src.services.m365_preflight_service import LIVE_PILOT_MANIFEST_PATHS
 
-    meta = Path(metadata_root) if metadata_root is not None else ROOT / "assets/m365"
-    lib = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+    meta = Path(metadata_root) if metadata_root is not None else resource_path("assets", "m365")
+    lib = Path(library_root) if library_root is not None else resource_path("scripts", "m365")
     contract = Path(contract_root) if contract_root is not None else CONTRACT_ROOT
     raw = json.loads((meta / "synthetic-catalog.json").read_text(encoding="utf-8"))
     allowed = set(LIVE_PILOT_MANIFEST_PATHS)
@@ -256,7 +281,7 @@ class M365ExecutionService:
     def _discover_pwsh(explicit: Path | None) -> Path:
         if explicit is not None:
             return Path(explicit)
-        anchor_path = ROOT / "prototypes/m365_official_engine/trust-anchor.json"
+        anchor_path = resource_path("prototypes", "m365_official_engine", "trust-anchor.json")
         if anchor_path.is_file():
             try:
                 anchor = json.loads(anchor_path.read_text(encoding="utf-8"))
@@ -927,38 +952,18 @@ class M365ExecutionService:
             "already_cancelled": cancel_event.is_set(),
         }
 
-        runner_code = (
-            "$ErrorActionPreference = 'Stop'; "
-            "$raw = [Console]::In.ReadLine(); "
-            "$payload = ConvertFrom-Json -InputObject $raw -AsHashtable -Depth 25; "
-            ". $payload['protocol_path']; "
-            "Initialize-NativeReturnValidation; "
-            "$frozenContext = Freeze-Value $payload['context']; "
-            "$rawParams = if ($null -ne $payload['parameters']) { $payload['parameters'] } else { @{} }; "
-            "$frozenParams = Freeze-Value $rawParams; "
-            "$cts = [System.Threading.CancellationTokenSource]::new(); "
-            "if ([bool]$payload['already_cancelled']) { $cts.Cancel() }; "
-            "$ret = & $payload['script_path'] -Context $frozenContext -Parameters $frozenParams -CancellationToken $cts.Token; "
-            "Assert-NativeOperationReturn $ret; "
-            "$json = ConvertTo-Json -InputObject $ret -Depth 20 -Compress; "
-            "[Console]::Out.WriteLine($json)"
-        )
+        candidate = self.library_root / "_host" / "M365SyntheticRunner.ps1"
+        runner_script = candidate if candidate.is_file() else SYNTHETIC_RUNNER_PATH
+        if not runner_script.is_file():
+            raise RuntimeError(f"M365 PowerShell runner script missing: {runner_script}")
 
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         proc = subprocess.Popen(
-            [
-                str(self.pwsh_path),
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                runner_code,
-            ],
+            build_powershell_file_command(self.pwsh_path, runner_script),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(self.library_root),
-            creationflags=creationflags,
+            **hidden_subprocess_kwargs(),
         )
         try:
             if on_started is not None:

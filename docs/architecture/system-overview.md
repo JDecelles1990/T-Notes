@@ -238,10 +238,12 @@ T-Notes operates within the standard PySide6 / Qt Event Loop:
 ### Bootstrap & Workspace Restoration Sequence
 When `src/main.py` is executed:
 1. `QApplication` is initialized with high-DPI scaling enabled and `app.setQuitOnLastWindowClosed(False)` so closing the window keeps the tray icon active.
-2. Clean technician dark theme (`assets/styles/dark_theme.qss`) and custom app icon (`assets/icons/app_icon.png`) are loaded.
-3. `DatabaseManager` opens `techpad.db`, activates WAL mode, and verifies table schemas via `init_database()`.
-4. `MainWindow` initializes the two-row toolbar, system tray icon, and registers the global `F8` hotkey.
-5. `SessionService.restore_workspace()` and Split View restoration runs:
+2. When frozen via PyInstaller (`src/core/paths.py`), `QCoreApplication.addLibraryPath(resource_path("PySide6", "plugins"))` registers bundled Qt plugins (`imageformats`, `platforms`, `styles`) and the working directory stays next to `sys.executable` rather than inside `_MEIPASS`.
+3. `migrate_legacy_user_data()` checks `%LOCALAPPDATA%\TechPad\techpad.db` and, if `%APPDATA%\T-Notes\techpad.db` does not yet exist, performs a non-destructive online SQLite backup migration (plus backup snapshots) so existing notes and embedded images survive updates cleanly.
+4. Clean technician dark theme (`assets/styles/dark_theme.qss`) and custom app icon (`assets/icons/app_icon.png`) are loaded via `resource_path()`.
+5. `DatabaseManager` opens `%APPDATA%\T-Notes\techpad.db`, activates WAL mode, and verifies table schemas loaded from `resource_path("src", "database", "schema.sql")` via `init_database()`.
+6. `MainWindow` initializes the two-row toolbar, system tray icon, and registers the global `F8` hotkey.
+7. `SessionService.restore_workspace()` and Split View restoration runs:
    - Queries `scratchpads` for all records with `status = 'active'` ordered by `tab_order ASC`.
    - If no active scratchpads exist, an initial scratchpad (`INC-1001`) is automatically generated.
    - Restores window geometry, window opacity, and History Drawer visibility from `app_session`.
@@ -366,5 +368,11 @@ Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow ins
 ### 8.2 Windows Autostart & Smart Recovery (`src/services/autostart_service.py`)
 - **HKCU Run Registry Management:** Reads and writes to `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\TNotes` without requiring administrator privileges or UAC elevation.
 - **Enabled by Default with Safe Working-Directory Bootstrap:** `init_database()` sets `autostart_enabled = "true"` by default and `src/main.py` prepends the repository root to `sys.path` / sets working directory on launch so Windows login invocations starting in `System32` import `src.*` cleanly and keep the `Run` entry synchronized while respecting user opt-out in `SettingsDialog`.
-- **Silent Boot via `pythonw.exe`:** Configures GUI-mode execution passing `--tray` to prevent terminal console flashing on workstation boot.
+- **Silent Boot via `pythonw.exe`:** Configures GUI-mode execution passing `--tray` to prevent terminal console flashing on workstation boot (or invokes `"T-Notes.exe" --tray` directly when running frozen).
 - **Smart Restore:** Restores either desktop window presentation or silent system tray residency based on the technician's previous session state.
+
+### 8.3 Standalone Windows Packaging (`T-Notes.spec` & `build.ps1`)
+- **Frozen Resource Resolution (`src/core/paths.py`):** `is_frozen()`, `get_bundle_root()`, and `resource_path(*parts)` resolve read-only UI assets (`assets/`), database schema (`src/database/schema.sql`), M365 contract schemas (`docs/contracts/m365/schemas/`), protocol helpers, and PowerShell scripts (`scripts/m365/`) from `sys._MEIPASS` when packaged via PyInstaller `--onedir` (`T-Notes.spec`), and from the repository root in source mode.
+- **Persistent User Storage:** All mutable state—`techpad.db`, embedded JPEG BLOBs, WAL journals, daily backups, frozen synthetic metadata cache (`cache/m365_synthetic`), and frozen plain-text exports (`exports/`)—writes strictly under `%APPDATA%\T-Notes` on Windows (never inside `_MEIPASS`), surviving `--onedir` rebuilds and upgrades.
+- **Zero-Console PowerShell 7 Invocations (`src/core/powershell_utils.py`):** Host worker (`M365WorkerHost.ps1`), synthetic operation runner (`M365SyntheticRunner.ps1`), and preflight probe (`M365PreflightProbe.ps1`) execute through `build_powershell_file_command()` (`-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File <script>`) and `hidden_subprocess_kwargs()` (`CREATE_NO_WINDOW` + `STARTUPINFO` `SW_HIDE`).
+- **Qt Media Plugins & Build Automation:** `T-Notes.spec` explicitly bundles PySide6 `imageformats` (`qjpeg.dll`, `qico.dll`, `qsvg.dll`, etc.), `platforms`, `styles`, and `jsonschema_specifications` metaschemas; `build.ps1` automates clean builds and verifies every required runtime file inside `dist\T-Notes\`.

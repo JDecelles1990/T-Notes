@@ -15,9 +15,11 @@ import time
 from typing import Any, Callable
 from uuid import uuid4
 
+from src.core.paths import get_bundle_root, resource_path
+from src.core.powershell_utils import build_powershell_file_command, hidden_subprocess_kwargs
 
-ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_HOST_SCRIPT = ROOT / "scripts/m365/_host/M365WorkerHost.ps1"
+ROOT = get_bundle_root()
+DEFAULT_HOST_SCRIPT = resource_path("scripts", "m365", "_host", "M365WorkerHost.ps1")
 MAX_FRAME_BYTES = 1024 * 1024  # 1 MiB per JSON protocol line
 MAX_STDERR_BYTES = 64 * 1024
 
@@ -206,22 +208,14 @@ class M365WorkerHost:
         if self.is_alive:
             return
 
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         self._proc = subprocess.Popen(
-            [
-                str(self.pwsh_path),
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-File",
-                str(self.host_script),
-            ],
+            build_powershell_file_command(self.pwsh_path, self.host_script),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(self.host_script.parent),
-            creationflags=creationflags,
             bufsize=0,
+            **hidden_subprocess_kwargs(),
         )
         self._pid = self._proc.pid
         self._job.assign(getattr(self._proc, "_handle", None))

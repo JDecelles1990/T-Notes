@@ -10,6 +10,7 @@ import threading
 from typing import Callable
 from uuid import uuid4
 
+from src.core.paths import resource_path
 from src.services.m365_preflight_service import LIVE_PILOT_MANIFEST_PATHS, ROOT
 from src.services.m365_worker_host import (
     M365WorkerHost,
@@ -49,7 +50,7 @@ class LiveConnectionState:
 
 def pilot_graph_scopes(library_root: Path | None = None) -> tuple[str, ...]:
     """Read required read-only Microsoft Graph scopes dynamically from the pilot manifests."""
-    root = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+    root = Path(library_root) if library_root is not None else resource_path("scripts", "m365")
     scopes: list[str] = []
     seen: set[str] = set()
     for rel in LIVE_PILOT_MANIFEST_PATHS:
@@ -71,7 +72,7 @@ def pilot_graph_scopes(library_root: Path | None = None) -> tuple[str, ...]:
 
 def pilot_module_constraint(module_name: str, library_root: Path | None = None) -> dict[str, str]:
     """Return pinned SemVer bounds for a given module from the pilot manifests."""
-    root = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+    root = Path(library_root) if library_root is not None else resource_path("scripts", "m365")
     for rel in LIVE_PILOT_MANIFEST_PATHS:
         manifest_path = root / rel
         if not manifest_path.is_file():
@@ -106,7 +107,7 @@ class LiveConnectionManager:
         worker_factory: Callable[[WorkerIdentity], M365WorkerHost] | None = None,
     ) -> None:
         self.pwsh_path = Path(pwsh_path) if pwsh_path is not None else None
-        self.library_root = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+        self.library_root = Path(library_root) if library_root is not None else resource_path("scripts", "m365")
         self.lease_minutes = lease_minutes
         self._worker_factory = worker_factory
         self._lock = threading.RLock()

@@ -27,7 +27,10 @@ class AutostartService:
         return _WINREG_AVAILABLE and sys.platform == "win32"
 
     def get_launch_command(self) -> str:
-        """Constructs the launch command using pythonw (GUI mode) if available."""
+        """Constructs the Windows Startup launch command for source or frozen executable mode."""
+        if getattr(sys, "frozen", False):
+            return f'"{Path(sys.executable).resolve()}" --tray'
+
         py_exe = Path(sys.executable)
         pythonw_exe = py_exe.parent / "pythonw.exe"
         chosen_exe = pythonw_exe if pythonw_exe.exists() else py_exe

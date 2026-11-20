@@ -2,12 +2,15 @@
 
 import sqlite3
 from pathlib import Path
+from src.core.paths import resource_path
 from src.database.connection import DatabaseManager
 
 
 def init_database(db_manager: DatabaseManager) -> None:
     """Initializes the database schema, runs migrations, and ensures required rows exist."""
-    schema_path = Path(__file__).resolve().parent / "schema.sql"
+    schema_path = resource_path("src", "database", "schema.sql")
+    if not schema_path.is_file():
+        schema_path = Path(__file__).resolve().parent / "schema.sql"
     with open(schema_path, "r", encoding="utf-8") as f:
         schema_sql = f.read()
 

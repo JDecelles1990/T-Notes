@@ -11,9 +11,11 @@ from pathlib import Path
 import re
 import stat
 
+from src.core.paths import get_bundle_root, resource_path
 
-ROOT = Path(__file__).resolve().parents[2]
-CONTRACT_ROOT = ROOT / "docs/contracts/m365"
+
+ROOT = get_bundle_root()
+CONTRACT_ROOT = resource_path("docs", "contracts", "m365")
 VERSION = "0.3.0"
 SCHEMAS = ("common", "script-manifest", "execution-request", "execution-result",
            "error", "company-profile", "operation-data")
@@ -199,8 +201,8 @@ class M365CatalogService:
     """Immutable category and unavailable-operation snapshots for the GUI."""
 
     def __init__(self, metadata_root=None, library_root=None, contract_root=None, *, catalog_data=None):
-        metadata_root = Path(metadata_root) if metadata_root is not None else ROOT / "assets/m365"
-        library_root = Path(library_root) if library_root is not None else ROOT / "scripts/m365"
+        metadata_root = Path(metadata_root) if metadata_root is not None else resource_path("assets", "m365")
+        library_root = Path(library_root) if library_root is not None else resource_path("scripts", "m365")
         contract_root = Path(contract_root) if contract_root is not None else CONTRACT_ROOT
         data, _ = _json(metadata_root / "categories.json")
         if set(data) != {"format_version", "categories"} or type(data["format_version"]) is not int or data["format_version"] != 1:
