@@ -979,3 +979,301 @@ def test_step2_debounce_clipboard_and_controller_refresh(qapp, tmp_path, monkeyp
         QApplication.instance().removeEventFilter(win)
         win.deleteLater()
         db_mgr.close()
+
+
+def test_step3_archive_taxonomy_dialog_en_and_fr_autosuggest_provenance_and_filters(qapp, tmp_path):
+    """Validates EN/FR-CA auto-suggestions, auto vs manual provenance, Enter confirm, and HistorySearchPage filtering."""
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from src.database.history_fts import get_ticket_taxonomy
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.dialogs.archive_taxonomy_dialog import ArchiveTaxonomyDialog
+    from src.ui.main_window import TechPadMainWindow
+
+    db_mgr = DatabaseManager(tmp_path / "step3_en_fr.db")
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    # 1. English auto-suggestion accuracy
+    en_dlg = ArchiveTaxonomyDialog(
+        ticket_number="INC-9601",
+        client_name="Contoso",
+        title="Outlook OST corrupt, rebuilt user profile",
+        body_text="Cleared cache and recreated Outlook profile.",
+        conn=conn,
+    )
+    try:
+        en_assignments = {a["slug"]: a["source"] for a in en_dlg.pill_selector.selected_assignments()}
+        assert en_assignments.get("domain.m365.exchange") == "auto"
+        assert en_assignments.get("symptom.mail_flow_sync") == "auto"
+        assert en_assignments.get("resolution.profile_cache_rebuild") == "auto"
+        exch_btn = en_dlg.pill_selector.pill_buttons["domain.m365.exchange"]
+        assert exch_btn.property("pillState") == "auto"
+        assert "✦" in exch_btn.text()
+        assert "Auto-suggested" in exch_btn.toolTip()
+    finally:
+        en_dlg.close()
+        en_dlg.deleteLater()
+
+    # 2. French-Canadian diacritic-insensitive auto-suggestion + manual pill click provenance
+    fr_dlg = ArchiveTaxonomyDialog(
+        ticket_number="INC-9602",
+        client_name="Desjardins",
+        title="Imprimante réseau bloquée, redémarrage du spooler",
+        body_text="",
+        conn=conn,
+    )
+    try:
+        fr_assignments = {a["slug"]: a["source"] for a in fr_dlg.pill_selector.selected_assignments()}
+        assert fr_assignments.get("domain.hardware.printers_peripherals") == "auto"
+        assert fr_assignments.get("symptom.hardware_print") == "auto"
+
+        # Clicking an unselected pill marks it manual while untouched suggestions stay auto
+        manual_btn = fr_dlg.pill_selector.pill_buttons["resolution.service_driver_restart"]
+        manual_btn.click()
+        assert manual_btn.property("pillState") == "manual"
+
+        # Toggling an auto pill off then on switches it cleanly to manual
+        print_btn = fr_dlg.pill_selector.pill_buttons["symptom.hardware_print"]
+        print_btn.click()
+        assert print_btn.isChecked() is False
+        print_btn.click()
+        assert print_btn.isChecked() is True
+        assert print_btn.property("pillState") == "manual"
+
+        mixed = {a["slug"]: a["source"] for a in fr_dlg.selected_assignments()}
+        # Simulate user pressing Enter on Archive Ticket button
+        fr_dlg._on_archive_with_tags()
+        mixed = {a["slug"]: a["source"] for a in fr_dlg.selected_assignments()}
+        assert mixed["domain.hardware.printers_peripherals"] == "auto"
+        assert mixed["symptom.hardware_print"] == "manual"
+        assert mixed["resolution.service_driver_restart"] == "manual"
+    finally:
+        fr_dlg.close()
+        fr_dlg.deleteLater()
+
+    # 3. Full MainWindow single-keystroke Enter archive flow & immediate Step 2 search visibility
+    win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+    win.show()
+    qapp.processEvents()
+    try:
+        ed = win.tab_widget.get_current_editor()
+        sid = ed.scratchpad_id
+        sp_svc.update_metadata(
+            sid,
+            ticket_number="INC-9610",
+            client_name="Contoso",
+            title="Outlook OST corrupt, rebuilt user profile",
+        )
+        ed.setPlainText("Rebuilt OST file and verified mail flow.")
+        idx = win.tab_widget.indexOf(ed)
+
+        def _confirm_with_manual_and_enter():
+            modal = QApplication.activeModalWidget()
+            assert isinstance(modal, ArchiveTaxonomyDialog)
+            modal.pill_selector.pill_buttons["resolution.permissions_updated"].click()
+            QTest.keyClick(modal, Qt.Key.Key_Return)
+
+        QTimer.singleShot(30, _confirm_with_manual_and_enter)
+        assert win._archive_tab(idx) is True
+        qapp.processEvents()
+
+        saved_ticket = sp_svc.get_ticket(sid)
+        assert saved_ticket["status"] == "archived"
+        saved_tax = {row["slug"]: row["source"] for row in get_ticket_taxonomy(conn, sid)}
+        assert saved_tax["domain.m365.exchange"] == "auto"
+        assert saved_tax["resolution.permissions_updated"] == "manual"
+
+        # Immediately searchable via Step 2 taxonomy filter dropdowns in HistorySearchPage
+        win.bottom_history_btn.click()
+        qapp.processEvents()
+        page = win.history_search_page
+        dom_idx = page.domain_combo.findData("domain.m365.exchange")
+        assert dom_idx > 0
+        page.domain_combo.setCurrentIndex(dom_idx)
+        qapp.processEvents()
+        assert page.results_list.count() == 1
+        assert "INC-9610" in page.meta_label.text()
+    finally:
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        db_mgr.close()
+
+
+def test_step3_archive_without_tags_cancel_escape_and_bulk_archive(qapp, tmp_path):
+    """Validates Archive Without Tags, Esc cancel leaving active ticket untouched, and non-modal bulk archive."""
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from src.database.history_fts import get_ticket_taxonomy
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.dialogs.archive_taxonomy_dialog import ArchiveTaxonomyDialog
+    from src.ui.main_window import TechPadMainWindow
+
+    db_mgr = DatabaseManager(tmp_path / "step3_flows.db")
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+    win.show()
+    qapp.processEvents()
+    try:
+        # 1. Pressing Esc on ArchiveTaxonomyDialog cancels cleanly and keeps ticket active & untouched
+        ed1 = win.tab_widget.get_current_editor()
+        sid1 = ed1.scratchpad_id
+        sp_svc.update_metadata(sid1, ticket_number="INC-9701", client_name="Contoso", title="Outlook OST issue")
+        ed1.setPlainText("Still actively troubleshooting.")
+        tabs_before = win.tab_widget.count()
+
+        QTimer.singleShot(30, lambda: QTest.keyClick(QApplication.activeModalWidget(), Qt.Key.Key_Escape))
+        assert win._archive_tab(win.tab_widget.indexOf(ed1)) is False
+        qapp.processEvents()
+        assert sp_svc.get_ticket(sid1)["status"] == "active"
+        assert win.tab_widget.count() == tabs_before
+        assert get_ticket_taxonomy(conn, sid1) == []
+
+        # 2. Moving a ticket to secondary split pane and clicking "Archive Without Tags" stores 0 tags
+        win.create_new_tab()
+        ed2 = win.tab_widget.get_current_editor()
+        sid2 = ed2.scratchpad_id
+        sp_svc.update_metadata(sid2, ticket_number="INC-9702", client_name="Fabrikam", title="Entra MFA prompt loop")
+        ed2.setPlainText("Reset MFA tokens.")
+        win.open_split_view(target_scratchpad_id=sid2)
+        qapp.processEvents()
+
+        def _click_untagged():
+            modal = QApplication.activeModalWidget()
+            assert isinstance(modal, ArchiveTaxonomyDialog)
+            modal.archive_untagged_btn.click()
+
+        QTimer.singleShot(30, _click_untagged)
+        assert win._archive_secondary_tab(0) is True
+        qapp.processEvents()
+        assert sp_svc.get_ticket(sid2)["status"] == "archived"
+        assert get_ticket_taxonomy(conn, sid2) == []
+
+        # 3. Bulk archiving via _close_other_tabs skips modal dialogs and silently auto-tags archived tickets
+        win.create_new_tab()
+        ed_keep = win.tab_widget.get_current_editor()
+        keep_idx = win.tab_widget.indexOf(ed_keep)
+
+        win._close_other_tabs(keep_idx)
+        qapp.processEvents()
+        assert sp_svc.get_ticket(sid1)["status"] == "archived"
+        auto_tax = get_ticket_taxonomy(conn, sid1)
+        assert any(row["slug"] == "domain.m365.exchange" and row["source"] == "auto" for row in auto_tax)
+    finally:
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        db_mgr.close()
+
+
+def test_step3_retroactive_edit_tags_in_history_search_page(qapp, tmp_path):
+    """Validates HistorySearchPage Edit Tags button, ✦ Suggest Tags, manual edits, card refresh, and scroll preservation."""
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtWidgets import QApplication, QStyleOptionViewItem
+    from src.database.history_fts import get_ticket_taxonomy
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.ui.components.history_search_page import HistorySearchPage
+    from src.ui.dialogs.archive_taxonomy_dialog import EditTicketTaxonomyDialog
+
+    db_mgr = DatabaseManager(tmp_path / "step3_edit_tags.db")
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    sp_svc = ScratchpadService(
+        ScratchpadRepository(db_mgr),
+        ImageService(ImageRepository(db_mgr)),
+        TemplateRepository(db_mgr),
+    )
+
+    target_id = sp_svc.create_ticket(
+        ticket_number="INC-9801",
+        client_name="Northwind",
+        title="Imprimante réseau bloquée",
+        content_html="<p>Redémarré service spooler et réinstallé pilote.</p>",
+    )["id"]
+    sp_svc.archive_ticket(target_id)
+
+    # Seed extra archived tickets so scroll bar is populated cleanly
+    for idx in range(15):
+        tid = sp_svc.create_ticket(
+            ticket_number=f"INC-98{idx + 10}",
+            client_name="Contoso",
+            title=f"Sample archived ticket {idx}",
+            content_html="<p>Routine ticket notes.</p>",
+        )["id"]
+        sp_svc.archive_ticket(tid)
+
+    page = HistorySearchPage(get_conn=db_mgr.get_connection)
+    page.resize(980, 420)
+    page.show()
+    qapp.processEvents()
+    try:
+        page.refresh_and_focus()
+        assert page.edit_tags_btn.isEnabled() is True
+
+        # Select target untagged ticket near the bottom of the list to verify scroll preservation
+        target_row = next(
+            r
+            for r in range(page.results_list.count())
+            if page.results_list.item(r).data(Qt.ItemDataRole.UserRole + 1).id == target_id
+        )
+        page.results_list.setCurrentRow(target_row)
+        qapp.processEvents()
+        page.results_list.verticalScrollBar().setValue(120)
+        qapp.processEvents()
+        saved_scroll = page.results_list.verticalScrollBar().value()
+
+        def _suggest_toggle_and_save():
+            modal = QApplication.activeModalWidget()
+            assert isinstance(modal, EditTicketTaxonomyDialog)
+            modal.suggest_btn.click()
+            # Manual pill toggled in addition to ✦ auto-suggestions
+            modal.pill_selector.pill_buttons["symptom.connectivity"].click()
+            modal.save_btn.click()
+
+        QTimer.singleShot(30, _suggest_toggle_and_save)
+        assert page._open_edit_tags_dialog() is True
+        qapp.processEvents()
+
+        # Verify SQLite provenance persisted
+        saved_tax = {row["slug"]: row["source"] for row in get_ticket_taxonomy(conn, target_id)}
+        assert saved_tax["domain.hardware.printers_peripherals"] == "auto"
+        assert saved_tax["resolution.service_driver_restart"] == "auto"
+        assert saved_tax["symptom.connectivity"] == "manual"
+
+        # Verify right-pane header, left-pane card badges, current row, and scroll position all updated/preserved
+        assert "Hardware › Printers / Peripherals" in page.meta_label.text()
+        assert "Connectivity" in page.meta_label.text()
+        delegate = page.results_list.itemDelegate()
+        res = page.results_list.item(target_row).data(Qt.ItemDataRole.UserRole + 1)
+        opt = QStyleOptionViewItem()
+        opt.rect.setWidth(360)
+        card_html = delegate._build_document(opt, res).toHtml()
+        assert "Hardware › Printers / Peripherals" in card_html
+        assert page.results_list.currentRow() == target_row
+        assert page.results_list.verticalScrollBar().value() == saved_scroll
+    finally:
+        page.close()
+        page.deleteLater()
+        db_mgr.close()

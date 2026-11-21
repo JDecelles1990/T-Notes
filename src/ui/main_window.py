@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QGuiApplication, QKeySequence, QMoveEvent, QPainter, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
@@ -55,7 +55,13 @@ from src.ui.components.history_search_page import HistorySearchPage
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
+from src.database.history_fts import suggest_taxonomy_for_text
+from src.ui.components.taxonomy_pill_selector import (
+    TaxonomyPillSelector,
+    persist_taxonomy_assignments,
+)
 from src.ui.dialogs.add_template_dialog import AddTemplateDialog
+from src.ui.dialogs.archive_taxonomy_dialog import ArchiveTaxonomyDialog
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
 from src.ui.dialogs.summary_formatter_dialog import SummaryFormatterDialog
@@ -2428,17 +2434,23 @@ class TechPadMainWindow(QMainWindow):
             self._remove_secondary_tab(index, editor.scratchpad_id)
             self.history_drawer.refresh_list()
 
-    def _archive_secondary_tab(self, index: int) -> None:
-        """Archives a secondary tab directly without extra prompt."""
+    def _archive_secondary_tab(self, index: int, *, prompt_taxonomy: Optional[bool] = None) -> bool:
+        """Archives a secondary tab, prompting for taxonomy pills during interactive UI use."""
         editor = self.secondary_tab_widget.get_editor_at(index)
         if not editor:
-            return
+            return False
+        assignments = self._prompt_archive_taxonomy_assignments(editor, prompt_taxonomy=prompt_taxonomy)
+        if assignments is None:
+            return False
         if not self._save_before_archive(editor.scratchpad_id):
-            return
+            return False
+        self._finalize_archived_taxonomy(editor.scratchpad_id, assignments)
         self._remove_secondary_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
         self._update_related_history_pill()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+        return True
 
     def _remove_secondary_tab(self, index: int, scratchpad_id: int) -> None:
         """Removes a tab from the secondary pane and collapses split view if empty."""
@@ -2997,17 +3009,110 @@ class TechPadMainWindow(QMainWindow):
             return False
         return True
 
-    def _archive_tab(self, index: int) -> None:
-        """Archives a tab directly without extra prompt."""
+    def _should_prompt_archive_taxonomy(self, prompt_taxonomy: Optional[bool] = None) -> bool:
+        if prompt_taxonomy is not None:
+            return bool(prompt_taxonomy)
+        if self.isVisible():
+            return True
+        return ArchiveTaxonomyDialog.exec is not QDialog.exec
+
+    def _collect_auto_taxonomy_assignments(
+        self,
+        scratchpad_id: int,
+        *,
+        body_text: str = "",
+        min_score: float = 1.5,
+    ) -> list[dict[str, object]]:
+        ticket = self.scratchpad_service.get_ticket(scratchpad_id) or {}
+        title = str(ticket.get("title", "") or "")
+        conn = self._get_history_db_conn()
+        suggestions = suggest_taxonomy_for_text(title=title, body=body_text, conn=conn, max_per_axis=2)
+        assignments: list[dict[str, object]] = []
+        for axis in ("domain", "symptom", "resolution"):
+            for item in suggestions.get(axis, ()):
+                # Prefer concrete leaf domain nodes over parent-only containers when both match
+                if axis == "domain" and item.get("parent_slug") is None:
+                    continue
+                if float(item.get("score", 0.0)) >= min_score:
+                    assignments.append(
+                        {
+                            "slug": str(item["slug"]),
+                            "source": "auto",
+                            "confidence": float(item.get("confidence", 0.7)),
+                        }
+                    )
+                    break
+        return assignments
+
+    def _prompt_archive_taxonomy_assignments(
+        self,
+        editor: TechPadEditor,
+        *,
+        prompt_taxonomy: Optional[bool] = None,
+    ) -> Optional[list[dict[str, object]]]:
+        """Return selected taxonomy assignments, or None if the user cancels archiving."""
+        if not self._should_prompt_archive_taxonomy(prompt_taxonomy):
+            return self._collect_auto_taxonomy_assignments(
+                editor.scratchpad_id,
+                body_text=editor.toPlainText(),
+            )
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        dlg = ArchiveTaxonomyDialog(
+            ticket_number=str(ticket.get("ticket_number", "") or ""),
+            client_name=str(ticket.get("client_name", "") or ""),
+            title=str(ticket.get("title", "") or ""),
+            body_text=editor.toPlainText(),
+            conn=self._get_history_db_conn(),
+            parent=self,
+        )
+        self._last_archive_taxonomy_dialog = dlg
+        result = dlg.exec()
+        if result != QDialog.DialogCode.Accepted or dlg.outcome == ArchiveTaxonomyDialog.OUTCOME_CANCEL:
+            return None
+        if dlg.outcome == ArchiveTaxonomyDialog.OUTCOME_ARCHIVE_WITHOUT_TAGS:
+            return []
+        return dlg.selected_assignments()
+
+    def _finalize_archived_taxonomy(
+        self,
+        scratchpad_id: int,
+        assignments: Sequence[dict[str, object]],
+        *,
+        replace_existing: bool = True,
+    ) -> None:
+        try:
+            if assignments or replace_existing:
+                persist_taxonomy_assignments(
+                    self._get_history_db_conn(),
+                    scratchpad_id,
+                    assignments,
+                    replace_existing=replace_existing,
+                )
+        except Exception:
+            pass
+
+    def _refresh_history_search_after_archive(self) -> None:
+        if hasattr(self, "history_search_page"):
+            self.history_search_page._reload_clients()
+            self.history_search_page._run_fresh_search()
+
+    def _archive_tab(self, index: int, *, prompt_taxonomy: Optional[bool] = None) -> bool:
+        """Archives a primary tab, prompting for taxonomy pills during interactive UI use."""
         editor = self.tab_widget.get_editor_at(index)
         if not editor:
-            return
+            return False
+        assignments = self._prompt_archive_taxonomy_assignments(editor, prompt_taxonomy=prompt_taxonomy)
+        if assignments is None:
+            return False
         if not self._save_before_archive(editor.scratchpad_id):
-            return
+            return False
+        self._finalize_archived_taxonomy(editor.scratchpad_id, assignments)
         self._remove_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
         self._update_related_history_pill()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+        return True
 
     def _copy_tab_formatted_note_from(self, tab_widget: TechPadTabWidget, index: int) -> None:
         """Copies the entire note of a specific tab with rich formatting, colors, and embedded images."""
@@ -3033,7 +3138,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Copied note to clipboard!", 3500)
 
     def _close_other_tabs(self, keep_index: int) -> None:
-        """Closes and archives all open tabs except the selected one."""
+        """Bulk-archives all open tabs except keep_index without per-tab modal prompts."""
         keep_editor = self.tab_widget.get_editor_at(keep_index)
         if not keep_editor:
             return
@@ -3042,12 +3147,25 @@ class TechPadMainWindow(QMainWindow):
         for i in range(self.tab_widget.count() - 1, -1, -1):
             editor = self.tab_widget.get_editor_at(i)
             if editor and editor.scratchpad_id != keep_id:
+                body_text = editor.toPlainText()
                 if not self._save_before_archive(editor.scratchpad_id):
                     self.history_drawer.refresh_list()
                     return
+                auto_assignments = self._collect_auto_taxonomy_assignments(
+                    editor.scratchpad_id,
+                    body_text=body_text,
+                )
+                self._finalize_archived_taxonomy(
+                    editor.scratchpad_id,
+                    auto_assignments,
+                    replace_existing=False,
+                )
                 self._remove_tab(i, editor.scratchpad_id)
 
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
+        self._update_related_history_pill()
+        self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _on_find_requested(self) -> None:

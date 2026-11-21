@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta
 import html
 import re
 import sqlite3
 import sys
-from typing import Callable
+from typing import Callable, Sequence
 import unicodedata
 
 from PySide6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, Signal
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QColorDialog,
     QComboBox,
+    QDialog,
     QFileDialog,
     QFrame,
     QGroupBox,
@@ -58,6 +60,10 @@ from src.database.history_fts import (
 )
 from src.ui.components.editor import TechPadEditor
 from src.ui.components.panel_transition import PanelWidthTransition
+from src.ui.dialogs.archive_taxonomy_dialog import (
+    EditTicketTaxonomyDialog,
+    persist_taxonomy_assignments,
+)
 from src.ui.m365.launcher_widget import HoverToolButton
 
 # Expose as top-level `history_search_page` as well so direct imports work identically.
@@ -341,13 +347,15 @@ class HistorySearchPage(QWidget):
         self.copy_all_btn.setToolTip("Copy ticket header and full note body to clipboard")
         self.copy_body_btn = QPushButton("Copy Body")
         self.copy_body_btn.setToolTip("Copy ticket note body only to clipboard")
+        self.edit_tags_btn = QPushButton("Edit Tags")
+        self.edit_tags_btn.setToolTip("Edit or auto-suggest 3-axis taxonomy tags for this archived ticket")
         self.restore_btn = QPushButton("Restore to Active")
         self.restore_btn.setToolTip("Re-open this archived ticket as an active workspace tab")
         self.clone_btn = QPushButton("Clone to New")
         self.clone_btn.setToolTip("Create a fresh active ticket pre-filled from this archived note")
         self.feedback_label = QLabel("")
 
-        for btn in (self.copy_all_btn, self.copy_body_btn, self.restore_btn, self.clone_btn):
+        for btn in (self.copy_all_btn, self.copy_body_btn, self.edit_tags_btn, self.restore_btn, self.clone_btn):
             btn.setEnabled(False)
             action_bar.addWidget(btn)
         action_bar.addStretch(1)
@@ -594,6 +602,7 @@ class HistorySearchPage(QWidget):
 
         self.copy_all_btn.clicked.connect(self._copy_all)
         self.copy_body_btn.clicked.connect(self._copy_body)
+        self.edit_tags_btn.clicked.connect(self._open_edit_tags_dialog)
         self.restore_btn.clicked.connect(self._emit_restore)
         self.clone_btn.clicked.connect(self._emit_clone)
         self.ticket_panel_toggle.toggled.connect(self._on_ticket_panel_toggled)
@@ -792,27 +801,33 @@ class HistorySearchPage(QWidget):
             tax_nodes = get_ticket_taxonomy(self._get_conn(), res.id)
         except sqlite3.Error:
             tax_nodes = []
+        self._update_meta_label(self._current_ticket, tax_nodes)
+
+        body_text = str(self._current_ticket["body"])
+        self.preview_edit.setPlainText(body_text)
+        self._highlight_preview_matches(body_text, self.search_input.text())
+
+        for btn in (self.copy_all_btn, self.copy_body_btn, self.edit_tags_btn, self.restore_btn, self.clone_btn):
+            btn.setEnabled(True)
+
+    def _update_meta_label(
+        self,
+        ticket: dict[str, str | int],
+        tax_nodes: Sequence[dict[str, object]],
+    ) -> None:
         tax_part = (
             "<br>Taxonomy: "
             + " · ".join(f"<b>{html.escape(str(n['label']))}</b>" for n in tax_nodes)
             if tax_nodes
             else ""
         )
-
-        tags_part = f" · Tags: {html.escape(str(self._current_ticket['tags']))}" if self._current_ticket["tags"] else ""
+        tags_part = f" · Tags: {html.escape(str(ticket['tags']))}" if ticket["tags"] else ""
         self.meta_label.setText(
-            f"<b>{html.escape(str(self._current_ticket['ticket_number']))}</b> — "
-            f"{html.escape(str(self._current_ticket['title']))}<br>"
-            f"Client: {html.escape(str(self._current_ticket['client']))} · "
-            f"Archived: {html.escape(str(self._current_ticket['archived_at'])[:16])}{tags_part}{tax_part}"
+            f"<b>{html.escape(str(ticket['ticket_number']))}</b> — "
+            f"{html.escape(str(ticket['title']))}<br>"
+            f"Client: {html.escape(str(ticket['client']))} · "
+            f"Archived: {html.escape(str(ticket['archived_at'])[:16])}{tags_part}{tax_part}"
         )
-
-        body_text = str(self._current_ticket["body"])
-        self.preview_edit.setPlainText(body_text)
-        self._highlight_preview_matches(body_text, self.search_input.text())
-
-        for btn in (self.copy_all_btn, self.copy_body_btn, self.restore_btn, self.clone_btn):
-            btn.setEnabled(True)
 
     def _highlight_preview_matches(self, text: str, raw_query: str) -> None:
         terms = _extract_highlight_terms(raw_query)
@@ -867,7 +882,7 @@ class HistorySearchPage(QWidget):
         self.meta_label.setText("Select an archived ticket to inspect its notes.")
         self.preview_edit.clear()
         self.preview_edit.setExtraSelections([])
-        for btn in (self.copy_all_btn, self.copy_body_btn, self.restore_btn, self.clone_btn):
+        for btn in (self.copy_all_btn, self.copy_body_btn, self.edit_tags_btn, self.restore_btn, self.clone_btn):
             btn.setEnabled(False)
 
     # --- Actions ---
@@ -895,6 +910,63 @@ class HistorySearchPage(QWidget):
             return
         QGuiApplication.clipboard().setText(str(self._current_ticket["body"]))
         self._flash_feedback("Copied body")
+
+    def _open_edit_tags_dialog(self) -> bool:
+        """Open EditTicketTaxonomyDialog for the selected archived ticket and update cards in place."""
+        if not self._current_ticket:
+            return False
+        ticket_id = int(self._current_ticket["id"])
+        dlg = EditTicketTaxonomyDialog(
+            ticket_id=ticket_id,
+            ticket_number=str(self._current_ticket["ticket_number"]),
+            client_name=str(self._current_ticket["client"]),
+            title=str(self._current_ticket["title"]),
+            body_text=str(self._current_ticket["body"]),
+            conn=self._get_conn(),
+            parent=self,
+        )
+        self._last_edit_tags_dialog = dlg
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            self.apply_ticket_taxonomy_edits(ticket_id, dlg.selected_assignments())
+            return True
+        return False
+
+    def apply_ticket_taxonomy_edits(
+        self,
+        ticket_id: int,
+        assignments: Sequence[dict[str, object]],
+    ) -> list[dict[str, object]]:
+        """Persist updated taxonomy tags and refresh preview + result card without resetting scroll."""
+        updated = persist_taxonomy_assignments(
+            self._get_conn(),
+            ticket_id,
+            assignments,
+            replace_existing=True,
+        )
+        updated_slugs = tuple(str(n["slug"]) for n in updated)
+
+        scroll_bar = self.results_list.verticalScrollBar()
+        scroll_pos = scroll_bar.value()
+        current_row = self.results_list.currentRow()
+
+        for row in range(self.results_list.count()):
+            item = self.results_list.item(row)
+            res: HistorySearchResult | None = item.data(_RESULT_ROLE)
+            if res is not None and res.id == ticket_id:
+                item.setData(_RESULT_ROLE, replace(res, taxonomy_slugs=updated_slugs))
+
+        if self._current_ticket and int(self._current_ticket["id"]) == ticket_id:
+            self._update_meta_label(self._current_ticket, updated)
+
+        self.results_list.doItemsLayout()
+        self.results_list.viewport().update()
+        if current_row >= 0 and current_row < self.results_list.count():
+            self.results_list.blockSignals(True)
+            self.results_list.setCurrentRow(current_row)
+            self.results_list.blockSignals(False)
+        scroll_bar.setValue(scroll_pos)
+        self._flash_feedback("Tags updated")
+        return updated
 
     def _emit_restore(self) -> None:
         if self._current_ticket:
