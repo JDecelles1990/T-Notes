@@ -464,3 +464,518 @@ def test_history_active_ticket_text_color_and_highlight_on_selection(qapp, tmp_p
         QApplication.instance().removeEventFilter(win)
         win.deleteLater()
         db_mgr.close()
+
+
+def test_related_history_keyword_extraction_or_query_and_pill_navigation(qapp, tmp_path):
+    """Verifies OR query support, hybrid keyword extraction, client boost, and '💡 N Related' pill workflow."""
+    from PySide6.QtWidgets import QApplication
+    from src.database.history_fts import extract_related_keywords, find_related_history
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.main_window import TechPadMainWindow
+
+    assert sanitize_fts5_query("vpn OR 0x80070005") == '"vpn"* OR "0x80070005"*'
+    kw = extract_related_keywords(
+        title="FortiClient VPN issue",
+        note_text="[2026-11-21 10:00:00] User cannot connect error 0x80070005 after KB5034441",
+    )
+    assert "FortiClient" in kw and "0x80070005" in kw
+
+    db_mgr = DatabaseManager(tmp_path / "ui_related.db")
+    init_database(db_mgr)
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    t_other = sp_svc.create_ticket(
+        ticket_number="INC-8100",
+        client_name="Fabrikam",
+        title="FortiClient 0x80070005 Fix",
+        content_html="<p>Cleared credential manager cache for 0x80070005.</p>",
+    )
+    sp_svc.archive_ticket(t_other["id"])
+
+    t_same = sp_svc.create_ticket(
+        ticket_number="INC-8200",
+        client_name="Contoso",
+        title="VPN Tunnel Reset",
+        content_html="<p>Resolved 0x80070005 via miniport reinstall.</p>",
+    )
+    sp_svc.archive_ticket(t_same["id"])
+
+    conn = db_mgr.get_connection()
+    rel_results, rel_total, rel_query = find_related_history(
+        conn,
+        title="Unable to start tunnel",
+        note_text="Getting error 0x80070005 when connecting.",
+        client="Contoso",
+    )
+    assert rel_total == 2
+    assert "0x80070005" in rel_query
+    # Same-client match receives boost over other clients
+    assert rel_results[0].id == t_same["id"]
+
+    win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+    win.show()
+    qapp.processEvents()
+    try:
+        # 1. With no matching subject/body keywords or archived client tickets, pill stays hidden
+        assert win.btn_related_history.isVisible() is False
+
+        # 2. Type error code in active ticket & save -> '💡 2 Related' pill becomes visible with tooltip preview
+        active_ed = win.tab_widget.get_current_editor()
+        assert active_ed is not None
+        sp_svc.update_metadata(active_ed.scratchpad_id, ticket_number="INC-9001", client_name="Contoso", title="VPN Tunnel Failed")
+        active_ed.setPlainText("Hit 0x80070005 after reboot.")
+        win.flush_all_saves()
+        qapp.processEvents()
+
+        assert win.btn_related_history.isVisible() is True
+        assert win.btn_related_history.text() == "💡 2 Related"
+        assert "INC-8200" in win.btn_related_history.toolTip()
+        assert "Contoso" in win.btn_related_history.toolTip()
+
+        # 3. Clicking '💡 2 Related' opens History Search pre-filtered (All Clients) + auto-opens Active Ticket pane
+        win.btn_related_history.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is True
+        assert win.history_search_page.client_combo.currentData() is None
+        assert win.history_search_page.results_list.count() == 2
+        assert win.history_search_page.results_list.currentRow() == 0
+        assert win.history_search_page.ticket_panel_toggle.isChecked() is True
+        assert win.history_search_page.ticket_sidebar.isVisible() is True
+    finally:
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        db_mgr.close()
+
+
+def test_step1_pre_migration_backup_rollback_triggers_and_sanitizer_torture(tmp_path):
+    """Comprehensive Step 1 data-safety test: backup, rollback, trigger sync, and sanitizer torture cases."""
+    from src.database.history_fts import FTS_MIGRATION_VERSION, seed_taxonomy_nodes
+
+    # 1. Pre-migration file DB simulation matching old schema before tags/archived_at/taxonomy existed
+    db_file = tmp_path / "legacy_upgrade.db"
+    raw_conn = sqlite3.connect(str(db_file))
+    raw_conn.executescript(
+        """
+        PRAGMA foreign_keys = ON;
+        CREATE TABLE scratchpads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_number TEXT NOT NULL,
+            client_name TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            content_html TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            tab_order INTEGER DEFAULT 0,
+            elapsed_seconds INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT '2026-10-01T09:00:00'
+        );
+        INSERT INTO scratchpads (ticket_number, client_name, title, content_html, status)
+        VALUES ('INC-100', 'Contoso', 'Active ticket', '<p>Still in progress</p>', 'active');
+        INSERT INTO scratchpads (ticket_number, client_name, title, content_html, status)
+        VALUES ('INC-200', 'Fabrikam', 'Compte bloqué C:\\ProgramData\\App', '<p>Error 0x80070005:denied for &lt;jdoe@fabrikam.com&gt;</p>', 'archived');
+        PRAGMA user_version = 0;
+        """
+    )
+    raw_conn.close()
+
+    # 2. Simulated failure mid-migration rolls back cleanly and preserves user_version = 0
+    fail_conn = sqlite3.connect(str(db_file))
+    try:
+        def _boom(_c):
+            raise RuntimeError("Simulated mid-migration power loss")
+
+        with pytest.raises(RuntimeError, match="Simulated"):
+            migrate_history_fts(fail_conn, _test_hook=_boom)
+        assert fail_conn.execute("PRAGMA user_version").fetchone()[0] == 0
+    finally:
+        fail_conn.close()
+
+    # Backup was created before the attempted upgrade
+    backups = list(tmp_path.glob("legacy_upgrade.db.*.pre_fts_migration.bak"))
+    assert len(backups) == 1
+    assert backups[0].stat().st_size > 0
+
+    # 3. Real migration via DatabaseManager + init_database succeeds atomically & backfills archived ticket
+    db_mgr = DatabaseManager(db_file)
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    try:
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == FTS_MIGRATION_VERSION
+        # Second migration run is a safe no-op and creates no duplicate backups
+        assert migrate_history_fts(conn) is False
+        assert len(list(tmp_path.glob("legacy_upgrade.db.*.pre_fts_migration.bak"))) == 1
+
+        # Backfill indexed pre-existing archived ticket with French diacritics & HTML escape
+        res, total = search_history(conn, "bloque")
+        assert total == 1
+        assert res[0].ticket_number == "INC-200"
+
+        # 4. Sanitizer torture queries never raise sqlite3.OperationalError
+        assert sanitize_fts5_query("AND OR NOT") == '"AND"* "OR"* "NOT"*'
+        assert sanitize_fts5_query("--- :::") is None
+        for torture in (
+            "INC-200",
+            r"C:\ProgramData\App\log.txt",
+            "0x80070005:denied",
+            'AND OR NOT "unclosed quote',
+            "--- :::",
+            "<jdoe@fabrikam.com>",
+        ):
+            search_history(conn, torture)
+
+        path_hits, path_total = search_history(conn, r"C:\ProgramData\App")
+        assert path_total == 1 and path_hits[0].ticket_number == "INC-200"
+
+        colon_hits, colon_total = search_history(conn, "0x80070005:denied")
+        assert colon_total == 1
+        assert "&lt;jdoe@fabrikam.com&gt;" in colon_hits[0].snippet_html or "0x80070005" in colon_hits[0].snippet_html
+
+        # 5. Lifecycle trigger sync: restore-to-active hides from archive search, re-archive & delete remove FTS traces
+        repo = ScratchpadRepository(db_mgr)
+        repo.restore(2, 1)
+        _, after_restore = search_history(conn, "bloque")
+        assert after_restore == 0
+
+        repo.archive(2)
+        _, after_rearchive = search_history(conn, "bloque")
+        assert after_rearchive == 1
+
+        # Idempotent re-seeding leaves user assignments intact
+        repo.assign_ticket_taxonomy(2, ["domain.identity.entra_mfa", "symptom.auth_signin"])
+        seed_taxonomy_nodes(conn)
+        assigned = repo.get_ticket_taxonomy(2)
+        assert {item["slug"] for item in assigned} == {"domain.identity.entra_mfa", "symptom.auth_signin"}
+
+        # Delete ticket permanently -> FTS index & ticket_taxonomy cascade cleanly
+        repo.delete_permanently(2)
+        _, after_delete = search_history(conn, "bloque")
+        assert after_delete == 0
+        assert repo.get_ticket_taxonomy(2) == []
+    finally:
+        db_mgr.close()
+
+
+def test_step1_taxonomy_faceted_filtering_and_bilingual_suggestions(tmp_path):
+    """Validates 3-axis taxonomy hierarchy, filtering, repository/service integration, and FR/EN alias matching."""
+    from src.database.history_fts import get_taxonomy_seed_path
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.template_repository import TemplateRepository
+
+    assert get_taxonomy_seed_path().is_file()
+
+    db_mgr = DatabaseManager(tmp_path / "tax_test.db")
+    init_database(db_mgr)
+    sp_svc = ScratchpadService(
+        ScratchpadRepository(db_mgr),
+        ImageService(ImageRepository(db_mgr)),
+        TemplateRepository(db_mgr),
+    )
+    try:
+        # 1. All 3 axes populated with 2-level max domain hierarchy
+        domains = sp_svc.list_taxonomy_nodes(axis="domain")
+        symptoms = sp_svc.list_taxonomy_nodes(axis="symptom")
+        resolutions = sp_svc.list_taxonomy_nodes(axis="resolution")
+        assert len(domains) >= 9
+        assert len(symptoms) == 7
+        assert len(resolutions) == 8
+
+        # 2. Bilingual FR/EN auto-suggestion accuracy
+        fr_sug = sp_svc.suggest_taxonomy_for_text(
+            title="Boîte partagée Outlook lente / courriel ne part pas",
+            body="Reconstruit le fichier OST et vidé le cache.",
+        )
+        assert fr_sug["domain"][0]["slug"] == "domain.m365.exchange"
+        assert fr_sug["symptom"][0]["slug"] == "symptom.mail_flow_sync"
+        assert fr_sug["resolution"][0]["slug"] == "resolution.profile_cache_rebuild"
+
+        print_sug = sp_svc.suggest_taxonomy_for_text(
+            title="Imprimante ne répond pas — spouleur bloqué",
+            body="Redémarré service spooler et réinstallé pilote.",
+        )
+        assert print_sug["domain"][0]["slug"] == "domain.hardware.printers_peripherals"
+        assert print_sug["resolution"][0]["slug"] == "resolution.service_driver_restart"
+
+        # 3. Assign multi-axis taxonomy & filter search_history across domain + symptom & parent domain
+        t1 = sp_svc.create_ticket("INC-9101", "Contoso", "Exchange OST rebuild", "<p>Fixed OST</p>")
+        sp_svc.archive_ticket(t1["id"])
+        sp_svc.assign_ticket_taxonomy(
+            t1["id"],
+            ["domain.m365.exchange", "symptom.mail_flow_sync", "resolution.profile_cache_rebuild"],
+        )
+
+        t2 = sp_svc.create_ticket("INC-9102", "Contoso", "Entra MFA Loop", "<p>Revoked tokens</p>")
+        sp_svc.archive_ticket(t2["id"])
+        sp_svc.assign_ticket_taxonomy(
+            t2["id"],
+            ["domain.identity.entra_mfa", "symptom.auth_signin", "resolution.token_mfa_reset"],
+        )
+
+        # Exact multi-axis intersection (domain.m365.exchange + symptom.mail_flow_sync)
+        hits, total = sp_svc.search_history(
+            "",
+            taxonomy_slugs=["domain.m365.exchange", "symptom.mail_flow_sync"],
+        )
+        assert total == 1
+        assert hits[0].id == t1["id"]
+        assert "domain.m365.exchange" in hits[0].taxonomy_slugs
+
+        # Parent-level domain slug (domain.m365) matches child leaf tickets too
+        parent_hits, parent_total = sp_svc.search_history("", taxonomy_slugs=["domain.m365"])
+        assert parent_total == 1
+        assert parent_hits[0].id == t1["id"]
+    finally:
+        db_mgr.close()
+
+
+def test_step2_taxonomy_filters_delegate_badges_and_preview_header(qapp, tmp_path):
+    """Validates Step 2 3-axis taxonomy dropdown filtering, delegate card badges, and preview metadata header."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QStyleOptionViewItem
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.ui.components.history_search_page import HistorySearchPage
+
+    db_mgr = DatabaseManager(tmp_path / "step2_tax_ui.db")
+    init_database(db_mgr)
+    sp_svc = ScratchpadService(
+        ScratchpadRepository(db_mgr),
+        ImageService(ImageRepository(db_mgr)),
+        TemplateRepository(db_mgr),
+    )
+
+    t1 = sp_svc.create_ticket(
+        ticket_number="INC-9301",
+        client_name="Contoso",
+        title="Exchange shared mailbox OST failure",
+        content_html="<p>Rebuilt Outlook OST cache cleanly.</p>",
+    )
+    sp_svc.archive_ticket(t1["id"])
+    sp_svc.assign_ticket_taxonomy(
+        t1["id"],
+        ["domain.m365.exchange", "symptom.mail_flow_sync", "resolution.profile_cache_rebuild"],
+    )
+
+    t2 = sp_svc.create_ticket(
+        ticket_number="INC-9302",
+        client_name="Fabrikam",
+        title="Entra MFA token loop",
+        content_html="<p>Revoked Entra MFA sessions and re-registered.</p>",
+    )
+    sp_svc.archive_ticket(t2["id"])
+    sp_svc.assign_ticket_taxonomy(
+        t2["id"],
+        ["domain.identity.entra_mfa", "symptom.auth_signin", "resolution.token_mfa_reset"],
+    )
+
+    page = HistorySearchPage(get_conn=db_mgr.get_connection)
+    page.resize(1100, 680)
+    page.show()
+    qapp.processEvents()
+    try:
+        page.refresh_and_focus()
+        assert page.results_list.count() == 2
+        assert page.domain_combo.findData("domain.m365.exchange") > 0
+        assert page.domain_combo.findData("domain.m365") > 0
+        assert page.symptom_combo.findData("symptom.mail_flow_sync") > 0
+        assert page.resolution_combo.findData("resolution.profile_cache_rebuild") > 0
+
+        # Filter by parent domain slug -> matches child leaf domain.m365.exchange
+        page.domain_combo.setCurrentIndex(page.domain_combo.findData("domain.m365"))
+        qapp.processEvents()
+        assert page.results_list.count() == 1
+        assert page.count_label.text() == "1 match"
+
+        # Preview header shows assigned taxonomy labels
+        assert "M365 › Exchange" in page.meta_label.text()
+        assert "Mail Flow / Sync" in page.meta_label.text()
+        assert "Profile / Cache Rebuild" in page.meta_label.text()
+
+        # Custom delegate card includes human-readable taxonomy badges
+        delegate = page.results_list.itemDelegate()
+        res = page.results_list.item(0).data(Qt.ItemDataRole.UserRole + 1)
+        opt = QStyleOptionViewItem()
+        opt.rect.setWidth(360)
+        doc_html = delegate._build_document(opt, res).toHtml()
+        assert "M365 › Exchange" in doc_html
+
+        # Cross-axis combination with mismatched symptom returns 0 matches
+        page.symptom_combo.setCurrentIndex(page.symptom_combo.findData("symptom.auth_signin"))
+        qapp.processEvents()
+        assert page.results_list.count() == 0
+        assert page.count_label.text() == "0 matches"
+
+        # Switching symptom & resolution to match Exchange ticket brings it back
+        page.symptom_combo.setCurrentIndex(page.symptom_combo.findData("symptom.mail_flow_sync"))
+        page.resolution_combo.setCurrentIndex(page.resolution_combo.findData("resolution.profile_cache_rebuild"))
+        qapp.processEvents()
+        assert page.results_list.count() == 1
+        assert "INC-9301" in page.meta_label.text()
+    finally:
+        page.close()
+        page.deleteLater()
+        db_mgr.close()
+
+
+def test_step2_main_window_history_coexistence_and_shortcuts(qapp, tmp_path):
+    """Verifies top 🕰️ coexistence, Ctrl+Shift+F shortcut, and graceful drawer hide/restore."""
+    from PySide6.QtWidgets import QApplication
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.main_window import TechPadMainWindow
+
+    db_mgr = DatabaseManager(tmp_path / "step2_coexist.db")
+    init_database(db_mgr)
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    arch = sp_svc.create_ticket(
+        ticket_number="INC-9401",
+        client_name="Contoso",
+        title="Problème réseau Wi-Fi",
+        content_html="<p>Réseau restauré via réinitialisation DHCP.</p>",
+    )
+    sp_svc.archive_ticket(arch["id"])
+
+    win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+    win.show()
+    qapp.processEvents()
+    try:
+        # 1. Open right History drawer via top 🕰️ button -> stays in Active Workspace
+        if win.history_drawer.isHidden():
+            win.toolbar.btn_history.click()
+            qapp.processEvents()
+        assert win.history_drawer.isVisible() is True
+        assert win.is_history_search_page is False
+
+        # 2. Trigger Ctrl+Shift+F slot -> opens HistorySearchPage, focuses search_input, hides drawer
+        win.history_search_shortcut.activated.emit()
+        qapp.processEvents()
+        assert win.is_history_search_page is True
+        assert win.history_drawer.isHidden() is True
+        assert win.bottom_history_btn.isChecked() is True
+        assert win.history_search_page.search_input.hasFocus() is True
+
+        # 3. Clicking top 🕰️ while HistorySearchPage is open & drawer had been open:
+        # closes HistorySearchPage and toggles drawer closed (never two history views side-by-side)
+        win.toolbar.btn_history.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is False
+        assert win.history_drawer.isHidden() is True
+
+        # 4. When drawer is hidden and HistorySearchPage is open, clicking top 🕰️ closes search page & opens drawer
+        win.bottom_history_btn.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is True
+        win.toolbar.btn_history.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is False
+        assert win.history_drawer.isVisible() is True
+    finally:
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        db_mgr.close()
+
+
+def test_step2_debounce_clipboard_and_controller_refresh(qapp, tmp_path, monkeypatch):
+    """Validates 180 ms debounced FTS5 lookup, diacritic highlight, clipboard copy, and restore/clone refresh."""
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.main_window import TechPadMainWindow
+
+    copied: list[str] = []
+    monkeypatch.setattr(QGuiApplication.clipboard(), "setText", copied.append)
+
+    db_mgr = DatabaseManager(tmp_path / "step2_debounce.db")
+    init_database(db_mgr)
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    t1 = sp_svc.create_ticket(
+        ticket_number="INC-9501",
+        client_name="Contoso",
+        title="Panne réseau VPN",
+        content_html="<p>Le réseau interne a été rétabli.</p>",
+    )
+    sp_svc.archive_ticket(t1["id"])
+    t2 = sp_svc.create_ticket(
+        ticket_number="INC-9502",
+        client_name="Fabrikam",
+        title="Printer Spooler Queue",
+        content_html="<p>Cleared spooler queue.</p>",
+    )
+    sp_svc.archive_ticket(t2["id"])
+
+    win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+    win.show()
+    qapp.processEvents()
+    try:
+        win.bottom_history_btn.click()
+        qapp.processEvents()
+        page = win.history_search_page
+        assert page._debounce.interval() == 180
+        assert page.results_list.count() == 2
+
+        # Typing starts debounce timer; waiting slightly past 180 ms executes FTS5 search & highlights 'réseau'
+        page.search_input.setText("reseau")
+        assert page._debounce.isActive() is True
+        QTest.qWait(240)
+        qapp.processEvents()
+
+        assert page.results_list.count() == 1
+        assert page.count_label.text() == "1 match"
+        assert len(page.preview_edit.extraSelections()) >= 1
+
+        # Copy Body / Copy All populate clipboard
+        page.copy_body_btn.click()
+        assert "rétabli" in copied[-1]
+        page.copy_all_btn.click()
+        assert "INC-9501" in copied[-1]
+
+        # Restore removes archived ticket from HistorySearchPage results & refreshes count
+        page.restore_btn.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is False
+        assert win.tab_widget.get_current_editor().scratchpad_id == t1["id"]
+
+        win.bottom_history_btn.click()
+        qapp.processEvents()
+        assert page.results_list.count() == 0  # 'reseau' archived ticket was restored to active
+
+        page.search_input.clear()
+        page._run_fresh_search()
+        assert page.results_list.count() == 1  # Only INC-9502 remains archived
+
+        # Clone keeps archived ticket in History and creates a new active tab
+        tabs_before = win.tab_widget.count()
+        page.clone_btn.click()
+        qapp.processEvents()
+        assert win.is_history_search_page is False
+        assert win.tab_widget.count() == tabs_before + 1
+        assert win.tab_widget.get_current_editor().scratchpad_id not in (t1["id"], t2["id"])
+    finally:
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        db_mgr.close()

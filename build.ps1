@@ -98,6 +98,7 @@ try {
     $requiredFiles = @(
         $ExePath,
         (Join-Path $InternalRoot "src\database\schema.sql"),
+        (Join-Path $InternalRoot "src\database\taxonomy_seed.json"),
         (Join-Path $InternalRoot "assets\styles\dark_theme.qss"),
         (Join-Path $InternalRoot "assets\icons\app_icon.png"),
         (Join-Path $InternalRoot "assets\m365\categories.json"),
@@ -135,13 +136,4 @@ try {
 }
 finally {
     Pop-Location
-}
-finally {
-    if ($tempWorkDir -and (Test-Path -Path $tempWorkDir)) {
-        Remove-Item -Path $tempWorkDir -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    Set-Location -Path $origLocation.Path
-    if ($Host.Name -eq "ConsoleHost" -and -not $env:CI) {
-        Read-Host "`nPress Enter to close"
-    }
 }

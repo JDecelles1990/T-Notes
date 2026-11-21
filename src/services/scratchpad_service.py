@@ -7,7 +7,7 @@ from pathlib import Path
 from src.config import DEFAULT_EXPORT_DIR
 from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
-from src.database.history_fts import HistorySearchResult
+from src.database.history_fts import HistorySearchResult, find_related_history as _find_related_history
 from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.repositories.template_repository import TemplateRepository
@@ -198,6 +198,7 @@ class ScratchpadService:
         client: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
+        taxonomy_slugs: Optional[List[str] | Tuple[str, ...] | str] = None,
         sort_by: str = "relevance",
         limit: int = 100,
         offset: int = 0,
@@ -208,6 +209,7 @@ class ScratchpadService:
             client=client,
             date_from=date_from,
             date_to=date_to,
+            taxonomy_slugs=taxonomy_slugs,
             sort_by=sort_by,
             limit=limit,
             offset=offset,
@@ -216,6 +218,63 @@ class ScratchpadService:
     def list_archived_clients(self) -> List[str]:
         """Returns distinct client names across archived tickets for filtering."""
         return self.repo.list_archived_clients()
+
+    def list_taxonomy_nodes(self, *, axis: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Returns active 3-axis troubleshooting taxonomy nodes."""
+        return self.repo.list_taxonomy_nodes(axis=axis)
+
+    def assign_ticket_taxonomy(
+        self,
+        scratchpad_id: int,
+        slugs: List[str] | Tuple[str, ...],
+        *,
+        source: str = "manual",
+        confidence: float = 1.0,
+        replace_existing: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Assigns taxonomy slugs to a ticket."""
+        return self.repo.assign_ticket_taxonomy(
+            scratchpad_id,
+            slugs,
+            source=source,
+            confidence=confidence,
+            replace_existing=replace_existing,
+        )
+
+    def get_ticket_taxonomy(self, scratchpad_id: int) -> List[Dict[str, Any]]:
+        """Returns taxonomy nodes assigned to a ticket."""
+        return self.repo.get_ticket_taxonomy(scratchpad_id)
+
+    def suggest_taxonomy_for_text(
+        self,
+        title: str = "",
+        body: str = "",
+        *,
+        max_per_axis: int = 2,
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Suggests bilingual taxonomy nodes per axis from ticket title and body."""
+        return self.repo.suggest_taxonomy_for_text(
+            title=title,
+            body=body,
+            max_per_axis=max_per_axis,
+        )
+
+    def find_related_history(
+        self,
+        *,
+        title: str = "",
+        note_text: str = "",
+        client: str = "",
+        limit: int = 5,
+    ) -> Tuple[List[HistorySearchResult], int, str]:
+        """Finds related archived tickets matching Subject/note keywords with optional client boost."""
+        return _find_related_history(
+            self.repo.db.get_connection(),
+            title=title,
+            note_text=note_text,
+            client=client,
+            limit=limit,
+        )
 
     def get_skeleton_names(self) -> List[str]:
         """Returns the list of available ticket skeleton template names."""

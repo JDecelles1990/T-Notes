@@ -174,6 +174,7 @@ def test_pyinstaller_spec_is_valid_ast_and_references_existing_inputs():
     for rel in (
         "src/main.py",
         "src/database/schema.sql",
+        "src/database/taxonomy_seed.json",
         "assets/styles/dark_theme.qss",
         "assets/icons/app_icon.png",
         "assets/m365",

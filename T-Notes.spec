@@ -38,6 +38,7 @@ for src_name, dst_name in (
 
 datas = [
     (str(PROJECT_ROOT / "src" / "database" / "schema.sql"), "src/database"),
+    (str(PROJECT_ROOT / "src" / "database" / "taxonomy_seed.json"), "src/database"),
     (str(PROJECT_ROOT / "assets" / "styles" / "dark_theme.qss"), "assets/styles"),
     (str(PROJECT_ROOT / "assets" / "icons" / "app_icon.png"), "assets/icons"),
     (str(PROJECT_ROOT / "assets" / "m365"), "assets/m365"),

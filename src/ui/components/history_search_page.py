@@ -51,7 +51,9 @@ from src.core.constants import LOG_BADGES, TICKET_SKELETONS
 from src.database.history_fts import (
     HistorySearchResult,
     get_history_ticket,
+    get_ticket_taxonomy,
     list_history_clients,
+    list_taxonomy_nodes,
     search_history,
 )
 from src.ui.components.editor import TechPadEditor
@@ -69,6 +71,8 @@ def _extract_highlight_terms(raw_query: str) -> list[str]:
     """Pull searchable terms out of the query string for preview highlighting."""
     terms: list[str] = []
     for phrase, token in _QUERY_TOKEN_RE.findall(raw_query or ""):
+        if not phrase and token == "OR":
+            continue
         candidate = (phrase or token).strip('"').strip()
         if any(ch.isalnum() for ch in candidate):
             terms.append(candidate)
@@ -89,10 +93,18 @@ def _strip_accents_with_map(text: str) -> tuple[str, list[int]]:
 
 
 class HistoryItemDelegate(QStyledItemDelegate):
-    """Renders compact multi-line rich-text result cards with bolded FTS5 snippets."""
+    """Renders compact multi-line rich-text result cards with taxonomy badges and FTS5 snippets."""
 
     _PADDING_X = 10
     _PADDING_Y = 7
+
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        label_lookup: Callable[[str], str] | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._label_lookup = label_lookup
 
     def _build_document(self, option: QStyleOptionViewItem, result: HistorySearchResult) -> QTextDocument:
         doc = QTextDocument()
@@ -104,6 +116,17 @@ class HistoryItemDelegate(QStyledItemDelegate):
         header_meta = f"{html.escape(result.ticket_number)}{client_part}"
         title_safe = html.escape(result.title or "(Untitled)")
         snippet_safe = result.snippet_html or ""
+
+        tax_badges_html = ""
+        if getattr(result, "taxonomy_slugs", ()):
+            pills = []
+            for slug in result.taxonomy_slugs:
+                lbl = html.escape(self._label_lookup(slug) if self._label_lookup else slug)
+                pills.append(
+                    f"<span style='background-color:rgba(56,189,248,0.14); color:#7dd3fc; "
+                    f"padding:1px 5px; border-radius:3px; font-size:10px;'>{lbl}</span>"
+                )
+            tax_badges_html = f"<div style='margin-top:3px;'>{' &nbsp;'.join(pills)}</div>"
 
         muted_color = option.palette.placeholderText().color().name()
         text_color = (
@@ -119,6 +142,7 @@ class HistoryItemDelegate(QStyledItemDelegate):
             f"<td align='right' style='font-size:11px; color:{muted_color};'>{html.escape(date_short)}</td>"
             f"</tr></table>"
             f"<div style='font-size:13px; margin-top:2px;'><b>{title_safe}</b></div>"
+            f"{tax_badges_html}"
             f"<div style='font-size:12px; color:{muted_color}; margin-top:2px;'>{snippet_safe}</div>"
             f"</div>"
         )
@@ -197,6 +221,7 @@ class HistorySearchPage(QWidget):
         self._active_editor: TechPadEditor | None = None
         self._current_ticket_number = ""
         self.ticket_editor: TechPadEditor | None = None
+        self._taxonomy_labels: dict[str, str] = {}
 
         self._debounce = QTimer(self)
         self._debounce.setSingleShot(True)
@@ -226,7 +251,7 @@ class HistorySearchPage(QWidget):
         self.search_input.installEventFilter(self)
 
         self.client_combo = QComboBox()
-        self.client_combo.setMinimumWidth(150)
+        self.client_combo.setMinimumWidth(120)
         self.client_combo.addItem("All Clients", None)
         self.client_combo.setToolTip("Filter archived tickets by Client / Company")
 
@@ -236,6 +261,23 @@ class HistorySearchPage(QWidget):
         self.date_combo.addItem("Last 30 Days", 30)
         self.date_combo.addItem("Last 90 Days", 90)
         self.date_combo.setToolTip("Filter by archive date window")
+
+        self.domain_combo = QComboBox()
+        self.domain_combo.addItem("All Domains", None)
+        self.domain_combo.setToolTip("Filter by Technical Domain")
+
+        self.symptom_combo = QComboBox()
+        self.symptom_combo.addItem("All Symptoms", None)
+        self.symptom_combo.setToolTip("Filter by Symptom")
+
+        self.resolution_combo = QComboBox()
+        self.resolution_combo.addItem("All Resolutions", None)
+        self.resolution_combo.setToolTip("Filter by Resolution")
+
+        for combo in (self.client_combo, self.domain_combo, self.symptom_combo, self.resolution_combo):
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            combo.setMinimumContentsLength(11)
+            combo.setMaximumWidth(175)
 
         self.sort_combo = QComboBox()
         self.sort_combo.addItem("Relevance", "relevance")
@@ -250,6 +292,9 @@ class HistorySearchPage(QWidget):
         filter_bar.addWidget(self.search_input, stretch=1)
         filter_bar.addWidget(self.client_combo)
         filter_bar.addWidget(self.date_combo)
+        filter_bar.addWidget(self.domain_combo)
+        filter_bar.addWidget(self.symptom_combo)
+        filter_bar.addWidget(self.resolution_combo)
         filter_bar.addWidget(self.sort_combo)
         filter_bar.addWidget(self.count_label)
         root.addLayout(filter_bar)
@@ -265,7 +310,12 @@ class HistorySearchPage(QWidget):
         left_layout.setSpacing(6)
 
         self.results_list = QListWidget()
-        self.results_list.setItemDelegate(HistoryItemDelegate(self.results_list))
+        self.results_list.setItemDelegate(
+            HistoryItemDelegate(
+                self.results_list,
+                label_lookup=lambda slug: self._taxonomy_labels.get(slug, slug),
+            )
+        )
         self.results_list.setUniformItemSizes(False)
         self.results_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.results_list.setSpacing(0)
@@ -535,6 +585,9 @@ class HistorySearchPage(QWidget):
         self.search_input.returnPressed.connect(self._run_fresh_search)
         self.client_combo.currentIndexChanged.connect(self._run_fresh_search)
         self.date_combo.currentIndexChanged.connect(self._run_fresh_search)
+        self.domain_combo.currentIndexChanged.connect(self._run_fresh_search)
+        self.symptom_combo.currentIndexChanged.connect(self._run_fresh_search)
+        self.resolution_combo.currentIndexChanged.connect(self._run_fresh_search)
         self.sort_combo.currentIndexChanged.connect(self._run_fresh_search)
         self.load_more_btn.clicked.connect(self._load_next_page)
         self.results_list.currentItemChanged.connect(self._on_result_selected)
@@ -557,11 +610,54 @@ class HistorySearchPage(QWidget):
     # --- Public entry point when navigating to this page ---
 
     def refresh_and_focus(self) -> None:
-        """Reload client dropdown, run current query, and focus the search bar."""
+        """Reload client and taxonomy dropdowns, run current query, and focus the search bar."""
         self._reload_clients()
+        self._reload_taxonomy_filters()
         self._run_fresh_search()
         self.search_input.setFocus()
         self.search_input.selectAll()
+
+    def open_with_related_query(
+        self,
+        query: str,
+        client: str | None = None,
+        open_active_ticket_pane: bool = True,
+    ) -> None:
+        """Populate filters for related past tickets, select the best match, and optionally open Active Ticket."""
+        self._reload_clients()
+        self._reload_taxonomy_filters()
+        clean_query = (query or "").strip()
+
+        for combo in (self.domain_combo, self.symptom_combo, self.resolution_combo):
+            combo.blockSignals(True)
+            combo.setCurrentIndex(0)
+            combo.blockSignals(False)
+
+        self.client_combo.blockSignals(True)
+        if not clean_query and client:
+            client_idx = self.client_combo.findData(client)
+            self.client_combo.setCurrentIndex(client_idx if client_idx >= 0 else 0)
+        else:
+            self.client_combo.setCurrentIndex(0)
+        self.client_combo.blockSignals(False)
+
+        self.sort_combo.blockSignals(True)
+        sort_idx = self.sort_combo.findData("relevance" if clean_query else "date")
+        if sort_idx >= 0:
+            self.sort_combo.setCurrentIndex(sort_idx)
+        self.sort_combo.blockSignals(False)
+
+        self.search_input.blockSignals(True)
+        self.search_input.setText(clean_query)
+        self.search_input.blockSignals(False)
+
+        self._run_fresh_search()
+        if open_active_ticket_pane:
+            self.ticket_panel_toggle.setChecked(True)
+        if self.results_list.count() > 0:
+            self.results_list.setFocus()
+        else:
+            self.search_input.setFocus()
 
     def _reload_clients(self) -> None:
         previous_client = self.client_combo.currentData()
@@ -576,6 +672,46 @@ class HistorySearchPage(QWidget):
         restore_idx = self.client_combo.findData(previous_client)
         self.client_combo.setCurrentIndex(restore_idx if restore_idx >= 0 else 0)
         self.client_combo.blockSignals(False)
+
+    def _reload_taxonomy_filters(self) -> None:
+        try:
+            nodes = list_taxonomy_nodes(self._get_conn(), active_only=True)
+        except sqlite3.Error:
+            nodes = []
+        self._taxonomy_labels = {str(n["slug"]): str(n["label"]) for n in nodes}
+
+        combos = (
+            (self.domain_combo, "All Domains", "domain"),
+            (self.symptom_combo, "All Symptoms", "symptom"),
+            (self.resolution_combo, "All Resolutions", "resolution"),
+        )
+        for combo, default_label, axis in combos:
+            previous = combo.currentData()
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem(default_label, None)
+            for node in nodes:
+                if node.get("axis") != axis:
+                    continue
+                label = str(node["label"])
+                slug = str(node["slug"])
+                combo.addItem(label, slug)
+                idx = combo.count() - 1
+                combo.setItemData(idx, label, Qt.ItemDataRole.ToolTipRole)
+            restore_idx = combo.findData(previous)
+            combo.setCurrentIndex(restore_idx if restore_idx >= 0 else 0)
+            combo.blockSignals(False)
+
+    def _selected_taxonomy_slugs(self) -> list[str]:
+        return [
+            slug
+            for slug in (
+                self.domain_combo.currentData(),
+                self.symptom_combo.currentData(),
+                self.resolution_combo.currentData(),
+            )
+            if slug
+        ]
 
     # --- Search & Pagination ---
 
@@ -602,6 +738,7 @@ class HistorySearchPage(QWidget):
             query=self.search_input.text(),
             client=self.client_combo.currentData(),
             date_from=self._compute_date_from(),
+            taxonomy_slugs=self._selected_taxonomy_slugs() or None,
             sort_by=self.sort_combo.currentData() or "relevance",
             limit=self._PAGE_SIZE,
             offset=self._loaded_count,
@@ -651,12 +788,23 @@ class HistorySearchPage(QWidget):
 
         self._current_ticket = ticket
 
+        try:
+            tax_nodes = get_ticket_taxonomy(self._get_conn(), res.id)
+        except sqlite3.Error:
+            tax_nodes = []
+        tax_part = (
+            "<br>Taxonomy: "
+            + " · ".join(f"<b>{html.escape(str(n['label']))}</b>" for n in tax_nodes)
+            if tax_nodes
+            else ""
+        )
+
         tags_part = f" · Tags: {html.escape(str(self._current_ticket['tags']))}" if self._current_ticket["tags"] else ""
         self.meta_label.setText(
             f"<b>{html.escape(str(self._current_ticket['ticket_number']))}</b> — "
             f"{html.escape(str(self._current_ticket['title']))}<br>"
             f"Client: {html.escape(str(self._current_ticket['client']))} · "
-            f"Archived: {html.escape(str(self._current_ticket['archived_at'])[:16])}{tags_part}"
+            f"Archived: {html.escape(str(self._current_ticket['archived_at'])[:16])}{tags_part}{tax_part}"
         )
 
         body_text = str(self._current_ticket["body"])

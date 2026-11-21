@@ -157,6 +157,12 @@ Stores saved administrator UPNs and optional display labels belonging to a compa
 **Repository Access:**
 Managed atomically via `M365CompanyRepository` (`src/repositories/m365_company_repository.py`) and bridged cleanly into UI/services via `PersistentCompanyDirectory` (`src/services/m365_company_store.py`).
 
+### 2.9 `taxonomy_nodes` & `ticket_taxonomy`
+Stores the editable 3-axis troubleshooting taxonomy (`domain`, `symptom`, `resolution`) seeded from `src/database/taxonomy_seed.json` and links archived/active tickets to taxonomy nodes (`ON DELETE CASCADE`).
+
+- `taxonomy_nodes`: `id`, `slug` (`UNIQUE`), `axis` (`domain` | `symptom` | `resolution`), `label`, `parent_slug` (`FOREIGN KEY -> taxonomy_nodes(slug) ON DELETE SET NULL`), `aliases_json`, `sort_order`, `is_active`, `created_at`, `updated_at`. Indexed via `idx_taxonomy_nodes_axis`.
+- `ticket_taxonomy`: `(ticket_id, node_id)` composite `PRIMARY KEY` referencing `scratchpads(id) ON DELETE CASCADE` and `taxonomy_nodes(id) ON DELETE CASCADE`, with `source`, `confidence`, and `assigned_at`. Indexed via `idx_ticket_taxonomy_node`.
+
 ---
 
 ## 3. SQLite PRAGMA Configuration
@@ -211,8 +217,8 @@ Database migrations are managed idempotently in `src/database/migrations.py`. On
 5. **M365 Directory Metadata Singleton (`m365_directory_meta`)**:
    - Ensures the `m365_companies`, `m365_administrators`, and `m365_directory_meta` tables exist idempotently and initializes row `id = 1` in `m365_directory_meta` via `INSERT OR IGNORE`.
 
-6. **Versioned History FTS5 Migration (`PRAGMA user_version = 2`, `history_tickets_fts`)**:
-   - Invokes `migrate_history_fts(conn)` (`src/database/history_fts.py`) inside a single atomic transaction: adds missing `tags` / `archived_at` columns, backfills blank `archived_at` timestamps on archived tickets, creates `history_tickets_fts` (`tokenize='unicode61 remove_diacritics 2'`, `prefix='2 3'`) backed by `scratchpads` with `history_tickets_ai` / `history_tickets_ad` / `history_tickets_au` triggers, runs `rebuild`, and bumps `PRAGMA user_version = 2`.
+6. **Versioned History FTS5 & Taxonomy Migration (`PRAGMA user_version = 3`, `history_tickets_fts`, `taxonomy_nodes`, `ticket_taxonomy`)**:
+   - Invokes `migrate_history_fts(conn)` (`src/database/history_fts.py`) which creates a timestamped `*.pre_fts_migration.bak` backup before upgrading non-empty file DBs, runs inside `BEGIN IMMEDIATE ... COMMIT` (full `ROLLBACK` on error), adds missing `tags` / `archived_at` columns, backfills blank `archived_at` timestamps on archived tickets, creates `history_tickets_fts` (`tokenize='unicode61 remove_diacritics 2'`, `prefix='2 3'`) backed by `scratchpads` with `history_tickets_ai` / `history_tickets_ad` / `history_tickets_au` triggers (verified free of nested base-table `UPDATE` triggers), runs `rebuild`, creates/upserts the 3-axis taxonomy tables from `taxonomy_seed.json` without wiping user assignments, and sets `PRAGMA user_version = 3`.
 
 ---
 
