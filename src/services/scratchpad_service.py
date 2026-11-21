@@ -7,6 +7,7 @@ from pathlib import Path
 from src.config import DEFAULT_EXPORT_DIR
 from typing import Any, Dict, List, Optional, Tuple
 from src.core.constants import STATUS_ACTIVE, STATUS_ARCHIVED, TICKET_SKELETONS
+from src.database.history_fts import HistorySearchResult
 from src.repositories.image_repository import ImageRepository
 from src.repositories.scratchpad_repository import ScratchpadRepository
 from src.repositories.template_repository import TemplateRepository
@@ -189,6 +190,32 @@ class ScratchpadService:
     def search_tickets(self, query: str, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """Performs full-text search across tickets."""
         return self.repo.search(query=query, status=status)
+
+    def search_history(
+        self,
+        query: str = "",
+        *,
+        client: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        sort_by: str = "relevance",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Tuple[List[HistorySearchResult], int]:
+        """Performs ranked FTS5 history search across archived tickets with snippets."""
+        return self.repo.search_history(
+            query=query,
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_archived_clients(self) -> List[str]:
+        """Returns distinct client names across archived tickets for filtering."""
+        return self.repo.list_archived_clients()
 
     def get_skeleton_names(self) -> List[str]:
         """Returns the list of available ticket skeleton template names."""

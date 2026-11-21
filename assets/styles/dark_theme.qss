@@ -1,22 +1,29 @@
-/* T-Notes Theme — Neon Aurora Glass Dark */
+/* T-Notes Theme — Dynamic Aurora Frosted Glass Dark */
 
-QMainWindow, QDialog {
+QMainWindow {
+    background-color: transparent;
+    color: #e2e8f0;
+    font-family: "Segoe UI", "Inter", system-ui, sans-serif;
+    font-size: 10pt;
+}
+
+QDialog {
     background-color: #0b101b;
     color: #e2e8f0;
     font-family: "Segoe UI", "Inter", system-ui, sans-serif;
     font-size: 10pt;
 }
 
-/* Glossy Multi-Stop Aurora Gradient Toolbars */
+/* Glossy Translucent Frosted Glass Toolbars */
 QToolBar {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #1b253b,
-        stop: 0.45 #121a2d,
-        stop: 1 #0b111f
+        stop: 0 rgba(27, 37, 59, 0.68),
+        stop: 0.45 rgba(18, 26, 45, 0.64),
+        stop: 1 rgba(11, 17, 31, 0.68)
     );
     border: none;
-    border-bottom: 1px solid #263554;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.24);
     padding: 3px 6px;
     spacing: 4px;
 }
@@ -163,30 +170,30 @@ QPushButton#btnCancel:hover, QPushButton#btnDanger:hover {
     color: #ffffff;
 }
 
-/* Tab Widget & Glossy Tabs (blends with TechPadTabBar custom rainbow glow) */
+/* Tab Widget & Translucent Glossy Tabs */
 QTabWidget::pane {
-    border: 1px solid #24324d;
+    border: 1px solid rgba(56, 189, 248, 0.22);
     border-top: 2px solid #38bdf8;
-    background-color: #0e1422;
+    background-color: rgba(12, 18, 34, 0.54);
 }
 
 QTabBar {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #141c2e,
-        stop: 1 #0b101c
+        stop: 0 rgba(20, 28, 46, 0.62),
+        stop: 1 rgba(11, 16, 28, 0.62)
     );
-    border-bottom: 1px solid #1f2b44;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.18);
 }
 
 QTabBar::tab {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #1b2438,
-        stop: 1 #121928
+        stop: 0 rgba(27, 36, 56, 0.70),
+        stop: 1 rgba(18, 25, 40, 0.70)
     );
     color: #94a3b8;
-    border: 1px solid #243047;
+    border: 1px solid rgba(71, 85, 105, 0.42);
     border-bottom: none;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
@@ -198,9 +205,9 @@ QTabBar::tab {
 QTabBar::tab:selected {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #24334f,
-        stop: 0.45 #172236,
-        stop: 1 #0e1422
+        stop: 0 rgba(36, 51, 79, 0.80),
+        stop: 0.45 rgba(23, 34, 54, 0.76),
+        stop: 1 rgba(14, 20, 34, 0.76)
     );
     color: #f8fafc;
     border-color: #38bdf8;
@@ -210,18 +217,18 @@ QTabBar::tab:selected {
 QTabBar::tab:hover:!selected {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #24314a,
-        stop: 1 #182235
+        stop: 0 rgba(36, 49, 74, 0.78),
+        stop: 1 rgba(24, 34, 53, 0.78)
     );
     color: #e2e8f0;
-    border-color: #475569;
+    border-color: #38bdf8;
 }
 
-/* Note Editor Workspace */
+/* Note Editor Frosted Glass Workspace */
 QTextEdit, QPlainTextEdit {
-    background-color: #0e1422;
+    background-color: rgba(12, 18, 34, 0.60);
     color: #e2e8f0;
-    border: 1px solid #253450;
+    border: 1px solid rgba(56, 189, 248, 0.22);
     border-radius: 6px;
     selection-background-color: #0ea5e9;
     selection-color: #ffffff;
@@ -230,22 +237,23 @@ QTextEdit, QPlainTextEdit {
 
 QTextEdit:hover, QPlainTextEdit:hover {
     border: 1px solid #38bdf8;
+    background-color: rgba(14, 22, 40, 0.65);
 }
 
 QTextEdit:focus, QPlainTextEdit:focus {
     border: 1px solid #60a5fa;
-    background-color: #101829;
+    background-color: rgba(15, 24, 42, 0.70);
 }
 
-/* Glowing Text Fields, Combos & SpinBoxes */
+/* Glowing Translucent Text Fields, Combos & SpinBoxes */
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #151f33,
-        stop: 1 #0f1728
+        stop: 0 rgba(21, 31, 51, 0.78),
+        stop: 1 rgba(15, 23, 40, 0.78)
     );
     color: #f1f5f9;
-    border: 1px solid #2e4063;
+    border: 1px solid rgba(71, 85, 105, 0.55);
     border-radius: 6px;
     padding: 5px 9px;
     selection-background-color: #0ea5e9;
@@ -256,8 +264,8 @@ QLineEdit:hover, QComboBox:hover, QSpinBox:hover, QDoubleSpinBox:hover {
     border: 1px solid #38bdf8;
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #19263e,
-        stop: 1 #121c30
+        stop: 0 rgba(25, 38, 62, 0.85),
+        stop: 1 rgba(18, 28, 48, 0.85)
     );
 }
 
@@ -265,8 +273,8 @@ QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {
     border: 1px solid #a78bfa;
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #1c2944,
-        stop: 1 #131d33
+        stop: 0 rgba(28, 41, 68, 0.88),
+        stop: 1 rgba(19, 29, 51, 0.88)
     );
     color: #ffffff;
 }
@@ -277,7 +285,7 @@ QComboBox::drop-down {
 }
 
 QComboBox QAbstractItemView {
-    background-color: #121a2d;
+    background-color: rgba(18, 26, 45, 0.96);
     color: #e2e8f0;
     border: 1px solid #38bdf8;
     selection-background-color: #1d4ed8;
@@ -289,34 +297,34 @@ QComboBox QAbstractItemView {
 QDockWidget {
     color: #e2e8f0;
     font-weight: bold;
-    background-color: #0d1322;
+    background-color: rgba(13, 19, 34, 0.58);
 }
 
 QDockWidget::title {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 #192642,
-        stop: 0.5 #151e34,
-        stop: 1 #1b2038
+        stop: 0 rgba(25, 38, 66, 0.74),
+        stop: 0.5 rgba(21, 30, 52, 0.70),
+        stop: 1 rgba(27, 32, 56, 0.74)
     );
     padding: 8px 10px;
-    border-bottom: 1px solid #2d3f63;
+    border-bottom: 1px solid rgba(56, 189, 248, 0.25);
     color: #7dd3fc;
 }
 
-/* Luminous Lists & Trees */
+/* Luminous Translucent Lists & Trees */
 QListWidget, QTreeWidget, QTableWidget {
-    background-color: #0f1626;
+    background-color: rgba(13, 20, 38, 0.58);
     color: #e2e8f0;
-    border: 1px solid #24334f;
+    border: 1px solid rgba(56, 189, 248, 0.22);
     border-radius: 6px;
     outline: none;
-    alternate-background-color: #131c30;
+    alternate-background-color: rgba(19, 28, 48, 0.62);
 }
 
 QListWidget::item, QTreeWidget::item {
     padding: 7px 10px;
-    border-bottom: 1px solid rgba(36, 51, 79, 0.55);
+    border-bottom: 1px solid rgba(36, 51, 79, 0.45);
     border-radius: 4px;
 }
 
@@ -335,10 +343,10 @@ QListWidget::item:hover:!selected, QTreeWidget::item:hover:!selected {
     color: #f8fafc;
 }
 
-/* Glass Cards (GroupBox) */
+/* Frosted Glass Cards (GroupBox) */
 QGroupBox {
-    background-color: rgba(15, 23, 42, 0.72);
-    border: 1px solid #273859;
+    background-color: rgba(15, 23, 42, 0.54);
+    border: 1px solid rgba(56, 189, 248, 0.25);
     border-radius: 8px;
     margin-top: 12px;
     padding-top: 10px;
@@ -351,13 +359,13 @@ QGroupBox::title {
     subcontrol-position: top left;
     left: 10px;
     padding: 0 6px;
-    background-color: #0d1424;
-    border: 1px solid #2b3f66;
+    background-color: rgba(13, 20, 36, 0.80);
+    border: 1px solid rgba(56, 189, 248, 0.32);
     border-radius: 4px;
     color: #7dd3fc;
 }
 
-/* Labels & Statusbar */
+/* Labels & Translucent Glass Statusbar */
 QLabel {
     color: #dbeafe;
 }
@@ -365,11 +373,11 @@ QLabel {
 QStatusBar {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #141d31,
-        stop: 1 #0a0f1c
+        stop: 0 rgba(20, 29, 49, 0.70),
+        stop: 1 rgba(10, 15, 28, 0.74)
     );
     color: #cbd5e1;
-    border-top: 1px solid #283959;
+    border-top: 1px solid rgba(56, 189, 248, 0.24);
     padding: 2px 6px;
 }
 

@@ -2152,17 +2152,20 @@ def test_ui_m365_launcher_buttons_have_glow(main_window):
 
 
 def test_history_pane_shortcut_is_alt_h(main_window):
-    """Verifies that the History pane toggle shortcut is Alt+H and buttons reflect it."""
-    # Status bar button text and tooltip
-    assert "Alt+H" in main_window.btn_toggle_drawer.text()
-    assert "Alt+H" in main_window.btn_toggle_drawer.toolTip()
+    """Verifies top History drawer stays Alt+H while bottom History button opens Ctrl+Shift+F search page."""
+    # Top toolbar History drawer button remains Alt+H
     assert "Alt+H" in main_window.toolbar.btn_history.toolTip()
+
+    # Bottom status bar History button is rewired to the full-page History Search workspace
+    assert "Ctrl+Shift+F" in main_window.btn_toggle_drawer.toolTip()
+    assert main_window.btn_toggle_drawer.isCheckable() is True
 
     # Verify shortcut bindings
     shortcut_map = {s.key().toString(): s for s in main_window._notes_shortcuts}
     assert "Alt+H" in shortcut_map
     assert "Ctrl+H" in shortcut_map
     assert "Ctrl+F" in shortcut_map
+    assert main_window.history_search_shortcut.key().toString() == "Ctrl+Shift+F"
 
 
 def test_main_window_summary_copy_actions(main_window, qapp, monkeypatch):
@@ -2204,5 +2207,57 @@ def test_main_window_summary_copy_actions(main_window, qapp, monkeypatch):
     clip_text = captured_mimes[-1].text()
     assert "=== BILLET :" in clip_text
     assert "DÉPANNAGE / TRAVAIL EFFECTUÉ :" in clip_text
+
+
+def test_ui_dynamic_gradient_backdrop_and_interactive_glass_hover(main_window, qapp):
+    """Verifies color-changing backdrop animation, transparent mouse-hover glass overlay, and zero idle CPU on hide."""
+    from PySide6.QtCore import QPointF
+
+    backdrop = getattr(main_window, "glass_backdrop", None)
+    assert backdrop is not None
+    overlay = backdrop.overlay
+    assert overlay.testAttribute(Qt.WA_TransparentForMouseEvents) is True
+
+    main_window.show()
+    qapp.processEvents()
+    assert backdrop.is_active is True
+
+    # Smooth slow full-spectrum rainbow backdrop advances phase and interpolates hues
+    c_before = backdrop.sample_backdrop_color()
+    phase_before = backdrop.phase
+    backdrop.step_animation(steps=90)
+    assert backdrop.phase != phase_before
+    c_after = backdrop.sample_backdrop_color()
+    assert c_after.getRgb() != c_before.getRgb()
+
+    # Sampling across the cycle traverses distinct full-spectrum rainbow hues
+    rainbow_hues = [backdrop.sample_accent_color(offset=off).hueF() for off in (0.0, 0.25, 0.5, 0.75)]
+    assert len({round(h, 2) for h in rainbow_hues}) == 4
+
+    # Interactive cursor tracking activates hover spotlight with zero lag & viewport-clipped panel rect
+    editor = main_window.tab_widget.get_current_editor()
+    assert editor is not None
+    center_pt = QPointF(editor.mapTo(main_window, editor.rect().center()))
+    backdrop.set_cursor_pos(center_pt, hovered=True)
+    assert backdrop.hover_level > 0.0
+    assert backdrop.spotlight_pos == center_pt
+    panel_rect = backdrop.hovered_panel_rect
+    assert panel_rect is not None
+    assert main_window.rect().contains(panel_rect.toRect())
+
+    # Backdrop uses compact cached buffer for minimal GPU/CPU overhead
+    assert backdrop._backdrop_cache.width() == 96
+    assert backdrop._backdrop_cache.height() == 54
+
+    # Painting both window backdrop and glass overlay renders non-empty pixmaps without error
+    win_pix = main_window.grab()
+    overlay_pix = overlay.grab()
+    assert not win_pix.isNull() and win_pix.width() > 0
+    assert not overlay_pix.isNull() and overlay_pix.width() > 0
+
+    # Hiding stops the animation timer (0% idle CPU)
+    main_window.hide()
+    qapp.processEvents()
+    assert backdrop.is_active is False
 
 

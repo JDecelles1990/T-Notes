@@ -7,7 +7,7 @@ import re
 import sys
 from typing import Any, Callable, Optional
 from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QGuiApplication, QKeySequence, QMoveEvent, QResizeEvent, QScreen, QShortcut, QShowEvent
+from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QGuiApplication, QKeySequence, QMoveEvent, QPainter, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -46,10 +46,12 @@ from src.ui.components.glow_effect import (
     apply_glow_to_inputs,
     pulse_widget_glow,
 )
+from src.ui.components.glass_backdrop import install_glass_backdrop
 from src.ui.components.panel_transition import PanelWidthTransition, fade_in_widget
 from src.ui.dialogs.command_palette_dialog import CommandPaletteDialog, PaletteEntry
 from src.ui.dialogs.quick_tools_dialog import QuickToolsDialog
 from src.ui.components.history_drawer import HistoryDrawer
+from src.ui.components.history_search_page import HistorySearchPage
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
@@ -277,7 +279,21 @@ class TechPadMainWindow(QMainWindow):
         self.m365_workspace.note_modified.connect(self._on_editor_modified)
         self.m365_workspace.save_requested.connect(self._execute_save)
         self.m365_workspace.send_default_email_requested.connect(self._on_send_active_ticket_to_default_email)
-        self.setCentralWidget(self.workspace_stack)
+
+        # Wrap existing workspace_stack + full-page HistorySearchPage inside main_stack
+        self.main_stack = QStackedWidget(self)
+        self.main_stack.addWidget(self.workspace_stack)
+        self.history_search_page = HistorySearchPage(get_conn=self._get_history_db_conn, parent=self)
+        self.main_stack.addWidget(self.history_search_page)
+        self.main_stack.setCurrentWidget(self.workspace_stack)
+        self.active_workspace_widget = self.workspace_stack
+        self.history_search_page.back_requested.connect(self.close_history_search_page)
+        self.history_search_page.restore_requested.connect(self.restore_ticket_from_history)
+        self.history_search_page.clone_requested.connect(self.clone_ticket_from_history)
+        self.history_search_page.note_modified.connect(self._on_editor_modified)
+        self.history_search_page.save_requested.connect(self._execute_save)
+        self.history_search_page.send_default_email_requested.connect(self._on_send_active_ticket_to_default_email)
+        self.setCentralWidget(self.main_stack)
 
         # Formatting & System Toolbars (Two-Row Header)
         self.toolbar = TechPadToolBar(self)
@@ -301,6 +317,7 @@ class TechPadMainWindow(QMainWindow):
         self.toolbar.command_palette_requested.connect(self._open_command_palette)
         self.toolbar.quick_tools_requested.connect(self._open_quick_tools)
         self.toolbar.stopwatch.time_updated.connect(self._on_stopwatch_time_updated)
+        # StatusBar wiring is below; connect status messages from HistorySearchPage once status_bar exists
 
         # Row 1: Formatting Actions
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -315,8 +332,9 @@ class TechPadMainWindow(QMainWindow):
             toggle_act.setVisible(False)
             toggle_act.setEnabled(False)
 
-        # History / Archive Side Drawer
+        # History / Archive Side Drawer (kept intact for top toolbar 🕰️ button & Alt+H)
         self.history_drawer = HistoryDrawer(self.scratchpad_service, self)
+        self.right_history_pane = self.history_drawer
         self.history_drawer.restore_requested.connect(self._on_restore_ticket)
         self.history_drawer.split_restore_requested.connect(self._on_history_split_restore)
         self.history_drawer.delete_requested.connect(self._on_delete_ticket)
@@ -328,6 +346,7 @@ class TechPadMainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.toolbar.stopwatch.status_message_requested.connect(self.status_bar.showMessage)
         self.m365_workspace.status_message_requested.connect(self.status_bar.showMessage)
+        self.history_search_page.status_message_requested.connect(self.status_bar.showMessage)
 
         # 1. Toggle Always-on-Top Mini-HUD button in status bar (down-left corner for 1-click restore in HUD mode)
         self.btn_status_hud = QPushButton("📌 HUD (Alt+T)")
@@ -364,12 +383,30 @@ class TechPadMainWindow(QMainWindow):
         self.btn_switch_split_pane.setVisible(False)
         self.status_bar.addWidget(self.btn_switch_split_pane)
 
-        # 4. Toggle history drawer button in status bar (on the right side of the Split button, left side of bottom bar)
-        self.btn_toggle_drawer = QPushButton("🕰️ History (Alt+H)")
+        # 3b. Active Ticket sidebar toggle replacing Split when viewing the History module
+        self.btn_history_active_ticket = QPushButton("Active Ticket")
+        self.btn_history_active_ticket.setObjectName("btnSecondary")
+        self.btn_history_active_ticket.setFlat(True)
+        self.btn_history_active_ticket.setCheckable(True)
+        self.btn_history_active_ticket.setChecked(self.history_search_page.ticket_panel_toggle.isChecked())
+        self.btn_history_active_ticket.setToolTip("Show or hide the Active Ticket right pane")
+        self.btn_history_active_ticket.setAccessibleName("Toggle active ticket panel in History")
+        self.btn_history_active_ticket.setFocusPolicy(Qt.StrongFocus)
+        self.btn_history_active_ticket.clicked.connect(self._toggle_history_active_ticket)
+        self.btn_history_active_ticket.setVisible(False)
+        self.status_bar.addWidget(self.btn_history_active_ticket)
+        self.history_search_page.ticket_panel_toggle.toggled.connect(self.btn_history_active_ticket.setChecked)
+        self.history_search_page.btn_active_ticket = self.btn_history_active_ticket
+
+        # 4. Full-page History Search button in status bar (rewired; top 🕰️ button keeps toggling drawer)
+        self.btn_toggle_drawer = QPushButton("🕰️ History")
+        self.bottom_history_btn = self.btn_toggle_drawer
         self.btn_toggle_drawer.setObjectName("btnSecondary")
         self.btn_toggle_drawer.setFlat(True)
-        self.btn_toggle_drawer.setToolTip("Toggle History and Archival drawer (Alt+H)")
-        self.btn_toggle_drawer.clicked.connect(self._toggle_history_drawer)
+        self.btn_toggle_drawer.setCheckable(True)
+        self.btn_toggle_drawer.setAccessibleName("Open full History Search page")
+        self.btn_toggle_drawer.setToolTip("Open full History Search page (Ctrl+Shift+F)")
+        self.btn_toggle_drawer.clicked.connect(self.toggle_history_search_page)
         self.status_bar.addWidget(self.btn_toggle_drawer)
 
         # 5. M365 Launcher module sidebar buttons: Categories & Active Ticket (replacing Split & History in M365 mode)
@@ -445,9 +482,13 @@ class TechPadMainWindow(QMainWindow):
             self.tab_widget,
             self.secondary_tab_widget,
             self.m365_workspace,
+            self.history_search_page,
         ]
         apply_glow_to_buttons(glow_roots)
-        apply_glow_to_inputs([self.history_drawer, self.m365_workspace])
+        apply_glow_to_inputs([self.history_drawer, self.m365_workspace, self.history_search_page])
+
+        # 8. Dynamic app gradient backdrop & interactive mouse-hover glass overlay
+        self.glass_backdrop = install_glass_backdrop(self)
 
     def _toggle_m365_categories(self) -> None:
         """Toggles the M365 category navigation sidebar."""
@@ -459,6 +500,11 @@ class TechPadMainWindow(QMainWindow):
         if hasattr(self, "m365_workspace") and hasattr(self.m365_workspace, "ticket_panel_toggle"):
             self.m365_workspace.ticket_panel_toggle.setChecked(self.btn_m365_active_ticket.isChecked())
 
+    def _toggle_history_active_ticket(self) -> None:
+        """Toggles the Active Ticket right pane inside the History Search workspace."""
+        if hasattr(self, "history_search_page") and hasattr(self.history_search_page, "ticket_panel_toggle"):
+            self.history_search_page.ticket_panel_toggle.setChecked(self.btn_history_active_ticket.isChecked())
+
     def _update_module_status_bar_buttons(self, is_m365: Optional[bool] = None) -> None:
         """Updates visibility of module-specific buttons on the bottom status bar."""
         if is_m365 is None:
@@ -468,18 +514,41 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_toggle_split.setVisible(False)
             if hasattr(self, "btn_switch_split_pane"):
                 self.btn_switch_split_pane.setVisible(False)
+            if hasattr(self, "btn_history_active_ticket"):
+                self.btn_history_active_ticket.setVisible(False)
             if hasattr(self, "btn_toggle_drawer"):
                 self.btn_toggle_drawer.setVisible(False)
             if hasattr(self, "btn_m365_categories"):
                 self.btn_m365_categories.setVisible(True)
             if hasattr(self, "btn_m365_active_ticket"):
                 self.btn_m365_active_ticket.setVisible(True)
+        elif self.is_history_search_page:
+            if hasattr(self, "btn_toggle_split"):
+                self.btn_toggle_split.setVisible(False)
+            if hasattr(self, "btn_switch_split_pane"):
+                self.btn_switch_split_pane.setVisible(False)
+            if hasattr(self, "btn_history_active_ticket"):
+                self.btn_history_active_ticket.setVisible(True)
+            if hasattr(self, "btn_toggle_drawer"):
+                self.btn_toggle_drawer.setText("T-Notes")
+                self.btn_toggle_drawer.setToolTip("Return to T-Notes workspace (Ctrl+Shift+F)")
+                self.btn_toggle_drawer.setAccessibleName("T-Notes")
+                self.btn_toggle_drawer.setVisible(True)
+            if hasattr(self, "btn_m365_categories"):
+                self.btn_m365_categories.setVisible(False)
+            if hasattr(self, "btn_m365_active_ticket"):
+                self.btn_m365_active_ticket.setVisible(False)
         else:
             if hasattr(self, "btn_toggle_split"):
                 self.btn_toggle_split.setVisible(True)
             if hasattr(self, "btn_switch_split_pane"):
                 self.btn_switch_split_pane.setVisible(getattr(self, "_split_auto_single_pane", False))
+            if hasattr(self, "btn_history_active_ticket"):
+                self.btn_history_active_ticket.setVisible(False)
             if hasattr(self, "btn_toggle_drawer"):
+                self.btn_toggle_drawer.setText("🕰️ History")
+                self.btn_toggle_drawer.setToolTip("Open full History Search page (Ctrl+Shift+F)")
+                self.btn_toggle_drawer.setAccessibleName("Open full History Search page")
                 self.btn_toggle_drawer.setVisible(True)
             if hasattr(self, "btn_m365_categories"):
                 self.btn_m365_categories.setVisible(False)
@@ -515,6 +584,9 @@ class TechPadMainWindow(QMainWindow):
         QShortcut(QKeySequence("F8"), self, self.toggle_window_visibility, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+K"), self, self._open_command_palette, context=Qt.ApplicationShortcut)
         QShortcut(QKeySequence("Ctrl+Alt+Q"), self, self._open_quick_tools, context=Qt.ApplicationShortcut)
+        self.history_search_shortcut = QShortcut(
+            QKeySequence("Ctrl+Shift+F"), self, self.open_history_search_page, context=Qt.ApplicationShortcut
+        )
         # One Qt shortcut owns Alt+F8; do not also handle it in eventFilter.
         self.workspace_shortcut = QShortcut(
             QKeySequence("Alt+F8"), self, self.switch_workspace
@@ -586,6 +658,8 @@ class TechPadMainWindow(QMainWindow):
 
     def show_m365_workspace(self) -> bool:
         """Flush notes, then select the existing M365 page without rebuilding notes."""
+        if self.is_history_search_page:
+            self.close_history_search_page()
         if self.is_m365_workspace:
             return True
         pending = {sid for sid, timer in self._debounce_timers.items() if timer.is_active()}
@@ -602,7 +676,7 @@ class TechPadMainWindow(QMainWindow):
             # an explicit navigation retry without treating an idle timer as saved.
             self.status_bar.showMessage("Notes could not be saved. Stay in T-Notes and retry.", 6000)
             return False
-        editor = self._get_active_editor()
+        editor = self._get_underlying_tab_editor()
         self._workspace_restore_ticket = editor.scratchpad_id if editor else None
         ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) if editor else None
         self.m365_workspace.set_active_ticket(
@@ -673,7 +747,7 @@ class TechPadMainWindow(QMainWindow):
             self.setMinimumSize(340, 200)
             if hasattr(self, "tab_widget"):
                 self.tab_widget.set_hud_nav_arrows_visible(True)
-            editor = self._get_active_editor()
+            editor = self._get_underlying_tab_editor()
             t_label = ""
             if editor:
                 ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id)
@@ -840,6 +914,8 @@ class TechPadMainWindow(QMainWindow):
         # 6. Drawer open state
         if self.is_m365_workspace:
             drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else self._notes_visibility.get(self.history_drawer, False)
+        elif self.is_history_search_page:
+            drawer_open = getattr(self, "_right_pane_was_visible", False)
         else:
             drawer_open = self._user_history_drawer_open if self.history_auto_collapsed else (self.history_drawer.isVisible() if hasattr(self, "history_drawer") else False)
 
@@ -1038,15 +1114,15 @@ class TechPadMainWindow(QMainWindow):
                 editor.setFocus()
                 self._on_editor_focused(editor.scratchpad_id)
 
-    def _get_active_editor(self) -> Optional[TechPadEditor]:
-        """Returns the currently active editor where the cursor is placed across primary and secondary panes."""
-        # 1. First check if a TechPadEditor (or its viewport) has keyboard focus right now
+    def _get_underlying_tab_editor(self) -> Optional[TechPadEditor]:
+        """Returns the currently active editor strictly across primary and secondary tab panes."""
         focus_w = QApplication.focusWidget()
         m365_ed = getattr(self.m365_workspace, "ticket_editor", None) if hasattr(self, "m365_workspace") else None
-        if isinstance(focus_w, TechPadEditor) and focus_w is not m365_ed:
+        hist_ed = getattr(self.history_search_page, "ticket_editor", None) if hasattr(self, "history_search_page") else None
+        if isinstance(focus_w, TechPadEditor) and focus_w not in (m365_ed, hist_ed):
             self._logical_active_scratchpad_id = focus_w.scratchpad_id
             return focus_w
-        if focus_w and isinstance(focus_w.parent(), TechPadEditor) and focus_w.parent() is not m365_ed:
+        if focus_w and isinstance(focus_w.parent(), TechPadEditor) and focus_w.parent() not in (m365_ed, hist_ed):
             self._logical_active_scratchpad_id = focus_w.parent().scratchpad_id
             return focus_w.parent()
 
@@ -1070,12 +1146,21 @@ class TechPadMainWindow(QMainWindow):
         # 4. Check toolbar's current editor reference
         if hasattr(self, "toolbar") and self.toolbar._current_editor:
             tb_ed = self.toolbar._current_editor
-            _, tw, _ = self._find_editor_by_id(tb_ed.scratchpad_id)
-            if tb_ed.isVisible() or (tw and not tw.isHidden()):
-                return tb_ed
+            if tb_ed not in (m365_ed, hist_ed):
+                _, tw, _ = self._find_editor_by_id(tb_ed.scratchpad_id)
+                if tb_ed.isVisible() or (tw and not tw.isHidden()):
+                    return tb_ed
 
         # 5. Default fallback
         return prim_ed or sec_ed
+
+    def _get_active_editor(self) -> Optional[TechPadEditor]:
+        """Returns the currently active editor (History Active Ticket editor when in History module, else tab pane editor)."""
+        if self.is_history_search_page:
+            hist_ed = getattr(self.history_search_page, "ticket_editor", None)
+            if hist_ed is not None and getattr(self.history_search_page, "_active_editor", None) is not None:
+                return hist_ed
+        return self._get_underlying_tab_editor()
 
     def _find_editor_by_id(self, scratchpad_id: int):
         """Finds editor, its parent tab widget, and index by scratchpad ID."""
@@ -1258,8 +1343,19 @@ class TechPadMainWindow(QMainWindow):
         if self.is_m365_workspace or self._workspace_switching:
             return
         self._logical_active_scratchpad_id = scratchpad_id
-        self.toolbar.set_active_editor(editor)
-        self._update_telemetry(editor)
+        if (
+            self.is_history_search_page
+            and getattr(self.history_search_page, "ticket_editor", None) is not None
+            and getattr(self.history_search_page, "_active_editor", None) is not None
+            and self.history_search_page.ticket_editor.scratchpad_id == scratchpad_id
+        ):
+            self.toolbar.set_active_editor(self.history_search_page.ticket_editor)
+            self._update_telemetry(self.history_search_page.ticket_editor)
+            if self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
+                return
+        else:
+            self.toolbar.set_active_editor(editor)
+            self._update_telemetry(editor)
         restore_ticket = self._workspace_restore_ticket
         self._workspace_restore_ticket = None
         if restore_ticket == scratchpad_id and self.toolbar.stopwatch.current_scratchpad_id == scratchpad_id:
@@ -1599,6 +1695,8 @@ class TechPadMainWindow(QMainWindow):
             self.toolbar.update_templates_menu(custom_templates)
         if hasattr(self, "m365_workspace") and hasattr(self.m365_workspace, "update_templates_menu"):
             self.m365_workspace.update_templates_menu(custom_templates)
+        if hasattr(self, "history_search_page") and hasattr(self.history_search_page, "update_templates_menu"):
+            self.history_search_page.update_templates_menu(custom_templates)
 
     def _on_add_new_template(self) -> None:
         """Opens dialog to manage (create, modify, delete) custom templates with rich formatting."""
@@ -1770,6 +1868,8 @@ class TechPadMainWindow(QMainWindow):
         editor = None
         if self.is_m365_workspace and getattr(self.m365_workspace, "_active_editor", None):
             editor = self.m365_workspace._active_editor
+        elif self.is_history_search_page and getattr(self.history_search_page, "_active_editor", None):
+            editor = self.history_search_page._active_editor
         if not editor:
             editor = self._get_active_editor()
         if not editor:
@@ -2881,6 +2981,124 @@ class TechPadMainWindow(QMainWindow):
         if editor and hasattr(editor, "show_find_replace"):
             editor.show_find_replace(replace_mode=True)
 
+    def _get_history_db_conn(self):
+        return self.scratchpad_service.repo.db.get_connection()
+
+    @property
+    def is_history_search_page(self) -> bool:
+        return (
+            hasattr(self, "main_stack")
+            and hasattr(self, "history_search_page")
+            and self.main_stack.currentWidget() is self.history_search_page
+        )
+
+    def toggle_history_search_page(self) -> None:
+        if self.is_history_search_page:
+            self.close_history_search_page()
+        else:
+            self.open_history_search_page()
+
+    def open_history_search_page(self) -> None:
+        """Open full-page History Search workspace and tuck away right drawer until closed."""
+        if self.is_m365_workspace:
+            self.show_notes_workspace()
+        self.flush_all_saves()
+
+        editor = self._get_underlying_tab_editor()
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) if editor else None
+        self.history_search_page.set_active_ticket(
+            editor=editor,
+            ticket_data=ticket,
+            scratchpad_service=self.scratchpad_service,
+            image_service=self.image_service,
+            stopwatch=self.toolbar.stopwatch,
+        )
+        ticket_ed = self.history_search_page.ticket_editor
+        if ticket_ed is not None and not getattr(self, "_history_ticket_editor_wired", False):
+            ticket_ed.currentCharFormatChanged.connect(self.toolbar.update_format_states)
+            ticket_ed.editor_focused.connect(self._on_editor_focused)
+            self._history_ticket_editor_wired = True
+
+        if not self.is_history_search_page:
+            self._right_pane_was_visible = (
+                self.right_history_pane.isVisible()
+                if self.isVisible()
+                else (not self.right_history_pane.isHidden())
+            )
+            if self._right_pane_was_visible:
+                self.right_history_pane.hide()
+
+        self.main_stack.setCurrentWidget(self.history_search_page)
+        self.toolbar.set_active_editor(ticket_ed if editor is not None else None)
+        if editor is not None and ticket_ed is not None:
+            self.toolbar.update_format_states(ticket_ed.currentCharFormat())
+            self._update_telemetry(ticket_ed)
+        self.bottom_history_btn.setChecked(True)
+        self._update_module_status_bar_buttons(is_m365=False)
+        self.history_search_page.refresh_and_focus()
+
+    def close_history_search_page(self) -> None:
+        """Return from full-page History Search to the active workspace and restore drawer state."""
+        if not self.is_history_search_page:
+            self.bottom_history_btn.setChecked(False)
+            self._update_module_status_bar_buttons(is_m365=self.is_m365_workspace)
+            return
+        self.main_stack.setCurrentWidget(self.active_workspace_widget)
+        self.bottom_history_btn.setChecked(False)
+        self._update_module_status_bar_buttons(is_m365=False)
+        if getattr(self, "_right_pane_was_visible", False):
+            self.right_history_pane.show()
+            self._right_pane_was_visible = False
+        editor = self._get_underlying_tab_editor()
+        self.toolbar.set_active_editor(editor)
+        if editor:
+            self.toolbar.update_format_states(editor.currentCharFormat())
+            self._update_telemetry(editor)
+            editor.setFocus()
+
+    def restore_ticket_from_history(self, scratchpad_id: int) -> None:
+        """Restore an archived ticket from HistorySearchPage into active tabs."""
+        self.close_history_search_page()
+        self._on_restore_ticket(scratchpad_id)
+        self.status_bar.showMessage("✓ Restored ticket to active workspace", 3000)
+
+    def clone_ticket_from_history(self, scratchpad_id: int) -> None:
+        """Create a new active ticket cloned from an archived ticket's metadata, note, and images."""
+        source = self.scratchpad_service.get_ticket(scratchpad_id)
+        if not source:
+            return
+        raw_html = source.get("content_html", "") or ""
+        cleaned_html = re.sub(
+            r'<div class="ticket-archive-audit".*?</div>\s*</div>',
+            "",
+            raw_html,
+            flags=re.DOTALL,
+        )
+        prefix = self.session_service.get_setting("ticket_prefix", "INC-")
+        active = self.scratchpad_service.get_active_tickets()
+        new_ticket = self.scratchpad_service.create_ticket(
+            ticket_number=f"{prefix}{len(active) + 101}",
+            client_name=source.get("client_name", ""),
+            title=source.get("title", ""),
+            content_html=cleaned_html,
+        )
+        if getattr(self, "image_service", None) and getattr(self.image_service, "repo", None):
+            images = self.image_service.repo.get_images_for_scratchpad(scratchpad_id)
+            for img_name, img_bytes in images.items():
+                self.image_service.repo.save_image(new_ticket["id"], img_name, img_bytes)
+
+        self.close_history_search_page()
+        editor = self._create_editor(new_ticket["id"], cleaned_html)
+        idx = self.tab_widget.add_ticket_tab(new_ticket, editor)
+        self.tab_widget.setCurrentIndex(idx)
+        editor.setFocus()
+        self._on_editor_focused(new_ticket["id"])
+        self._on_tabs_reordered()
+        self.status_bar.showMessage(
+            f"✓ Cloned #{source.get('ticket_number', '')} to #{new_ticket.get('ticket_number', '')}",
+            3500,
+        )
+
     def _toggle_history_drawer(self) -> None:
         if self._history_transition.is_open:
             self._user_history_drawer_open = False
@@ -2955,6 +3173,13 @@ class TechPadMainWindow(QMainWindow):
                 self.tray_icon.hide()
             self._shutdown_accepted = True
             event.accept()
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if hasattr(self, "glass_backdrop") and self.glass_backdrop is not None:
+            painter = QPainter(self)
+            self.glass_backdrop.paint_backdrop(painter, self.rect())
+            painter.end()
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)

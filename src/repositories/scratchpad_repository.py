@@ -3,6 +3,12 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from src.database.connection import DatabaseManager
+from src.database.history_fts import (
+    HistorySearchResult,
+    list_history_clients,
+    sanitize_fts5_query,
+    search_history,
+)
 
 
 def _get_utc_now_str() -> str:
@@ -271,3 +277,30 @@ class ScratchpadRepository:
                 """
                 rows = conn.execute(sql, (pattern, pattern, pattern, pattern)).fetchall()
             return [dict(r) for r in rows]
+
+    def search_history(
+        self,
+        query: str = "",
+        *,
+        client: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        sort_by: str = "relevance",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Tuple[List[HistorySearchResult], int]:
+        """Searches archived tickets using weighted FTS5 BM25 ranking and snippet previews."""
+        return search_history(
+            self.db.get_connection(),
+            query,
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_archived_clients(self) -> List[str]:
+        """Returns distinct non-empty client names across archived tickets."""
+        return list_history_clients(self.db.get_connection())

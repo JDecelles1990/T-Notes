@@ -104,4 +104,15 @@ When migrating schemas or importing historical scratchpad databases:
   ```
 - **Index Rebuild:** After table structure validation, `INSERT INTO scratchpad_fts(scratchpad_fts) VALUES('rebuild');` is executed within a guarded block, re-indexing all existing tickets without downtime or loss of note content.
 
+---
+
+## 6. Versioned History Search (`history_tickets_fts`, `src/database/history_fts.py`)
+
+To support ranked full-text history search across large multi-client ticket archives:
+
+- **Diacritics & Prefix Indexing:** `history_tickets_fts` uses `tokenize='unicode61 remove_diacritics 2'` (accent-insensitive matching such as `reseau` -> `réseau`) and `prefix='2 3'` external content linked to `scratchpads` (`ticket_number`, `client_name`, `title`, `tags`, `content_html`), gated by `PRAGMA user_version = 2`.
+- **FTS5 Query Sanitization (`sanitize_fts5_query`):** Preserves closed double-quoted phrases while quoting individual tokens with trailing `*` so hyphenated ticket IDs (`INC-40219`), paths/hex errors (`error:0x80070005`), and boolean words (`not`) never trigger FTS syntax errors.
+- **Weighted `bm25()` Ranking & Safe Snippets (`search_history`):** Supports archived-only filtering by client, inclusive `archived_at` date ranges, `relevance` (`bm25(..., 10.0, 5.0, 4.0, 2.0, 1.0)`) vs. `date` sorting, pagination (`limit`/`offset` + total count), and HTML-safe `snippet()` extraction wrapping matches in `<b>...</b>` while stripping QTextDocument `<head><style>` boilerplate and escaping literal angle brackets (e.g. email headers).
+- **Layer Access:** Exposed through `ScratchpadRepository.search_history()` / `list_archived_clients()` and `ScratchpadService.search_history()` / `list_archived_clients()`.
+
 

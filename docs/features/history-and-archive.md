@@ -112,3 +112,15 @@ the editor for recovery. There is no batch-wide archive transaction.
 ### History drawer slide transition
 
 Toggling the History drawer (`Alt+H`, ribbon, status bar) slides the dock open/closed (~220ms) via `PanelWidthTransition`. The drawer remains visible until the close animation ends; the last width (min 320px, default 380px) is remembered and re-applied with `resizeDocks`. Responsive auto-collapse and restore paths stay instant. See `docs/architecture/system-overview.md` section 7.
+
+---
+
+## 4. Full-Page History Search Workspace (`HistorySearchPage`, `Ctrl+Shift+F`)
+
+`src/ui/components/history_search_page.py` provides a read-first master-detail FTS5 workspace (`HistorySearchPage`) hosted alongside `workspace_stack` inside `TechPadMainWindow.main_stack`:
+
+- **Clean Control Separation:** The top toolbar **`🕰️`** button and **`Alt+H`** shortcut continue toggling the right-side quick `HistoryDrawer`, while the bottom status-bar **`🕰️ History`** button (`btn_toggle_drawer` / `bottom_history_btn`) and **`Ctrl+Shift+F`** toggle `HistorySearchPage` (temporarily hiding `HistoryDrawer` if open and restoring it when returning). While inside the History module, that bottom button transforms into **`T-Notes`** so clicking it returns to the T-Notes workspace.
+- **Bottom Bar Swap (`Split` -> `Active Ticket`):** Inside the History module, the bottom bar's `Split` button is replaced by a checkable **`Active Ticket`** button (`btn_history_active_ticket`) that slides `HistorySearchPage.ticket_sidebar` open/closed via `PanelWidthTransition` (`300px`), sharing the active ticket's live `QTextDocument`, formatting tools, and stopwatch on the far-right pane so technicians can copy historical fixes directly into their active note. Entering `HistorySearchPage` binds `TechPadToolBar` and `MainWindow._get_active_editor()` to `HistorySearchPage.ticket_editor` (cleanly rebinding back to the tab editor on return), and both the toolbar and the sidebar `...` color/highlight actions apply `QTextCharFormat` directly to captured `QTextCursor` selections across color-picker focus transitions.
+- **Debounced Filter Bar:** Features instant search input (`180 ms` `QTimer` debounce, immediate on `Enter`, `Down` arrow jumps into results), **Client / Company** dropdown (`list_history_clients`), **Date Range** preset (`All Time`, `7d`, `30d`, `90d`), **Sort** (`Relevance` via `bm25()` vs. `Newest Archived`), and live match counter.
+- **Custom Dark Cards & Pagination:** `HistoryItemDelegate` renders lightweight rich-text cards with FTS5 `<b>...</b>` snippet highlights (`LIMIT 100` with incremental **Load More**).
+- **Accent-Insensitive Preview & Actions:** The read-only preview converts stored HTML cleanly while preserving literal angle brackets, highlights query terms via `QTextEdit.ExtraSelection` using diacritic-insensitive offset mapping (`_strip_accents_with_map`), and exposes **Copy All**, **Copy Body**, **Restore to Active** (`restore_ticket_from_history`), and **Clone to New** (`clone_ticket_from_history`, stripping any previous archive audit footer and cloning embedded images).

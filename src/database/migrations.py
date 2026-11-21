@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 from src.core.paths import resource_path
 from src.database.connection import DatabaseManager
+from src.database.history_fts import migrate_history_fts
 
 
 def init_database(db_manager: DatabaseManager) -> None:
@@ -33,12 +34,14 @@ def init_database(db_manager: DatabaseManager) -> None:
         if "split_sizes" not in pragma_cols:
             conn.execute("ALTER TABLE app_session ADD COLUMN split_sizes TEXT DEFAULT '';")
 
-        # 2. Migration: Ensure elapsed_seconds and archived_at columns exist on scratchpads
+        # 2. Migration: Ensure elapsed_seconds, archived_at, and tags columns exist on scratchpads
         scratchpad_cols = [r[1] for r in conn.execute("PRAGMA table_info(scratchpads);").fetchall()]
         if "elapsed_seconds" not in scratchpad_cols:
             conn.execute("ALTER TABLE scratchpads ADD COLUMN elapsed_seconds INTEGER DEFAULT 0;")
         if "archived_at" not in scratchpad_cols:
             conn.execute("ALTER TABLE scratchpads ADD COLUMN archived_at DATETIME;")
+        if "tags" not in scratchpad_cols:
+            conn.execute("ALTER TABLE scratchpads ADD COLUMN tags TEXT DEFAULT '';")
 
         # 3. Migration: Migrate legacy scratchpad_fts if it was created with old 'content_text' column
         fts_row = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'scratchpad_fts';").fetchone()
@@ -122,3 +125,6 @@ def init_database(db_manager: DatabaseManager) -> None:
             INSERT OR IGNORE INTO m365_directory_meta (id, revision, updated_at)
             VALUES (1, 1, datetime('now'));
         """)
+
+    # 9. Apply versioned history FTS5 migration, sync triggers, and initial backfill
+    migrate_history_fts(conn)

@@ -136,3 +136,12 @@ try {
 finally {
     Pop-Location
 }
+finally {
+    if ($tempWorkDir -and (Test-Path -Path $tempWorkDir)) {
+        Remove-Item -Path $tempWorkDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    Set-Location -Path $origLocation.Path
+    if ($Host.Name -eq "ConsoleHost" -and -not $env:CI) {
+        Read-Host "`nPress Enter to close"
+    }
+}

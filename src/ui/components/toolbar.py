@@ -506,41 +506,60 @@ class TechPadToolBar(QToolBar):
         self.lbl_opacity.setText(f"{prefix}{value}%")
         self.opacity_changed.emit(value)
 
+    @staticmethod
+    def _apply_char_format(ed, cursor: QTextCursor, fmt: QTextCharFormat) -> None:
+        if cursor.hasSelection():
+            cursor.mergeCharFormat(fmt)
+            ed.setTextCursor(cursor)
+        ed.mergeCurrentCharFormat(fmt)
+
     def _toggle_bold(self) -> None:
         if self._current_editor:
+            ed = self._current_editor
+            cursor = ed.textCursor()
             fmt = QTextCharFormat()
             fmt.setFontWeight(QFont.Bold if self.act_bold.isChecked() else QFont.Normal)
-            self._current_editor.mergeCurrentCharFormat(fmt)
+            self._apply_char_format(ed, cursor, fmt)
 
     def _toggle_italic(self) -> None:
         if self._current_editor:
+            ed = self._current_editor
+            cursor = ed.textCursor()
             fmt = QTextCharFormat()
             fmt.setFontItalic(self.act_italic.isChecked())
-            self._current_editor.mergeCurrentCharFormat(fmt)
+            self._apply_char_format(ed, cursor, fmt)
 
     def _toggle_underline(self) -> None:
         if self._current_editor:
+            ed = self._current_editor
+            cursor = ed.textCursor()
             fmt = QTextCharFormat()
             fmt.setFontUnderline(self.act_underline.isChecked())
-            self._current_editor.mergeCurrentCharFormat(fmt)
+            self._apply_char_format(ed, cursor, fmt)
 
     def _pick_text_color(self) -> None:
         if not self._current_editor:
             return
+        ed = self._current_editor
+        cursor = ed.textCursor()
         color = QColorDialog.getColor(Qt.white, self, "Select Text Color")
         if color.isValid():
             fmt = QTextCharFormat()
             fmt.setForeground(color)
-            self._current_editor.mergeCurrentCharFormat(fmt)
+            self._apply_char_format(ed, cursor, fmt)
+            ed.setFocus()
 
     def _pick_highlight_color(self) -> None:
         if not self._current_editor:
             return
+        ed = self._current_editor
+        cursor = ed.textCursor()
         color = QColorDialog.getColor(QColor("#264f78"), self, "Select Highlight Color")
         if color.isValid():
             fmt = QTextCharFormat()
             fmt.setBackground(color)
-            self._current_editor.mergeCurrentCharFormat(fmt)
+            self._apply_char_format(ed, cursor, fmt)
+            ed.setFocus()
 
     def _insert_or_toggle_code_block(self) -> None:
         if not self._current_editor:

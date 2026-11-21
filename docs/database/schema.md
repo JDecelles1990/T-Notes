@@ -16,6 +16,7 @@ Stores active and archived ticket records.
 | `ticket_number` | `TEXT` | `NOT NULL` | Ticket reference number (e.g., `INC-4092`, `#10293`). |
 | `client_name` | `TEXT` | `DEFAULT ''` | Client, department, or organization name. |
 | `title` | `TEXT` | `DEFAULT ''` | Ticket subject or brief summary. |
+| `tags` | `TEXT` | `DEFAULT ''` | Optional comma-separated search tags indexed by FTS5. |
 | `content_html` | `TEXT` | `DEFAULT ''` | Full rich-text document HTML markup. |
 | `status` | `TEXT` | `DEFAULT 'active' CHECK(status IN ('active', 'archived', 'deleted'))` | State of the ticket. |
 | `tab_order` | `INTEGER` | `DEFAULT 0` | Display index in the active tab bar. |
@@ -209,6 +210,9 @@ Database migrations are managed idempotently in `src/database/migrations.py`. On
 
 5. **M365 Directory Metadata Singleton (`m365_directory_meta`)**:
    - Ensures the `m365_companies`, `m365_administrators`, and `m365_directory_meta` tables exist idempotently and initializes row `id = 1` in `m365_directory_meta` via `INSERT OR IGNORE`.
+
+6. **Versioned History FTS5 Migration (`PRAGMA user_version = 2`, `history_tickets_fts`)**:
+   - Invokes `migrate_history_fts(conn)` (`src/database/history_fts.py`) inside a single atomic transaction: adds missing `tags` / `archived_at` columns, backfills blank `archived_at` timestamps on archived tickets, creates `history_tickets_fts` (`tokenize='unicode61 remove_diacritics 2'`, `prefix='2 3'`) backed by `scratchpads` with `history_tickets_ai` / `history_tickets_ad` / `history_tickets_au` triggers, runs `rebuild`, and bumps `PRAGMA user_version = 2`.
 
 ---
 

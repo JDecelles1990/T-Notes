@@ -31,7 +31,7 @@ one M365LauncherWidget as page 1 before installing the stack as central widget.
 No existing central widget is deleted after installation. Editors, documents,
 image caches, timers, services and database are not recreated or duplicated.
 
-The accessible M365 Launcher button is positioned on the left side of the bottom status bar, placed 2nd between the HUD button and the Split button in both normal workspace mode and HUD mode. While viewing the M365 Launcher module, this button transforms into a 'T-Notes' button (`btn_m365`), remaining enabled to provide seamless bidirectional workspace toggling in normal mode as well as in HUD mode. Navigation
+The accessible M365 Launcher button is positioned on the left side of the bottom status bar, placed 2nd between the HUD button and the Split button in both normal workspace mode and HUD mode. While viewing the M365 Launcher module, this button transforms into a 'T-Notes' button (`btn_m365`), remaining enabled to provide seamless bidirectional workspace toggling in normal mode as well as in HUD mode. While in the M365 Launcher workspace, the bottom bar swaps `Split` / `History` for `☰ Categories` / `Active Ticket`. While in the full-page History Search workspace (`HistorySearchPage`), the bottom bar swaps `Split` for `Active Ticket` (`btn_history_active_ticket`), sliding open `HistorySearchPage.ticket_sidebar` (backed by a lazily created `TechPadEditor` sharing the active ticket's live `QTextDocument`). Navigation
 saves pending/dirty tickets by calling the existing `_execute_save` service path
 directly: Qt signal callback exceptions cannot be relied upon to propagate through
 the existing debounce flush. Dirty IDs clear only after successful content/image
@@ -332,6 +332,13 @@ Tabs are painted by `TechPadTabBar.paintEvent()`, so they use a painted glow ins
   - Rotating iridescent rainbow `QConicalGradient` neon perimeter border with an inner specular chrome rim and orbiting starlight border glints.
   - Dynamic flowing rainbow text rendered via DPR-aware alpha masking (`QTextLayout` + `CompositionMode_SourceIn`) over a crisp dark contrast drop-shadow, supporting multi-line wrapping and basic rich-text normalization.
 - **Transitions & CPU Hygiene:** Smoothly animates `windowOpacity` + subtle vertical glide on appear (`175ms`, `OutCubic`) and disappear (`135ms`, `InCubic`), honoring `panel_transition.TRANSITIONS_ENABLED` for deterministic synchronous unit tests. Clamps strictly within the active monitor's `availableGeometry()` across multi-monitor layouts. Its `~33ms` effect timer runs strictly while visible and stops immediately upon hiding (0% idle CPU).
+
+### 6.5 Dynamic App Gradient Backdrop & Interactive Mouse-Hover Glass Effect (`src/ui/components/glass_backdrop.py`)
+
+- `install_glass_backdrop(window)` (invoked at the end of `TechPadMainWindow._setup_ui()`) attaches `AuroraGlassBackdrop` and its mouse-transparent `AuroraGlassOverlay` (`Qt.WA_TransparentForMouseEvents`, `Qt.WA_TranslucentBackground`, `Qt.NoFocus`) across the main window.
+- **Cached Slow Full-Spectrum Rainbow Backdrop:** `TechPadMainWindow.paintEvent()` draws a compact `96 × 54` offscreen `QImage` buffer (`_backdrop_cache`) smoothly upscaled with `SmoothPixmapTransform`, refreshed every `3` ticks (~10 Hz) as `phase` cycles slowly across 360° (~30s cycle, HSV-interpolated across `DARK_RAINBOW_BACKDROP_PALETTE` and `RAINBOW_LIGHT_PALETTE`) without concentric Mach-banding or full-window mouse-move repaints.
+- **Zero-Lag Interactive Mouse-Hover Glass Effect:** An application-level non-consuming event filter tracks pointer motion and wheel scrolling `1:1` (`SPOTLIGHT_SMOOTHING = 1.0`), issuing targeted dirty-rectangle updates on `AuroraGlassOverlay` for the rainbow spotlight lens and live ancestor/scroll-viewport-clipped colorful panel border rims + top specular edge highlights.
+- **Zero Idle CPU:** The animation timer runs strictly while `window.isVisible() and not window.isMinimized()`, stopping immediately upon hide/minimize/close.
 
 ## 7. Side-Pane Slide Transitions (`src/ui/components/panel_transition.py`)
 

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS scratchpads (
     ticket_number TEXT NOT NULL,
     client_name TEXT DEFAULT '',
     title TEXT DEFAULT '',
+    tags TEXT DEFAULT '',
     content_html TEXT DEFAULT '',
     status TEXT DEFAULT 'active' CHECK(status IN ('active', 'archived', 'deleted')),
     tab_order INTEGER DEFAULT 0,

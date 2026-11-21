@@ -168,6 +168,10 @@ All keyboard shortcuts implemented across **T-Notes**, **M365 Launcher**, **Find
 | `Alt+Z` | T-Notes Workspace | Toggle side-by-side **Split View** (or compact single-pane switch below 750 px) |
 | `Alt+Shift+Z` | T-Notes (Compact Split) | Switch active editor pane (`Pane 1/2` ↔ `Pane 2/2`) when Split View is narrow |
 | `Alt+H` | T-Notes Workspace | Toggle History & FTS5 Archive Side Drawer |
+| `Ctrl+Shift+F` | Application-Wide | Open full-page **History Search** workspace and focus search bar |
+| `Enter` (in History Search bar) | History Search Page | Run immediate FTS5 search without waiting for debounce |
+| `↓` (in History Search bar) | History Search Page | Jump keyboard focus into matching results list |
+| `Esc` | History Search Page | Clear active search text, or return to active ticket tabs |
 | `Ctrl+K` | Application-Wide | Open **Quick Command Palette** (tabs, archive, templates, badges, M365) |
 | `Ctrl+Alt+Q` | Application-Wide | Open **Tech Quick-Tools & Smart Entity Extractor** |
 | `Ctrl+S` | T-Notes Workspace | Force immediate SQLite flush/save of all pending and dirty notes |
