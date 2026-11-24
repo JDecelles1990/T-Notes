@@ -35,12 +35,16 @@ ENV/
 env.bak/
 venv.bak/
 
-# SQLite databases & temporary WAL files
+# SQLite databases, backups & temporary WAL files
 *.db
 *.sqlite
 *.sqlite3
 *.db-wal
 *.db-shm
+*.bak
+
+# Portable release archives
+*.zip
 
 # Unit test / coverage reports
 htmlcov/

@@ -5,6 +5,7 @@ from pathlib import Path
 from src.core.paths import resource_path
 from src.database.connection import DatabaseManager
 from src.database.history_fts import migrate_history_fts
+from src.database.semantic_search import migrate_semantic_embeddings
 
 
 def init_database(db_manager: DatabaseManager) -> None:
@@ -96,6 +97,10 @@ def init_database(db_manager: DatabaseManager) -> None:
             ("window_opacity", "100"),
             ("autostart_enabled", "true"),
             ("smart_restore_enabled", "true"),
+            ("semantic_search_enabled", "false"),
+            ("semantic_ollama_url", "http://127.0.0.1:11434"),
+            ("semantic_embedding_model", "bge-m3"),
+            ("semantic_search_mode", "exact"),
         ]
         for key, val in default_settings:
             conn.execute(
@@ -128,3 +133,5 @@ def init_database(db_manager: DatabaseManager) -> None:
 
     # 9. Apply versioned history FTS5 migration, sync triggers, and initial backfill
     migrate_history_fts(conn)
+    # 10. Apply versioned semantic embeddings migration (PRAGMA user_version = 4)
+    migrate_semantic_embeddings(conn)

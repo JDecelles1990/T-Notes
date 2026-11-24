@@ -3095,6 +3095,7 @@ class TechPadMainWindow(QMainWindow):
         if hasattr(self, "history_search_page"):
             self.history_search_page._reload_clients()
             self.history_search_page._run_fresh_search()
+            self.history_search_page.start_background_indexing()
 
     def _archive_tab(self, index: int, *, prompt_taxonomy: Optional[bool] = None) -> bool:
         """Archives a primary tab, prompting for taxonomy pills during interactive UI use."""
@@ -3388,6 +3389,8 @@ class TechPadMainWindow(QMainWindow):
                     2500,
                 )
         else:
+            if getattr(self, "history_search_page", None) is not None:
+                self.history_search_page.stop_background_indexing()
             if getattr(self, "m365_workspace", None) is not None:
                 self.m365_workspace.shutdown()
             if hasattr(self, "global_hotkey") and self.global_hotkey:

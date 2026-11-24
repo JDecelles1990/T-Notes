@@ -116,7 +116,9 @@ def test_scratchpads_migration_ranking_filters_and_service_wrapper(tmp_path):
     conn = db_mgr.get_connection()
 
     try:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == FTS_MIGRATION_VERSION
+        from src.database.semantic_search import SEMANTIC_MIGRATION_VERSION
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SEMANTIC_MIGRATION_VERSION
+        assert conn.execute("PRAGMA user_version").fetchone()[0] >= FTS_MIGRATION_VERSION
         # Idempotent second call must return False
         assert migrate_history_fts(conn) is False
 
@@ -608,7 +610,9 @@ def test_step1_pre_migration_backup_rollback_triggers_and_sanitizer_torture(tmp_
     init_database(db_mgr)
     conn = db_mgr.get_connection()
     try:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == FTS_MIGRATION_VERSION
+        from src.database.semantic_search import SEMANTIC_MIGRATION_VERSION
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SEMANTIC_MIGRATION_VERSION
+        assert conn.execute("PRAGMA user_version").fetchone()[0] >= FTS_MIGRATION_VERSION
         # Second migration run is a safe no-op and creates no duplicate backups
         assert migrate_history_fts(conn) is False
         assert len(list(tmp_path.glob("legacy_upgrade.db.*.pre_fts_migration.bak"))) == 1
@@ -1036,9 +1040,10 @@ def test_step3_archive_taxonomy_dialog_en_and_fr_autosuggest_provenance_and_filt
         fr_assignments = {a["slug"]: a["source"] for a in fr_dlg.pill_selector.selected_assignments()}
         assert fr_assignments.get("domain.hardware.printers_peripherals") == "auto"
         assert fr_assignments.get("symptom.hardware_print") == "auto"
+        assert fr_assignments.get("resolution.service_driver_restart") == "auto"
 
         # Clicking an unselected pill marks it manual while untouched suggestions stay auto
-        manual_btn = fr_dlg.pill_selector.pill_buttons["resolution.service_driver_restart"]
+        manual_btn = fr_dlg.pill_selector.pill_buttons["resolution.escalated_vendor"]
         manual_btn.click()
         assert manual_btn.property("pillState") == "manual"
 
@@ -1056,7 +1061,7 @@ def test_step3_archive_taxonomy_dialog_en_and_fr_autosuggest_provenance_and_filt
         mixed = {a["slug"]: a["source"] for a in fr_dlg.selected_assignments()}
         assert mixed["domain.hardware.printers_peripherals"] == "auto"
         assert mixed["symptom.hardware_print"] == "manual"
-        assert mixed["resolution.service_driver_restart"] == "manual"
+        assert mixed["resolution.escalated_vendor"] == "manual"
     finally:
         fr_dlg.close()
         fr_dlg.deleteLater()
@@ -1276,4 +1281,389 @@ def test_step3_retroactive_edit_tags_in_history_search_page(qapp, tmp_path):
     finally:
         page.close()
         page.deleteLater()
+        db_mgr.close()
+
+
+def test_step4_embeddings_migration_backup_rollback_and_cascade(tmp_path):
+    """Validates v3 -> v4 embeddings migration backup, rollback safety, idempotency, and CASCADE delete."""
+    from src.database.semantic_search import (
+        FakeEmbeddingProvider,
+        SEMANTIC_MIGRATION_VERSION,
+        index_pending_embeddings_sync,
+        migrate_semantic_embeddings,
+    )
+
+    # 1. Create a v3 file database with pre-existing FTS5 + taxonomy + archived ticket
+    db_file = tmp_path / "step4_upgrade.db"
+    v3_mgr = DatabaseManager(db_file)
+    v3_conn = v3_mgr.get_connection()
+    v3_conn.executescript(
+        """
+        CREATE TABLE scratchpads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_number TEXT NOT NULL,
+            client_name TEXT DEFAULT '',
+            title TEXT DEFAULT '',
+            tags TEXT DEFAULT '',
+            content_html TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            tab_order INTEGER DEFAULT 0,
+            elapsed_seconds INTEGER DEFAULT 0,
+            archived_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO scratchpads (ticket_number, client_name, title, content_html, status, archived_at)
+        VALUES ('INC-4001', 'Contoso', 'Legacy v3 archived', '<p>VPN reset</p>', 'archived', '2026-11-01 10:00:00');
+        """
+    )
+    migrate_history_fts(v3_conn)
+    assert v3_conn.execute("PRAGMA user_version").fetchone()[0] == FTS_MIGRATION_VERSION
+
+    # 2. Simulated failure mid-migration rolls back cleanly at v3 and creates pre-embeddings backup
+    def _boom(_conn):
+        raise RuntimeError("Simulated mid-v4 migration error")
+
+    with pytest.raises(RuntimeError, match="Simulated"):
+        migrate_semantic_embeddings(v3_conn, _test_hook=_boom)
+    assert v3_conn.execute("PRAGMA user_version").fetchone()[0] == FTS_MIGRATION_VERSION
+    assert v3_conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ticket_embeddings'"
+    ).fetchone() is None
+
+    backups = list(tmp_path.glob("step4_upgrade.db.*.pre_embeddings_migration.bak"))
+    assert len(backups) == 1 and backups[0].stat().st_size > 0
+    v3_mgr.close()
+
+    # 3. Full init_database upgrades cleanly to v4 without duplicate backups and is idempotent
+    db_mgr = DatabaseManager(db_file)
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    try:
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == SEMANTIC_MIGRATION_VERSION
+        assert migrate_semantic_embeddings(conn) is False
+        assert len(list(tmp_path.glob("step4_upgrade.db.*.pre_embeddings_migration.bak"))) == 1
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0].lower() == "wal"
+
+        # Index ticket and verify ON DELETE CASCADE cleans up ticket_embeddings
+        provider = FakeEmbeddingProvider()
+        count, status = index_pending_embeddings_sync(conn, provider)
+        assert count == 1 and "Indexed 1" in status
+        assert conn.execute("SELECT COUNT(*) FROM ticket_embeddings").fetchone()[0] == 1
+
+        ScratchpadRepository(db_mgr).delete_permanently(1)
+        assert conn.execute("SELECT COUNT(*) FROM ticket_embeddings").fetchone()[0] == 0
+    finally:
+        db_mgr.close()
+
+
+def test_step4_vector_math_semantic_card_and_incremental_hash_skip(tmp_path):
+    """Validates float32 BLOB round-trip, L2 normalization, card truncation, and hash-based incremental indexing."""
+    import math
+    from src.database.semantic_search import (
+        FakeEmbeddingProvider,
+        build_semantic_card,
+        cosine_dot,
+        index_pending_embeddings_sync,
+        l2_normalize,
+        pack_vector,
+        unpack_vector,
+    )
+
+    # 1. Float32 pack/unpack, L2 norm, and cosine dot accuracy
+    raw = [3.0, 4.0, 0.0, 0.0]
+    normed = l2_normalize(raw)
+    assert math.isclose(math.sqrt(sum(v * v for v in normed)), 1.0, rel_tol=1e-6)
+    blob = pack_vector(raw)
+    assert len(blob) == 16  # 4 x float32
+    unpacked = unpack_vector(blob)
+    assert math.isclose(unpacked[0], 0.6, rel_tol=1e-5)
+    assert math.isclose(unpacked[1], 0.8, rel_tol=1e-5)
+    assert math.isclose(cosine_dot(blob, blob), 1.0, rel_tol=1e-5)
+
+    # 2. build_semantic_card strips HTML boilerplate, collapses whitespace, and caps body at 2000 chars
+    long_html = "<html><head><style>p{color:#fff;}</style></head><body><p>" + ("word " * 800) + "</p></body></html>"
+    card, h1 = build_semantic_card(
+        {"ticket_number": "INC-10", "client_name": "Contoso", "title": "Mail sync", "content_html": long_html},
+        taxonomy_labels=["M365 › Exchange", "Mail Flow / Sync"],
+    )
+    assert "<style>" not in card
+    assert "Taxonomy: M365 › Exchange | Mail Flow / Sync" in card
+    assert len(card) < 2300
+    assert len(h1) == 64
+
+    # 3. Incremental indexing skips unchanged tickets and re-embeds modified ones
+    db_mgr = DatabaseManager(tmp_path / "step4_incr.db")
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    repo = ScratchpadRepository(db_mgr)
+    try:
+        tid = repo.create("INC-501", "Contoso", "VPN disconnect", "<p>Timeout on FortiClient tunnel.</p>")
+        repo.archive(tid)
+
+        provider = FakeEmbeddingProvider()
+        n1, _ = index_pending_embeddings_sync(conn, provider)
+        assert n1 == 1
+        calls_after_first = len(provider.calls)
+
+        # Unchanged ticket must be skipped completely (0 new provider calls)
+        n2, status2 = index_pending_embeddings_sync(conn, provider)
+        assert n2 == 0 and status2 == "Up to date"
+        assert len(provider.calls) == calls_after_first
+
+        # Editing ticket notes or taxonomy tags changes content_hash and triggers re-embedding
+        repo.assign_ticket_taxonomy(tid, ["domain.network.vpn_dns_wifi"])
+        n3, _ = index_pending_embeddings_sync(conn, provider)
+        assert n3 == 1
+    finally:
+        db_mgr.close()
+
+
+def test_step4_hybrid_rrf_ranking_filters_and_offline_fallback(tmp_path):
+    """Validates exact ID priority, concept matching with zero keyword overlap, strict filters, and FTS5 fallback."""
+    from src.database.semantic_search import (
+        FakeEmbeddingProvider,
+        find_similar_tickets,
+        index_pending_embeddings_sync,
+        search_history_hybrid,
+    )
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.template_repository import TemplateRepository
+
+    db_mgr = DatabaseManager(tmp_path / "step4_hybrid.db")
+    init_database(db_mgr)
+    conn = db_mgr.get_connection()
+    sp_svc = ScratchpadService(
+        ScratchpadRepository(db_mgr),
+        ImageService(ImageRepository(db_mgr)),
+        TemplateRepository(db_mgr),
+    )
+    try:
+        # Ticket 1: Exact ID match + auth ticket
+        t_exact = sp_svc.create_ticket(
+            ticket_number="INC-40219",
+            client_name="Contoso",
+            title="Routine workstation setup",
+            content_html="<p>Installed Office apps and verified sign-in.</p>",
+        )["id"]
+        sp_svc.archive_ticket(t_exact)
+        sp_svc.repo.archive(t_exact, archived_at="2026-11-12 09:00:00")
+
+        # Ticket 2: Bilingual auth concept ticket with ZERO overlap with query "Entra sign-in lockout"
+        t_concept = sp_svc.create_ticket(
+            ticket_number="INC-40220",
+            client_name="Contoso",
+            title="Compte bloqué après trop d'essais",
+            content_html="<p>Compte verrouillé, jeton réinitialisé pour l'utilisateur.</p>",
+        )["id"]
+        sp_svc.archive_ticket(t_concept)
+        sp_svc.repo.archive(t_concept, archived_at="2026-11-15 10:00:00")
+        sp_svc.assign_ticket_taxonomy(t_concept, ["domain.identity.entra_mfa", "symptom.auth_signin"])
+
+        # Ticket 3: Same concept for a DIFFERENT client & older date (must be excluded by filters)
+        t_other_client = sp_svc.create_ticket(
+            ticket_number="INC-40221",
+            client_name="Fabrikam",
+            title="Compte verrouillé mot de passe",
+            content_html="<p>Déverrouillé accès utilisateur.</p>",
+        )["id"]
+        sp_svc.archive_ticket(t_other_client)
+        sp_svc.repo.archive(t_other_client, archived_at="2026-09-01 08:00:00")
+        sp_svc.assign_ticket_taxonomy(t_other_client, ["domain.identity.entra_mfa", "symptom.auth_signin"])
+
+        # Ticket 4: Unrelated hardware ticket
+        t_unrelated = sp_svc.create_ticket(
+            ticket_number="INC-40222",
+            client_name="Contoso",
+            title="Monitor desk mount",
+            content_html="<p>Adjusted VESA arm height.</p>",
+        )["id"]
+        sp_svc.archive_ticket(t_unrelated)
+        sp_svc.repo.archive(t_unrelated, archived_at="2026-11-16 11:00:00")
+
+        provider = FakeEmbeddingProvider()
+        indexed, _ = index_pending_embeddings_sync(conn, provider)
+        assert indexed == 4
+
+        # 1. Exact ticket ID query always keeps INC-40219 ranked #1 in Smart mode
+        id_hits, id_total = sp_svc.search_history_hybrid("INC-40219", mode="smart", provider=provider)
+        assert id_total >= 1
+        assert id_hits[0].id == t_exact
+
+        # 2. Concept query with zero keyword overlap surfaces INC-40220 via semantic matching
+        concept_hits, _ = sp_svc.search_history_hybrid(
+            "Entra sign-in lockout",
+            mode="smart",
+            provider=provider,
+            min_similarity=0.25,
+        )
+        hit_ids = [h.id for h in concept_hits]
+        assert t_concept in hit_ids
+        assert t_unrelated not in hit_ids
+        concept_item = next(h for h in concept_hits if h.id == t_concept)
+        assert concept_item.match_type in ("semantic", "both")
+
+        # 3. Active filters (client + date_from + taxonomy_slugs) strictly exclude Fabrikam's ticket
+        filtered_hits, filtered_total = search_history_hybrid(
+            conn,
+            "Entra sign-in lockout",
+            mode="smart",
+            provider=provider,
+            client="Contoso",
+            date_from="2026-11-01",
+            taxonomy_slugs=["domain.identity.entra_mfa"],
+            min_similarity=0.25,
+        )
+        assert filtered_total == 1
+        assert [h.id for h in filtered_hits] == [t_concept]
+
+        # 4. Offline/failing provider falls back silently to Exact FTS5 without exceptions
+        offline_provider = FakeEmbeddingProvider(available=False)
+        fallback_hits, fallback_total = search_history_hybrid(
+            conn,
+            "verrouille",
+            mode="smart",
+            provider=offline_provider,
+        )
+        assert fallback_total == 2  # INC-40220 and INC-40221 matched cleanly by FTS5
+        assert all(h.match_type == "exact" for h in fallback_hits)
+
+        # 5. find_similar_tickets helper returns concept neighbors while honoring exclude_id
+        sim_hits = sp_svc.find_similar_tickets(
+            "Entra sign-in lockout",
+            provider,
+            exclude_id=t_concept,
+            min_similarity=0.25,
+        )
+        assert all(h.id != t_concept for h in sim_hits)
+        assert any(h.id == t_other_client for h in sim_hits)
+    finally:
+        db_mgr.close()
+
+
+def test_step4_qthread_worker_ui_smart_mode_and_clean_shutdown(qapp, tmp_path):
+    """Validates WAL QThread indexer, stop cancellation, Smart/Exact UI toggle, settings dialog, and clean closeEvent."""
+    from PySide6.QtCore import Qt, qInstallMessageHandler
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from src.database.semantic_search import (
+        EmbeddingIndexWorker,
+        FakeEmbeddingProvider,
+        get_semantic_settings,
+    )
+    from src.repositories.image_repository import ImageRepository
+    from src.repositories.session_repository import SessionRepository
+    from src.repositories.template_repository import TemplateRepository
+    from src.services.session_service import SessionService
+    from src.ui.main_window import TechPadMainWindow
+
+    qt_warnings: list[str] = []
+    prev_handler = qInstallMessageHandler(lambda _t, _c, msg: qt_warnings.append(msg))
+
+    db_file = tmp_path / "step4_worker.db"
+    db_mgr = DatabaseManager(db_file)
+    init_database(db_mgr)
+    scratch_repo = ScratchpadRepository(db_mgr)
+    img_repo = ImageRepository(db_mgr)
+    img_svc = ImageService(img_repo)
+    sp_svc = ScratchpadService(scratch_repo, img_svc, TemplateRepository(db_mgr))
+    sess_svc = SessionService(SessionRepository(db_mgr), sp_svc)
+
+    t1 = sp_svc.create_ticket(
+        ticket_number="INC-9901",
+        client_name="Contoso",
+        title="Bac papier bloqué",
+        content_html="<p>Cordon d'alimentation imprimante rebranché et pilote OK.</p>",
+    )["id"]
+    sp_svc.archive_ticket(t1)
+    t2 = sp_svc.create_ticket(
+        ticket_number="INC-9902",
+        client_name="Fabrikam",
+        title="Routine desk check",
+        content_html="<p>Cleaned keyboard.</p>",
+    )["id"]
+    sp_svc.archive_ticket(t2)
+
+    try:
+        # 1. QThread background worker indexes via its own dedicated WAL connection
+        provider = FakeEmbeddingProvider()
+        worker = EmbeddingIndexWorker(db_file, provider, batch_size=1)
+        progress_events: list[tuple[int, int]] = []
+        finished_events: list[tuple[int, str]] = []
+        worker.progress_updated.connect(lambda d, t: progress_events.append((d, t)))
+        worker.indexing_finished.connect(lambda c, s: finished_events.append((c, s)))
+        worker.start()
+        assert worker.wait(5000) is True
+        qapp.processEvents()
+        assert finished_events and finished_events[-1][0] == 2
+        assert len(progress_events) >= 2
+
+        # Second run skips unchanged hashes cleanly (0 indexed)
+        worker2 = EmbeddingIndexWorker(db_file, provider, batch_size=2)
+        finished2: list[tuple[int, str]] = []
+        worker2.indexing_finished.connect(lambda c, s: finished2.append((c, s)))
+        worker2.start()
+        assert worker2.wait(5000) is True
+        qapp.processEvents()
+        assert finished2 == [(0, "Up to date")]
+
+        # 2. Cooperative cancellation on stop_and_wait()
+        t3 = sp_svc.create_ticket("INC-9903", "Contoso", "Extra ticket", "<p>Body</p>")["id"]
+        sp_svc.archive_ticket(t3)
+        worker_stop = EmbeddingIndexWorker(db_file, FakeEmbeddingProvider(model_id="other-model"), batch_size=1)
+        worker_stop.request_stop()
+        worker_stop.start()
+        assert worker_stop.stop_and_wait(3000) is True
+
+        # 3. MainWindow + HistorySearchPage Smart/Exact mode & SemanticSettingsDialog
+        win = TechPadMainWindow(sp_svc, img_svc, sess_svc)
+        page = win.history_search_page
+        page.set_embedding_provider(provider)
+        assert page.mode_combo.currentData() == "exact"
+
+        win.show()
+        win.bottom_history_btn.click()
+        qapp.processEvents()
+
+        # In Exact mode, "Printer spooler offline" has 0 keyword hits against INC-9901 ("Bac papier bloqué")
+        page.search_input.setText("Printer spooler offline")
+        page._run_fresh_search()
+        assert page.results_list.count() == 0
+
+        # Switching to Smart triggers off-UI-thread QueryEmbeddingWorker and surfaces semantic match
+        page.mode_combo.setCurrentIndex(page.mode_combo.findData("smart"))
+        QTest.qWait(150)
+        qapp.processEvents()
+        assert page.results_list.count() >= 1
+        assert page.results_list.item(0).data(Qt.ItemDataRole.UserRole + 1).id == t1
+
+        # Save settings in SemanticSettingsDialog persists to app_settings
+        from src.ui.dialogs.semantic_settings_dialog import SemanticSettingsDialog
+
+        dlg = SemanticSettingsDialog(get_conn=db_mgr.get_connection, provider=provider, db_path=db_file, parent=page)
+        dlg.chk_enabled.setChecked(True)
+        dlg.url_input.setText("http://127.0.0.1:11434")
+        dlg.model_input.setText("nomic-embed-text")
+        dlg._on_save_clicked()
+        saved = get_semantic_settings(db_mgr.get_connection())
+        assert saved["enabled"] is True
+        assert saved["model_id"] == "nomic-embed-text"
+        dlg.deleteLater()
+
+        # Offline provider in Smart mode falls back gracefully with 0 errors
+        page.set_embedding_provider(FakeEmbeddingProvider(available=False))
+        page._run_fresh_search()
+        QTest.qWait(100)
+        qapp.processEvents()
+        assert page.results_list.count() == 0
+
+        # Clean quit stops any running worker without QThread warnings
+        win.quit_application()
+        QApplication.instance().removeEventFilter(win)
+        win.deleteLater()
+        qapp.processEvents()
+
+        assert not any("Destroyed while thread is still running" in m for m in qt_warnings)
+    finally:
+        qInstallMessageHandler(prev_handler)
         db_mgr.close()

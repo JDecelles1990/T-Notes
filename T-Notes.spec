@@ -61,17 +61,43 @@ for item in scripts_root.rglob("*"):
 # Collect Draft 2020-12 metaschema JSON resources shipped inside jsonschema_specifications
 datas += collect_data_files("jsonschema_specifications")
 
-# Explicitly bundle PySide6 Qt plugins required for inline JPEG/PNG/ICO/SVG images and Windows styling
+# Explicitly bundle only required PySide6 Qt plugins (omitting qpdf.dll / qdirect2d.dll / qminimal.dll
+# so unused Qt6Pdf / Qt6Quick / Qt6Qml binaries are not dragged into the release bundle).
 qt_plugins_root = Path(QLibraryInfo.path(QLibraryInfo.PluginsPath))
 if not qt_plugins_root.is_dir():
     qt_plugins_root = Path(PySide6.__file__).resolve().parent / "plugins"
 
+plugin_allowlist = {
+    "imageformats": {
+        "qgif.dll",
+        "qicns.dll",
+        "qico.dll",
+        "qjpeg.dll",
+        "qsvg.dll",
+        "qtga.dll",
+        "qtiff.dll",
+        "qwbmp.dll",
+        "qwebp.dll",
+    },
+    "platforms": {
+        "qwindows.dll",
+        "qoffscreen.dll",
+    },
+    "styles": {
+        "qmodernwindowsstyle.dll",
+    },
+    "iconengines": {
+        "qsvgicon.dll",
+    },
+}
+
 binaries = []
-for plugin_subdir in ("imageformats", "platforms", "styles", "iconengines"):
+for plugin_subdir, allowed_names in plugin_allowlist.items():
     src_subdir = qt_plugins_root / plugin_subdir
     if src_subdir.is_dir():
-        for dll in src_subdir.glob("*.dll"):
-            binaries.append((str(dll), f"PySide6/plugins/{plugin_subdir}"))
+        for dll in sorted(src_subdir.glob("*.dll")):
+            if dll.name.lower() in allowed_names:
+                binaries.append((str(dll), f"PySide6/plugins/{plugin_subdir}"))
 
 hiddenimports = (
     collect_submodules("src")
@@ -93,6 +119,59 @@ hiddenimports = (
     ]
 )
 
+excluded_modules = [
+    # Development / scientific / unused stdlib GUI modules
+    "pytest",
+    "_pytest",
+    "tkinter",
+    "matplotlib",
+    "numpy",
+    "scipy",
+    # Unused heavy PySide6 modules (prevents dragging WebEngine/Pdf/Quick/Qml/Multimedia bloat)
+    "PySide6.QtWebEngineCore",
+    "PySide6.QtWebEngineWidgets",
+    "PySide6.QtWebEngineQuick",
+    "PySide6.QtWebChannel",
+    "PySide6.QtMultimedia",
+    "PySide6.QtMultimediaWidgets",
+    "PySide6.QtPdf",
+    "PySide6.QtPdfWidgets",
+    "PySide6.QtQuick",
+    "PySide6.QtQuickWidgets",
+    "PySide6.QtQuickControls2",
+    "PySide6.QtQml",
+    "PySide6.QtNetwork",
+    "PySide6.Qt3DCore",
+    "PySide6.Qt3DRender",
+    "PySide6.Qt3DInput",
+    "PySide6.Qt3DLogic",
+    "PySide6.Qt3DExtras",
+    "PySide6.QtBluetooth",
+    "PySide6.QtCharts",
+    "PySide6.QtDataVisualization",
+    "PySide6.QtDesigner",
+    "PySide6.QtGraphs",
+    "PySide6.QtHelp",
+    "PySide6.QtLocation",
+    "PySide6.QtNfc",
+    "PySide6.QtOpenGL",
+    "PySide6.QtOpenGLWidgets",
+    "PySide6.QtPositioning",
+    "PySide6.QtPrintSupport",
+    "PySide6.QtRemoteObjects",
+    "PySide6.QtScxml",
+    "PySide6.QtSensors",
+    "PySide6.QtSerialPort",
+    "PySide6.QtSpatialAudio",
+    "PySide6.QtSql",
+    "PySide6.QtStateMachine",
+    "PySide6.QtTest",
+    "PySide6.QtTextToSpeech",
+    "PySide6.QtUiTools",
+    "PySide6.QtWebSockets",
+    "PySide6.QtXml",
+]
+
 a = Analysis(
     [str(PROJECT_ROOT / "src" / "main.py")],
     pathex=[str(PROJECT_ROOT)],
@@ -102,10 +181,35 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["pytest", "_pytest", "tkinter", "matplotlib", "numpy", "scipy"],
+    excludes=excluded_modules,
     noarchive=False,
     optimize=0,
 )
+
+# Prune unused Qt plugins and exclusive transitive DLLs auto-injected by PyInstaller's QtGui hook
+_pruned_binary_names = {
+    "qpdf.dll",
+    "qdirect2d.dll",
+    "qminimal.dll",
+    "qtvirtualkeyboardplugin.dll",
+    "qtuiotouchplugin.dll",
+    "qt6pdf.dll",
+    "qt6virtualkeyboard.dll",
+    "qt6quick.dll",
+    "qt6qml.dll",
+    "qt6qmlmeta.dll",
+    "qt6qmlmodels.dll",
+    "qt6qmlworkerscript.dll",
+    "qt6opengl.dll",
+    "qt6network.dll",
+    "qt6webenginecore.dll",
+    "qt6multimedia.dll",
+}
+a.binaries = [
+    entry
+    for entry in a.binaries
+    if Path(entry[0]).name.lower() not in _pruned_binary_names
+]
 pyz = PYZ(a.pure)
 
 exe = EXE(

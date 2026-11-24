@@ -13,6 +13,7 @@ from src.database.history_fts import (
     search_history,
     suggest_taxonomy_for_text,
 )
+from src.database.semantic_search import find_similar_tickets, search_history_hybrid
 
 
 def _get_utc_now_str() -> str:
@@ -351,4 +352,58 @@ class ScratchpadRepository:
             body=body,
             conn=self.db.get_connection(),
             max_per_axis=max_per_axis,
+        )
+
+    def search_history_hybrid(
+        self,
+        query: str = "",
+        *,
+        mode: str = "exact",
+        provider: Any = None,
+        query_vector: Any = None,
+        model_id: Optional[str] = None,
+        min_similarity: float = 0.25,
+        client: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        taxonomy_slugs: Optional[List[str] | Tuple[str, ...] | str] = None,
+        sort_by: str = "relevance",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Tuple[List[HistorySearchResult], int]:
+        """Hybrid FTS5 + Vector RRF history search with automatic Exact FTS5 fallback."""
+        return search_history_hybrid(
+            self.db.get_connection(),
+            query,
+            mode=mode,
+            provider=provider,
+            query_vector=query_vector,
+            model_id=model_id,
+            min_similarity=min_similarity,
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            taxonomy_slugs=taxonomy_slugs,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+
+    def find_similar_tickets(
+        self,
+        text: str,
+        provider: Any,
+        *,
+        exclude_id: Optional[int] = None,
+        min_similarity: float = 0.25,
+        limit: int = 5,
+    ) -> List[HistorySearchResult]:
+        """Returns top semantically similar archived tickets for live recommendation panels."""
+        return find_similar_tickets(
+            self.db.get_connection(),
+            text,
+            provider,
+            exclude_id=exclude_id,
+            min_similarity=min_similarity,
+            limit=limit,
         )

@@ -276,6 +276,58 @@ class ScratchpadService:
             limit=limit,
         )
 
+    def search_history_hybrid(
+        self,
+        query: str = "",
+        *,
+        mode: str = "exact",
+        provider: Any = None,
+        query_vector: Any = None,
+        model_id: Optional[str] = None,
+        min_similarity: float = 0.25,
+        client: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        taxonomy_slugs: Optional[List[str] | Tuple[str, ...] | str] = None,
+        sort_by: str = "relevance",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Tuple[List[HistorySearchResult], int]:
+        """Hybrid FTS5 + Vector RRF search with automatic Exact FTS5 fallback."""
+        return self.repo.search_history_hybrid(
+            query=query,
+            mode=mode,
+            provider=provider,
+            query_vector=query_vector,
+            model_id=model_id,
+            min_similarity=min_similarity,
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            taxonomy_slugs=taxonomy_slugs,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+
+    def find_similar_tickets(
+        self,
+        text: str,
+        provider: Any,
+        *,
+        exclude_id: Optional[int] = None,
+        min_similarity: float = 0.25,
+        limit: int = 5,
+    ) -> List[HistorySearchResult]:
+        """Finds top semantically similar archived tickets."""
+        return self.repo.find_similar_tickets(
+            text,
+            provider,
+            exclude_id=exclude_id,
+            min_similarity=min_similarity,
+            limit=limit,
+        )
+
     def get_skeleton_names(self) -> List[str]:
         """Returns the list of available ticket skeleton template names."""
         return list(TICKET_SKELETONS.keys())

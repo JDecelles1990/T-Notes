@@ -18,7 +18,9 @@
       "sort_order": 11,
       "aliases": [
         "exchange", "exchange online", "exo", "outlook", "ost", "pst",
-        "autodiscover", "shared mailbox", "boite partagee", "boite aux lettres",
+        "autodiscover", "autodiscover loop", "boucle autodiscover",
+        "cache exchange", "gal", "carnet d'adresses",
+        "shared mailbox", "boite partagee", "boite aux lettres",
         "courriel", "courriels", "messagerie", "mail", "email", "smtp", "imap",
         "oab", "oof", "out of office", "absence", "distribution list",
         "liste de distribution", "transport rule", "quarantine", "quarantaine"
@@ -31,9 +33,11 @@
       "parent_slug": "domain.m365",
       "sort_order": 12,
       "aliases": [
-        "teams", "microsoft teams", "sharepoint", "onedrive", "canal",
-        "channel", "synchro onedrive", "synchronisation", "fichier partage",
-        "bibliotheque", "document library", "meeting", "reunion", "appel teams"
+        "teams", "microsoft teams", "teams cache", "cache teams", "new teams",
+        "sharepoint", "bibliotheque sharepoint", "onedrive", "onedrive sync",
+        "synchronisation onedrive", "canal", "channel", "synchro onedrive",
+        "synchronisation", "fichier partage", "bibliotheque",
+        "document library", "meeting", "reunion", "appel teams"
       ]
     },
     {
@@ -51,8 +55,9 @@
       "parent_slug": "domain.identity",
       "sort_order": 21,
       "aliases": [
-        "entra", "entra id", "azure ad", "aad", "mfa", "2fa", "authenticator",
-        "microsoft authenticator", "conditional access", "acces conditionnel",
+        "entra", "entra id", "azure ad", "aad", "aadsts50076", "aadsts50079",
+        "aadsts50158", "mfa", "2fa", "authenticator", "microsoft authenticator",
+        "reinitialisation mfa", "conditional access", "acces conditionnel",
         "sso", "sspr", "fido2", "token", "jeton", "double facteur",
         "authentification multifacteur"
       ]
@@ -64,10 +69,11 @@
       "parent_slug": "domain.identity",
       "sort_order": 22,
       "aliases": [
-        "active directory", "gpo", "ldap", "kerberos", "ntlm", "domain controller",
-        "controleur de domaine", "ou", "group policy", "strategie de groupe",
-        "gpupdate", "azure ad connect", "entra connect", "ad sync", "sid",
-        "lecteur reseau", "mapped drive"
+        "active directory", "gpo", "ldap", "kerberos", "ntlm", "sysvol",
+        "domain controller", "controleur de domaine", "ou", "group policy",
+        "strategie de groupe", "gpupdate", "azure ad connect", "entra connect",
+        "ad sync", "sid", "lecteur reseau", "mapped drive",
+        "compte verrouille", "account locked", "mot de passe expire", "expired password"
       ]
     },
     {
@@ -86,9 +92,10 @@
       "sort_order": 31,
       "aliases": [
         "windows", "win10", "win11", "bsod", "blue screen", "ecran bleu",
-        "explorer", "regedit", "registry", "registre", "wu", "windows update",
-        "mise a jour windows", "sfc", "dism", "event viewer", "observateur",
-        "bitlocker", "profil windows", "user profile"
+        "explorer", "explorateur windows", "regedit", "registry", "registre",
+        "wu", "windows update", "mise a jour windows", "sfc", "dism", "wmi",
+        "event viewer", "observateur", "bitlocker", "profil windows",
+        "profil temporaire", "temp profile", "user profile"
       ]
     },
     {
@@ -99,8 +106,9 @@
       "sort_order": 32,
       "aliases": [
         "intune", "autopilot", "mdm", "mam", "rmm", "compliance", "conformite",
-        "company portal", "portail d'entreprise", "enrollment", "enrolement",
-        "ninjarmm", "ninjaone", "datto", "connectwise", "automate"
+        "compliance policy", "conformite intune", "company portal",
+        "portail d'entreprise", "enrollment", "enrolement", "ninjarmm",
+        "ninjaone", "datto", "connectwise", "automate"
       ]
     },
     {
@@ -118,10 +126,11 @@
       "parent_slug": "domain.network",
       "sort_order": 41,
       "aliases": [
-        "vpn", "forticlient", "fortinet", "cisco", "anyconnect", "globalprotect",
-        "wireguard", "openvpn", "dns", "dhcp", "wifi", "wi-fi", "sans fil",
-        "ethernet", "reseau", "pare-feu", "firewall", "proxy", "rdp", "gateway",
-        "passerelle", "ipconfig", "nslookup", "ping", "nic", "carte reseau"
+        "vpn", "forticlient", "fortinet", "sonicwall", "meraki", "cisco",
+        "anyconnect", "globalprotect", "wireguard", "openvpn", "split tunnel",
+        "dns", "resolution dns", "dhcp", "vlan", "wifi", "wi-fi", "sans fil",
+        "802.1x", "ethernet", "reseau", "pare-feu", "firewall", "proxy", "rdp",
+        "gateway", "passerelle", "ipconfig", "nslookup", "ping", "nic", "carte reseau"
       ]
     },
     {
@@ -140,9 +149,11 @@
       "sort_order": 51,
       "aliases": [
         "printer", "printers", "imprimante", "imprimantes", "spooler",
-        "spouleur", "print", "impression", "scanner", "numeriseur", "dock",
-        "station d'accueil", "usb", "monitor", "ecran", "moniteur",
-        "keyboard", "clavier", "mouse", "souris", "headset", "casque", "toner"
+        "spouleur", "print spooler", "spouleur d'impression", "0x0000011b",
+        "0x00000709", "print", "impression", "kyocera", "zebra", "scanner",
+        "numeriseur", "dock", "docking station", "station d'accueil", "usb",
+        "monitor", "ecran", "moniteur", "keyboard", "clavier", "mouse",
+        "souris", "headset", "casque", "toner"
       ]
     },
     {
@@ -160,10 +171,11 @@
       "parent_slug": "domain.security",
       "sort_order": 61,
       "aliases": [
-        "defender", "phishing", "hameconnage", "malware", "edr", "xdr",
-        "ransomware", "rancongiciel", "spam", "pourriel", "compromised",
-        "compromis", "risky sign-in", "connexion risquee", "alert", "alerte",
-        "quarantine", "antivirus"
+        "defender", "phishing", "hameconnage", "malware", "edr", "xdr", "asr",
+        "smartscreen", "ransomware", "rancongiciel", "spam", "pourriel",
+        "compromised", "compromis", "risky sign-in", "connexion risquee",
+        "alert", "alerte", "quarantine", "quarantaine", "faux positif",
+        "false positive", "antivirus"
       ]
     },
     {
@@ -173,10 +185,14 @@
       "parent_slug": null,
       "sort_order": 10,
       "aliases": [
-        "auth", "login", "sign-in", "signin", "connexion", "mot de passe",
-        "password", "locked", "lockout", "verrouille", "compte verrouille",
-        "denied", "credential", "identifiant", "mfa prompt", "loop", "boucle",
-        "0x80070005", "aadsts", "invalid credentials", "expired password"
+        "auth", "login", "sign-in", "signin", "connexion", "ouverture de session",
+        "mot de passe", "password", "locked", "lockout", "verrouille",
+        "compte verrouille", "account locked", "mot de passe expire",
+        "login denied", "sign-in denied", "credential", "identifiant",
+        "mfa prompt", "authenticator", "loop", "boucle",
+        "boucle de connexion", "login loop", "0x80070005", "aadsts",
+        "aadsts50076", "invalid credentials", "expired password",
+        "temp profile", "temporary profile", "profil temporaire"
       ]
     },
     {
@@ -188,8 +204,11 @@
       "aliases": [
         "mail flow", "flux de messagerie", "ndr", "bounce", "rejet",
         "not receiving", "ne recoit pas", "ne part pas", "stuck in outbox",
-        "boite d'envoi", "sync", "synchronisation", "ost corrupt",
-        "boite partagee", "delayed email", "courriel retarde"
+        "boite d'envoi", "sync", "synchronisation", "onedrive sync",
+        "synchronisation onedrive", "not syncing", "ne synchronise pas",
+        "ost", "ost corrupt", "autodiscover loop", "boucle autodiscover",
+        "boite partagee", "blocked mail", "courriel bloque",
+        "non-delivery", "delayed email", "courriel retarde"
       ]
     },
     {
@@ -199,9 +218,10 @@
       "parent_slug": null,
       "sort_order": 30,
       "aliases": [
-        "disconnect", "deconnexion", "offline", "hors ligne", "timeout",
-        "delai depasse", "unreachable", "inaccessible", "no internet",
-        "pas d'internet", "pas de reseau", "dropped", "packet loss",
+        "disconnect", "deconnexion", "vpn disconnect", "deconnexion vpn",
+        "offline", "hors ligne", "timeout", "dns timeout", "delai depasse",
+        "unreachable", "inaccessible", "no internet", "pas d'internet",
+        "pas de reseau", "dropped", "packet loss", "perte de paquets",
         "cannot connect", "impossible de se connecter"
       ]
     },
@@ -212,9 +232,10 @@
       "parent_slug": null,
       "sort_order": 40,
       "aliases": [
-        "slow", "lent", "lenteur", "freeze", "gele", "hang", "fige", "crash",
-        "plantage", "plante", "bsod", "ecran bleu", "high cpu", "ram",
-        "memory leak", "out of memory", "not responding", "ne repond pas"
+        "slow", "lent", "lenteur", "freeze", "freezes", "gele", "hang", "fige",
+        "crash", "plantage", "plante", "bsod", "ecran bleu", "high cpu", "ram",
+        "100% disk", "memory leak", "out of memory", "not responding",
+        "ne repond pas"
       ]
     },
     {
@@ -224,10 +245,11 @@
       "parent_slug": null,
       "sort_order": 50,
       "aliases": [
-        "permission", "permissions", "access denied", "acces refuse",
-        "unauthorized", "non autorise", "forbidden", "shared folder",
-        "dossier partage", "full access", "send as", "envoyer en tant que",
-        "read only", "lecture seule", "privilege", "droits d'acces"
+        "permission", "permissions", "permission drift", "access denied",
+        "acces refuse", "unauthorized", "non autorise", "forbidden",
+        "shared folder", "dossier partage", "full access", "send as",
+        "envoyer en tant que", "read only", "lecture seule", "privilege",
+        "droits d'acces", "quarantine", "quarantaine", "faux positif", "false positive"
       ]
     },
     {
@@ -237,9 +259,11 @@
       "parent_slug": null,
       "sort_order": 60,
       "aliases": [
-        "onboarding", "offboarding", "new user", "nouvel employe", "arrivee",
-        "depart", "provision", "provisioning", "creation de compte", "license",
-        "licence", "sku", "device setup", "preparation poste", "deploiement"
+        "onboarding", "offboarding", "new user", "new hire", "nouvel employe",
+        "embauche", "arrivee", "depart", "provision", "provisioning",
+        "creation de compte", "autopilot", "enrollment", "license", "licence",
+        "license missing", "licence manquante", "sku", "device setup",
+        "preparation poste", "deploiement"
       ]
     },
     {
@@ -249,10 +273,13 @@
       "parent_slug": null,
       "sort_order": 70,
       "aliases": [
-        "not printing", "n'imprime pas", "paper jam", "bourrage", "spooler",
-        "spouleur", "no display", "pas d'affichage", "flickering",
-        "battery", "batterie", "charging", "ne charge pas", "peripheral",
-        "peripherique", "not detected", "non detecte"
+        "not printing", "n'imprime pas", "ne s'imprime pas", "paper jam",
+        "bourrage", "spooler", "spouleur", "0x0000011b", "0x00000709",
+        "stuck print queue", "file d'attente bloquee", "imprimante bloquee",
+        "imprimante hors ligne", "printer offline", "no display",
+        "pas d'affichage", "double ecran", "flickering", "battery", "batterie",
+        "charging", "ne charge pas", "peripheral", "peripherique",
+        "not detected", "non detecte"
       ]
     },
     {
@@ -262,9 +289,12 @@
       "parent_slug": null,
       "sort_order": 10,
       "aliases": [
-        "rebuild", "rebuilt", "reconstruct", "reconstruit", "ost",
-        "cleared cache", "vide le cache", "vidage cache", "new profile",
-        "nouveau profil", "recreated profile", "credman", "credential manager"
+        "rebuild", "rebuilt", "rebuilt ost", "renamed ost", "renomme ost",
+        "reconstruct", "reconstruit", "ost", "cleared cache", "cleared teams cache",
+        "vide le cache", "vider le cache", "vider le cache teams", "nettoyer le cache",
+        "vidage cache", "cache teams vide", "new profile",
+        "nouveau profil", "recreated profile", "recree le profil",
+        "reinitialise onedrive", "onedrive reset", "credman", "credential manager"
       ]
     },
     {
@@ -274,10 +304,14 @@
       "parent_slug": null,
       "sort_order": 20,
       "aliases": [
-        "revoke session", "revoque", "revoke tokens", "re-register mfa",
-        "reinitialise mfa", "mfa reset", "reinitialisation mfa",
-        "password reset", "mot de passe reinitialise", "unlock account",
-        "deverrouille", "unlocked", "cleared token"
+        "revoke session", "revoked sessions", "revoque", "revoque les sessions",
+        "revoke tokens", "re-register mfa", "require re-register mfa",
+        "re-enregistrer mfa", "reinitialise mfa", "mfa reset",
+        "reinitialisation mfa", "password reset", "reinitialise le mot de passe",
+        "reinitialisation du mot de passe", "mot de passe reinitialise",
+        "unlock account", "unlocked account", "deverrouille",
+        "deverrouille le compte", "deverrouillage", "deverrouillage ad",
+        "unlocked", "cleared token"
       ]
     },
     {
@@ -287,9 +321,15 @@
       "parent_slug": null,
       "sort_order": 30,
       "aliases": [
-        "assigned license", "licence assignee", "sku updated", "gpo updated",
-        "strategie mise a jour", "conditional access excluded",
-        "intune policy", "regle transport", "mail flow rule", "policy applied"
+        "assigned license", "attribue la licence", "licence assignee",
+        "sku updated", "m365 e3", "gpo updated", "updated gpo", "corrige la gpo",
+        "gpupdate /force", "strategie mise a jour", "conditional access excluded",
+        "intune policy", "regle transport", "transport rule", "mail flow rule",
+        "policy applied", "ajout d'exclusion", "ajoute exclusion",
+        "exclusion defender", "exclu dans defender", "excluded in defender",
+        "released from quarantine", "libere de la quarantaine",
+        "released blocked mail", "registry key", "cle de registre",
+        "rpcauthnlevelprivacyenabled"
       ]
     },
     {
@@ -299,10 +339,12 @@
       "parent_slug": null,
       "sort_order": 40,
       "aliases": [
-        "restarted spooler", "redemarre spouleur", "net stop spooler",
-        "restarted service", "redemarre service", "driver updated",
-        "pilote mis a jour", "reinstall driver", "reinstalle pilote",
-        "miniport", "rebooted", "redemarre"
+        "restarted spooler", "redemarre spouleur", "redemarre le spouleur",
+        "redemarrage du spooler", "redemarrage spouleur", "net stop spooler",
+        "restarted service", "redemarre service", "redemarre le service",
+        "restarted ninja", "driver updated", "pilote mis a jour",
+        "reinstall driver", "reinstalled driver", "reinstalle le pilote",
+        "firmware update", "mise a jour pilote", "miniport", "rebooted", "redemarre"
       ]
     },
     {
@@ -313,8 +355,11 @@
       "sort_order": 50,
       "aliases": [
         "flushdns", "ipconfig /flushdns", "winsock reset", "netsh",
-        "dns updated", "spf", "dkim", "dmarc", "vpn reconnect", "reconnected",
-        "mtu adjusted", "firewall rule added", "ouverture port", "ip renewed"
+        "dns updated", "updated dns", "corrige le dns", "routage dns",
+        "routage vlan", "corrige le routage", "qos", "split tunnel",
+        "static route", "route statique", "reconnected vlan", "spf", "dkim",
+        "dmarc", "vpn reconnect", "reconnected", "mtu", "mtu adjusted",
+        "firewall rule added", "ouverture port", "ip renewed"
       ]
     },
     {
@@ -324,9 +369,12 @@
       "parent_slug": null,
       "sort_order": 60,
       "aliases": [
-        "granted access", "acces accorde", "added to group", "ajoute au groupe",
-        "full access added", "send as granted", "ntfs updated",
-        "permissions updated", "droits mis a jour", "automapping"
+        "granted access", "granted full access", "acces accorde",
+        "added to group", "added to security group", "ajoute au groupe",
+        "ajoute au groupe de securite", "ajout au groupe",
+        "ajout au groupe de securite", "full access added", "send as granted",
+        "add-mailboxpermission", "ntfs updated", "ntfs permissions",
+        "droits sharepoint", "permissions updated", "droits mis a jour", "automapping"
       ]
     },
     {
@@ -336,9 +384,11 @@
       "parent_slug": null,
       "sort_order": 70,
       "aliases": [
-        "replaced", "remplace", "swapped", "echange", "new dock",
-        "new cable", "nouveau cable", "rma", "warranty", "garantie",
-        "toner replaced", "replaced battery"
+        "replaced", "remplace", "replaced dock", "remplace la station d'accueil",
+        "swapped", "echange", "new dock", "new cable", "replaced cable",
+        "remplace le cable", "nouveau cable", "rma", "warranty", "garantie",
+        "toner replaced", "swapped toner", "remplace le tambour",
+        "replaced battery", "replaced ssd"
       ]
     },
     {
@@ -348,9 +398,11 @@
       "parent_slug": null,
       "sort_order": 80,
       "aliases": [
-        "escalated", "escalade", "vendor", "fournisseur", "microsoft support",
-        "tier 3", "niveau 3", "opened ticket", "billet ouvert", "isp", "bell",
-        "videotron", "rogers"
+        "escalated", "escalade", "escalated to microsoft",
+        "escalade au fournisseur", "vendor", "fournisseur", "microsoft support",
+        "tier 3", "niveau 3", "escalade niveau 3", "opened ticket",
+        "opened vendor ticket", "billet ouvert", "support kyocera",
+        "support bell", "isp", "bell", "videotron", "rogers"
       ]
     }
   ]

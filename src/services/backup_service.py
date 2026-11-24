@@ -28,7 +28,6 @@ class BackupService:
         self.scratchpad_repo = scratchpad_repo or ScratchpadRepository(db_manager)
         self.image_repo = image_repo or ImageRepository(db_manager)
         self.backup_dir = backup_dir or (DEFAULT_DB_PATH.parent / "backups")
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
 
     def create_backup_snapshot(self, custom_path: Optional[Path] = None, retention_days: int = 7) -> Path:
         """
@@ -59,6 +58,8 @@ class BackupService:
 
     def purge_old_backups(self, retention_days: int = 7) -> int:
         """Deletes database snapshots older than retention_days."""
+        if not self.backup_dir.is_dir():
+            return 0
         cutoff = datetime.now() - timedelta(days=retention_days)
         purged = 0
         for item in self.backup_dir.glob("techpad_*.db.bak"):
@@ -73,6 +74,8 @@ class BackupService:
 
     def list_backups(self) -> List[Dict[str, Any]]:
         """Lists available backup snapshots sorted newest first."""
+        if not self.backup_dir.is_dir():
+            return []
         results = []
         for item in sorted(self.backup_dir.glob("techpad_*.db.bak"), reverse=True):
             try:

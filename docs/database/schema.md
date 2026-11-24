@@ -220,6 +220,9 @@ Database migrations are managed idempotently in `src/database/migrations.py`. On
 6. **Versioned History FTS5 & Taxonomy Migration (`PRAGMA user_version = 3`, `history_tickets_fts`, `taxonomy_nodes`, `ticket_taxonomy`)**:
    - Invokes `migrate_history_fts(conn)` (`src/database/history_fts.py`) which creates a timestamped `*.pre_fts_migration.bak` backup before upgrading non-empty file DBs, runs inside `BEGIN IMMEDIATE ... COMMIT` (full `ROLLBACK` on error), adds missing `tags` / `archived_at` columns, backfills blank `archived_at` timestamps on archived tickets, creates `history_tickets_fts` (`tokenize='unicode61 remove_diacritics 2'`, `prefix='2 3'`) backed by `scratchpads` with `history_tickets_ai` / `history_tickets_ad` / `history_tickets_au` triggers (verified free of nested base-table `UPDATE` triggers), runs `rebuild`, creates/upserts the 3-axis taxonomy tables from `taxonomy_seed.json` without wiping user assignments, and sets `PRAGMA user_version = 3`.
 
+7. **Optional Local Semantic Embeddings Migration (`PRAGMA user_version = 4`, `ticket_embeddings`)**:
+   - Invokes `migrate_semantic_embeddings(conn)` (`src/database/semantic_search.py`), creating a one-time `*.pre_embeddings_migration.bak` backup on non-empty file DBs, enabling `WAL` + `busy_timeout=5000`, creating `ticket_embeddings` (`ticket_id PRIMARY KEY REFERENCES scratchpads(id) ON DELETE CASCADE`, `model_id`, `dim`, `content_hash`, `vector` IEEE-754 little-endian `float32` BLOB, `updated_at`) with index `idx_ticket_embeddings_model_id`, seeding `semantic_*` defaults in `app_settings`, and setting `PRAGMA user_version = 4`.
+
 ---
 
 ## 5. Adding Future Migrations

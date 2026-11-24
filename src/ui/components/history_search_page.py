@@ -52,11 +52,22 @@ from PySide6.QtWidgets import (
 from src.core.constants import LOG_BADGES, TICKET_SKELETONS
 from src.database.history_fts import (
     HistorySearchResult,
+    _get_main_db_file,
+    _table_exists,
     get_history_ticket,
     get_ticket_taxonomy,
     list_history_clients,
     list_taxonomy_nodes,
+    sanitize_fts5_query,
     search_history,
+)
+from src.database.semantic_search import (
+    EmbeddingIndexWorker,
+    EmbeddingProvider,
+    OllamaEmbeddingProvider,
+    QueryEmbeddingWorker,
+    get_semantic_settings,
+    search_history_hybrid,
 )
 from src.ui.components.editor import TechPadEditor
 from src.ui.components.panel_transition import PanelWidthTransition
@@ -64,6 +75,7 @@ from src.ui.dialogs.archive_taxonomy_dialog import (
     EditTicketTaxonomyDialog,
     persist_taxonomy_assignments,
 )
+from src.ui.dialogs.semantic_settings_dialog import SemanticSettingsDialog
 from src.ui.m365.launcher_widget import HoverToolButton
 
 # Expose as top-level `history_search_page` as well so direct imports work identically.
@@ -119,7 +131,19 @@ class HistoryItemDelegate(QStyledItemDelegate):
 
         date_short = (result.archived_at or "")[:10]
         client_part = f" · {html.escape(result.client)}" if result.client else ""
-        header_meta = f"{html.escape(result.ticket_number)}{client_part}"
+        match_badge = ""
+        m_type = getattr(result, "match_type", "exact")
+        if m_type == "both":
+            match_badge = (
+                " &nbsp;<span style='background-color:rgba(167,139,250,0.22); color:#ddd6fe; "
+                "padding:0px 4px; border-radius:3px; font-size:10px;'>Hybrid</span>"
+            )
+        elif m_type == "semantic":
+            match_badge = (
+                " &nbsp;<span style='background-color:rgba(16,185,129,0.22); color:#6ee7b7; "
+                "padding:0px 4px; border-radius:3px; font-size:10px;'>Semantic</span>"
+            )
+        header_meta = f"{html.escape(result.ticket_number)}{client_part}{match_badge}"
         title_safe = html.escape(result.title or "(Untitled)")
         snippet_safe = result.snippet_html or ""
 
@@ -228,6 +252,12 @@ class HistorySearchPage(QWidget):
         self._current_ticket_number = ""
         self.ticket_editor: TechPadEditor | None = None
         self._taxonomy_labels: dict[str, str] = {}
+        self._embedding_provider: EmbeddingProvider | None = None
+        self._index_worker: EmbeddingIndexWorker | None = None
+        self._reindex_pending = False
+        self._active_query_workers: list[QueryEmbeddingWorker] = []
+        self._search_generation = 0
+        self._cached_query_vec: tuple[str, str, list[float]] | None = None
 
         self._debounce = QTimer(self)
         self._debounce.setSingleShot(True)
@@ -236,6 +266,7 @@ class HistorySearchPage(QWidget):
 
         self._build_ui()
         self._wire_signals()
+        self._init_search_mode_from_settings()
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
@@ -290,6 +321,14 @@ class HistorySearchPage(QWidget):
         self.sort_combo.addItem("Newest Archived", "date")
         self.sort_combo.setToolTip("Sort results by BM25 relevance or newest archive date")
 
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItem("Exact", "exact")
+        self.mode_combo.addItem("Smart", "smart")
+        self.mode_combo.setToolTip("Search mode: Exact FTS5 or Smart Hybrid FTS5 + Embeddings")
+
+        self.semantic_btn = QPushButton("⚙ Semantic")
+        self.semantic_btn.setToolTip("Configure local Ollama semantic search & background indexing")
+
         self.count_label = QLabel("")
         self.count_label.setMinimumWidth(90)
         self.count_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -302,6 +341,8 @@ class HistorySearchPage(QWidget):
         filter_bar.addWidget(self.symptom_combo)
         filter_bar.addWidget(self.resolution_combo)
         filter_bar.addWidget(self.sort_combo)
+        filter_bar.addWidget(self.mode_combo)
+        filter_bar.addWidget(self.semantic_btn)
         filter_bar.addWidget(self.count_label)
         root.addLayout(filter_bar)
 
@@ -597,6 +638,8 @@ class HistorySearchPage(QWidget):
         self.symptom_combo.currentIndexChanged.connect(self._run_fresh_search)
         self.resolution_combo.currentIndexChanged.connect(self._run_fresh_search)
         self.sort_combo.currentIndexChanged.connect(self._run_fresh_search)
+        self.mode_combo.currentIndexChanged.connect(self._run_fresh_search)
+        self.semantic_btn.clicked.connect(self._open_semantic_settings)
         self.load_more_btn.clicked.connect(self._load_next_page)
         self.results_list.currentItemChanged.connect(self._on_result_selected)
 
@@ -722,6 +765,129 @@ class HistorySearchPage(QWidget):
             if slug
         ]
 
+    # --- Semantic Provider & Background Worker Lifecycle ---
+
+    def _init_search_mode_from_settings(self) -> None:
+        try:
+            settings = get_semantic_settings(self._get_conn())
+        except sqlite3.Error:
+            settings = {"enabled": False, "search_mode": "exact"}
+        target_mode = "smart" if (settings.get("enabled") and settings.get("search_mode") == "smart") else "exact"
+        idx = self.mode_combo.findData(target_mode)
+        if idx >= 0:
+            self.mode_combo.blockSignals(True)
+            self.mode_combo.setCurrentIndex(idx)
+            self.mode_combo.blockSignals(False)
+
+    def set_embedding_provider(self, provider: EmbeddingProvider | None) -> None:
+        """Inject a custom or mock EmbeddingProvider (used by offline tests or configured Ollama)."""
+        self._embedding_provider = provider
+        self._cached_query_vec = None
+
+    def get_embedding_provider(self) -> EmbeddingProvider | None:
+        """Return injected provider or build OllamaEmbeddingProvider when semantic search is enabled."""
+        if self._embedding_provider is not None:
+            return self._embedding_provider
+        try:
+            settings = get_semantic_settings(self._get_conn())
+        except sqlite3.Error:
+            return None
+        if not settings.get("enabled"):
+            return None
+        return OllamaEmbeddingProvider(
+            base_url=str(settings.get("ollama_url", "")),
+            model_id=str(settings.get("model_id", "")),
+        )
+
+    def _has_indexed_embeddings(self, conn: sqlite3.Connection, model_id: str) -> bool:
+        if not model_id or not _table_exists(conn, "ticket_embeddings"):
+            return False
+        return (
+            conn.execute(
+                "SELECT 1 FROM ticket_embeddings WHERE model_id = ? LIMIT 1",
+                (model_id,),
+            ).fetchone()
+            is not None
+        )
+
+    def _open_semantic_settings(self) -> bool:
+        dlg = SemanticSettingsDialog(
+            get_conn=self._get_conn,
+            provider=self._embedding_provider,
+            parent=self,
+        )
+        self._last_semantic_settings_dialog = dlg
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            self._cached_query_vec = None
+            settings = get_semantic_settings(self._get_conn())
+            if not settings.get("enabled") and self._embedding_provider is None:
+                self.mode_combo.setCurrentIndex(self.mode_combo.findData("exact"))
+            self._run_fresh_search()
+            return True
+        return False
+
+    def start_background_indexing(self, *, force: bool = False) -> bool:
+        """Queue incremental background embedding indexing on a dedicated WAL SQLite connection."""
+        conn = self._get_conn()
+        db_file = _get_main_db_file(conn)
+        if db_file is None:
+            return False
+
+        if not force and self._embedding_provider is None:
+            try:
+                settings = get_semantic_settings(conn)
+            except sqlite3.Error:
+                return False
+            if not settings.get("enabled"):
+                return False
+
+        provider = self.get_embedding_provider()
+        if provider is None:
+            return False
+
+        if self._index_worker is not None and self._index_worker.isRunning():
+            self._reindex_pending = True
+            return True
+
+        worker = EmbeddingIndexWorker(db_file, provider, parent=self)
+        self._index_worker = worker
+        worker.indexing_finished.connect(self._on_index_worker_finished)
+        worker.start()
+        return True
+
+    def _on_index_worker_finished(self, _count: int, status: str) -> None:
+        if self._index_worker is not None:
+            self._index_worker.deleteLater()
+            self._index_worker = None
+        if status and status != "Stopped":
+            self.status_message_requested.emit(f"Semantic index: {status}", 3000)
+        if self._reindex_pending:
+            self._reindex_pending = False
+            self.start_background_indexing(force=True)
+            return
+        if self.mode_combo.currentData() == "smart" and self.search_input.text().strip():
+            self._run_fresh_search()
+
+    def stop_background_workers(self, timeout_ms: int = 3000) -> None:
+        """Stop all background indexing and query embedding threads cleanly before shutdown."""
+        self._reindex_pending = False
+        if self._index_worker is not None:
+            self._index_worker.stop_and_wait(timeout_ms)
+            self._index_worker.deleteLater()
+            self._index_worker = None
+        for worker in list(self._active_query_workers):
+            worker.requestInterruption()
+            if worker.isRunning():
+                worker.wait(timeout_ms)
+            worker.deleteLater()
+        self._active_query_workers.clear()
+
+    stop_background_indexing = stop_background_workers
+
+    def closeEvent(self, event) -> None:
+        self.stop_background_workers()
+        super().closeEvent(event)
+
     # --- Search & Pagination ---
 
     def _compute_date_from(self) -> str | None:
@@ -740,18 +906,83 @@ class HistorySearchPage(QWidget):
         if self.results_list.count() > 0:
             self.results_list.setCurrentRow(0)
 
+        # If Smart mode is active and query isn't embedded yet, embed off UI thread cleanly
+        conn = self._get_conn()
+        query = self.search_input.text()
+        mode = self.mode_combo.currentData() or "exact"
+        provider = self.get_embedding_provider() if mode == "smart" else None
+        if (
+            mode == "smart"
+            and provider is not None
+            and sanitize_fts5_query(query) is not None
+            and self._has_indexed_embeddings(conn, provider.model_id)
+        ):
+            cached = self._cached_query_vec
+            if cached is None or cached[0] != provider.model_id or cached[1] != query:
+                self._launch_async_query_embed(query, provider)
+
+    def _launch_async_query_embed(self, query: str, provider: EmbeddingProvider) -> None:
+        self._search_generation += 1
+        gen = self._search_generation
+        worker = QueryEmbeddingWorker(gen, query, provider, parent=self)
+        self._active_query_workers.append(worker)
+        worker.query_embedded.connect(self._on_query_embedded)
+        worker.finished.connect(lambda w=worker: self._cleanup_query_worker(w))
+        worker.start()
+
+    def _cleanup_query_worker(self, worker: QueryEmbeddingWorker) -> None:
+        if worker in self._active_query_workers:
+            self._active_query_workers.remove(worker)
+        worker.deleteLater()
+
+    def _on_query_embedded(self, generation: int, query_str: str, vec: object) -> None:
+        if generation != self._search_generation or query_str != self.search_input.text():
+            return
+        if self.mode_combo.currentData() != "smart":
+            return
+        provider = self.get_embedding_provider()
+        if provider is None or vec is None:
+            return
+        self._cached_query_vec = (provider.model_id, query_str, list(vec))  # type: ignore[arg-type]
+        self._run_fresh_search()
+
     def _load_next_page(self) -> None:
         conn = self._get_conn()
-        results, total = search_history(
-            conn,
-            query=self.search_input.text(),
-            client=self.client_combo.currentData(),
-            date_from=self._compute_date_from(),
-            taxonomy_slugs=self._selected_taxonomy_slugs() or None,
-            sort_by=self.sort_combo.currentData() or "relevance",
-            limit=self._PAGE_SIZE,
-            offset=self._loaded_count,
-        )
+        query = self.search_input.text()
+        mode = self.mode_combo.currentData() or "exact"
+        provider = self.get_embedding_provider() if mode == "smart" else None
+        cached = self._cached_query_vec
+        if (
+            mode == "smart"
+            and provider is not None
+            and cached is not None
+            and cached[0] == provider.model_id
+            and cached[1] == query
+        ):
+            results, total = search_history_hybrid(
+                conn,
+                query=query,
+                mode="smart",
+                provider=provider,
+                query_vector=cached[2],
+                client=self.client_combo.currentData(),
+                date_from=self._compute_date_from(),
+                taxonomy_slugs=self._selected_taxonomy_slugs() or None,
+                sort_by=self.sort_combo.currentData() or "relevance",
+                limit=self._PAGE_SIZE,
+                offset=self._loaded_count,
+            )
+        else:
+            results, total = search_history(
+                conn,
+                query=query,
+                client=self.client_combo.currentData(),
+                date_from=self._compute_date_from(),
+                taxonomy_slugs=self._selected_taxonomy_slugs() or None,
+                sort_by=self.sort_combo.currentData() or "relevance",
+                limit=self._PAGE_SIZE,
+                offset=self._loaded_count,
+            )
 
         self._total_count = total
         for res in results:
@@ -966,6 +1197,7 @@ class HistorySearchPage(QWidget):
             self.results_list.blockSignals(False)
         scroll_bar.setValue(scroll_pos)
         self._flash_feedback("Tags updated")
+        self.start_background_indexing()
         return updated
 
     def _emit_restore(self) -> None:

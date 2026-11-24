@@ -156,3 +156,15 @@ CREATE TABLE IF NOT EXISTS ticket_taxonomy (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ticket_taxonomy_node ON ticket_taxonomy(node_id, ticket_id);
+
+-- Optional local semantic embeddings for Hybrid FTS5 + Vector RRF search
+CREATE TABLE IF NOT EXISTS ticket_embeddings (
+    ticket_id INTEGER PRIMARY KEY REFERENCES scratchpads(id) ON DELETE CASCADE,
+    model_id TEXT NOT NULL,
+    dim INTEGER NOT NULL,
+    content_hash TEXT NOT NULL,
+    vector BLOB NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ticket_embeddings_model_id ON ticket_embeddings(model_id);

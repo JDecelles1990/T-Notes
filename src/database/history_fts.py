@@ -53,6 +53,7 @@ class HistorySearchResult:
     snippet_html: str
     rank: float | None = None
     taxonomy_slugs: tuple[str, ...] = ()
+    match_type: str = "exact"
 
 
 def get_taxonomy_seed_path() -> Path:
