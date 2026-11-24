@@ -167,13 +167,15 @@ def test_qt_image_formats_include_jpeg_and_png(qapp, tmp_path):
 
 
 def test_pyinstaller_spec_is_valid_ast_and_references_existing_inputs():
-    """T-Notes.spec parses cleanly and points at valid entry script and asset folders."""
+    """T-Notes.spec parses cleanly, references valid inputs, and excludes unused heavy Qt modules."""
     spec_path = resource_path("T-Notes.spec")
     assert spec_path.is_file()
-    ast.parse(spec_path.read_text(encoding="utf-8"))
+    spec_text = spec_path.read_text(encoding="utf-8")
+    tree = ast.parse(spec_text)
     for rel in (
         "src/main.py",
         "src/database/schema.sql",
+        "src/database/taxonomy_seed.json",
         "assets/styles/dark_theme.qss",
         "assets/icons/app_icon.png",
         "assets/m365",
@@ -184,3 +186,22 @@ def test_pyinstaller_spec_is_valid_ast_and_references_existing_inputs():
         "scripts/m365/_host/M365PreflightProbe.ps1",
     ):
         assert resource_path(rel).exists(), f"Missing spec input: {rel}"
+
+    # Verify AST literals directly (ignores comments)
+    literals: dict[str, object] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            name = node.targets[0].id
+            if name in ("plugin_allowlist", "excluded_modules"):
+                literals[name] = ast.literal_eval(node.value)
+
+    excluded = set(literals.get("excluded_modules", []))
+    for mod in ("PySide6.QtWebEngineCore", "PySide6.QtPdf", "PySide6.QtMultimedia", "PySide6.QtQuick"):
+        assert mod in excluded, f"Expected heavy Qt module exclusion missing from T-Notes.spec: {mod}"
+
+    allowlist = literals.get("plugin_allowlist", {})
+    assert isinstance(allowlist, dict)
+    assert "qjpeg.dll" in allowlist.get("imageformats", set())
+    assert "qpdf.dll" not in allowlist.get("imageformats", set())
+    assert "qwindows.dll" in allowlist.get("platforms", set())
+    assert "qdirect2d.dll" not in allowlist.get("platforms", set())

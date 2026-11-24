@@ -1,0 +1,409 @@
+{
+  "version": 1,
+  "axes": ["domain", "symptom", "resolution"],
+  "nodes": [
+    {
+      "slug": "domain.m365",
+      "axis": "domain",
+      "label": "M365",
+      "parent_slug": null,
+      "sort_order": 10,
+      "aliases": ["m365", "microsoft 365", "office 365", "o365"]
+    },
+    {
+      "slug": "domain.m365.exchange",
+      "axis": "domain",
+      "label": "M365 \u203a Exchange",
+      "parent_slug": "domain.m365",
+      "sort_order": 11,
+      "aliases": [
+        "exchange", "exchange online", "exo", "outlook", "ost", "pst",
+        "autodiscover", "autodiscover loop", "boucle autodiscover",
+        "cache exchange", "gal", "carnet d'adresses",
+        "shared mailbox", "boite partagee", "boite aux lettres",
+        "courriel", "courriels", "messagerie", "mail", "email", "smtp", "imap",
+        "oab", "oof", "out of office", "absence", "distribution list",
+        "liste de distribution", "transport rule", "quarantine", "quarantaine"
+      ]
+    },
+    {
+      "slug": "domain.m365.teams_sharepoint",
+      "axis": "domain",
+      "label": "M365 \u203a Teams / SharePoint",
+      "parent_slug": "domain.m365",
+      "sort_order": 12,
+      "aliases": [
+        "teams", "microsoft teams", "teams cache", "cache teams", "new teams",
+        "sharepoint", "bibliotheque sharepoint", "onedrive", "onedrive sync",
+        "synchronisation onedrive", "canal", "channel", "synchro onedrive",
+        "synchronisation", "fichier partage", "bibliotheque",
+        "document library", "meeting", "reunion", "appel teams"
+      ]
+    },
+    {
+      "slug": "domain.identity",
+      "axis": "domain",
+      "label": "Identity",
+      "parent_slug": null,
+      "sort_order": 20,
+      "aliases": ["identity", "identite", "iam"]
+    },
+    {
+      "slug": "domain.identity.entra_mfa",
+      "axis": "domain",
+      "label": "Identity \u203a Entra / MFA",
+      "parent_slug": "domain.identity",
+      "sort_order": 21,
+      "aliases": [
+        "entra", "entra id", "azure ad", "aad", "aadsts50076", "aadsts50079",
+        "aadsts50158", "mfa", "2fa", "authenticator", "microsoft authenticator",
+        "reinitialisation mfa", "conditional access", "acces conditionnel",
+        "sso", "sspr", "fido2", "token", "jeton", "double facteur",
+        "authentification multifacteur"
+      ]
+    },
+    {
+      "slug": "domain.identity.ad_gpo",
+      "axis": "domain",
+      "label": "Identity \u203a Active Directory / GPO",
+      "parent_slug": "domain.identity",
+      "sort_order": 22,
+      "aliases": [
+        "active directory", "gpo", "ldap", "kerberos", "ntlm", "sysvol",
+        "domain controller", "controleur de domaine", "ou", "group policy",
+        "strategie de groupe", "gpupdate", "azure ad connect", "entra connect",
+        "ad sync", "sid", "lecteur reseau", "mapped drive",
+        "compte verrouille", "account locked", "mot de passe expire", "expired password"
+      ]
+    },
+    {
+      "slug": "domain.endpoint",
+      "axis": "domain",
+      "label": "Endpoint",
+      "parent_slug": null,
+      "sort_order": 30,
+      "aliases": ["endpoint", "poste", "workstation", "laptop", "portable"]
+    },
+    {
+      "slug": "domain.endpoint.windows_os",
+      "axis": "domain",
+      "label": "Endpoint \u203a Windows OS",
+      "parent_slug": "domain.endpoint",
+      "sort_order": 31,
+      "aliases": [
+        "windows", "win10", "win11", "bsod", "blue screen", "ecran bleu",
+        "explorer", "explorateur windows", "regedit", "registry", "registre",
+        "wu", "windows update", "mise a jour windows", "sfc", "dism", "wmi",
+        "event viewer", "observateur", "bitlocker", "profil windows",
+        "profil temporaire", "temp profile", "user profile"
+      ]
+    },
+    {
+      "slug": "domain.endpoint.intune_rmm",
+      "axis": "domain",
+      "label": "Endpoint \u203a Intune / RMM",
+      "parent_slug": "domain.endpoint",
+      "sort_order": 32,
+      "aliases": [
+        "intune", "autopilot", "mdm", "mam", "rmm", "compliance", "conformite",
+        "compliance policy", "conformite intune", "company portal",
+        "portail d'entreprise", "enrollment", "enrolement", "ninjarmm",
+        "ninjaone", "datto", "connectwise", "automate"
+      ]
+    },
+    {
+      "slug": "domain.network",
+      "axis": "domain",
+      "label": "Network",
+      "parent_slug": null,
+      "sort_order": 40,
+      "aliases": ["network", "reseau"]
+    },
+    {
+      "slug": "domain.network.vpn_dns_wifi",
+      "axis": "domain",
+      "label": "Network \u203a VPN / DNS / Wi-Fi",
+      "parent_slug": "domain.network",
+      "sort_order": 41,
+      "aliases": [
+        "vpn", "forticlient", "fortinet", "sonicwall", "meraki", "cisco",
+        "anyconnect", "globalprotect", "wireguard", "openvpn", "split tunnel",
+        "dns", "resolution dns", "dhcp", "vlan", "wifi", "wi-fi", "sans fil",
+        "802.1x", "ethernet", "reseau", "pare-feu", "firewall", "proxy", "rdp",
+        "gateway", "passerelle", "ipconfig", "nslookup", "ping", "nic", "carte reseau"
+      ]
+    },
+    {
+      "slug": "domain.hardware",
+      "axis": "domain",
+      "label": "Hardware",
+      "parent_slug": null,
+      "sort_order": 50,
+      "aliases": ["hardware", "materiel"]
+    },
+    {
+      "slug": "domain.hardware.printers_peripherals",
+      "axis": "domain",
+      "label": "Hardware \u203a Printers / Peripherals",
+      "parent_slug": "domain.hardware",
+      "sort_order": 51,
+      "aliases": [
+        "printer", "printers", "imprimante", "imprimantes", "spooler",
+        "spouleur", "print spooler", "spouleur d'impression", "0x0000011b",
+        "0x00000709", "print", "impression", "kyocera", "zebra", "scanner",
+        "numeriseur", "dock", "docking station", "station d'accueil", "usb",
+        "monitor", "ecran", "moniteur", "keyboard", "clavier", "mouse",
+        "souris", "headset", "casque", "toner"
+      ]
+    },
+    {
+      "slug": "domain.security",
+      "axis": "domain",
+      "label": "Security",
+      "parent_slug": null,
+      "sort_order": 60,
+      "aliases": ["security", "securite"]
+    },
+    {
+      "slug": "domain.security.defender_phishing",
+      "axis": "domain",
+      "label": "Security \u203a Defender / Phishing",
+      "parent_slug": "domain.security",
+      "sort_order": 61,
+      "aliases": [
+        "defender", "phishing", "hameconnage", "malware", "edr", "xdr", "asr",
+        "smartscreen", "ransomware", "rancongiciel", "spam", "pourriel",
+        "compromised", "compromis", "risky sign-in", "connexion risquee",
+        "alert", "alerte", "quarantine", "quarantaine", "faux positif",
+        "false positive", "antivirus"
+      ]
+    },
+    {
+      "slug": "symptom.auth_signin",
+      "axis": "symptom",
+      "label": "Auth / Sign-in",
+      "parent_slug": null,
+      "sort_order": 10,
+      "aliases": [
+        "auth", "login", "sign-in", "signin", "connexion", "ouverture de session",
+        "mot de passe", "password", "locked", "lockout", "verrouille",
+        "compte verrouille", "account locked", "mot de passe expire",
+        "login denied", "sign-in denied", "credential", "identifiant",
+        "mfa prompt", "authenticator", "loop", "boucle",
+        "boucle de connexion", "login loop", "0x80070005", "aadsts",
+        "aadsts50076", "invalid credentials", "expired password",
+        "temp profile", "temporary profile", "profil temporaire"
+      ]
+    },
+    {
+      "slug": "symptom.mail_flow_sync",
+      "axis": "symptom",
+      "label": "Mail Flow / Sync",
+      "parent_slug": null,
+      "sort_order": 20,
+      "aliases": [
+        "mail flow", "flux de messagerie", "ndr", "bounce", "rejet",
+        "not receiving", "ne recoit pas", "ne part pas", "stuck in outbox",
+        "boite d'envoi", "sync", "synchronisation", "onedrive sync",
+        "synchronisation onedrive", "not syncing", "ne synchronise pas",
+        "ost", "ost corrupt", "autodiscover loop", "boucle autodiscover",
+        "boite partagee", "blocked mail", "courriel bloque",
+        "non-delivery", "delayed email", "courriel retarde"
+      ]
+    },
+    {
+      "slug": "symptom.connectivity",
+      "axis": "symptom",
+      "label": "Connectivity",
+      "parent_slug": null,
+      "sort_order": 30,
+      "aliases": [
+        "disconnect", "deconnexion", "vpn disconnect", "deconnexion vpn",
+        "offline", "hors ligne", "timeout", "dns timeout", "delai depasse",
+        "unreachable", "inaccessible", "no internet", "pas d'internet",
+        "pas de reseau", "dropped", "packet loss", "perte de paquets",
+        "cannot connect", "impossible de se connecter"
+      ]
+    },
+    {
+      "slug": "symptom.performance_crash",
+      "axis": "symptom",
+      "label": "Performance / Crash",
+      "parent_slug": null,
+      "sort_order": 40,
+      "aliases": [
+        "slow", "lent", "lenteur", "freeze", "freezes", "gele", "hang", "fige",
+        "crash", "plantage", "plante", "bsod", "ecran bleu", "high cpu", "ram",
+        "100% disk", "memory leak", "out of memory", "not responding",
+        "ne repond pas"
+      ]
+    },
+    {
+      "slug": "symptom.permissions_access",
+      "axis": "symptom",
+      "label": "Permissions / Access",
+      "parent_slug": null,
+      "sort_order": 50,
+      "aliases": [
+        "permission", "permissions", "permission drift", "access denied",
+        "acces refuse", "unauthorized", "non autorise", "forbidden",
+        "shared folder", "dossier partage", "full access", "send as",
+        "envoyer en tant que", "read only", "lecture seule", "privilege",
+        "droits d'acces", "quarantine", "quarantaine", "faux positif", "false positive"
+      ]
+    },
+    {
+      "slug": "symptom.provisioning_onboarding",
+      "axis": "symptom",
+      "label": "Provisioning / Onboarding",
+      "parent_slug": null,
+      "sort_order": 60,
+      "aliases": [
+        "onboarding", "offboarding", "new user", "new hire", "nouvel employe",
+        "embauche", "arrivee", "depart", "provision", "provisioning",
+        "creation de compte", "autopilot", "enrollment", "license", "licence",
+        "license missing", "licence manquante", "sku", "device setup",
+        "preparation poste", "deploiement"
+      ]
+    },
+    {
+      "slug": "symptom.hardware_print",
+      "axis": "symptom",
+      "label": "Hardware / Print",
+      "parent_slug": null,
+      "sort_order": 70,
+      "aliases": [
+        "not printing", "n'imprime pas", "ne s'imprime pas", "paper jam",
+        "bourrage", "spooler", "spouleur", "0x0000011b", "0x00000709",
+        "stuck print queue", "file d'attente bloquee", "imprimante bloquee",
+        "imprimante hors ligne", "printer offline", "no display",
+        "pas d'affichage", "double ecran", "flickering", "battery", "batterie",
+        "charging", "ne charge pas", "peripheral", "peripherique",
+        "not detected", "non detecte"
+      ]
+    },
+    {
+      "slug": "resolution.profile_cache_rebuild",
+      "axis": "resolution",
+      "label": "Profile / Cache Rebuild",
+      "parent_slug": null,
+      "sort_order": 10,
+      "aliases": [
+        "rebuild", "rebuilt", "rebuilt ost", "renamed ost", "renomme ost",
+        "reconstruct", "reconstruit", "ost", "cleared cache", "cleared teams cache",
+        "vide le cache", "vider le cache", "vider le cache teams", "nettoyer le cache",
+        "vidage cache", "cache teams vide", "new profile",
+        "nouveau profil", "recreated profile", "recree le profil",
+        "reinitialise onedrive", "onedrive reset", "credman", "credential manager"
+      ]
+    },
+    {
+      "slug": "resolution.token_mfa_reset",
+      "axis": "resolution",
+      "label": "Token / MFA Reset",
+      "parent_slug": null,
+      "sort_order": 20,
+      "aliases": [
+        "revoke session", "revoked sessions", "revoque", "revoque les sessions",
+        "revoke tokens", "re-register mfa", "require re-register mfa",
+        "re-enregistrer mfa", "reinitialise mfa", "mfa reset",
+        "reinitialisation mfa", "password reset", "reinitialise le mot de passe",
+        "reinitialisation du mot de passe", "mot de passe reinitialise",
+        "unlock account", "unlocked account", "deverrouille",
+        "deverrouille le compte", "deverrouillage", "deverrouillage ad",
+        "unlocked", "cleared token"
+      ]
+    },
+    {
+      "slug": "resolution.policy_license_fix",
+      "axis": "resolution",
+      "label": "Policy / License Fix",
+      "parent_slug": null,
+      "sort_order": 30,
+      "aliases": [
+        "assigned license", "attribue la licence", "licence assignee",
+        "sku updated", "m365 e3", "gpo updated", "updated gpo", "corrige la gpo",
+        "gpupdate /force", "strategie mise a jour", "conditional access excluded",
+        "intune policy", "regle transport", "transport rule", "mail flow rule",
+        "policy applied", "ajout d'exclusion", "ajoute exclusion",
+        "exclusion defender", "exclu dans defender", "excluded in defender",
+        "released from quarantine", "libere de la quarantaine",
+        "released blocked mail", "registry key", "cle de registre",
+        "rpcauthnlevelprivacyenabled"
+      ]
+    },
+    {
+      "slug": "resolution.service_driver_restart",
+      "axis": "resolution",
+      "label": "Service / Driver Restart",
+      "parent_slug": null,
+      "sort_order": 40,
+      "aliases": [
+        "restarted spooler", "redemarre spouleur", "redemarre le spouleur",
+        "redemarrage du spooler", "redemarrage spouleur", "net stop spooler",
+        "restarted service", "redemarre service", "redemarre le service",
+        "restarted ninja", "driver updated", "pilote mis a jour",
+        "reinstall driver", "reinstalled driver", "reinstalle le pilote",
+        "firmware update", "mise a jour pilote", "miniport", "rebooted", "redemarre"
+      ]
+    },
+    {
+      "slug": "resolution.dns_network_fix",
+      "axis": "resolution",
+      "label": "DNS / Network Fix",
+      "parent_slug": null,
+      "sort_order": 50,
+      "aliases": [
+        "flushdns", "ipconfig /flushdns", "winsock reset", "netsh",
+        "dns updated", "updated dns", "corrige le dns", "routage dns",
+        "routage vlan", "corrige le routage", "qos", "split tunnel",
+        "static route", "route statique", "reconnected vlan", "spf", "dkim",
+        "dmarc", "vpn reconnect", "reconnected", "mtu", "mtu adjusted",
+        "firewall rule added", "ouverture port", "ip renewed"
+      ]
+    },
+    {
+      "slug": "resolution.permissions_updated",
+      "axis": "resolution",
+      "label": "Permissions Updated",
+      "parent_slug": null,
+      "sort_order": 60,
+      "aliases": [
+        "granted access", "granted full access", "acces accorde",
+        "added to group", "added to security group", "ajoute au groupe",
+        "ajoute au groupe de securite", "ajout au groupe",
+        "ajout au groupe de securite", "full access added", "send as granted",
+        "add-mailboxpermission", "ntfs updated", "ntfs permissions",
+        "droits sharepoint", "permissions updated", "droits mis a jour", "automapping"
+      ]
+    },
+    {
+      "slug": "resolution.hardware_replaced",
+      "axis": "resolution",
+      "label": "Hardware Replaced",
+      "parent_slug": null,
+      "sort_order": 70,
+      "aliases": [
+        "replaced", "remplace", "replaced dock", "remplace la station d'accueil",
+        "swapped", "echange", "new dock", "new cable", "replaced cable",
+        "remplace le cable", "nouveau cable", "rma", "warranty", "garantie",
+        "toner replaced", "swapped toner", "remplace le tambour",
+        "replaced battery", "replaced ssd"
+      ]
+    },
+    {
+      "slug": "resolution.escalated_vendor",
+      "axis": "resolution",
+      "label": "Escalated / Vendor",
+      "parent_slug": null,
+      "sort_order": 80,
+      "aliases": [
+        "escalated", "escalade", "escalated to microsoft",
+        "escalade au fournisseur", "vendor", "fournisseur", "microsoft support",
+        "tier 3", "niveau 3", "escalade niveau 3", "opened ticket",
+        "opened vendor ticket", "billet ouvert", "support kyocera",
+        "support bell", "isp", "bell", "videotron", "rogers"
+      ]
+    }
+  ]
+}

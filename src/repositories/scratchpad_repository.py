@@ -5,10 +5,15 @@ from typing import Any, Dict, List, Optional, Tuple
 from src.database.connection import DatabaseManager
 from src.database.history_fts import (
     HistorySearchResult,
+    assign_ticket_taxonomy,
+    get_ticket_taxonomy,
     list_history_clients,
+    list_taxonomy_nodes,
     sanitize_fts5_query,
     search_history,
+    suggest_taxonomy_for_text,
 )
+from src.database.semantic_search import find_similar_tickets, search_history_hybrid
 
 
 def _get_utc_now_str() -> str:
@@ -285,17 +290,19 @@ class ScratchpadRepository:
         client: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
+        taxonomy_slugs: Optional[List[str] | Tuple[str, ...] | str] = None,
         sort_by: str = "relevance",
         limit: int = 100,
         offset: int = 0,
     ) -> Tuple[List[HistorySearchResult], int]:
-        """Searches archived tickets using weighted FTS5 BM25 ranking and snippet previews."""
+        """Searches archived tickets using weighted FTS5 BM25 ranking, taxonomy facets, and snippets."""
         return search_history(
             self.db.get_connection(),
             query,
             client=client,
             date_from=date_from,
             date_to=date_to,
+            taxonomy_slugs=taxonomy_slugs,
             sort_by=sort_by,
             limit=limit,
             offset=offset,
@@ -304,3 +311,99 @@ class ScratchpadRepository:
     def list_archived_clients(self) -> List[str]:
         """Returns distinct non-empty client names across archived tickets."""
         return list_history_clients(self.db.get_connection())
+
+    def list_taxonomy_nodes(self, *, axis: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Returns active 3-axis troubleshooting taxonomy nodes."""
+        return list_taxonomy_nodes(self.db.get_connection(), axis=axis)
+
+    def assign_ticket_taxonomy(
+        self,
+        scratchpad_id: int,
+        slugs: List[str] | Tuple[str, ...],
+        *,
+        source: str = "manual",
+        confidence: float = 1.0,
+        replace_existing: bool = False,
+    ) -> List[Dict[str, Any]]:
+        """Assigns taxonomy slugs to a ticket."""
+        return assign_ticket_taxonomy(
+            self.db.get_connection(),
+            scratchpad_id,
+            slugs,
+            source=source,
+            confidence=confidence,
+            replace_existing=replace_existing,
+        )
+
+    def get_ticket_taxonomy(self, scratchpad_id: int) -> List[Dict[str, Any]]:
+        """Returns taxonomy nodes assigned to a ticket."""
+        return get_ticket_taxonomy(self.db.get_connection(), scratchpad_id)
+
+    def suggest_taxonomy_for_text(
+        self,
+        title: str = "",
+        body: str = "",
+        *,
+        max_per_axis: int = 2,
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Suggests bilingual taxonomy nodes per axis from ticket title and body."""
+        return suggest_taxonomy_for_text(
+            title=title,
+            body=body,
+            conn=self.db.get_connection(),
+            max_per_axis=max_per_axis,
+        )
+
+    def search_history_hybrid(
+        self,
+        query: str = "",
+        *,
+        mode: str = "exact",
+        provider: Any = None,
+        query_vector: Any = None,
+        model_id: Optional[str] = None,
+        min_similarity: float = 0.25,
+        client: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        taxonomy_slugs: Optional[List[str] | Tuple[str, ...] | str] = None,
+        sort_by: str = "relevance",
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Tuple[List[HistorySearchResult], int]:
+        """Hybrid FTS5 + Vector RRF history search with automatic Exact FTS5 fallback."""
+        return search_history_hybrid(
+            self.db.get_connection(),
+            query,
+            mode=mode,
+            provider=provider,
+            query_vector=query_vector,
+            model_id=model_id,
+            min_similarity=min_similarity,
+            client=client,
+            date_from=date_from,
+            date_to=date_to,
+            taxonomy_slugs=taxonomy_slugs,
+            sort_by=sort_by,
+            limit=limit,
+            offset=offset,
+        )
+
+    def find_similar_tickets(
+        self,
+        text: str,
+        provider: Any,
+        *,
+        exclude_id: Optional[int] = None,
+        min_similarity: float = 0.25,
+        limit: int = 5,
+    ) -> List[HistorySearchResult]:
+        """Returns top semantically similar archived tickets for live recommendation panels."""
+        return find_similar_tickets(
+            self.db.get_connection(),
+            text,
+            provider,
+            exclude_id=exclude_id,
+            min_similarity=min_similarity,
+            limit=limit,
+        )

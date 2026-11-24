@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices, QFont, QGuiApplication, QKeySequence, QMoveEvent, QPainter, QResizeEvent, QScreen, QShortcut, QShowEvent
 from PySide6.QtWidgets import (
@@ -55,7 +55,13 @@ from src.ui.components.history_search_page import HistorySearchPage
 from src.ui.components.system_tray import TechPadSystemTray, get_or_create_app_icon
 from src.ui.components.tab_widget import TechPadTabWidget
 from src.ui.components.toolbar import TechPadToolBar
+from src.database.history_fts import suggest_taxonomy_for_text
+from src.ui.components.taxonomy_pill_selector import (
+    TaxonomyPillSelector,
+    persist_taxonomy_assignments,
+)
 from src.ui.dialogs.add_template_dialog import AddTemplateDialog
+from src.ui.dialogs.archive_taxonomy_dialog import ArchiveTaxonomyDialog
 from src.ui.dialogs.edit_ticket_dialog import EditTicketDialog
 from src.ui.dialogs.settings_dialog import SettingsDialog
 from src.ui.dialogs.summary_formatter_dialog import SummaryFormatterDialog
@@ -461,6 +467,22 @@ class TechPadMainWindow(QMainWindow):
         )
         self.status_bar.addWidget(self.lbl_telemetry)
 
+        self.btn_related_history = QPushButton("💡 0 Related")
+        self.btn_related_history.setObjectName("btnSecondary")
+        self.btn_related_history.setFlat(True)
+        self.btn_related_history.setVisible(False)
+        self.btn_related_history.setFocusPolicy(Qt.StrongFocus)
+        self.btn_related_history.setAccessibleName("Open related past tickets")
+        self.btn_related_history.setToolTip("Open related archived tickets in History Search")
+        self.btn_related_history.setStyleSheet(
+            "color: #fde047; font-weight: 600; padding: 2px 9px; margin-left: 6px; "
+            "background-color: rgba(234, 179, 8, 0.14); "
+            "border: 1px solid rgba(250, 204, 21, 0.45); border-radius: 9px;"
+        )
+        self.btn_related_history.clicked.connect(self._on_related_history_pill_clicked)
+        self.status_bar.addWidget(self.btn_related_history)
+        self._related_history_state: tuple[str, str, int] = ("", "", 0)
+
         self.lbl_active_info = CompactLabel("")
         self.lbl_active_info.setStyleSheet("color: #9cdcfe; padding-left: 14px;")
         self.status_bar.addWidget(self.lbl_active_info)
@@ -522,6 +544,8 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_m365_categories.setVisible(True)
             if hasattr(self, "btn_m365_active_ticket"):
                 self.btn_m365_active_ticket.setVisible(True)
+            if hasattr(self, "btn_related_history"):
+                self.btn_related_history.setVisible(False)
         elif self.is_history_search_page:
             if hasattr(self, "btn_toggle_split"):
                 self.btn_toggle_split.setVisible(False)
@@ -538,6 +562,8 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_m365_categories.setVisible(False)
             if hasattr(self, "btn_m365_active_ticket"):
                 self.btn_m365_active_ticket.setVisible(False)
+            if hasattr(self, "btn_related_history"):
+                self.btn_related_history.setVisible(False)
         else:
             if hasattr(self, "btn_toggle_split"):
                 self.btn_toggle_split.setVisible(True)
@@ -554,6 +580,8 @@ class TechPadMainWindow(QMainWindow):
                 self.btn_m365_categories.setVisible(False)
             if hasattr(self, "btn_m365_active_ticket"):
                 self.btn_m365_active_ticket.setVisible(False)
+            if hasattr(self, "btn_related_history"):
+                self.btn_related_history.setVisible(getattr(self, "_related_history_state", ("", "", 0))[2] > 0)
 
     def _keep_status_buttons_visible(self, _msg: str = "") -> None:
         """Keeps HUD, M365 Launcher / T-Notes, and module-specific buttons visible on the left even during temporary status messages."""
@@ -1246,6 +1274,10 @@ class TechPadMainWindow(QMainWindow):
         elif any_dirty and not any_timer_active:
             self.set_save_status("Save Failed", is_saved=False)
 
+        active = self._get_underlying_tab_editor()
+        if active and active.scratchpad_id == scratchpad_id:
+            self._update_related_history_pill(active)
+
     def flush_all_saves(self) -> bool:
         """Forces all debounced saves and dirty tickets to execute immediately."""
         pending = {sid for sid, timer in self._debounce_timers.items() if timer.is_active()}
@@ -1372,6 +1404,7 @@ class TechPadMainWindow(QMainWindow):
                 elapsed_seconds=elapsed,
                 auto_start=True,
             )
+        self._update_related_history_pill(editor)
 
     def _on_current_tab_changed(self, index: int) -> None:
         """Updates active editor in toolbar and synchronizes stopwatch on primary tab change."""
@@ -1658,6 +1691,7 @@ class TechPadMainWindow(QMainWindow):
             editor.setFocus()
             self._on_tabs_reordered()
             self.history_drawer.refresh_list()
+            self._update_related_history_pill(editor)
 
     def _on_history_split_restore(self, scratchpad_id: int) -> None:
         """Restores an archived ticket directly into the secondary pane in Split View."""
@@ -1953,6 +1987,57 @@ class TechPadMainWindow(QMainWindow):
         if stats["images"] > 0:
             parts.append(f"🖼️ {stats['images']}")
         self.lbl_telemetry.setText(" • ".join(parts))
+
+    def _update_related_history_pill(self, editor: Optional[TechPadEditor] = None) -> None:
+        """Updates the status-bar '💡 N Related' pill from Subject/note keywords and client matches."""
+        if not hasattr(self, "btn_related_history"):
+            return
+        target = editor or self._get_underlying_tab_editor()
+        if target is None:
+            self._related_history_state = ("", "", 0)
+            self.btn_related_history.setVisible(False)
+            return
+        ticket = self.scratchpad_service.get_ticket(target.scratchpad_id) or {}
+        title = ticket.get("title", "") or ""
+        client = ticket.get("client_name", "") or ""
+        note_text = target.toPlainText()
+        results, total, query = self.scratchpad_service.find_related_history(
+            title=title,
+            note_text=note_text,
+            client=client,
+            limit=5,
+        )
+        self._related_history_state = (query, client, total)
+        if total <= 0:
+            self.btn_related_history.setVisible(False)
+            self.btn_related_history.setToolTip("No related archived tickets found")
+            return
+        self.btn_related_history.setText(f"💡 {total} Related")
+        preview_lines = [
+            f"• #{r.ticket_number}"
+            + (f" ({r.client})" if r.client else "")
+            + (f" — {r.title}" if r.title else "")
+            for r in results[:4]
+        ]
+        self.btn_related_history.setToolTip(
+            "Related past tickets (click to open side-by-side):\n" + "\n".join(preview_lines)
+        )
+        self.btn_related_history.setVisible(
+            (not self.is_m365_workspace) and (not self.is_history_search_page)
+        )
+
+    def _on_related_history_pill_clicked(self) -> None:
+        """Opens History Search filtered to related matches with the Active Ticket pane open."""
+        query, client, total = getattr(self, "_related_history_state", ("", "", 0))
+        if total <= 0:
+            self._update_related_history_pill()
+            query, client, total = getattr(self, "_related_history_state", ("", "", 0))
+        self.open_history_search_page(refresh_default=False)
+        self.history_search_page.open_with_related_query(
+            query=query,
+            client=client or None,
+            open_active_ticket_pane=True,
+        )
 
     def _open_quick_tools(self) -> QuickToolsDialog:
         """Opens Smart Entity Extractor & Tech Quick-Tools modal (Ctrl+Alt+Q)."""
@@ -2349,16 +2434,23 @@ class TechPadMainWindow(QMainWindow):
             self._remove_secondary_tab(index, editor.scratchpad_id)
             self.history_drawer.refresh_list()
 
-    def _archive_secondary_tab(self, index: int) -> None:
-        """Archives a secondary tab directly without extra prompt."""
+    def _archive_secondary_tab(self, index: int, *, prompt_taxonomy: Optional[bool] = None) -> bool:
+        """Archives a secondary tab, prompting for taxonomy pills during interactive UI use."""
         editor = self.secondary_tab_widget.get_editor_at(index)
         if not editor:
-            return
+            return False
+        assignments = self._prompt_archive_taxonomy_assignments(editor, prompt_taxonomy=prompt_taxonomy)
+        if assignments is None:
+            return False
         if not self._save_before_archive(editor.scratchpad_id):
-            return
+            return False
+        self._finalize_archived_taxonomy(editor.scratchpad_id, assignments)
         self._remove_secondary_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
+        self._update_related_history_pill()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+        return True
 
     def _remove_secondary_tab(self, index: int, scratchpad_id: int) -> None:
         """Removes a tab from the secondary pane and collapses split view if empty."""
@@ -2917,16 +3009,111 @@ class TechPadMainWindow(QMainWindow):
             return False
         return True
 
-    def _archive_tab(self, index: int) -> None:
-        """Archives a tab directly without extra prompt."""
+    def _should_prompt_archive_taxonomy(self, prompt_taxonomy: Optional[bool] = None) -> bool:
+        if prompt_taxonomy is not None:
+            return bool(prompt_taxonomy)
+        if self.isVisible():
+            return True
+        return ArchiveTaxonomyDialog.exec is not QDialog.exec
+
+    def _collect_auto_taxonomy_assignments(
+        self,
+        scratchpad_id: int,
+        *,
+        body_text: str = "",
+        min_score: float = 1.5,
+    ) -> list[dict[str, object]]:
+        ticket = self.scratchpad_service.get_ticket(scratchpad_id) or {}
+        title = str(ticket.get("title", "") or "")
+        conn = self._get_history_db_conn()
+        suggestions = suggest_taxonomy_for_text(title=title, body=body_text, conn=conn, max_per_axis=2)
+        assignments: list[dict[str, object]] = []
+        for axis in ("domain", "symptom", "resolution"):
+            for item in suggestions.get(axis, ()):
+                # Prefer concrete leaf domain nodes over parent-only containers when both match
+                if axis == "domain" and item.get("parent_slug") is None:
+                    continue
+                if float(item.get("score", 0.0)) >= min_score:
+                    assignments.append(
+                        {
+                            "slug": str(item["slug"]),
+                            "source": "auto",
+                            "confidence": float(item.get("confidence", 0.7)),
+                        }
+                    )
+                    break
+        return assignments
+
+    def _prompt_archive_taxonomy_assignments(
+        self,
+        editor: TechPadEditor,
+        *,
+        prompt_taxonomy: Optional[bool] = None,
+    ) -> Optional[list[dict[str, object]]]:
+        """Return selected taxonomy assignments, or None if the user cancels archiving."""
+        if not self._should_prompt_archive_taxonomy(prompt_taxonomy):
+            return self._collect_auto_taxonomy_assignments(
+                editor.scratchpad_id,
+                body_text=editor.toPlainText(),
+            )
+        ticket = self.scratchpad_service.get_ticket(editor.scratchpad_id) or {}
+        dlg = ArchiveTaxonomyDialog(
+            ticket_number=str(ticket.get("ticket_number", "") or ""),
+            client_name=str(ticket.get("client_name", "") or ""),
+            title=str(ticket.get("title", "") or ""),
+            body_text=editor.toPlainText(),
+            conn=self._get_history_db_conn(),
+            parent=self,
+        )
+        self._last_archive_taxonomy_dialog = dlg
+        result = dlg.exec()
+        if result != QDialog.DialogCode.Accepted or dlg.outcome == ArchiveTaxonomyDialog.OUTCOME_CANCEL:
+            return None
+        if dlg.outcome == ArchiveTaxonomyDialog.OUTCOME_ARCHIVE_WITHOUT_TAGS:
+            return []
+        return dlg.selected_assignments()
+
+    def _finalize_archived_taxonomy(
+        self,
+        scratchpad_id: int,
+        assignments: Sequence[dict[str, object]],
+        *,
+        replace_existing: bool = True,
+    ) -> None:
+        try:
+            if assignments or replace_existing:
+                persist_taxonomy_assignments(
+                    self._get_history_db_conn(),
+                    scratchpad_id,
+                    assignments,
+                    replace_existing=replace_existing,
+                )
+        except Exception:
+            pass
+
+    def _refresh_history_search_after_archive(self) -> None:
+        if hasattr(self, "history_search_page"):
+            self.history_search_page._reload_clients()
+            self.history_search_page._run_fresh_search()
+            self.history_search_page.start_background_indexing()
+
+    def _archive_tab(self, index: int, *, prompt_taxonomy: Optional[bool] = None) -> bool:
+        """Archives a primary tab, prompting for taxonomy pills during interactive UI use."""
         editor = self.tab_widget.get_editor_at(index)
         if not editor:
-            return
+            return False
+        assignments = self._prompt_archive_taxonomy_assignments(editor, prompt_taxonomy=prompt_taxonomy)
+        if assignments is None:
+            return False
         if not self._save_before_archive(editor.scratchpad_id):
-            return
+            return False
+        self._finalize_archived_taxonomy(editor.scratchpad_id, assignments)
         self._remove_tab(index, editor.scratchpad_id)
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
+        self._update_related_history_pill()
         self.status_bar.showMessage("✓ Ticket archived to History Drawer", 3000)
+        return True
 
     def _copy_tab_formatted_note_from(self, tab_widget: TechPadTabWidget, index: int) -> None:
         """Copies the entire note of a specific tab with rich formatting, colors, and embedded images."""
@@ -2952,7 +3139,7 @@ class TechPadMainWindow(QMainWindow):
         self.status_bar.showMessage("✓ Copied note to clipboard!", 3500)
 
     def _close_other_tabs(self, keep_index: int) -> None:
-        """Closes and archives all open tabs except the selected one."""
+        """Bulk-archives all open tabs except keep_index without per-tab modal prompts."""
         keep_editor = self.tab_widget.get_editor_at(keep_index)
         if not keep_editor:
             return
@@ -2961,12 +3148,25 @@ class TechPadMainWindow(QMainWindow):
         for i in range(self.tab_widget.count() - 1, -1, -1):
             editor = self.tab_widget.get_editor_at(i)
             if editor and editor.scratchpad_id != keep_id:
+                body_text = editor.toPlainText()
                 if not self._save_before_archive(editor.scratchpad_id):
                     self.history_drawer.refresh_list()
                     return
+                auto_assignments = self._collect_auto_taxonomy_assignments(
+                    editor.scratchpad_id,
+                    body_text=body_text,
+                )
+                self._finalize_archived_taxonomy(
+                    editor.scratchpad_id,
+                    auto_assignments,
+                    replace_existing=False,
+                )
                 self._remove_tab(i, editor.scratchpad_id)
 
         self.history_drawer.refresh_list()
+        self._refresh_history_search_after_archive()
+        self._update_related_history_pill()
+        self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
         self.status_bar.showMessage("✓ Closed and archived other tabs", 3000)
 
     def _on_find_requested(self) -> None:
@@ -2998,7 +3198,7 @@ class TechPadMainWindow(QMainWindow):
         else:
             self.open_history_search_page()
 
-    def open_history_search_page(self) -> None:
+    def open_history_search_page(self, refresh_default: bool = True) -> None:
         """Open full-page History Search workspace and tuck away right drawer until closed."""
         if self.is_m365_workspace:
             self.show_notes_workspace()
@@ -3020,12 +3220,19 @@ class TechPadMainWindow(QMainWindow):
             self._history_ticket_editor_wired = True
 
         if not self.is_history_search_page:
-            self._right_pane_was_visible = (
-                self.right_history_pane.isVisible()
-                if self.isVisible()
-                else (not self.right_history_pane.isHidden())
-            )
-            if self._right_pane_was_visible:
+            if hasattr(self, "_history_transition") and self._history_transition.running:
+                was_open = bool(self._history_transition.is_open)
+                self._history_transition.cancel()
+            elif hasattr(self, "right_history_pane"):
+                was_open = (
+                    self.right_history_pane.isVisible()
+                    if self.isVisible()
+                    else (not self.right_history_pane.isHidden())
+                )
+            else:
+                was_open = False
+            self._right_pane_was_visible = was_open
+            if self._right_pane_was_visible or not self.right_history_pane.isHidden():
                 self.right_history_pane.hide()
 
         self.main_stack.setCurrentWidget(self.history_search_page)
@@ -3035,7 +3242,8 @@ class TechPadMainWindow(QMainWindow):
             self._update_telemetry(ticket_ed)
         self.bottom_history_btn.setChecked(True)
         self._update_module_status_bar_buttons(is_m365=False)
-        self.history_search_page.refresh_and_focus()
+        if refresh_default:
+            self.history_search_page.refresh_and_focus()
 
     def close_history_search_page(self) -> None:
         """Return from full-page History Search to the active workspace and restore drawer state."""
@@ -3045,21 +3253,25 @@ class TechPadMainWindow(QMainWindow):
             return
         self.main_stack.setCurrentWidget(self.active_workspace_widget)
         self.bottom_history_btn.setChecked(False)
-        self._update_module_status_bar_buttons(is_m365=False)
-        if getattr(self, "_right_pane_was_visible", False):
-            self.right_history_pane.show()
-            self._right_pane_was_visible = False
         editor = self._get_underlying_tab_editor()
         self.toolbar.set_active_editor(editor)
         if editor:
             self.toolbar.update_format_states(editor.currentCharFormat())
             self._update_telemetry(editor)
+            self._update_related_history_pill(editor)
             editor.setFocus()
+        self._update_module_status_bar_buttons(is_m365=False)
+        if getattr(self, "_right_pane_was_visible", False):
+            self.right_history_pane.show()
+            self._right_pane_was_visible = False
 
     def restore_ticket_from_history(self, scratchpad_id: int) -> None:
         """Restore an archived ticket from HistorySearchPage into active tabs."""
         self.close_history_search_page()
         self._on_restore_ticket(scratchpad_id)
+        self.history_search_page._reload_clients()
+        self.history_search_page._run_fresh_search()
+        self._update_related_history_pill()
         self.status_bar.showMessage("✓ Restored ticket to active workspace", 3000)
 
     def clone_ticket_from_history(self, scratchpad_id: int) -> None:
@@ -3094,12 +3306,24 @@ class TechPadMainWindow(QMainWindow):
         editor.setFocus()
         self._on_editor_focused(new_ticket["id"])
         self._on_tabs_reordered()
+        self.history_search_page._run_fresh_search()
+        self._update_related_history_pill()
         self.status_bar.showMessage(
             f"✓ Cloned #{source.get('ticket_number', '')} to #{new_ticket.get('ticket_number', '')}",
             3500,
         )
 
     def _toggle_history_drawer(self) -> None:
+        if self.is_history_search_page:
+            was_visible_before_search = getattr(self, "_right_pane_was_visible", False)
+            self._right_pane_was_visible = False
+            self.close_history_search_page()
+            if was_visible_before_search:
+                self._user_history_drawer_open = False
+                self.history_auto_collapsed = False
+                self._history_transition.cancel()
+                self.history_drawer.hide()
+                return
         if self._history_transition.is_open:
             self._user_history_drawer_open = False
             self.history_auto_collapsed = False
@@ -3165,6 +3389,8 @@ class TechPadMainWindow(QMainWindow):
                     2500,
                 )
         else:
+            if getattr(self, "history_search_page", None) is not None:
+                self.history_search_page.stop_background_indexing()
             if getattr(self, "m365_workspace", None) is not None:
                 self.m365_workspace.shutdown()
             if hasattr(self, "global_hotkey") and self.global_hotkey:

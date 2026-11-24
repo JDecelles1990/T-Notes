@@ -126,3 +126,45 @@ CREATE TABLE IF NOT EXISTS m365_administrators (
     FOREIGN KEY(company_id) REFERENCES m365_companies(company_id) ON DELETE CASCADE,
     UNIQUE(company_id, upn COLLATE NOCASE)
 );
+
+-- 3-Axis Technical Troubleshooting Taxonomy
+CREATE TABLE IF NOT EXISTS taxonomy_nodes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,
+    axis TEXT NOT NULL CHECK(axis IN ('domain', 'symptom', 'resolution')),
+    label TEXT NOT NULL,
+    parent_slug TEXT,
+    aliases_json TEXT NOT NULL DEFAULT '[]',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(parent_slug) REFERENCES taxonomy_nodes(slug) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_taxonomy_nodes_axis ON taxonomy_nodes(axis, sort_order);
+
+CREATE TABLE IF NOT EXISTS ticket_taxonomy (
+    ticket_id INTEGER NOT NULL,
+    node_id INTEGER NOT NULL,
+    source TEXT NOT NULL DEFAULT 'manual',
+    confidence REAL NOT NULL DEFAULT 1.0,
+    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(ticket_id, node_id),
+    FOREIGN KEY(ticket_id) REFERENCES scratchpads(id) ON DELETE CASCADE,
+    FOREIGN KEY(node_id) REFERENCES taxonomy_nodes(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ticket_taxonomy_node ON ticket_taxonomy(node_id, ticket_id);
+
+-- Optional local semantic embeddings for Hybrid FTS5 + Vector RRF search
+CREATE TABLE IF NOT EXISTS ticket_embeddings (
+    ticket_id INTEGER PRIMARY KEY REFERENCES scratchpads(id) ON DELETE CASCADE,
+    model_id TEXT NOT NULL,
+    dim INTEGER NOT NULL,
+    content_hash TEXT NOT NULL,
+    vector BLOB NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ticket_embeddings_model_id ON ticket_embeddings(model_id);

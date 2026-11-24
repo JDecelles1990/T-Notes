@@ -1,5 +1,6 @@
 """Application configuration and filesystem paths."""
 
+import os
 from pathlib import Path
 import sys
 
@@ -22,8 +23,14 @@ try:
 except OSError:
     pass
 
-# Database path (always outside _MEIPASS so notes & tabs survive app updates)
-DEFAULT_DB_PATH = APP_DATA_DIR / "techpad.db"
+# Database path (always outside _MEIPASS so notes & tabs survive app updates;
+# optional TNOTES_DB_PATH override enables launching an isolated visual sandbox).
+_ENV_DB_PATH = os.environ.get("TNOTES_DB_PATH", "").strip()
+DEFAULT_DB_PATH = (
+    Path(_ENV_DB_PATH).expanduser().resolve()
+    if _ENV_DB_PATH
+    else (APP_DATA_DIR / "techpad.db")
+)
 
 # Read-only bundled UI asset paths
 STYLES_DIR = resource_path("assets", "styles")
